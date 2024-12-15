@@ -10,25 +10,43 @@ vars:
   DAGGER_CROSSPLANE_MODULE_VERSION: v0.0.2
 
 tasks:
-  xplane-push:
-    desc: Push crossplane package
+  get-variables:
+    desc: Get variables from app folder
     cmds:
       - |
-        echo "Enter to be pushed crossplane package:"
-        read PACKAGE_NAME;
-        echo "Enter to be pushed tag version:"
-        read TAG;
+        # INPUT FOLDER CONTAINING YAML FILES
+        echo "Enter app folder path (e.g. apps/app-xy):"
+        read APP_FOLDER;
 
-        dagger call -m {{ .DAGGER_CROSSPLANE_MODULE }} push \
-        --src {{ .SOURCE_FOLDER }}/${PACKAGE_NAME} \
-        --progress plain --username={{ .USER }} \
-        --password=env:GITHUB_TOKEN \
-        --registry={{ .CROSSPLANE_PACKAGE_REGISTRY }} \
-        --destination={{ .DESTINATION }}/${PACKAGE_NAME}:${TAG}
-    vars:
-      SOURCE_FOLDER: "./configurations"
-      DESTINATION: "{{ .CROSSPLANE_PACKAGE_REGISTRY }}/stuttgart-things/crossplane"
-      USER: stuttgart-things
+        output_file="/tmp/variables.yaml"
+
+        # CLEAR THE OUTPUT FILE
+        > "$output_file"
+
+        # ITERATE OVER ALL YAML FILES IN THE FOLDER
+        find "${APP_FOLDER}" -type f -name "*.yaml" | while read -r file; do
+            echo "Processing: $file..."
+
+            # EXTRACT VARIABLES WITH DEFAULT VALUES FROM EACH YAML FILE
+            grep -oP '\$\{([A-Z0-9_]+)(?::-([^\}]+))?\}' "$file" | sort | uniq | while read -r line; do
+
+                # EXTRACT VARIABLE NAME AND DEFAULT VALUE
+                var_name=$(echo "$line" | grep -oP '\$\{\K[A-Z0-9_]+')
+                default_value=$(echo "$line" | grep -oP ':-\K[^}]+' || echo "")
+
+                # WRITE TO THE OUTPUT IN YAML FORMAT (APPEND ONLY IF NOT ALREADY PRESENT)
+                if ! grep -q "^$var_name:" "$output_file"; then
+                    if [ -n "$default_value" ]; then
+                        echo "$var_name: $default_value" >> "$output_file"
+                    else
+                        echo "$var_name: " >> "$output_file"
+                    fi
+                fi
+            done
+        done
+
+        # Display the generated YAML
+        cat "$output_file"
 
   branch:
     desc: Create branch from main
