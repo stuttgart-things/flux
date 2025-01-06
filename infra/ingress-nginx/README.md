@@ -9,12 +9,12 @@ kubectl apply -f - <<EOF
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: flux-apps
+  name: flux-infra
   namespace: flux-system
 spec:
   interval: 1m0s
   ref:
-    branch: feature/add-cert-manager
+    branch: feature/add-ingress-nginx
   url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
@@ -37,7 +37,7 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: flux-apps
+    name: flux-infra
   path: ./infra/ingress-nginx
   prune: true
   wait: true
