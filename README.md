@@ -1,5 +1,7 @@
 # stuttgart-things/flux
 
+flux infra & app kustomizations
+
 ## FLUX BOOSTRAP
 
 <details><summary>CLI-GITHUB</summary>
