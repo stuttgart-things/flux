@@ -9,11 +9,11 @@ spec:
   chart:
     spec:
       chart: metallb
-      version: ${METALLB_CHART_VERSION:=4.8.0} 
+      version: ${METALLB_CHART_VERSION:=4.8.0}
       sourceRef:
         kind: HelmRepository
         name: bitnami
         namespace: metallb-system
       interval: 12h
   values:
-    installCRDs: ${INSTALL_CRDS:=true}  
+    installCRDs: ${INSTALL_CRDS:=true}

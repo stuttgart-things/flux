@@ -64,7 +64,7 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: flux-system
+    name: flux-apps
   path: ./infra/cert-manager
   prune: true
   wait: true
