@@ -25,7 +25,7 @@ spec:
         apiVersion: metallb.io/v1beta1
         kind: IPAddressPool
         metadata:
-          name: ${METALLB_IP_POOL:-ip-pool}
+          name: ip-pool
           namespace: ${METALLB_NAMESPACE:-metallb-system}
         spec:
           addresses:
@@ -38,4 +38,4 @@ spec:
           namespace: ${METALLB_NAMESPACE:-metallb-system}
         spec:
           ipAddressPools:
-          - ${METALLB_IP_POOL:-ip-pool}
+          - ip-pool
