@@ -44,7 +44,7 @@ spec:
   postBuild:
     substitute:
       METALLB_NAMESPACE: metallb-system
-      METALLB_CHART_VERSION: 4.12.0
+      METALLB_CHART_VERSION: 6.4.2
       INSTALL_CRDS: "true"
       METALLB_IP_RANGE: 10.31.103.13-10.31.103.14 #EXAMPLE
       METALLB_IP_POOL: ingress
