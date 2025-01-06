@@ -12,8 +12,9 @@ metadata:
   name: bitnami
   namespace: ${METALLB_NAMESPACE:-metallb-system}
 spec:
+  type: oci
   interval: 24h
-  url: https://charts.bitnami.com/bitnami
+  url: oci://registry-1.docker.io/bitnamicharts
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
