@@ -9,12 +9,12 @@ kubectl apply -f - <<EOF
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: flux-infra
+  name: flux-apps
   namespace: flux-system
 spec:
   interval: 1m0s
   ref:
-    branch: feature/add-ingress-nginx
+    branch: feature/add-cert-manager
   url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
@@ -37,16 +37,16 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: flux-infra
+    name: flux-apps
   path: ./infra/metallb
   prune: true
   wait: true
   postBuild:
     substitute:
       METALLB_NAMESPACE: metallb-system
-      METALLB_CHART_VERSION: 6.4.2
-      METALLB_INSTALL_CRDS: "true"
-      METALLB_IP_RANGE: 10.31.103.10-10.31.103.10 #EXAMPLE
+      METALLB_CHART_VERSION: 4.12.0
+      INSTALL_CRDS: "true"
+      METALLB_IP_RANGE: 10.31.103.13-10.31.103.14 #EXAMPLE
       METALLB_IP_POOL: ingress
 EOF
 ```
