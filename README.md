@@ -15,7 +15,7 @@ flux bootstrap github --owner=stuttgart-things --repository=stuttgart-things --p
 
 ## ADD GITREPOSITORY
 
-<details><summary>FLUX APPS REPO-BRANCH  (KUBECTL)</summary>
+<details><summary>FLUX APPS REPO (KUBECTL)</summary>
 
 ```bash
 kubectl apply -f - <<EOF
