@@ -29,7 +29,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: feature/add-cert-manager
+    tag: v1.0.0
   url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
