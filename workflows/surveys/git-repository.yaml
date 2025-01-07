@@ -1,0 +1,10 @@
+---
+- prompt: "Source repository of app defintions?"
+  name: gitRepository
+  options:
+    - "https://github.com/stuttgart-things/flux.git"
+
+- prompt: "Git Tag?"
+  name: gitTag
+  options:
+    - "v1.0.0"

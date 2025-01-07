@@ -1,0 +1,62 @@
+---
+preQuestions:
+  - prompt: "Cluster name?"
+    kind: ask
+    name: clusterName
+    type: string
+    minLength: 3
+    maxLength: 20
+  - prompt: "Env name"
+    name: envName
+    options:
+      - "labul"
+      - "labda"
+  - prompt: "Cloud name"
+    name: cloud
+    options:
+      - "vsphere"
+      - "proxmox"
+
+templates:
+  - /home/sthings/projects/flux/workflows/templates/git-repository.yaml.tpl:git-repo.yaml
+
+questions:
+  - /home/sthings/projects/flux/workflows/surveys/git-repository.yaml
+
+aliases:
+  - "interval:1m0s"
+
+#SECRETS
+# secretFiles:
+#   - "/home/sthings/projects/stuttgart-things/terraform/secrets.yaml"
+# secretAliases:
+#   - "{{ .envName }}_{{ .cloud }}_server:vsphere_server"    # KEYINSOURCE:TARGETKEY
+#   - "{{ .envName }}_{{ .cloud }}_user:vsphere_user"
+#   - "{{ .envName }}_{{ .cloud }}_password:vsphere_password"
+#   - "vm_ssh_user:vm_ssh_user"
+#   - "vm_ssh_password:vm_ssh_password"
+#   - "s3_user:AWS_ACCESS_KEY_ID"
+#   - "s3_password:AWS_SECRET_ACCESS_KEY"
+# secretFileOutputName: "secret-vars.yaml" # SOURCE SECRET FILE
+
+# kaeffken encrypt
+# --source /home/sthings/projects/golang/sops/terraform-secrets.yaml
+# --output file
+# --destination ~/projects/stuttgart-things/terraform/
+# --name secrets
+# --age age1g43...
+
+# GITHUB / BRANCH
+gitRepo: stuttgart-things
+gitOwner: stuttgart-things
+gitBranch: "{{ .technology }}-{{ .clusterName }}"
+rootFolder: clusters
+subFolder: "{{ .envName }}/{{ .cloud }}/{{ .clusterName }}"
+technology: flux
+commitMessage: "Added flux kustomizations for {{ .clusterName }}M"
+
+# GITHUB / PULL REQUEST
+prTitle: "Merge flux kustomizations for {{ .clusterName }}"
+prDescription: "Merge {{ .clusterName }} flux kustomizations definitions into main"
+prTags:
+  - flux
