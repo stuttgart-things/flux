@@ -51,6 +51,55 @@ flux bootstrap github --owner=stuttgart-things --repository=stuttgart-things --p
 
 <details><summary>ADD w/ GIT</summary>
 
+* Create (single or --- seperated) yaml-files on cluster Folder (e.g. clusters/dev-cluster)
+* Examples:
+
+```yaml
+# cat clusters/dev-cluster/app-repo.yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-apps
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    tag: v1.0.0
+  url: https://github.com/stuttgart-things/flux.git
+```
+
+```yaml
+# cat clusters/dev-cluster/apps.yaml
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tekton
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/tekton
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      TEKTON_NAMESPACE: tekton-pipelines
+      TEKTON_PIPELINE_NAMESPACE: tektoncd
+      TEKTON_VERSION: v0.60.4
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane
+  namespace: flux-system
+#.....
+```
 
 </details>
 
