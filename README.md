@@ -4,13 +4,17 @@ flux infra & app kustomizations
 
 ## FLUX BOOSTRAP
 
-<details><summary>CLI-GITHUB</summary>
+<details><summary>GITHUB SCM + FLUX CLI</summary>
 
 ```bash
 # BOOTSTRAP GITHUB
 export KUBECONFIG=<KUBECONFIG>
 export GITHUB_TOKEN=<TOKEN>
-flux bootstrap github --owner=stuttgart-things --repository=stuttgart-things --path=clusters/dev-cluster
+
+flux bootstrap github \
+--owner=stuttgart-things \
+--repository=stuttgart-things \
+--path=clusters/dev-cluster
 ```
 
 </details>
@@ -36,7 +40,7 @@ EOF
 
 </details>
 
-## ADD KUSTOMIZATION
+## ADD KUSTOMIZATIONS
 
 <details><summary>ADD w/ KUBECTL (TESTING)</summary>
 
