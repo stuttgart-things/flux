@@ -14,7 +14,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    tag: v1.0.0
+    branch: feature/add-argocd-app
   url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
@@ -27,7 +27,12 @@ EOF
 kubectl apply -f - <<EOF
 apiVersion: v1
 data:
-  ARGO_CD_SERVER_ADMIN_PASSWORD: JDJhJDEwJFRXSHNhY05Bc1dkUXh3N0xjTFZWb09VTjRVd2lIQVFYY2Y1SFAxd2RUc3NSelZ4MlZJMGQ2
+  ARGO_CD_SERVER_ADMIN_PASSWORD: <ADD-B64-VALUE> # htpasswd format!
+  AVP_ROLE_ID: <ADD-B64-VALUE>
+  AVP_SECRET_ID: <ADD-B64-VALUE>
+  AVP_VAULT_ADDR: <ADD-B64-VALUE>
+  VAULT_NAMESPACE: <ADD-B64-VALUE>
+  VAULT_ADDR: <ADD-B64-VALUE>
 kind: Secret
 metadata:
   labels:
@@ -63,10 +68,10 @@ spec:
   postBuild:
     substitute:
       ARGO_CD_VERSION: 7.7.14
-      ARGO_CD_NAMESPACE: argocd
+      ARGO_CD_NAMESPACE: argo-cd
       SERVICE_TYPE: ClusterIP
       IMAGE_AVP: ghcr.io/stuttgart-things/sthings-avp:1.18.1
-      INGRESS_HOSTNAME: argocd
+      INGRESS_HOSTNAME: argo-cd
       INGRESS_DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
       INGRESS_SECRET_NAME: argocd-server-tls
       ISSUER_NAME: cluster-issuer-approle
