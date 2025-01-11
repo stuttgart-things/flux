@@ -72,18 +72,22 @@ spec:
                   - sh
                   - "-c"
                   - "find . -name 'Chart.yaml' && find . -name 'values.yaml'"
+            init:
+              command:
+                - sh
+                - "-c"
+                - "helm dependency update"
             generate:
               command:
                 - sh
                 - "-c"
-                - |
-                  helm template "${ARGOCD_APP_NAME}" -f <(echo "${ARGOCD_ENV_HELM_VALUES}") --include-crds . -n ${ARGOCD_APP_NAMESPACE} | argocd-vault-plugin generate -
+                - helm template "${ARGOCD_APP_NAME}" -f <(echo "${ARGOCD_ENV_HELM_VALUES}") --include-crds . -n ${ARGOCD_APP_NAMESPACE} | argocd-vault-plugin generate -
             lockRepo: false
     repoServer:
       extraContainers:
         - name: argocd-vault-plugin
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP}
+          image: ${IMAGE_AVP:ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.30.2-3.16.4}
           envFrom:
             - secretRef:
                 name: argocd-vault-plugin-credentials
@@ -102,7 +106,7 @@ spec:
               name: argocd-cmp-cm
         - name: argocd-vault-plugin-helm
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP}
+          image: ${IMAGE_AVP:ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.30.2-3.16.4}
           envFrom:
             - secretRef:
                 name: argocd-vault-plugin-credentials
@@ -121,7 +125,7 @@ spec:
               name: argocd-cmp-cm
         - name: argocd-vault-plugin-kustomize
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP}
+          image: ${IMAGE_AVP:ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.30.2-3.16.4}
           envFrom:
             - secretRef:
                 name: argocd-vault-plugin-credentials
