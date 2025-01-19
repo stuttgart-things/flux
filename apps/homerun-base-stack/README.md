@@ -13,6 +13,7 @@ metadata:
 type: Opaque
 stringData:
   REDIS_PASSWORD: "your-secure-password" #pragma: allowlist secret
+  GENERIC_PITCHER_TOKEN: "IhrGeheimerToken" #pragma: allowlist secret
 EOF
 ```
 
@@ -58,8 +59,19 @@ spec:
     substitute:
       HOMERUN_NAMESPACE: homerun
       HOMERUN_VERSION: v0.1.2
+      REDIS_STACK_ENABLED: "true"
       REDIS_SERVICE_TYPE: ClusterIP
       REDIS_STORAGE_CLASS: local-path #longhorn
+      GENERIC_PITCHER_ENABLED: "true"
+      GENERIC_PITCHER_PATH: generic
+      GENERIC_PITCHER_PORT: 4000
+      GENERIC_PITCHER_STREAM: homerun
+      GENERIC_PITCHER_INDEX: homerun
+      HOSTNAME: homerun
+      DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
+      ISSUER_TYPE: ClusterIssuer
+      ISSUER_NAME: ca-issuer
+      TLS_SECRET_NAME: homerun-generic-pitcher-ingress-tls
     substituteFrom:
       - kind: Secret
         name: homerun-base-stack
