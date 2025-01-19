@@ -82,3 +82,90 @@ spec:
         name: argocd-secrets
 EOF
 ```
+
+## VERIFY PLUGINS
+
+```yaml
+apiVersion: v1
+data:
+  argocd-vault-plugin-helm.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin-helm
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command:
+          - sh
+          - -c
+          - find . -name 'Chart.yaml' && find . -name 'values.yaml'
+      generate:
+        command:
+        - sh
+        - -c
+        - helm template "${ARGOCD_APP_NAME}" -f <(echo "${ARGOCD_ENV_HELM_VALUES}") --include-crds . -n "${ARGOCD_APP_NAMESPACE}" | argocd-vault-plugin generate -
+      init:
+        command:
+        - sh
+        - -c
+        - helm dependency update
+      lockRepo: false
+  argocd-vault-plugin-kustomize.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin-kustomize
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command:
+          - find
+          - .
+          - -name
+          - kustomization.yaml
+      generate:
+        command:
+        - sh
+        - -c
+        - kustomize build . | argocd-vault-plugin generate -
+      lockRepo: false
+  argocd-vault-plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: argocd-vault-plugin
+    spec:
+      allowConcurrency: true
+      discover:
+        find:
+          command:
+          - sh
+          - -c
+          - find . -name '*.yaml' | xargs -I {} grep "<path\|avp\.kubernetes\.io" {}
+      generate:
+        command:
+        - argocd-vault-plugin
+        - generate
+        - .
+      lockRepo: false
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: argocd-deployment
+    meta.helm.sh/release-namespace: argo-cd
+  labels:
+    app.kubernetes.io/component: repo-server
+    app.kubernetes.io/instance: argocd-deployment
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: argocd-cmp-cm
+    app.kubernetes.io/part-of: argocd
+    app.kubernetes.io/version: v2.13.3
+    helm.sh/chart: argo-cd-7.7.14
+    helm.toolkit.fluxcd.io/name: argocd-deployment
+    helm.toolkit.fluxcd.io/namespace: argo-cd
+  name: argocd-cmp-cm
+  namespace: argo-cd
+```
