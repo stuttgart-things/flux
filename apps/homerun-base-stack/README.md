@@ -69,7 +69,6 @@ spec:
       REDIS_STORAGE_CLASS: local-path #longhorn
       GENERIC_PITCHER_ENABLED: "true"
       GENERIC_PITCHER_PATH: generic
-      GENERIC_PITCHER_PORT: "4000"
       GENERIC_PITCHER_STREAM: homerun
       GENERIC_PITCHER_INDEX: homerun
       HOSTNAME: homerun
@@ -77,6 +76,8 @@ spec:
       ISSUER_TYPE: ClusterIssuer
       ISSUER_NAME: ca-issuer
       TLS_SECRET_NAME: homerun-generic-pitcher-ingress-tls
+      TEXT_CATCHER_ENABLED: "true"
+      TEXT_CATCHER_STREAM: homerun
     substituteFrom:
       - kind: Secret
         name: homerun-base-stack
