@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - requirements.yaml
   - redis-stack.yaml
+  - generic-pitcher.yaml

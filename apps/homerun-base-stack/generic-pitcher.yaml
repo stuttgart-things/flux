@@ -1,0 +1,77 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: homerun-redis-stack
+  namespace: ${HOMERUN_NAMESPACE:-homerun}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: homerun
+      version: ${HOMERUN_VERSION:-v0.1.2}
+      sourceRef:
+        kind: HelmRepository
+        name: homerun
+        namespace: ${HOMERUN_NAMESPACE:-homerun}
+      interval: 12h
+  values:
+    generic-pitcher:
+      enabled: ${GENERIC_PITCHER_ENABLED:-true}
+      configmaps:
+        homerun-generic-pitcher:
+          API_PATH: ${GENERIC_PITCHER_PATH:-generic}
+          PORT: "${GENERIC_PITCHER_PORT:-4000}"
+          REDIS_STREAM: ${GENERIC_PITCHER_STREAM:-homerun}
+          REDISEARCH_INDEX: ${GENERIC_PITCHER_INDEX:-homerun}
+      secrets:
+        generic-token:
+          name: generic-token
+          labels:
+            app: homerun-generic-pitcher
+          dataType: stringData
+          secretKVs:
+            WEBHOOK_TOKEN: ${GENERIC_PITCHER_TOKEN}
+        redis-connection-homerun-generic-pitcher:
+          name: redis-connection-homerun-generic-pitcher
+          labels:
+            app: homerun-generic-pitcher
+          dataType: stringData
+          secretKVs:
+            REDIS_SERVER: homerun-redis-stack-headless.${HOMERUN_NAMESPACE}.svc.cluster.local
+            REDIS_PORT: ${REDIS_PORT:-6379}
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
+      customresources:
+        homerun-generic-pitcher-certificate:
+          apiVersion: cert-manager.io/v1
+          kind: Certificate
+          metadata:
+            name: homerun-generic-pitcher-ingress
+            labels:
+              app: homerun-generic-pitcher
+          spec:
+            commonName: ${HOSTNAME}.${DOMAIN}
+            dnsNames:
+              - ${HOSTNAME}.${DOMAIN}
+            issuerRef:
+              name: ${ISSUER_NAME}
+              kind: ${ISSUER_TYPE}
+            secretName: ${TLS_SECRET_NAME}
+      ingress:
+        homerun-generic-pitcher-ingress:
+          labels:
+            app: homerun-generic-pitcher
+          name: homerun-generic-pitcher
+          ingressClassName: nginx
+          annotations:
+            nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          service:
+            name: homerun-generic-pitcher-service
+            port: 80
+            path: /${GENERIC_PITCHER_PATH:-generic}
+            pathType: Prefix
+          hostname: ${HOSTNAME}
+          domain: ${DOMAIN}
+          tls:
+            secretName: ${TLS_SECRET_NAME}
+            host: ${HOSTNAME}.${DOMAIN}
