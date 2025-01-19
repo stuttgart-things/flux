@@ -1,4 +1,4 @@
-# FLUX/HOMERUN-BASE-STACK
+# stuttgart-things/flux/homerun-base-stack
 
 ## SECRETS MANIFEST
 
@@ -57,7 +57,7 @@ spec:
   postBuild:
     substitute:
       HOMERUN_NAMESPACE: homerun
-      HOMERUN_VERSION: v0.2.1
+      HOMERUN_VERSION: v0.1.2
       REDIS_SERVICE_TYPE: ClusterIP
       REDIS_STORAGE_CLASS: longhorn
     substituteFrom:
