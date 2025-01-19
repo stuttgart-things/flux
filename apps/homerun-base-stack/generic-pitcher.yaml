@@ -21,7 +21,7 @@ spec:
       configmaps:
         homerun-generic-pitcher:
           API_PATH: ${GENERIC_PITCHER_PATH:-generic}
-          PORT: "${GENERIC_PITCHER_PORT:-4000}"
+          PORT: "4000"
           REDIS_STREAM: ${GENERIC_PITCHER_STREAM:-homerun}
           REDISEARCH_INDEX: ${GENERIC_PITCHER_INDEX:-homerun}
       secrets:
