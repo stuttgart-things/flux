@@ -5,3 +5,4 @@ resources:
   - requirements.yaml
   - redis-stack.yaml
   - generic-pitcher.yaml
+  - text-catcher.yaml

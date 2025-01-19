@@ -1,0 +1,35 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homerun-generic-pitcher
+  namespace: ${HOMERUN_NAMESPACE:-homerun}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: homerun
+      version: ${HOMERUN_VERSION:-v0.1.2}
+      sourceRef:
+        kind: HelmRepository
+        name: homerun
+        namespace: ${HOMERUN_NAMESPACE:-homerun}
+      interval: 12h
+  values:
+    text-catcher:
+      enabled: ${TEXT_CATCHER_ENABLED:-true}
+      configmaps:
+        homerun-text-catcher:
+          REDIS_STREAM: ${TEXT_CATCHER_STREAM:-homerun}
+          REDIS_CONSUMER_GROUP: homerun-text-catcher
+          LOGGING: terminal
+      secrets:
+        redis-connection-text-catcher:
+          name: redis-connection-text-catcher
+          labels:
+            app: text-catcher
+          dataType: stringData
+          secretKVs:
+            REDIS_SERVER: homerun-redis-stack-headless.${HOMERUN_NAMESPACE}.svc.cluster.local
+            REDIS_PORT: 6379
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
