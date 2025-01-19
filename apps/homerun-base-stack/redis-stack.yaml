@@ -1,6 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
-kind: HelmRelease
+apiVersion: helm.toolkit.fluxcd.io/v2
 metadata:
   name: homerun-redis-stack
   namespace: ${HOMERUN_NAMESPACE:-homerun}
@@ -17,7 +16,7 @@ spec:
       interval: 12h
   values:
     redis-stack:
-      enabled: ${REDIS_STORAGE_ENABLED:true}
+      enabled: ${REDIS_STACK_ENABLED:true}
       sentinel:
         service:
           type: ${REDIS_SERVICE_TYPE:-ClusterIP}

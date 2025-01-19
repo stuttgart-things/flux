@@ -1,8 +1,8 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: homerun-redis-stack
+  name: homerun-generic-pitcher
   namespace: ${HOMERUN_NAMESPACE:-homerun}
 spec:
   interval: 30m

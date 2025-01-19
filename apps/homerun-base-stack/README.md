@@ -52,6 +52,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: stuttgart-things-flux
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: homerun-redis-stack
+      namespace: homerun
   path: ./apps/homerun-base-stack
   prune: true
   wait: true
@@ -64,7 +69,7 @@ spec:
       REDIS_STORAGE_CLASS: local-path #longhorn
       GENERIC_PITCHER_ENABLED: "true"
       GENERIC_PITCHER_PATH: generic
-      GENERIC_PITCHER_PORT: 4000
+      GENERIC_PITCHER_PORT: "4000"
       GENERIC_PITCHER_STREAM: homerun
       GENERIC_PITCHER_INDEX: homerun
       HOSTNAME: homerun
@@ -75,10 +80,5 @@ spec:
     substituteFrom:
       - kind: Secret
         name: homerun-base-stack
-  # healthChecks:
-  #   - apiVersion: helm.toolkit.fluxcd.io/v2beta1
-  #     kind: HelmRelease
-  #     name: crossplane-deployment
-  #     namespace: crossplane-system
 EOF
 ```
