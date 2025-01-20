@@ -34,6 +34,60 @@ spec:
 EOF
 ```
 
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wled-config
+  namespace: homerun
+data:
+  config.yaml: |
+    ---
+    effects:
+      error-git:
+        systems:
+          - gitlab
+          - github
+        severity:
+          - ERROR
+        fx: Blurz
+        effect_mode: 13
+        duration: 3 # seconds
+        color: sunset
+        segments:
+          - 0
+        endpoint: localhost:8080
+
+      info:
+        systems:
+          - flux # * = All systems
+        severity:
+          - INFO
+        fx: DJ Light
+        effect_mode: 5
+        duration: 3 # seconds
+        color: ocean
+        segments:
+          - 0
+        endpoint: localhost:8080
+
+      success:
+        systems:
+          - ansible
+        severity:
+          - SUCCESS
+        fx: Aurora
+        effect_mode: 5
+        duration: 3 # seconds
+        color: forest
+        segments:
+          - 0
+        endpoint: localhost:8080
+EOF
+```
+
 ## KUSTOMIZATION EXAMPLE
 
 ```bash
@@ -42,7 +96,7 @@ kubectl apply -f - <<EOF
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: homerun-base-stack
+  name: homerun-iot-stack
   namespace: flux-system
 spec:
   interval: 1h
