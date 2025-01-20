@@ -57,6 +57,10 @@ spec:
       kind: HelmRelease
       name: homerun-redis-stack
       namespace: homerun
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: homerun-generic-pitcher
+      namespace: homerun
   path: ./apps/homerun-base-stack
   prune: true
   wait: true
