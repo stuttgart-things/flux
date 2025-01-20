@@ -1,0 +1,89 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homerun-light-catcher
+  namespace: ${HOMERUN_NAMESPACE:-homerun}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: homerun
+      version: ${HOMERUN_VERSION:-v0.1.2}
+      sourceRef:
+        kind: HelmRepository
+        name: homerun
+        namespace: ${HOMERUN_NAMESPACE:-homerun}
+      interval: 12h
+  values:
+    light-catcher:
+      enabled: true
+      deployment:
+        volumes:
+          wled-config:
+            volumeKind: configMap
+        containers:
+          homerun-light-catcher:
+            volumeMounts:
+              wled-config:
+                mountPath: /homerun/
+                volumeKind: emptyDir
+      configmaps:
+        homerun-light-catcher:
+          REDIS_STREAM: homerun
+          REDIS_CONSUMER_GROUP: homerun-light-catcher
+          PROFILE_PATH: "/homerun/config.yaml"
+        wled-config:
+          config.yaml: |
+            ---
+            effects:
+              error-git:
+                systems:
+                  - gitlab
+                  - github
+                severity:
+                  - ERROR
+                fx: Blurz
+                effect_mode: 13
+                duration: 3 # seconds
+                color: sunset
+                segments:
+                  - 0
+                endpoint: localhost:8080
+
+              info:
+                systems:
+                  - flux # * = All systems
+                severity:
+                  - INFO
+                fx: DJ Light
+                effect_mode: 5
+                duration: 3 # seconds
+                color: ocean
+                segments:
+                  - 0
+                endpoint: localhost:8080
+
+              success:
+                systems:
+                  - ansible
+                severity:
+                  - SUCCESS
+                fx: Aurora
+                effect_mode: 5
+                duration: 3 # seconds
+                color: forest
+                segments:
+                  - 0
+                endpoint: localhost:8080
+
+      secrets:
+        redis-connection-homerun-light-catcher:
+          name: redis-connection-homerun-light-catcher
+          labels:
+            app: homerun-light-catcher
+          dataType: stringData
+          secretKVs:
+            REDIS_SERVER: homerun-redis-stack-headless.${HOMERUN_NAMESPACE}.svc.cluster.local
+            REDIS_PORT: ${REDIS_PORT:-6379}
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
