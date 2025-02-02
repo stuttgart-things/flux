@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${HOMERUN_NAMESPACE:-homerun}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: homerun
+  namespace: ${HOMERUN_NAMESPACE:-homerun}
+spec:
+  type: oci
+  interval: 24h
+  url: oci://ghcr.io/stuttgart-things

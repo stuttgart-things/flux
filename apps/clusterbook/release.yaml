@@ -1,0 +1,53 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: clusterbook
+  namespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: clusterbook
+      version: ${CLUSTERBOOK_VERSION:-v0.1.2}
+      sourceRef:
+        kind: HelmRepository
+        name: clusterbook
+        namespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
+      interval: 12h
+  values:
+    customresources:
+      clusterbook-ingress-certificate:
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: clusterbook-ingress
+          labels:
+            app: clusterbook
+        spec:
+          commonName: ${HOSTNAME}.${DOMAIN}
+          dnsNames:
+            - ${HOSTNAME}.${DOMAIN}
+          issuerRef:
+            name: ${ISSUER_NAME}
+            kind: ${ISSUER_TYPE}
+          secretName: ${TLS_SECRET_NAME}
+    ingress:
+      clusterbook:
+        labels:
+          app: clusterbook
+        name: clusterbook
+        ingressClassName: nginx
+        annotations:
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+        service:
+          name: clusterbook-service
+          port: 80
+          path: /
+          pathType: Prefix
+        hostname: ${HOSTNAME}
+        domain: ${DOMAIN}
+        tls:
+          secretName: ${TLS_SECRET_NAME}
+          host: ${HOSTNAME}.${DOMAIN}

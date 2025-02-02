@@ -108,15 +108,15 @@ spec:
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
-      name: homerun-redis-stack
+      name: homerun-light-catcher
       namespace: homerun
-  path: ./apps/homerun-base-stack
+  path: ./apps/homerun-iot-stack
   prune: true
   wait: true
   postBuild:
     substitute:
       HOMERUN_NAMESPACE: homerun
-      HOMERUN_VERSION: v0.1.2
+      HOMERUN_VERSION: v0.2.0
     substituteFrom:
       - kind: Secret
         name: homerun-iot-stack
