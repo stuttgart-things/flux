@@ -35,11 +35,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: stuttgart-things-flux
-  # healthChecks:
-  #   - apiVersion: helm.toolkit.fluxcd.io/v2
-  #     kind: HelmRelease
-  #     name: clusterbook
-  #     namespace: clusterbook
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: clusterbook
+      namespace: clusterbook
   path: ./apps/clusterbook
   prune: true
   wait: true
@@ -52,5 +52,28 @@ spec:
       ISSUER_TYPE: ClusterIssuer
       ISSUER_NAME: cluster-issuer-approle
       TLS_SECRET_NAME: homerun-generic-pitcher-ingress-tls
+EOF
+```
+
+## EXMAPLE CONFIG
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: github.stuttgart-things.com/v1
+kind: NetworkConfig
+metadata:
+  name: networks-labul
+  namespace: clusterbook
+spec:
+  networks:
+    10.31.103:
+    - "4"
+    - "5"
+    - 7:ASSIGNED:ipat
+    - 3:assigned:sandiego
+    10.31.104:
+    - "5"
+    - 4:pending:losangeles
 EOF
 ```
