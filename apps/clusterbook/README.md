@@ -46,7 +46,7 @@ spec:
   postBuild:
     substitute:
       CLUSTERBOOK_NAMESPACE: homerun
-      CLUSTERBOOK_VERSION: v0.1.2
+      CLUSTERBOOK_VERSION: v1.3.1-chart
       HOSTNAME: homerun
       DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
       ISSUER_TYPE: ClusterIssuer
