@@ -85,7 +85,9 @@ EOF
 
 ## VERIFY PLUGINS
 
-```yaml
+```bash
+kubectl apply -f - <<'EOF'
+---
 apiVersion: v1
 data:
   argocd-vault-plugin-helm.yaml: |
@@ -168,4 +170,5 @@ metadata:
     helm.toolkit.fluxcd.io/namespace: argo-cd
   name: argocd-cmp-cm
   namespace: argo-cd
+EOF
 ```
