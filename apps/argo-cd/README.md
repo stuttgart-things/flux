@@ -9,7 +9,7 @@ kubectl apply -f - <<EOF
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: add-argocd-app
+  name: stuttgart-things-flux-repo
   namespace: flux-system
 spec:
   interval: 1m0s
@@ -61,7 +61,7 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: add-argocd-app
+    name: stuttgart-things-flux-repo
   path: ./apps/argo-cd
   prune: true
   wait: true
