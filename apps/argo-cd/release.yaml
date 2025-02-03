@@ -82,7 +82,7 @@ spec:
                 - sh
                 - "-c"
                 - |
-                helm template '"${ARGOCD_APP_NAME}"' -f <(echo '"${ARGOCD_ENV_HELM_VALUES}"') --include-crds . -n '${ARGOCD_APP_NAMESPACE}' | argocd-vault-plugin generate -
+                helm template ${ARGOCD_APP_NAME} -f <(echo ${ARGOCD_ENV_HELM_VALUES}) --include-crds . -n ${ARGOCD_APP_NAMESPACE} | argocd-vault-plugin generate -
             lockRepo: false
     repoServer:
       extraContainers:
