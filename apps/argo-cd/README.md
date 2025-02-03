@@ -14,7 +14,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    branch: feature/add-argocd-app
+    branch: fix/argocd-cm
   url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
