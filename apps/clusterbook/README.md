@@ -35,11 +35,11 @@ spec:
   sourceRef:
     kind: GitRepository
     name: stuttgart-things-flux
-  healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2
-      kind: HelmRelease
-      name: clusterbook
-      namespace: clusterbook
+  # healthChecks:
+  #   - apiVersion: helm.toolkit.fluxcd.io/v2
+  #     kind: HelmRelease
+  #     name: clusterbook
+  #     namespace: clusterbook
   path: ./apps/clusterbook
   prune: true
   wait: true
