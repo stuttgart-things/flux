@@ -14,4 +14,4 @@ metadata:
 spec:
   type: oci
   interval: 24h
-  url: oci://ghcr.io/stuttgart-things
+  url: oci://ghcr.io/stuttgart-things/clusterbook
