@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: clusterbook
-      version: ${CLUSTERBOOK_VERSION:-v0.1.2}
+      version: ${CLUSTERBOOK_VERSION:-v1.3.1-chart}
       sourceRef:
         kind: HelmRepository
         name: clusterbook
