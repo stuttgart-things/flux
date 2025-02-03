@@ -45,12 +45,12 @@ spec:
   wait: true
   postBuild:
     substitute:
-      CLUSTERBOOK_NAMESPACE: homerun
+      CLUSTERBOOK_NAMESPACE: clusterbook
       CLUSTERBOOK_VERSION: v1.3.1-chart
-      HOSTNAME: homerun
-      DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
+      HOSTNAME: clusterbook
+      DOMAIN: fluxdev-3.sthings-vsphere.labul.sva.de
       ISSUER_TYPE: ClusterIssuer
-      ISSUER_NAME: ca-issuer
+      ISSUER_NAME: cluster-issuer-approle
       TLS_SECRET_NAME: homerun-generic-pitcher-ingress-tls
 EOF
 ```
