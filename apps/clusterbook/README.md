@@ -14,7 +14,7 @@ spec:
   interval: 1m0s
   url: https://github.com/stuttgart-things/flux.git
   ref:
-    branch: feature/update-homerun-base #main
+    tag: v1.1.0
 EOF
 ```
 
