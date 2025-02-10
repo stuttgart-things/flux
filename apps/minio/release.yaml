@@ -54,7 +54,7 @@ spec:
     persistence:
       enabled: true
       storageClass: ${STORAGE_CLASS:-longhorn}
-    #extraEnvVarsCM: minio-env-config
+    extraEnvVarsCM: minio-env-config
     extraEnvVars:
       - name: MINIO_SERVER_URL
         value: https://${INGRESS_HOSTNAME_API}.${INGRESS_DOMAIN}
