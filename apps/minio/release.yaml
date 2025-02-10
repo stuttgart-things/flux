@@ -61,13 +61,13 @@ spec:
         value: https://${INGRESS_HOSTNAME_CONSOLE}.${INGRESS_DOMAIN}:9001
       - name: MINIO_IDENTITY_OPENID_CONFIG_URL
         value: https://keycloak.fluxdev-3.sthings-vsphere.labul.sva.de/realms/master/.well-known/openid-configuration
+      - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
+        value: https://${INGRESS_HOSTNAME_CONSOLE}.${INGRESS_DOMAIN}/oauth_callback
       - name: MINIO_IDENTITY_OPENID_CLIENT_ID
         value: minio
       - name: MINIO_IDENTITY_OPENID_SCOPES
         value: openid,profile,email,groups
-      - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
-        value: https://${INGRESS_HOSTNAME_CONSOLE}.${INGRESS_DOMAIN}/oauth_callback
       - name: MINIO_IDENTITY_OPENID_CLAIM_NAME
-        value: groups
-      - name: MINIO_IDENTITY_OPENID_POLICY_MAPPING
-        value: on
+        value: preferred_username #groups
+      # - name: MINIO_IDENTITY_OPENID_POLICY_MAPPING
+      #   value: on
