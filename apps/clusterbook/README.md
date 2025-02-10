@@ -67,13 +67,30 @@ metadata:
   namespace: clusterbook
 spec:
   networks:
+    10.31.101:
+    - 5:ASSIGNED:rancher-mgmt
+    - "6"
+    - "7"
+    - 8:ASSIGNED:tockeck
+    - "9"
     10.31.103:
     - "4"
     - "5"
-    - 7:ASSIGNED:ipat
-    - 3:assigned:sandiego
-    10.31.104:
-    - "5"
-    - 4:pending:losangeles
+    - 8:ASSIGNED:fluxdev-3
+    - 9:ASSIGNED:fluxdev-3
 EOF
 ```
+
+homerun-dev:
+10.31.103.19
+10.31.103.15
+10.31.103.16
+10.31.103.17
+10.31.103.18
+
+fluxdev-3:
+10.31.101.8
+10.31.101.9
+
+rancher-mgmt:
+10.31.101.5
