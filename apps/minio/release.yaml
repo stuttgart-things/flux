@@ -69,5 +69,3 @@ spec:
         value: openid,profile,email,groups
       - name: MINIO_IDENTITY_OPENID_CLAIM_NAME
         value: preferred_username #groups
-      # - name: MINIO_IDENTITY_OPENID_POLICY_MAPPING
-      #   value: on
