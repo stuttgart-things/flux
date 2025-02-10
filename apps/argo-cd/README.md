@@ -72,7 +72,7 @@ spec:
       SERVICE_TYPE: ClusterIP
       IMAGE_AVP: ghcr.io/stuttgart-things/sthings-avp:1.18.1
       INGRESS_HOSTNAME: argo-cd
-      INGRESS_DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
+      INGRESS_DOMAIN: homerun-int.sthings-vsphere.labul.example.com
       INGRESS_SECRET_NAME: argocd-server-tls
       ISSUER_NAME: cluster-issuer-approle
       ISSUER_KIND: ClusterIssuer

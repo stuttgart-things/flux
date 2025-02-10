@@ -1,20 +1,6 @@
-# stuttgart-things/flux/minio-dev
+# stuttgart-things/flux/minio
 
-## SECRETS MANIFEST
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: minio-env-config
-  namespace: minio  # Change this to your MinIO namespace
-data:
-  MINIO_IDENTITY_OPENID_CONFIG_URL: "https://keycloak.fluxdev-3.sthings-vsphere.labul.sva.de/realms/master/.well-known/openid-configuration"
-EOF
-```
-
+## SECRET
 
 ```bash
 kubectl apply -f - <<EOF
@@ -28,6 +14,32 @@ type: Opaque
 stringData:
   MINIO_ADMIN_USER: "your-secure-username" #pragma: allowlist secret
   MINIO_ADMIN_PASSWORD: "your-secure-password" #pragma: allowlist secret
+EOF
+```
+
+## EXTRA CONFIG
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-env-config
+  namespace: minio
+data:
+  MINIO_IDENTITY_OPENID_CONFIG_URL: "https://keycloak.fluxdev-3.sthings-vsphere.labul.example.com/realms/master/.well-known/openid-configuration"
+  MINIO_IDENTITY_OPENID_REDIRECT_URI: "https://artifacts-console.fluxdev-3.sthings-vsphere.labul.example.com/oauth_callback"
+  MINIO_IDENTITY_OPENID_CLIENT_ID: minio
+  MINIO_IDENTITY_OPENID_SCOPES: openid,profile,email,groups
+  MINIO_IDENTITY_OPENID_CLAIM_NAME: preferred_username
 EOF
 ```
 
@@ -72,12 +84,13 @@ spec:
   postBuild:
     substitute:
       CLUSTER_ISSUER: cluster-issuer-approle
-      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.labul.sva.de
+      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.labul.example.com
       INGRESS_HOSTNAME_API: artifacts
       INGRESS_HOSTNAME_CONSOLE: artifacts-console
       MINIO_NAMESPACE: minio
       MINIO_VERSION: 14.8.0
       STORAGE_CLASS: nfs4-csi
+      EXTRA_CONFIG_MAP: minio-env-config
     substituteFrom:
       - kind: Secret
         name: minio
