@@ -6,6 +6,22 @@
 kubectl apply -f - <<EOF
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-env-config
+  namespace: minio  # Change this to your MinIO namespace
+data:
+  MINIO_IDENTITY_OPENID_CLIENT_ID: "minio"
+  MINIO_IDENTITY_OPENID_SCOPES: "openid,profile,email,groups"
+  MINIO_IDENTITY_OPENID_CLAIM_NAME: "preferred_username"
+EOF
+```
+
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: minio
