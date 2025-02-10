@@ -67,3 +67,5 @@ spec:
         value: preferred_username
       - name: MINIO_IDENTITY_OPENID_SCOPES
         value: openid,profile,email
+      - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
+        value: https://${INGRESS_HOSTNAME_API}.${INGRESS_DOMAIN}/oauth_callback
