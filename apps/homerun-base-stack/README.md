@@ -76,7 +76,7 @@ spec:
       GENERIC_PITCHER_STREAM: homerun
       GENERIC_PITCHER_INDEX: homerun
       HOSTNAME: homerun
-      DOMAIN: homerun-int.sthings-vsphere.labul.sva.de
+      DOMAIN: homerun-int.sthings-vsphere.labul.example.com
       ISSUER_TYPE: ClusterIssuer
       ISSUER_NAME: ca-issuer
       TLS_SECRET_NAME: homerun-generic-pitcher-ingress-tls
