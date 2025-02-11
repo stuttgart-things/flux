@@ -24,8 +24,8 @@ spec:
       configPassword: ${ADMIN_PASSWORD}
     logLevel: debug
     service:
-      enableLdapPort: true
-      enableSslLdapPort: false
+      enableLdapPort: ${ENABLE_LDAP_PORT:-true}
+      enableSslLdapPort: ${ENABLE_LDAPS_PORT:-false}
       type: ${SERVICE_TYPE:-ClusterIP}
     replication:
       enabled: ${REPLICATION_ENABLED:-false}
