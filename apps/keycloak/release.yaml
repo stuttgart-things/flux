@@ -1,0 +1,48 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: keycloak-deployment
+  namespace: ${KEYCLOAK_NAMESPACE:-keycloak}
+spec:
+  dependsOn:
+    - name: keycloak-certificate-configuration
+      namespace: ${KEYCLOAK_NAMESPACE:-keycloak}
+  interval: 30m
+  chart:
+    spec:
+      chart: keycloak
+      version: ${KEYCLOAK_VERSION:-24.4.9}
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: ${KEYCLOAK_NAMESPACE:-keycloak}
+      interval: 12h
+  values:
+    auth:
+      adminUser: ${ADMIN_USER}
+      adminPassword: ${ADMIN_PASSWORD} # Change this for security
+    proxy: edge # Useful for running Keycloak behind an Ingress or LoadBalancer
+    service:
+      type: ClusterIP # Change to LoadBalancer if needed
+    extraEnvVars:
+      - name: KEYCLOAK_LOG_LEVEL
+        value: DEBUG
+      - name: KEYCLOAK_EXTRA_ARGS
+        value: "--import-realm"
+    global:
+      defaultStorageClass: ${STORAGE_CLASS}
+      storageClass: ${STORAGE_CLASS}
+    ingress:
+      enabled: true
+      ingressClassName: ${INGRESS_CLASS:-nginx}
+      hostname: ${INGRESS_HOSTNAME:-keycloak}.${INGRESS_DOMAIN}
+      tls: false
+      extraTls:
+        - hosts:
+            - ${INGRESS_HOSTNAME:-keycloak}.${INGRESS_DOMAIN}
+          secretName: ${INGRESS_HOSTNAME:-keycloak}.${INGRESS_DOMAIN}-tls
+    startupProbe:
+      enabled: true
+      failureThreshold: 30
+      periodSeconds: 10
