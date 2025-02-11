@@ -1,0 +1,13 @@
+repositories:
+  - name: nginx-stable
+    url: https://charts.bitnami.com/bitnami
+
+releases:
+  - name: nginx
+    namespace: default
+    chart: nginx-stable/nginx
+    version: 15.5.0 # Update as needed
+    values:
+      - service:
+          type: LoadBalancer
+          port: 80
