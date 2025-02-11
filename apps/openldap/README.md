@@ -66,6 +66,8 @@ spec:
       TEST_ENABLED: false
       LTB_PASSWD_ENABLED: false
       PHP_ADMIN_ENABLED: false
+      ENABLE_LDAP_PORT: true
+      ENABLE_LDAPS_PORT: false
     substituteFrom:
       - kind: Secret
         name: openldap

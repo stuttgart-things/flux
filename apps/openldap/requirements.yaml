@@ -9,7 +9,7 @@ metadata:
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
 metadata:
-  name: helm-openldap
+  name: openldap
   namespace: ${OPENLDAP_NAMESPACE:-openldap}
 spec:
   interval: 1h
