@@ -14,6 +14,6 @@ releases:
     chart: nginx-stable/nginx
     version: 15.5.0 # Update as needed
     values:
-      - values/values.yaml.gotmpl
+      - values/nginx.yaml.gotmpl
       # - service:
       #     type: {{ .Values.serviceType }}
