@@ -1,4 +1,4 @@
-# stuttgart-things/flux/keycloak
+# stuttgart-things/flux/openldap
 
 ## SECRET
 
@@ -8,12 +8,12 @@ kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
 metadata:
-  name: keycloak
+  name: openldap
   namespace: flux-system
 type: Opaque
 stringData:
   ADMIN_USER: "admin" #pragma: allowlist secret
-  ADMIN_PASSWORD: "Ataln7is" #pragma: allowlist secret
+  ADMIN_PASSWORD: "tobeset" #pragma: allowlist secret
 EOF
 ```
 
@@ -25,7 +25,7 @@ kubectl apply -f - <<EOF
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: stuttgart-things-flux-keycloak-dev
+  name: stuttgart-things-flux-openldap-dev
   namespace: flux-system
 spec:
   interval: 1m0s
@@ -43,7 +43,7 @@ kubectl apply -f - <<EOF
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: keycloak
+  name: openldap
   namespace: flux-system
 spec:
   interval: 1h
@@ -51,21 +51,23 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: stuttgart-things-flux-keycloak-dev
-  path: ./apps/keycloak
+    name: stuttgart-things-flux-openldap-dev
+  path: ./apps/openldap
   prune: true
   wait: true
   postBuild:
     substitute:
-      INGRESS_CLASS: nginx
-      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.labul.sva.de
-      INGRESS_HOSTNAME: keycloak
-      KEYCLOAK_NAMESPACE: keycloak
-      KEYCLOAK_VERSION: 24.4.9
+      REPLICAS: 1
+      SERVICE_TYPE: ClusterIP
+      REPLICATION_ENABLED: false
+      PERSISTENCE_ENABLED: true
+      STORAGE_SIZE: 8Gi
       STORAGE_CLASS: nfs4-csi
-      CLUSTER_ISSUER: cluster-issuer-approle
+      TEST_ENABLED: false
+      LTB_PASSWD_ENABLED: false
+      PHP_ADMIN_ENABLED: false
     substituteFrom:
       - kind: Secret
-        name: keycloak
+        name: openldap
 EOF
 ```
