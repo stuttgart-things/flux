@@ -1,9 +1,4 @@
 ---
-# environments:
-#   homerun-dev:
-#     values:
-#       - env/homerun-dev.yaml
-
 repositories:
   - name: nginx-stable
     url: https://charts.bitnami.com/bitnami
@@ -12,8 +7,6 @@ releases:
   - name: nginx
     namespace: default
     chart: nginx-stable/nginx
-    version: 15.5.0 # Update as needed
+    version: 15.5.0
     values:
       - values/nginx.yaml.gotmpl
-      # - service:
-      #     type: {{ .Values.serviceType }}
