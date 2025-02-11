@@ -1,8 +1,8 @@
 ---
-environments:
-  homerun-dev:
-    values:
-      - env/homerun-dev.yaml
+# environments:
+#   homerun-dev:
+#     values:
+#       - env/homerun-dev.yaml
 
 repositories:
   - name: nginx-stable
@@ -14,5 +14,6 @@ releases:
     chart: nginx-stable/nginx
     version: 15.5.0 # Update as needed
     values:
-      - service:
-          type: {{ .Values.serviceType }}
+      - values/values.yaml.gotmpl
+      # - service:
+      #     type: {{ .Values.serviceType }}
