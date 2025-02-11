@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${OPENLDAP_NAMESPACE:-openldap}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: helm-openldap
+  namespace: ${OPENLDAP_NAMESPACE:-openldap}
+spec:
+  interval: 1h
+  url: https://jp-gouin.github.io/helm-openldap/
