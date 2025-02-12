@@ -31,7 +31,7 @@ spec:
   interval: 1m0s
   url: https://github.com/stuttgart-things/flux.git
   ref:
-    tag: v1.2.0
+    tag: v1.3.0
 EOF
 ```
 
@@ -57,17 +57,19 @@ spec:
   wait: true
   postBuild:
     substitute:
-      REPLICAS: 1
+      OPENLDAP_VERSION: v4.3.2
+      OPENLDAP_NAMESPACE: openldap
+      REPLICAS: "1"
       SERVICE_TYPE: ClusterIP
-      REPLICATION_ENABLED: false
-      PERSISTENCE_ENABLED: true
+      REPLICATION_ENABLED: "false"
+      PERSISTENCE_ENABLED: "true"
       STORAGE_SIZE: 8Gi
       STORAGE_CLASS: nfs4-csi
-      TEST_ENABLED: false
-      LTB_PASSWD_ENABLED: false
-      PHP_ADMIN_ENABLED: false
-      ENABLE_LDAP_PORT: true
-      ENABLE_LDAPS_PORT: false
+      TEST_ENABLED: "false"
+      LTB_PASSWD_ENABLED: "false" # pragma: allowlist secret
+      PHP_ADMIN_ENABLED: "false"
+      ENABLE_LDAP_PORT: "true"
+      ENABLE_LDAPS_PORT: "false"
     substituteFrom:
       - kind: Secret
         name: openldap
