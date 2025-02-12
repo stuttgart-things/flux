@@ -31,7 +31,7 @@ spec:
   interval: 1m0s
   url: https://github.com/stuttgart-things/flux.git
   ref:
-    branch: feature/add-keycloak
+    tag: v1.2.0
 EOF
 ```
 
