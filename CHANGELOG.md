@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/stuttgart-things/flux/compare/v1.2.0...v1.2.1) (2025-02-12)
+
+
+### Bug Fixes
+
+* fix/fix-openldap ([423fa17](https://github.com/stuttgart-things/flux/commit/423fa17c779570687cd0880423d18f53b10abbc0))
+
 # [1.2.0](https://github.com/stuttgart-things/flux/compare/v1.1.0...v1.2.0) (2025-02-12)
 
 
