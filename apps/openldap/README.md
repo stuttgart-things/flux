@@ -25,7 +25,7 @@ kubectl apply -f - <<EOF
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: stuttgart-things-flux-openldap-dev
+  name: stuttgart-things-openldap
   namespace: flux-system
 spec:
   interval: 1m0s
@@ -51,7 +51,7 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: stuttgart-things-flux-openldap-dev
+    name: stuttgart-things-openldap
   path: ./apps/openldap
   prune: true
   wait: true
