@@ -1,0 +1,14 @@
+---
+releases:
+  - name: longhorn
+    installed: true
+    namespace: longhorn-system
+    chart: longhorn/longhorn
+    version: 1.8.0
+    values:
+      - "values/longhorn.values.yaml.gotmpl"
+
+repositories:
+  - name: longhorn
+    url: https://charts.longhorn.io
+    oci: false
