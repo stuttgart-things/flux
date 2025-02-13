@@ -31,7 +31,7 @@ spec:
   interval: 1m0s
   url: https://github.com/stuttgart-things/flux.git
   ref:
-    tag: v1.3.0
+    tag: v1.2.1
 EOF
 ```
 
@@ -60,7 +60,7 @@ spec:
       OPENLDAP_VERSION: v4.3.2
       OPENLDAP_NAMESPACE: openldap
       REPLICAS: "1"
-      SERVICE_TYPE: ClusterIP
+      SERVICE_TYPE: LoadBalancer
       REPLICATION_ENABLED: "false"
       PERSISTENCE_ENABLED: "true"
       STORAGE_SIZE: 8Gi
