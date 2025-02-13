@@ -1,0 +1,25 @@
+releases:
+  - name: metallb-deployment
+    installed: true
+    namespace: metallb-system
+    chart: bitnami/metallb
+    version: 6.4.5
+
+  - name: metallb-configuration
+    disableValidationOnInstall: true
+    needs:
+      - metallb-system/metallb-deployment
+    installed: true
+    namespace: metallb-system
+    chart: stuttgart-things/sthings-cluster
+    version: 0.3.15
+    values:
+      - "values/metallb.values.yaml.gotmpl"
+
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+    oci: false
+  - name: stuttgart-things
+    url: eu.gcr.io/stuttgart-things
+    oci: true
