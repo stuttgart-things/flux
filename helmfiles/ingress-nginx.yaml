@@ -1,0 +1,13 @@
+---
+releases:
+  - name: ingress-nginx
+    disableValidationOnInstall: true
+    installed: true
+    namespace: ingress-nginx
+    chart: ingress-nginx/ingress-nginx
+    version: 4.12.0
+
+repositories:
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+    oci: false
