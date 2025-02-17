@@ -11,10 +11,10 @@
 ```bash
 # SET CACHE DIR AND EXECUTE HELMFILE OPERATION (WHICH IS PULLING)
 export HELMFILE_CACHE_HOME=/tmp/helmfile
-helmfile template/pull/apply
+helmfile template -f nginx.yaml
 
 # CHECK DOWNLOAD GIT REPO STRUCTURE
-ls -lta /tmp/helmfile
+ls -lta /tmp/helmfile 
 
 # DELETE CACHE FOR TRY 'N ERROR W/ GIT SOURCES
 rm -rf /tmp/helmfile
