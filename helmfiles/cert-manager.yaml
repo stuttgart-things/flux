@@ -3,6 +3,9 @@ repositories:
   - name: cert-manager
     url:  https://charts.jetstack.io
     oci: false
+  - name: stuttgart-things
+    url: eu.gcr.io/stuttgart-things
+    oci: true
 
 releases:
   - name: cert-manager
