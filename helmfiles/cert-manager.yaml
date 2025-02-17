@@ -22,4 +22,4 @@ releases:
     values:
       - "values/cert-manager.values.yaml.gotmpl"
     needs:
-      - cert-manager/cert-manager-deployment
+      - cert-manager/cert-manager
