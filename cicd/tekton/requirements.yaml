@@ -14,4 +14,4 @@ metadata:
 spec:
   type: oci
   interval: 1h
-  url: ghcr.io/stuttgart-things/tekton
+  url: oci://ghcr.io/stuttgart-things/tekton
