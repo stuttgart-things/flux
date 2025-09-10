@@ -44,6 +44,6 @@ spec:
   postBuild:
     substitute:
       TEKTON_NAMESPACE: tekton-pipelines
-      TEKTON_VERSION: 0.76.0
+      TEKTON_VERSION: 0.76.1
 EOF
 ```
