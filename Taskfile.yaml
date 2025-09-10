@@ -133,3 +133,10 @@ tasks:
       - npx semantic-release --dry-run
       - npx semantic-release --debug --no-ci
       - echo released version $(git describe --tags --abbrev=0)
+
+  do:
+    desc: Select a task to run
+    cmds:
+      - |
+        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | grep -v '^do$' | gum choose)
+        task ${task}
