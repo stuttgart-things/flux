@@ -43,11 +43,11 @@ spec:
   wait: true
   postBuild:
     substitute:
-      VERSION: 4.2.
-      VOLUMESNAPSHOTS_ENABLED: false
-      CSI_NODE_INIT_CONTAINERS_ENABLED: false
-      LOCAL_LVM_ENABLED: false
-      LOCAL_ZFS_ENABLED: false
-      REPLICATED_MAYASTOR_ENABLED: false
+      VERSION: 4.2.0
+      VOLUMESNAPSHOTS_ENABLED: "false"
+      CSI_NODE_INIT_CONTAINERS_ENABLED: "false"
+      LOCAL_LVM_ENABLED: "false"
+      LOCAL_ZFS_ENABLED: "false"
+      REPLICATED_MAYASTOR_ENABLED: "false"
 EOF
 ```
