@@ -126,6 +126,19 @@ metadata:
 
 </details>
 
+## DEV
+
+<details><summary>GENERATE KUST</summary>
+
+```bash
+k2n gen \
+--examples-dirs "/home/sthings/projects/apps/flux/apps,/home/sthings/projects/apps/helm/cicd" \
+--usecase flux \
+--instruction "transfer helmfile from tekton to a flux tekton kustomization"
+```
+
+</details>
+
 ## LICENSE
 
 <details><summary><b>APACHE 2.0</b></summary>
