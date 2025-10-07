@@ -12,7 +12,7 @@ spec:
       version: ${vault_VERSION:-1.9.0}
       sourceRef:
         kind: HelmRepository
-        name: vault
+        name: stuttgart-things
         namespace: ${VAULT_NAMESPACE:-vault}
       interval: 12h
   values:
