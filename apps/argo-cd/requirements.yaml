@@ -14,7 +14,7 @@ metadata:
 spec:
   type: oci
   interval: 1h
-  url: oci://ghcri.io/stuttgart-things
+  url: oci://ghcr.io/stuttgart-things
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
