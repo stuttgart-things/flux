@@ -1,3 +1,32 @@
+# [1.3.0](https://github.com/stuttgart-things/flux/compare/v1.2.1...v1.3.0) (2025-10-07)
+
+
+### Bug Fixes
+
+* feat/add-tekton ([5543ab8](https://github.com/stuttgart-things/flux/commit/5543ab870b8d452a242133324b3317a193cace1f))
+* feat/update-operator ([e783920](https://github.com/stuttgart-things/flux/commit/e7839200d8a02254e4e74686155a7483df48e82a))
+* geat/add-openebs ([60b4767](https://github.com/stuttgart-things/flux/commit/60b476744a27862df8dcd9ab63c69072048cdcf4))
+* main ([f636c68](https://github.com/stuttgart-things/flux/commit/f636c68d2cdc83d6d8331ef5f598f3e8384379c4))
+* main ([25fd2ce](https://github.com/stuttgart-things/flux/commit/25fd2ce29e8947abf2df8929e74742dbeaf55395))
+
+
+### Features
+
+* feat/update-operator ([73cff2f](https://github.com/stuttgart-things/flux/commit/73cff2fdf74646b4394af57e31dce878e219994c))
+* feature/add-nfs-chart ([d6636c8](https://github.com/stuttgart-things/flux/commit/d6636c8b124a0f75d3f454d540291a5fc3275da5))
+* feature/add-nfs-chart ([4eb2050](https://github.com/stuttgart-things/flux/commit/4eb20500c942e2cf8aeaa8911e7fb53ff196af85))
+* feature/add-nfs-chart ([b47e506](https://github.com/stuttgart-things/flux/commit/b47e5065d99eb31295a26b633dbe45ff2437b525))
+* feature/add-nfs-chart ([2f4912f](https://github.com/stuttgart-things/flux/commit/2f4912f92eb440d076e87ad357fdb2eb2c2d903b))
+* feature/add-nfs-chart ([78b1836](https://github.com/stuttgart-things/flux/commit/78b18360a4ab619c07dfc459553edca31251874b))
+* feature/add-nfs-chart ([da6b90e](https://github.com/stuttgart-things/flux/commit/da6b90e9f25ca1902093b784c9721a30f3c5afc0))
+* feature/add-nfs-chart ([d5fdc89](https://github.com/stuttgart-things/flux/commit/d5fdc89e771974f4fe03ad5a9f58ba2e649ece20))
+* feature/add-nfs-chart ([b75ef09](https://github.com/stuttgart-things/flux/commit/b75ef09a7fa9272a6f75d985ea0384016f47690d))
+* feature/add-nfs-chart ([4cf4244](https://github.com/stuttgart-things/flux/commit/4cf42446be47bf638d3bddab79ed4211d8293c56))
+* main ([2aa1f08](https://github.com/stuttgart-things/flux/commit/2aa1f08532f3092ccfd27fc6cde61b5b20fc61d9))
+* main ([c652676](https://github.com/stuttgart-things/flux/commit/c6526767e7d6bb586c5f18cf7cfdf7619b171c17))
+* main ([8d3c2fe](https://github.com/stuttgart-things/flux/commit/8d3c2fe82ca162e77883420a65a72aad8468bc50))
+* main ([4501456](https://github.com/stuttgart-things/flux/commit/4501456f7312df9ddbafb720f742e0e97e140c3d))
+
 ## [1.2.1](https://github.com/stuttgart-things/flux/compare/v1.2.0...v1.2.1) (2025-02-12)
 
 
