@@ -12,21 +12,10 @@ helm upgrade --install flux-operator \
 oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
 --namespace flux-system \
 --create-namespace \
---version 0.28.0
+--version 0.24.0
 ```
 
 #### GH SECRET
-
-```bash
-## DEPLOY FLUX
-
-```bash
-helm upgrade --install flux-operator \
-oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
---namespace flux-system \
---create-namespace \
---version 0.28.0
-```
 
 ```bash
 kubectl apply -f - <<EOF
@@ -99,6 +88,8 @@ spec:
               secretRef:
                 name: sops-age
         target:
+          group: kustomize.toolkit.fluxcd.io
+          version: v1
           kind: Kustomization
       - target:
           kind: Deployment

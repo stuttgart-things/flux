@@ -20,7 +20,7 @@ releases:
 
 repositories:
   - name: nfs-csi
-    url: oci://eu.gcr.io/stuttgart-things
+    url: oci://ghcri.io/stuttgart-things
     oci: true
   - name: stuttgart-things
     url: eu.gcr.io/stuttgart-things
