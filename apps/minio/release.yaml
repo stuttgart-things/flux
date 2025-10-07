@@ -15,7 +15,7 @@ spec:
       version: ${MINIO_VERSION:-14.8.0}
       sourceRef:
         kind: HelmRepository
-        name: bitnami
+        name: stuttgart-things
         namespace: ${MINIO_NAMESPACE:-minio}
       interval: 12h
   values:

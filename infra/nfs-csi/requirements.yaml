@@ -6,7 +6,7 @@ metadata:
   namespace: ${NFS_CSI_NAMESPACE:-kube-system}
 spec:
   interval: 24h
-  url: oci://eu.gcr.io/stuttgart-things
+  url: oci://ghcri.io/stuttgart-things
   type: oci
 ---
 apiVersion: source.toolkit.fluxcd.io/v1beta2

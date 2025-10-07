@@ -14,7 +14,7 @@ export HELMFILE_CACHE_HOME=/tmp/helmfile
 helmfile template -f nginx.yaml
 
 # CHECK DOWNLOAD GIT REPO STRUCTURE
-ls -lta /tmp/helmfile 
+ls -lta /tmp/helmfile
 
 # DELETE CACHE FOR TRY 'N ERROR W/ GIT SOURCES
 rm -rf /tmp/helmfile
