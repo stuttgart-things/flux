@@ -32,7 +32,7 @@ spec:
         extraTls:
           - hosts:
             - ${VAULT_INGRESS_HOSTNAME}.${VAULT_INGRESS_DOMAIN}
-        secretName: ${VAULT_INGRESS_HOSTNAME}-ingress-tls
+        secretName: ${VAULT_INGRESS_HOSTNAME}.${VAULT_INGRESS_DOMAIN}
 
     global:
       storageClass: ${STORAGE_CLASS:-standard}
