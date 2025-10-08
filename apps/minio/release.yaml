@@ -11,7 +11,7 @@ spec:
   interval: 30m
   chart:
     spec:
-      chart: minio
+      chart: charts/minio/minio
       version: ${MINIO_VERSION:-16.0.10}
       sourceRef:
         kind: HelmRepository
