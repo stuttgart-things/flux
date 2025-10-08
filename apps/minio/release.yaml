@@ -19,6 +19,10 @@ spec:
         namespace: ${MINIO_NAMESPACE:-minio}
       interval: 12h
   values:
+    global:
+      imageRegistry: ${MINIO_REGISTRY:-ghcr.io}
+      security:
+        allowInsecureImages: true
     image:
       registry: ${MINIO_REGISTRY:-ghcr.io}
       repository: ${MINIO_REPOSITORY:-stuttgart-things/minio}
