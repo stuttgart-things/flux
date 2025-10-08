@@ -28,8 +28,6 @@ spec:
       PULL_POLICY: IfNotPresent
       INGRESS_ENABLED: "false"
       INGRESS_CLASS_NAME: nginx
-      HOSTNAME: vault
-      DOMAIN: example.com
       STORAGE_CLASS: standard
       INJECTOR_ENABLED: "true"
       INJECTOR_REPOSITORY: stuttgart-things/vault-k8s
@@ -43,8 +41,5 @@ spec:
       VAULT_INGRESS_DOMAIN: example.com
       ISSUER_NAME: letsencrypt-prod
       ISSUER_KIND: ClusterIssuer
-    substituteFrom:
-      - kind: Secret
-        name: vault
 EOF
 ```

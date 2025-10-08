@@ -27,7 +27,7 @@ spec:
       ingress:
         enabled: ${INGRESS_ENABLED:-false}
         ingressClassName: ${INGRESS_CLASS_NAME:-nginx}
-        hostname: ${HOSTNAME:-vault}.${DOMAIN:-example.com}
+        hostname: ${VAULT_INGRESS_HOSTNAME}.${VAULT_INGRESS_DOMAIN}
         tls: true
 
     global:
