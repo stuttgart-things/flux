@@ -29,6 +29,10 @@ spec:
         ingressClassName: ${INGRESS_CLASS_NAME:-nginx}
         hostname: ${VAULT_INGRESS_HOSTNAME}.${VAULT_INGRESS_DOMAIN}
         tls: true
+        extraTls:
+          - hosts:
+            - ${VAULT_INGRESS_HOSTNAME}.${VAULT_INGRESS_DOMAIN}
+        secretName: ${VAULT_INGRESS_HOSTNAME}-ingress-tls
 
     global:
       storageClass: ${STORAGE_CLASS:-standard}
