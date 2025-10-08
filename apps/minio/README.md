@@ -91,6 +91,9 @@ spec:
       MINIO_VERSION: 14.8.0
       STORAGE_CLASS: nfs4-csi
       EXTRA_CONFIG_MAP: minio-env-config
+      MINIO_REGISTRY: ghcr.io
+      MINIO_REPOSITORY: stuttgart-things/minio
+      MINIO_IMAGE_TAG: RELEASE.2024-06-11T00-09-59Z
     substituteFrom:
       - kind: Secret
         name: minio
