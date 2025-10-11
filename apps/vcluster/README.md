@@ -22,6 +22,9 @@ spec:
     substitute:
       VCLUSTER_VERSION: "0.29.1"
       VCLUSTER_NAMESPACE: vcluster
+      VCLUSTER_STORAGE_ENABLED: "true"
+      VCLUSTER_STORAGE_SIZE: 10Gi
+      VCLUSTER_STORAGE_CLASS: longhorn
 ---
 EOF
 ```

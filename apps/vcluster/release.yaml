@@ -15,3 +15,51 @@ spec:
         name: loft
         namespace: ${VCLUSTER_NAMESPACE:-vcluster}
       interval: 12h
+  values:
+    persistence:
+      volumeClaim:
+        enabled: ${VCLUSTER_STORAGE_ENABLED:true}
+        retentionPolicy: Retain
+        size: ${VCLUSTER_STORAGE_SIZE:10Gi}
+        storageClass: ${VCLUSTER_STORAGE_CLASS}
+        accessModes: ["ReadWriteOnce"]
+
+    sync:
+      toHost:
+        services:
+          enabled: true
+        endpoints:
+          enabled: true
+        persistentVolumeClaims:
+          enabled: true
+      fromHost:
+        events:
+          enabled: true
+        storageClasses:
+          enabled: true  # Changed from auto
+        nodes:
+          enabled: false
+          selector:
+            all: false
+        ingressClasses:
+          enabled: true  # Changed from false
+    controlPlane:
+      distro:
+        k8s:
+          enabled: true
+          image:
+            tag: "v1.33.4"  # Specify version explicitly
+      backingStore:
+        etcd:
+          embedded:
+            enabled: true
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi  # Increased from 256Mi
+            ephemeral-storage: 1Gi
+          limits:
+            memory: 4Gi  # Increased from 2Gi
+            ephemeral-storage: 8Gi
+        highAvailability:
+          replicas: 1  # Set to 3 for true HA in production

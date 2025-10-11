@@ -47,7 +47,7 @@ spec:
       NFS_SHARE_PATH: /data/col1/sthings
       CLUSTER_NAME: homerun-int
       NFS_CSI_NAMESPACE: kube-system
-      NFS_CSI_VERSION: v4.9.0
+      NFS_CSI_VERSION: v4.12.0
       NFS_CSI_ENABLE_CRDS: "false"
       NFS_CSI_ENABLE_SNAPSHOTTER: "true"
 EOF
