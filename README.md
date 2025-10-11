@@ -7,7 +7,7 @@ flux infra & app kustomizations
 <details><summary>GITHUB SCM + FLUX OPERATOR</summary>
 
 ```bash
-#### INSTALL OPERATOR
+# INSTALL OPERATOR
 helm upgrade --install flux-operator \
 oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
 --namespace flux-system \

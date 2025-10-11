@@ -41,7 +41,6 @@ spec:
       VAULT_INGRESS_DOMAIN: demo-infra.sthings-vsphere.example.com
       ISSUER_NAME: cluster-issuer-approle
       ISSUER_KIND: ClusterIssuer
----
 EOF
 ```
 
