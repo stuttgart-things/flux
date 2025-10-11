@@ -1,5 +1,20 @@
 # stuttgart-things/flux/crossplane
 
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-apps
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  url: https://github.com/stuttgart-things/flux.git
+  ref:
+    branch: main
+EOF
+```
 
 ```bash
 kubectl apply -f - <<EOF
