@@ -10,7 +10,7 @@ apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: HelmRepository
 metadata:
   name: stuttgart-things
-  namespace: ${VAULT_NAMESPACE:-minio}
+  namespace: ${VAULT_NAMESPACE:-vault}
 spec:
   type: oci
   interval: 1h

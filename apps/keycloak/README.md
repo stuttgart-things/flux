@@ -58,7 +58,7 @@ spec:
   postBuild:
     substitute:
       INGRESS_CLASS: nginx
-      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.labul.sva.de
+      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.example.com
       INGRESS_HOSTNAME: keycloak
       KEYCLOAK_NAMESPACE: keycloak
       KEYCLOAK_VERSION: 24.4.9

@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${VCLUSTER_NAMESPACE:-vcluster}
+  labels:
+    toolkit.fluxcd.io/tenant: ${FLUX_TENANT:-flux}
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: loft
+  namespace: ${VCLUSTER_NAMESPACE:-vcluster}
+spec:
+  interval: 1h
+  url: https://charts.loft.sh

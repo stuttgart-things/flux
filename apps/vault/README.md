@@ -38,7 +38,7 @@ spec:
       OS_SHELL_TAG: 12-debian-12-r50
       OS_SHELL_PULL_POLICY: Always
       VAULT_INGRESS_HOSTNAME: vault
-      VAULT_INGRESS_DOMAIN: demo-infra.sthings-vsphere.labul.sva.de
+      VAULT_INGRESS_DOMAIN: demo-infra.sthings-vsphere.example.com
       ISSUER_NAME: cluster-issuer-approle
       ISSUER_KIND: ClusterIssuer
 ---
