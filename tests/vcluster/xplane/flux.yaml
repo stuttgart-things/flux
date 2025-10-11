@@ -16,6 +16,9 @@ spec:
     - source-controller
     - kustomize-controller
     - helm-controller
+    - notification-controller
+    - image-reflector-controller
+    - image-automation-controller
   cluster:
     type: kubernetes
     multitenant: false
@@ -48,5 +51,5 @@ spec:
     kind: GitRepository
     url: https://github.com/stuttgart-things/flux.git
     ref: refs/heads/main
-    path: flux/tests/vcluster/xplane
+    path: clusters/labda/vsphere/sthings-runner
     pullSecret: git-token-auth
