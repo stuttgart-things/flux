@@ -9,7 +9,7 @@ metadata:
     fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
   distribution:
-    version: "2.x"
+    version: "2.4"
     registry: "ghcr.io/fluxcd"
     artifact: "oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests"
   components:
@@ -51,5 +51,5 @@ spec:
     kind: GitRepository
     url: https://github.com/stuttgart-things/flux.git
     ref: refs/heads/main
-    path: clusters/labda/vsphere/sthings-runner
+    path: tests/vcluster/xplane
     pullSecret: git-token-auth
