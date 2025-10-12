@@ -1,15 +1,28 @@
-
----
 apiVersion: tinkerbell.sthings.cloud/v1alpha1
 kind: WorkflowClaim
 metadata:
   name: u22-machine1
   namespace: default
 spec:
-  # Required fields
+  # Required fields for workflow
   workflowName: u22-machine1-workflow
   templateRef: ubuntu24
   hardwareRef: machine1
-  providerConfigRef: in-cluster
+  workflowProviderConfigRef: in-cluster
   hardwareMap:
     device_1: "00:0c:29:aa:bb:cc"
+
+  # Optional ConfigMap configuration
+  createConfigMap: true
+  configMapName: u22-machine1-config
+  configMapProviderConfigRef: demo-infra
+  configMapData:
+    os_version: "ubuntu-22.04"
+    boot_mode: "uefi"
+    disk_layout: "/dev/sda"
+    user_data: |
+      #cloud-config
+      package_update: true
+      packages:
+        - curl
+        - wget

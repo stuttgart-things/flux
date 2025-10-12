@@ -28,7 +28,13 @@ spec:
           hardwareRef = oxr?.spec?.hardwareRef or ""
           hardwareMap = oxr?.spec?.hardwareMap or {}
           createWorkflow = oxr?.spec?.createWorkflow or True
-          providerConfigRef = oxr?.spec?.providerConfigRef or "in-cluster"
+          workflowProviderConfigRef = oxr?.spec?.workflowProviderConfigRef or "in-cluster"
+
+          # ConfigMap specific fields
+          configMapName = oxr?.spec?.configMapName or "tinkerbell-config"
+          configMapData = oxr?.spec?.configMapData or {}
+          createConfigMap = oxr?.spec?.createConfigMap or False
+          configMapProviderConfigRef = oxr?.spec?.configMapProviderConfigRef or "in-cluster"
 
           # Create the Kubernetes Object for Tinkerbell Workflow
           workflow = {
@@ -59,11 +65,43 @@ spec:
                   deletionPolicy = "Delete"
                   managementPolicies = ["*"]
                   providerConfigRef = {
-                      name = providerConfigRef
+                      name = workflowProviderConfigRef
                   }
               }
           }
 
-          # Return the resources to create
-          items = [workflow] if createWorkflow else []
-    step: render
+          # Create the Kubernetes Object for ConfigMap
+          config_map = {
+              apiVersion = "kubernetes.crossplane.io/v1alpha2"
+              kind = "Object"
+              metadata = {
+                  name = configMapName
+                  annotations = {
+                      "crossplane.io/external-name" = configMapName
+                  }
+              }
+              spec = {
+                  forProvider = {
+                      manifest = {
+                          apiVersion = "v1"
+                          kind = "ConfigMap"
+                          metadata = {
+                              name = configMapName
+                              namespace = workflowNamespace
+                          }
+                          data = configMapData
+                      }
+                  }
+                  deletionPolicy = "Delete"
+                  managementPolicies = ["*"]
+                  providerConfigRef = {
+                      name = configMapProviderConfigRef
+                  }
+              }
+          }
+
+          # Return the resources to create - FIXED: Build list immutably
+          workflow_list = [workflow] if createWorkflow else []
+          config_map_list = [config_map] if createConfigMap else []
+          items = workflow_list + config_map_list
+    step: render-workflow
