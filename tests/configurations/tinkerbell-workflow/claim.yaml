@@ -1,0 +1,16 @@
+---
+apiVersion: github.stuttgart-things.com/v1alpha1
+kind: XWorkflow
+metadata:
+  name: u25-workflow
+  namespace: crossplane-system
+spec:
+  name: u25-workflow
+  namespace: crossplane-system
+  targetNamespace: tinkerbell
+  templateRef: ubuntu25
+  hardwareRef: machine1
+  macAddr: "00:0c:29:aa:bb:cc"
+  cluster: in-clusters
+  compositionRef:
+    name: tinkerbell-workflow

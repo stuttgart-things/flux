@@ -1,0 +1,23 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: tinkerbell-workflow
+  labels:
+    provider: tinkerbell
+spec:
+  compositeTypeRef:
+    apiVersion: github.stuttgart-things.com/v1alpha1
+    kind: XWorkflow
+  mode: Pipeline
+  pipeline:
+    - functionRef:
+        name: function-kcl
+      input:
+        apiVersion: krm.kcl.dev/v1alpha1
+        kind: KCLRun
+        metadata:
+          name: kcl-input
+        spec:
+          source: oci://ghcr.io/stuttgart-things/tinkerbell-xplane-kcl:0.1.0
+          target: Resources
+      step: create-workflow
