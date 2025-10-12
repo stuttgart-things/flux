@@ -1,0 +1,17 @@
+[dependencies]
+  [dependencies.crossplane-provider-kubernetes]
+    name = "crossplane-provider-kubernetes"
+    full_name = "crossplane-provider-kubernetes_0.18.0"
+    version = "0.18.0"
+    sum = "ruN1sWzJH2c+TMCp51KNKdP1PCgz+ZMwBunZKpIEYVs="
+    reg = "ghcr.io"
+    repo = "kcl-lang/crossplane-provider-kubernetes"
+    oci_tag = "0.18.0"
+  [dependencies.k8s]
+    name = "k8s"
+    full_name = "k8s_1.32.4"
+    version = "1.32.4"
+    sum = "WrltC/mTXtdzmhBZxlvM71wJL5C/UZ/vW+bF3nFvNbM="
+    reg = "ghcr.io"
+    repo = "kcl-lang/k8s"
+    oci_tag = "1.32.4"

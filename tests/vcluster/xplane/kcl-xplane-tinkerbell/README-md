@@ -1,0 +1,9 @@
+# KCL-XPLANE-TINKERBELL
+
+```bash
+kcl run -D createWorkflow=true \
+-D workflowName=u22-machine1-workflow \
+-D templateRef=ubuntu22 \
+-D hardwareRef=machine1 \
+-D 'hardwareMap={"device_1": "00:0c:29:aa:bb:cc"}' | kubectl apply -f -
+```

@@ -1,0 +1,15 @@
+
+---
+apiVersion: tinkerbell.sthings.cloud/v1alpha1
+kind: WorkflowClaim
+metadata:
+  name: u22-machine1
+  namespace: default
+spec:
+  # Required fields
+  workflowName: u22-machine1-workflow
+  templateRef: ubuntu24
+  hardwareRef: machine1
+  providerConfigRef: in-cluster
+  hardwareMap:
+    device_1: "00:0c:29:aa:bb:cc"
