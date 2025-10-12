@@ -1,11 +1,52 @@
 
 
-helm upgrade --install vcluster loft/vcluster --version 0.29.0 --create-namespace -n vlcuster --set controlPlane.statefulSet.persistence.volumeClaim.storageClass=nfs4-csi --set controlPlane.distro.k3s.enabled=true
+helm upgrade --install xplane loft/vcluster --version 0.29.0 --create-namespace -n vcluster --set controlPlane.statefulSet.persistence.volumeClaim.storageClass=standard --set controlPlane.distro.k8s.enabled=true
+
+vcluster connect xplane -n vcluster
 
 ARTIFACTS_FILE_SERVER=http://192.168.56.117:7173
 helm upgrade --install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell --version v0.21.0 --set "artifactsFileServer=$ARTIFACTS_FILE_SERVER"
 
 helm upgrade --install flux-operator oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator --namespace flux-system --create-namespace --version 0.24.0
+
+```bash
+helm upgrade --install flux-operator \
+oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
+--namespace flux-system \
+--create-namespace \
+--version 0.24.0
+```
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-token-auth
+  namespace: flux-system
+type: Opaque
+stringData:
+  username: $GITHUB_USER
+  password: $GITHUB_TOKEN
+EOF
+```
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sops-age
+  namespace: flux-system
+type: Opaque
+stringData:
+  age.agekey: $SOPS_AGE_KEY
+EOF
+```
+
+kubectl apply -f /home/sthings/projects/flux/tests/vcluster/xplane/flux.yaml
 
 
 ```bash
