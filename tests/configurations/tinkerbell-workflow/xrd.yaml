@@ -1,5 +1,5 @@
-apiVersion: apiextensions.crossplane.io/v1
-kind: CompositeResourceDefinition
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
 metadata:
   name: xworkflows.github.stuttgart-things.com
   labels:
@@ -10,49 +10,37 @@ spec:
     kind: XWorkflow
     plural: xworkflows
     singular: xworkflow
-  claimNames:
-    kind: WorkflowClaim
-    plural: workflowclaims
-    singular: workflowclaim
+    listKind: XWorkflowList
+    categories:
+      - composite
+  scope: Cluster
   versions:
     - name: v1alpha1
       served: true
-      referenceable: true
+      storage: true
       schema:
         openAPIV3Schema:
           type: object
           properties:
             spec:
               type: object
+              required:
+                - name
+                - templateRef
+                - hardwareRef
+                - macAddr
+                - cluster
               properties:
-                name:
-                  type: string
-                  description: Name of the workflow
-                namespace:
-                  type: string
-                  description: Namespace where the composite resource will be created
-                targetNamespace:
-                  type: string
-                  description: Namespace where the actual workflow will be deployed
-                templateRef:
-                  type: string
-                  description: Reference to the workflow template
-                hardwareRef:
-                  type: string
-                  description: Reference to the hardware/machine
-                macAddr:
-                  type: string
-                  description: MAC address of the target machine
-                cluster:
-                  type: string
-                  description: Target cluster name
+                # ... other spec fields ...
                 resourceRefs:
                   type: array
-                  description: References to composed resources
-                  x-kubernetes-preserve-unknown-fields: true
+                  x-kubernetes-list-type: atomic
                   items:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
+                    required:
+                      - apiVersion
+                      - kind
                     properties:
                       apiVersion:
                         type: string
@@ -61,12 +49,4 @@ spec:
                       name:
                         type: string
                       namespace:
-                        type: string
-              required:
-                - name
-                - templateRef
-                - hardwareRef
-                - macAddr
-                - cluster
-          required:
-            - spec
+                        type: string   # <--- this is the critical fix

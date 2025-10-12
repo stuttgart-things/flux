@@ -11,6 +11,6 @@ spec:
   templateRef: ubuntu25
   hardwareRef: machine1
   macAddr: "00:0c:29:aa:bb:cc"
-  cluster: in-clusters
+  cluster: in-cluster
   compositionRef:
     name: tinkerbell-workflow

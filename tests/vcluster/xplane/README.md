@@ -4,8 +4,9 @@ helm upgrade --install xplane loft/vcluster --version 0.29.0 --create-namespace 
 
 vcluster connect xplane -n vcluster
 
+
 ARTIFACTS_FILE_SERVER=http://192.168.56.117:7173
-helm upgrade --install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell --version v0.21.0 --set "artifactsFileServer=$ARTIFACTS_FILE_SERVER"
+helm upgrade --install tinkerbell oci://ghcr.io/tinkerbell/charts/tinkerbell --version v0.21.0 --set "artifactsFileServer=$ARTIFACTS_FILE_SERVER" -n tinkerbell --create-namespace
 
 helm upgrade --install flux-operator oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator --namespace flux-system --create-namespace --version 0.24.0
 

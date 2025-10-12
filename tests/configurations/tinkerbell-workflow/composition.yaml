@@ -18,6 +18,6 @@ spec:
         metadata:
           name: kcl-input
         spec:
-          source: oci://ghcr.io/stuttgart-things/tinkerbell-xplane-kcl:0.1.0
+          source: oci://ghcr.io/stuttgart-things/tinkerbell-xplane-kcl:0.2.1
           target: Resources
       step: create-workflow

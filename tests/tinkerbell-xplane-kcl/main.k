@@ -2,7 +2,6 @@ import crossplane_provider_kubernetes.v1alpha2.kubernetes_crossplane_io_v1alpha2
 
 # Get the XR spec fields
 name = option("params")?.oxr?.spec.name or ""
-namespace = option("params")?.oxr?.spec.namespace or ""
 targetNamespace = option("params")?.oxr?.spec.targetNamespace or ""
 templateRef = option("params")?.oxr?.spec.templateRef or ""
 hardwareRef = option("params")?.oxr?.spec.hardwareRef or ""
@@ -15,7 +14,6 @@ workflow_object = obj.Object {
     kind = "Object"
     metadata = {
         name = name
-        namespace = namespace
     }
     spec = {
         forProvider = {
