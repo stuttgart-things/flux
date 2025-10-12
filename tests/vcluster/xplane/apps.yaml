@@ -16,7 +16,7 @@ spec:
   wait: true
   postBuild:
     substitute:
-      CROSSPLANE_VERSION: 1.20.0
+      CROSSPLANE_VERSION: 1.21.1
       CROSSPLANE_NAMESPACE: crossplane-system
       CROSSPLANE_HELM_PROVIDER_VERSION: "v0.21.0"
       CROSSPLANE_K8S_PROVIDER_VERSION: "v0.18.0"
