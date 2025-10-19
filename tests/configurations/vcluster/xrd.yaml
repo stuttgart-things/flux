@@ -1,0 +1,79 @@
+---
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xvclusters.github.stuttgart-things.com
+spec:
+  group: github.stuttgart-things.com
+  names:
+    kind: Xvcluster
+    plural: xvclusters
+  claimNames:
+    kind: Vcluster
+    plural: vclusters
+  defaultCompositionRef:
+    name: xplane-vcluster
+  connectionSecretKeys:
+    - kubeconfig
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                compositionRef:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                name:
+                  type: string
+                version:
+                  type: string
+                clusterName:
+                  type: string
+                targetNamespace:
+                  type: string
+                storageClass:
+                  type: string
+                bindAddress:
+                  type: string
+                proxyPort:
+                  type: integer
+                nodePort:
+                  type: integer
+                extraSANs:
+                  type: array
+                  items:
+                    type: string
+                serverUrl:
+                  type: string
+                additionalSecrets:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      context:
+                        type: string
+                      server:
+                        type: string
+                connectionSecret:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    vclusterSecretName:
+                      type: string
+                    vclusterSecretNamespace:
+                      type: string

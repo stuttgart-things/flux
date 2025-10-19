@@ -1,0 +1,32 @@
+---
+apiVersion: github.stuttgart-things.com/v1alpha1
+kind: Xvcluster
+metadata:
+  name: vcluster-xplane-test
+  namespace: crossplane-system
+spec:
+  compositionRef:
+    name: xplane-vcluster
+  name: vlcuster-k3s-tink1
+  version: "0.29.0"
+  clusterName: "k3s-tink1"
+  targetNamespace: "vcluster-k3s-tink2"
+  storageClass: "local-path"
+  bindAddress: "0.0.0.0"
+  proxyPort: 8443
+  nodePort: 32445
+  extraSANs:
+    - "test-k3s1.labul.sva.de"
+    - "10.31.103.23"
+    - "localhost"
+  serverUrl: "https://10.31.103.23:32445"
+  additionalSecrets:
+    - name: "vc-vlcuster-k3s-tink1-crossplane"
+      namespace: "vcluster-k3s-tink2"
+      context: "vcluster-crossplane-context"
+      server: "https://10.31.103.23:32445"
+  connectionSecret:
+    name: "vcluster-k3s-tink2-connection"
+    namespace: "crossplane-system"
+    vclusterSecretName: "vc-vlcuster-k3s-tink1"
+    vclusterSecretNamespace: "vcluster-k3s-tink2"

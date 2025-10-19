@@ -9,6 +9,10 @@ macAddr = option("params")?.oxr?.spec.macAddr or ""
 
 cluster = option("params")?.oxr?.spec.cluster or ""
 
+# Boolean flag to control output - check explicitly for False
+_printItemsValue = option("params")?.oxr?.spec.printItems
+printItems = False if _printItemsValue == False else True
+
 workflow_object = obj.Object {
     apiVersion = "kubernetes.crossplane.io/v1alpha2"
     kind = "Object"
@@ -41,4 +45,4 @@ workflow_object = obj.Object {
     }
 }
 
-items = [workflow_object]
+items = [workflow_object] if printItems else []
