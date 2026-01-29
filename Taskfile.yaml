@@ -9,6 +9,11 @@ vars:
   DAGGER_CROSSPLANE_MODULE: github.com/stuttgart-things/dagger/crossplane
   DAGGER_CROSSPLANE_MODULE_VERSION: v0.0.2
 
+includes:
+  git:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
+
+
 tasks:
   get-variables:
     desc: Get variables from app folder
@@ -48,82 +53,6 @@ tasks:
         # Display the generated YAML
         cat "$output_file"
 
-  branch:
-    desc: Create branch from main
-    cmds:
-      - git checkout main
-      - git branch
-      - git pull
-      - |
-        echo "Enter to be created (remote) branch:"
-        read BRANCH_NAME;
-        git checkout -b ${BRANCH_NAME}
-        git push origin ${BRANCH_NAME}
-      - git branch
-      - git branch --set-upstream-to=origin/main ${BRANCH_NAME}
-
-  check:
-    desc: "Run pre-commit hooks"
-    cmds:
-      - pre-commit run -a
-
-  run-pre-commit-hook:
-    deps:
-      - check
-    desc: "Run the pre-commit hook script to replace .example.com with .example.com"
-    cmds:
-      - |
-        # Find all YAML files in the repository recursively, excluding Taskfile.yaml
-        files=$(find . -type f \( -name "*.yaml" -o -name "*.yml" -o -name "*.yml" -o -name "*.md" \) ! -name "Taskfile.yaml")
-
-        # Loop through each file
-        for file in $files; do
-          # Skip binary files
-          if file "$file" | grep -q "text"; then
-            # Replace the string and update the file
-            sed -i 's/\.sva\.de/\.example\.com/g' "$file"
-          fi
-        done
-
-        # Add all modified YAML files back to staging
-        git add $(git ls-files --modified | grep -E '\.ya?ml$')
-
-        exit 0
-    silent: false
-
-  commit:
-    desc: Commit + push code into branch
-    cmds:
-      - rm -rf dist/
-      - git branch --set-upstream-to=origin/{{ .BRANCH }}
-      - git pull
-      - |
-        git add *
-        if [[ -n $(git status --porcelain) ]]; then
-          echo "committing changes"
-          echo "ENTER COMMIT MESSAGE"
-          COMMIT_MESSAGE=$(echo $(gum choose "feat: {{ .BRANCH }}" "fix: {{ .BRANCH }}" "BREAKING CHANGE: {{ .BRANCH }}" "ENTER CUSTOM COMMIT MESSAGE"))
-
-          if [ "$COMMIT_MESSAGE" == "ENTER CUSTOM COMMIT MESSAGE" ]; then
-            COMMIT_MESSAGE=$(echo $(gum input --placeholder "scope" --value "commit to {{ .BRANCH }}"))
-          fi
-
-          git commit --allow-empty -a -m "$(echo ${COMMIT_MESSAGE})"
-        else
-          echo "no changes"
-        fi
-        git push origin -u {{ .BRANCH }}
-
-  pr:
-    desc: Create pull request into main
-    cmds:
-      - task: commit
-      - gh pr create -t "{{ .BRANCH }}" -b "{{ .BRANCH }} branch into main"
-      - sleep 2s
-      # - gh pr checks $(gh pr list | grep "^[^#;]" | awk '{print $1}') --watch
-      - gh pr merge $(gh pr list | grep "^[^#;]" | grep '{{ .BRANCH }}' | awk '{print $1}') --auto --rebase --delete-branch
-      - git checkout main && git pull
-
   release:
     deps:
       - check
@@ -138,5 +67,8 @@ tasks:
     desc: Select a task to run
     cmds:
       - |
-        task=$(yq e '.tasks | keys' Taskfile.yaml | sed 's/^- //' | grep -v '^do$' | gum choose)
-        task ${task}
+        # Extract task names (keep internal colons, remove only trailing colon)
+        task_name=$(task -l | awk '/^\*/ {print $2}' | sed 's/:$//' | gum choose)
+
+        # Run the selected task
+        [ -n "$task_name" ] && task "$task_name"
