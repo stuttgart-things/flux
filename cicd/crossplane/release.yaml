@@ -19,7 +19,6 @@ spec:
     args:
       - '--debug'
       - '--enable-usages'
-      - '--enable-external-secret-stores'
     provider:
       packages:
         - xpkg.upbound.io/crossplane-contrib/provider-helm:${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.0.6}
