@@ -14,13 +14,13 @@ metadata:
 spec:
   interval: 24h
   url: https://charts.crossplane.io/stable
----
-apiVersion: source.toolkit.fluxcd.io/v1beta2
-kind: HelmRepository
-metadata:
-  name: stuttgart-things
-  namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
-spec:
-  type: oci
-  interval: 1h
-  url: oci://ghcr.io/stuttgart-things
+# ---
+# apiVersion: source.toolkit.fluxcd.io/v1beta2
+# kind: HelmRepository
+# metadata:
+#   name: stuttgart-things
+#   namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+# spec:
+#   type: oci
+#   interval: 1h
+#   url: oci://ghcr.io/stuttgart-things

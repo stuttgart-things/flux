@@ -8,7 +8,7 @@ bin/*
 
 # OSX leaves these everywhere on SMB shares
 ._*
-
+*task*
 # OSX trash
 .DS_Store
 

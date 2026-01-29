@@ -28,5 +28,5 @@ spec:
   connectionSecret:
     name: "vcluster-k3s-tink2-connection"
     namespace: "crossplane-system"
-    vclusterSecretName: "vc-vlcuster-k3s-tink1"
-    vclusterSecretNamespace: "vcluster-k3s-tink2"
+    vclusterSecretName: "vc-vlcuster-k3s-tink1" # pragma: allowlist secret
+    vclusterSecretNamespace: "vcluster-k3s-tink2" # pragma: allowlist secret

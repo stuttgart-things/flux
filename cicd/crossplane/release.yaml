@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: crossplane
-      version: ${CROSSPLANE_VERSION:-1.20.0}
+      version: ${CROSSPLANE_VERSION:-2.1.3}
       sourceRef:
         kind: HelmRepository
         name: crossplane-stable
@@ -22,5 +22,5 @@ spec:
       - '--enable-external-secret-stores'
     provider:
       packages:
-        - xpkg.upbound.io/crossplane-contrib/provider-helm:${CROSSPLANE_HELM_PROVIDER_VERSION:-v0.21.0}
-        - xpkg.upbound.io/crossplane-contrib/provider-kubernetes:${CROSSPLANE_K8S_PROVIDER_VERSION:-v0.18.0}
+        - xpkg.upbound.io/crossplane-contrib/provider-helm:${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.0.6}
+        - xpkg.upbound.io/crossplane-contrib/provider-kubernetes:${CROSSPLANE_K8S_PROVIDER_VERSION:-v1.2.0}

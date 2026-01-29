@@ -31,19 +31,23 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-apps
-  path: ./apps/crossplane
+  path: ./cicd/crossplane
   prune: true
   wait: true
   postBuild:
     substitute:
-      CROSSPLANE_VERSION: 1.20.0
       CROSSPLANE_NAMESPACE: crossplane-system
-      CROSSPLANE_HELM_PROVIDER_VERSION: "v0.21.0"
-      CROSSPLANE_K8S_PROVIDER_VERSION: "v0.18.0"
-      CROSSPLANE_TERRAFORM_PROVIDER_VERSION: "v0.21.0"
-      CROSSPLANE_TERRAFORM_PROVIDER_IMAGE: "ghcr.io/stuttgart-things/sthings-cptf:1.12.0"
+      CROSSPLANE_TERRAFORM_CONFIG_NAME: terraform-runtime-config
+      CROSSPLANE_TERRAFORM_POLL: 30s
+      CROSSPLANE_TERRAFORM_PROVIDER_IMAGE: ghcr.io/stuttgart-things/sthings-cptf:1.14.3
+      CROSSPLANE_TERRAFORM_PROVIDER_VERSION: v1.0.5
+      CROSSPLANE_TERRAFORM_RECONCILE_RATE: 10
+      CROSSPLANE_TERRAFORM_S3_SECRET_NAME: terraform-s3
+      CROSSPLANE_HELM_PROVIDER_VERSION: v1.0.6
+      CROSSPLANE_K8S_PROVIDER_VERSION: v1.2.0
+      CROSSPLANE_VERSION: 2.1.3
   healthChecks:
-    - apiVersion: helm.toolkit.fluxcd.io/v2beta1
+    - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease
       name: crossplane-deployment
       namespace: crossplane-system
