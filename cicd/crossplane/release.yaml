@@ -23,3 +23,4 @@ spec:
       packages:
         - xpkg.upbound.io/crossplane-contrib/provider-helm:${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.0.6}
         - xpkg.upbound.io/crossplane-contrib/provider-kubernetes:${CROSSPLANE_K8S_PROVIDER_VERSION:-v1.2.0}
+        - xpkg.upbound.io/upbound/provider-opentofu:v1.0.3
