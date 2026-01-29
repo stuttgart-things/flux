@@ -1,9 +1,7 @@
----
-# this file needs to be reworked and is not selected at tem moment in kustomization.yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: crossplane-configuration
+  name: crossplane-functions
   namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
 spec:
   interval: 30m
@@ -22,37 +20,31 @@ spec:
   values:
     installCRDs: true
     customresources:
-      deploymentTemplate:
+      functionAutoReady:
         apiVersion: pkg.crossplane.io/v1beta1
-        kind: DeploymentRuntimeConfig
+        kind: Function
         metadata:
-          name: ${CROSSPLANE_TERRAFORM_CONFIG_NAME:-terraform-runtime-config}
-          namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+          name: function-auto-ready
         spec:
-          deploymentTemplate:
-            spec:
-              selector: {}
-              strategy: {}
-              template:
-                spec:
-                  containers:
-                  - envFrom:
-                    - secretRef:
-                        name: ${CROSSPLANE_TERRAFORM_S3_SECRET_NAME:-terraform-s3}
-                    name: package-runtime
-                    image: ${CROSSPLANE_TERRAFORM_PROVIDER_IMAGE:-ghcr.io/stuttgart-things/sthings-cptf:1.14.3}
-                    args:
-                      - -d
-                      - --poll=${CROSSPLANE_TERRAFORM_POLL:-30s}
-                      - --max-reconcile-rate=${CROSSPLANE_TERRAFORM_RECONCILE_RATE:-10}
-                    resources: {}
-      provider:
+          package: xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.6.0
+      functionGoTemplating:
+        apiVersion: pkg.crossplane.io/v1beta1
+        kind: Function
+        metadata:
+          name: function-go-templating
+        spec:
+          package: xpkg.crossplane.io/crossplane-contrib/function-go-templating:v0.11.3
+      functionKCL:
         apiVersion: pkg.crossplane.io/v1
-        kind: Provider
+        kind: Function
         metadata:
-          name: provider-terraform
-          namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+          name: function-kcl
         spec:
-          package: xpkg.upbound.io/upbound/provider-terraform:${CROSSPLANE_TERRAFORM_PROVIDER_VERSION:-v1.0.5}
-          runtimeConfigRef:
-            name: ${CROSSPLANE_TERRAFORM_CONFIG_NAME:-terraform-runtime-config}
+          package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.0
+      functionPatchAndTransform:
+        apiVersion: pkg.crossplane.io/v1beta1
+        kind: Function
+        metadata:
+          name: function-patch-and-transform
+        spec:
+          package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.3
