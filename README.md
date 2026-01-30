@@ -4,6 +4,27 @@ flux infra & app kustomizations
 
 ## FLUX BOOSTRAP
 
+<details><summary>RENDER FLUX-INSTANCE w/ DAGGER</summary>
+
+```bash
+dagger call -m github.com/stuttgart-things/dagger/kcl@v0.76.0 run \
+  --oci-source ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3 \
+  --parameters "\
+name=flux,\
+namespace=flux-system,\
+gitUrl=https://github.com/stuttgart-things/stuttgart-things.git,\
+gitRef=refs/heads/main,\
+gitPath=clusters/labda/edge/xplane,\
+pullSecret=git-token-auth,\
+renderSecrets=true,\
+gitUsername=patrick-hermann-sva,\
+gitPassword=ghp_4#...,\
+sopsAgeKey=AGE-SECRET-KEY-1QY9#...,\
+version=2.4" \
+  export \
+  --path ./flux-instance.yaml
+```
+
 <details><summary>GITHUB SCM + FLUX OPERATOR</summary>
 
 ```bash
