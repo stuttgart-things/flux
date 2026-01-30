@@ -7,27 +7,27 @@ flux infra & app kustomizations
 <details><summary>RENDER FLUX-INSTANCE w/ DAGGER</summary>
 
 ```bash
+helmfile init --force
 helmfile apply -f git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl \
 --state-values-set version=0.28.0
 ```
 
 ```bash
 dagger call -m github.com/stuttgart-things/dagger/kcl@v0.76.0 run \
-  --oci-source ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3 \
-  --parameters " \
-name=flux,\
-namespace=flux-system,\
-gitUrl=https://github.com/stuttgart-things/stuttgart-things.git,\
-gitRef=refs/heads/main,\
-gitPath=clusters/labda/edge/xplane,\
-pullSecret=git-token-auth,\
-renderSecrets=true,\
-gitUsername=patrick-hermann-sva,\
-gitPassword=ghp_4#...,\
-sopsAgeKey=AGE-SECRET-KEY-1QY9#...,\
+--oci-source ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3 \
+--parameters" \
+name=flux, \
+namespace=flux-system, \
+gitUrl=https://github.com/stuttgart-things/stuttgart-things.git, \
+gitRef=refs/heads/main, \
+gitPath=clusters/labda/edge/xplane, \
+pullSecret=git-token-auth, \
+renderSecrets=true, \
+gitUsername=patrick-hermann-sva, \
+gitPassword=$GITHUB_TOKEN, \
+sopsAgeKey=$SOPS_AGE_KEY, \
 version=2.4" \
-  export \
-  --path ./flux-instance.yaml
+export --path ./flux-instance.yaml
 ```
 
 </details>
