@@ -247,6 +247,45 @@ k2n gen \
 
 </details>
 
+## SOPS ENCRYPTION
+
+<details><summary>ENCRYPT/DECRYPT WITH DAGGER SOPS MODULE</summary>
+
+### Encrypt
+
+```bash
+# Set your AGE public key (from ~/.sops.yaml)
+export AGE_PUBLIC_KEY="age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm" # pragma: allowlist secret
+
+# Encrypt a secret file
+dagger call -m github.com/stuttgart-things/dagger/sops encrypt \
+  --age-key="env:AGE_PUBLIC_KEY" \
+  --plaintext-file="./secret.yaml" \
+  --file-extension="yaml" \
+  export --path="./secret.enc.yaml"
+```
+
+### Decrypt
+
+```bash
+# Set your AGE private key
+export SOPS_AGE_KEY="AGE-SECRET-KEY-1..."
+
+# Decrypt and view contents
+dagger call -m github.com/stuttgart-things/dagger/sops decrypt \
+  --age-key="env:SOPS_AGE_KEY" \
+  --encrypted-file="./secret.enc.yaml" \
+  contents
+
+# Decrypt and export to file
+dagger call -m github.com/stuttgart-things/dagger/sops decrypt \
+  --age-key="env:SOPS_AGE_KEY" \
+  --encrypted-file="./secret.enc.yaml" \
+  export --path="./secret.dec.yaml"
+```
+
+</details>
+
 ## LICENSE
 
 <details><summary><b>APACHE 2.0</b></summary>
