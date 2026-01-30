@@ -7,9 +7,14 @@ flux infra & app kustomizations
 <details><summary>RENDER FLUX-INSTANCE w/ DAGGER</summary>
 
 ```bash
+helmfile apply -f git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl \
+--state-values-set version=0.28.0
+```
+
+```bash
 dagger call -m github.com/stuttgart-things/dagger/kcl@v0.76.0 run \
   --oci-source ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3 \
-  --parameters "\
+  --parameters " \
 name=flux,\
 namespace=flux-system,\
 gitUrl=https://github.com/stuttgart-things/stuttgart-things.git,\
@@ -24,6 +29,8 @@ version=2.4" \
   export \
   --path ./flux-instance.yaml
 ```
+
+</details>
 
 <details><summary>GITHUB SCM + FLUX OPERATOR</summary>
 
