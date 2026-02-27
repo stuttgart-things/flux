@@ -12,5 +12,5 @@ spec:
     - "${VAULT_HOSTNAME}.${VAULT_DOMAIN}"
   rules:
     - backendRefs:
-        - name: vault
+        - name: vault-server
           port: 8200
