@@ -41,8 +41,8 @@ spec:
   issuerRef:
     name: cluster-ca
     kind: ClusterIssuer
-  commonName: '${CERT_MANAGER_SELFSIGNED_DNS_NAME}'
+  commonName: "*.${CERT_MANAGER_SELFSIGNED_DOMAIN}"
   dnsNames:
-    - '${CERT_MANAGER_SELFSIGNED_DNS_NAME}'
+    - "*.${CERT_MANAGER_SELFSIGNED_DOMAIN}"
   duration: 2160h   # 90 days
   renewBefore: 360h # renew 15 days before expiry
