@@ -22,6 +22,11 @@ spec:
         allowInsecureImages: true
 
     server:
+      image:
+        registry: ${REGISTRY:-ghcr.io}
+        repository: ${REPOSITORY:-stuttgart-things/vault}
+        tag: ${TAG:-1.20.2-debian-12-r2}
+        pullPolicy: ${PULL_POLICY:-IfNotPresent}
       dev:
         enabled: ${VAULT_DEV_MODE:-true}
         devRootToken: ${VAULT_DEV_ROOT_TOKEN:-root}
