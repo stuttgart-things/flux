@@ -1,0 +1,48 @@
+---
+# Step 1: SelfSigned bootstrap issuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+---
+# Step 2: Bootstrap CA certificate (signed by selfsigned)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${CERT_MANAGER_CA_NAME:-cluster-ca}
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+spec:
+  isCA: true
+  commonName: ${CERT_MANAGER_CA_NAME:-cluster-ca}
+  secretName: ${CERT_MANAGER_CA_SECRET:-cluster-ca-secret}
+  issuerRef:
+    name: selfsigned
+    kind: ClusterIssuer
+---
+# Step 3: CA ClusterIssuer backed by bootstrap cert
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: cluster-ca
+spec:
+  ca:
+    secretName: ${CERT_MANAGER_CA_SECRET:-cluster-ca-secret}
+---
+# Step 4: Wildcard certificate for gateway TLS
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${CERT_MANAGER_SELFSIGNED_CERT_NAME:-wildcard-tls}
+  namespace: ${CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE:-default}
+spec:
+  secretName: ${CERT_MANAGER_SELFSIGNED_SECRET_NAME:-wildcard-tls}
+  issuerRef:
+    name: cluster-ca
+    kind: ClusterIssuer
+  commonName: ${CERT_MANAGER_SELFSIGNED_DNS_NAME}
+  dnsNames:
+    - ${CERT_MANAGER_SELFSIGNED_DNS_NAME}
+  duration: 2160h   # 90 days
+  renewBefore: 360h # renew 15 days before expiry
