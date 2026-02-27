@@ -1,0 +1,29 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: ${CILIUM_GATEWAY_NAME:-cilium-gateway}
+  namespace: ${CILIUM_GATEWAY_NAMESPACE:-default}
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: https
+      hostname: ${CILIUM_GATEWAY_HOSTNAME}
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: ${CILIUM_GATEWAY_TLS_SECRET}
+    - name: http
+      hostname: ${CILIUM_GATEWAY_HOSTNAME}
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
