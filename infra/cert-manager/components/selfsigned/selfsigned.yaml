@@ -39,7 +39,7 @@ metadata:
 spec:
   secretName: ${CERT_MANAGER_SELFSIGNED_SECRET_NAME:-wildcard-tls}
   issuerRef:
-    name: cluster-ca
+    name: ${CERT_MANAGER_SELFSIGNED_ISSUER:-cluster-ca}
     kind: ClusterIssuer
   commonName: "*.${CERT_MANAGER_SELFSIGNED_DOMAIN}"
   dnsNames:
