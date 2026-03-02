@@ -1,0 +1,42 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: claim-machinery-api
+  namespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: claim-machinery-api-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+  patches:
+    # Remove the Ingress from the kustomize base (we use Gateway API HTTPRoute)
+    - target:
+        kind: Ingress
+        name: claim-machinery-api
+      patch: |
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: claim-machinery-api
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: claim-machinery-api
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: claim-machinery-api
+        spec:
+          template:
+            spec:
+              containers:
+                - name: claim-machinery-api
+                  image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
