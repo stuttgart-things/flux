@@ -13,4 +13,4 @@ metadata:
   namespace: ${VAULT_NAMESPACE:-vault}
 spec:
   interval: 1h
-  url: ${UNSEAL_HELM_REPO_URL}
+  url: ${UNSEAL_HELM_REPO_URL:-https://pytoshka.github.io/vault-autounseal}

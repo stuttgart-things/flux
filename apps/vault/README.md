@@ -54,7 +54,7 @@ Add a second Kustomization pointing to `./apps/vault/autounseal`.
 | Variable | Default | Description |
 |---|---|---|
 | `VAULT_NAMESPACE` | `vault` | Target namespace |
-| `UNSEAL_HELM_REPO_URL` | *(required)* | URL of the `unseal` Helm repository |
+| `UNSEAL_HELM_REPO_URL` | `https://pytoshka.github.io/vault-autounseal` | URL of the `unseal` Helm repository |
 | `VAULT_AUTOUNSEAL_VERSION` | `0.5.3` | Chart version |
 | `VAULT_AUTOUNSEAL_URL` | `http://vault-server.vault.svc:8200` | Vault server URL |
 | `VAULT_AUTOUNSEAL_LABEL_SELECTOR` | `app.kubernetes.io/component=server` | Label selector for vault pods |
@@ -80,7 +80,7 @@ spec:
   postBuild:
     substitute:
       VAULT_NAMESPACE: vault
-      UNSEAL_HELM_REPO_URL: https://your-unseal-helm-repo
+      UNSEAL_HELM_REPO_URL: https://pytoshka.github.io/vault-autounseal
       VAULT_AUTOUNSEAL_VERSION: "0.5.3"
       VAULT_AUTOUNSEAL_URL: http://vault-server.vault.svc:8200
       VAULT_AUTOUNSEAL_LABEL_SELECTOR: app.kubernetes.io/component=server
