@@ -1,5 +1,7 @@
 # stuttgart-things/flux/vault
 
+## Main Vault Deployment
+
 ```bash
 kubectl apply -f - <<EOF
 ---
@@ -26,7 +28,7 @@ spec:
       REPOSITORY: stuttgart-things/vault
       TAG: 1.20.2-debian-12-r2
       PULL_POLICY: Always
-      INGRESS_ENABLED: "true"
+      INGRESS_ENABLED: "false"
       INGRESS_CLASS_NAME: nginx
       STORAGE_CLASS: openebs-hostpath
       INJECTOR_ENABLED: "true"
@@ -44,6 +46,84 @@ spec:
 EOF
 ```
 
+## Optional: Autounseal
 
+Deploys `vault-autounseal` from the `unseal` Helm repository into the same vault namespace.
+Add a second Kustomization pointing to `./apps/vault/autounseal`.
 
-helm upgrade --install vault-autounseal unseal/vault-autounseal --set=settings.vault_url=http://vault-server.vault.svc:8200 --set="settings.vault_label_selector=app.kubernetes.io/component=server" --version 0.5.3 -n vault
+| Variable | Default | Description |
+|---|---|---|
+| `VAULT_NAMESPACE` | `vault` | Target namespace |
+| `UNSEAL_HELM_REPO_URL` | *(required)* | URL of the `unseal` Helm repository |
+| `VAULT_AUTOUNSEAL_VERSION` | `0.5.3` | Chart version |
+| `VAULT_AUTOUNSEAL_URL` | `http://vault-server.vault.svc:8200` | Vault server URL |
+| `VAULT_AUTOUNSEAL_LABEL_SELECTOR` | `app.kubernetes.io/component=server` | Label selector for vault pods |
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-autounseal
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/vault/autounseal
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: vault
+      UNSEAL_HELM_REPO_URL: https://your-unseal-helm-repo
+      VAULT_AUTOUNSEAL_VERSION: "0.5.3"
+      VAULT_AUTOUNSEAL_URL: http://vault-server.vault.svc:8200
+      VAULT_AUTOUNSEAL_LABEL_SELECTOR: app.kubernetes.io/component=server
+EOF
+```
+
+## Optional: HTTPRoute (Gateway API)
+
+Deploys a Gateway API `HTTPRoute` for vault instead of using the Helm chart's built-in ingress.
+Keep `INGRESS_ENABLED: "false"` in the main Kustomization and add a second one for the HTTPRoute.
+
+| Variable | Default | Description |
+|---|---|---|
+| `VAULT_NAMESPACE` | `vault` | Target namespace |
+| `GATEWAY_NAME` | `cilium-gateway` | Gateway resource name |
+| `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |
+| `VAULT_HOSTNAME` | *(required)* | Hostname prefix |
+| `VAULT_DOMAIN` | *(required)* | Domain suffix |
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-httproute
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/vault/httproute
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: vault
+      GATEWAY_NAME: cilium-gateway
+      GATEWAY_NAMESPACE: default
+      VAULT_HOSTNAME: vault
+      VAULT_DOMAIN: example.com
+EOF
+```
