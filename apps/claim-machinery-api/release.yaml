@@ -25,7 +25,7 @@ spec:
         metadata:
           name: claim-machinery-api
         $patch: delete
-    # Override the container image tag
+    # Override the container image tag and set server command
     - target:
         kind: Deployment
         name: claim-machinery-api
@@ -40,3 +40,5 @@ spec:
               containers:
                 - name: claim-machinery-api
                   image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
+                  args:
+                    - server
