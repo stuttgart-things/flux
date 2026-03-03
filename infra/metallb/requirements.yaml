@@ -6,7 +6,7 @@ metadata:
   labels:
     toolkit.fluxcd.io/tenant: sthings-team
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: bitnami
@@ -16,7 +16,7 @@ spec:
   interval: 24h
   url: oci://registry-1.docker.io/bitnamicharts
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: stuttgart-things
