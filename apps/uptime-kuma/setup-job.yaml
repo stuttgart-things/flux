@@ -160,8 +160,20 @@ data:
         else:
             raise
 
+    import time as _time
+
     print(f"Connecting to {url}...")
-    api = UptimeKumaApi(url, timeout=30, wait_events=3)
+    api = None
+    for attempt in range(12):
+        try:
+            api = UptimeKumaApi(url, timeout=30, wait_events=3)
+            break
+        except Exception as e:
+            print(f"  Connection attempt {attempt+1}/12 failed: {e}")
+            _time.sleep(15)
+    if api is None:
+        print("ERROR: Could not connect after all retries.")
+        sys.exit(1)
 
     # Setup admin account if needed
     if api.need_setup():
