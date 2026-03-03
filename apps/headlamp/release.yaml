@@ -15,3 +15,11 @@ spec:
         name: headlamp
         namespace: ${HEADLAMP_NAMESPACE:-headlamp}
       interval: 12h
+  values:
+    httpRoute:
+      enabled: true
+      parentRefs:
+        - name: ${GATEWAY_NAME}
+          namespace: ${GATEWAY_NAMESPACE:-default}
+      hostnames:
+        - "${HOSTNAME}.${DOMAIN}"
