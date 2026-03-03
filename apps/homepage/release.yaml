@@ -44,3 +44,6 @@ spec:
       - name: homepage-config
         mountPath: /app/config/widgets.yaml
         subPath: widgets.yaml
+      - name: homepage-config
+        mountPath: /app/config/kubernetes.yaml
+        subPath: kubernetes.yaml

@@ -43,6 +43,8 @@ data:
         - Flux Repo:
             - icon: si-flux
               href: https://github.com/stuttgart-things/flux
+  kubernetes.yaml: |
+    mode: cluster
   widgets.yaml: |
     - kubernetes:
         cluster:
