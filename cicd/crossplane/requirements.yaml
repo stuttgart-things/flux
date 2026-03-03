@@ -6,7 +6,7 @@ metadata:
   labels:
     toolkit.fluxcd.io/tenant: sthings-team
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: crossplane-stable
@@ -15,7 +15,7 @@ spec:
   interval: 24h
   url: https://charts.crossplane.io/stable
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: stuttgart-things

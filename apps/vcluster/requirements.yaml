@@ -4,9 +4,9 @@ kind: Namespace
 metadata:
   name: ${VCLUSTER_NAMESPACE:-vcluster}
   labels:
-    toolkit.fluxcd.io/tenant: ${FLUX_TENANT:-flux}
+    toolkit.fluxcd.io/tenant: sthings-team
 ---
-apiVersion: source.toolkit.fluxcd.io/v1beta2
+apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
   name: loft
