@@ -20,3 +20,12 @@ spec:
     installCRDs: false
     web:
       serverOnly: true
+      networkPolicy:
+        create: false
+      httpRoute:
+        enabled: true
+        parentRefs:
+          - name: ${GATEWAY_NAME}
+            namespace: ${GATEWAY_NAMESPACE:-default}
+        hostnames:
+          - "${HOSTNAME}.${DOMAIN}"
