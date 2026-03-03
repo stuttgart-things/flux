@@ -12,40 +12,64 @@ data:
         "type": "http",
         "url": "https://${FLUX_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3
+        "maxretries": 3,
+        "ignoreTls": true
       },
       {
         "name": "Vault",
         "type": "http",
         "url": "https://${VAULT_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3
+        "maxretries": 3,
+        "ignoreTls": true
       },
       {
         "name": "Claim Machinery API",
         "type": "http",
         "url": "https://${CLAIM_API_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3
+        "maxretries": 3,
+        "ignoreTls": true
       },
       {
         "name": "Uptime Kuma",
         "type": "http",
         "url": "https://${UPTIME_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3
+        "maxretries": 3,
+        "ignoreTls": true
       }
     ]
 ---
 apiVersion: v1
-kind: Secret
+kind: ServiceAccount
 metadata:
-  name: uptime-kuma-admin
+  name: uptime-kuma-setup
   namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
-type: Opaque
-stringData:
-  username: ${UPTIME_KUMA_ADMIN_USER:-admin}
-  password: ${UPTIME_KUMA_ADMIN_PASSWORD:-admin}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: uptime-kuma-setup
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: uptime-kuma-setup
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: uptime-kuma-setup
+subjects:
+  - kind: ServiceAccount
+    name: uptime-kuma-setup
+    namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -60,6 +84,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: uptime-kuma-setup
       containers:
         - name: setup
           image: python:3.12-slim
@@ -67,21 +92,15 @@ spec:
             - /bin/bash
             - -c
             - |
-              pip install -q uptime-kuma-api &&
+              pip install -q uptime-kuma-api kubernetes &&
               python3 /scripts/setup.py
           env:
             - name: KUMA_URL
               value: "http://uptime-kuma.${UPTIME_KUMA_NAMESPACE:-uptime-kuma}.svc:3001"
+            - name: NAMESPACE
+              value: "${UPTIME_KUMA_NAMESPACE:-uptime-kuma}"
             - name: ADMIN_USER
-              valueFrom:
-                secretKeyRef:
-                  name: uptime-kuma-admin
-                  key: username
-            - name: ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: uptime-kuma-admin
-                  key: password
+              value: "${UPTIME_KUMA_ADMIN_USER:-admin}"
           volumeMounts:
             - name: scripts
               mountPath: /scripts
@@ -104,13 +123,42 @@ data:
   setup.py: |
     import json
     import os
-    import sys
-    import time
+    import secrets
+    import string
     from uptime_kuma_api import UptimeKumaApi
+    from kubernetes import client, config
 
     url = os.environ["KUMA_URL"]
+    namespace = os.environ["NAMESPACE"]
     user = os.environ["ADMIN_USER"]
-    password = os.environ["ADMIN_PASSWORD"]
+    secret_name = "uptime-kuma-admin"
+
+    # Load in-cluster k8s config
+    config.load_incluster_config()
+    v1 = client.CoreV1Api()
+
+    # Check if admin secret already exists
+    password = None
+    try:
+        secret = v1.read_namespaced_secret(secret_name, namespace)
+        import base64
+        password = base64.b64decode(secret.data["password"]).decode()
+        print(f"Found existing admin secret '{secret_name}'.")
+    except client.exceptions.ApiException as e:
+        if e.status == 404:
+            # Generate a random password
+            alphabet = string.ascii_letters + string.digits
+            password = ''.join(secrets.choice(alphabet) for _ in range(24))
+            # Create the secret
+            secret = client.V1Secret(
+                metadata=client.V1ObjectMeta(name=secret_name),
+                type="Opaque",
+                string_data={"username": user, "password": password}
+            )
+            v1.create_namespaced_secret(namespace, secret)
+            print(f"Generated password and created secret '{secret_name}'.")
+        else:
+            raise
 
     print(f"Connecting to {url}...")
     api = UptimeKumaApi(url, timeout=30, wait_events=3)
