@@ -1,0 +1,29 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: homepage
+  namespace: ${HOMEPAGE_NAMESPACE:-homepage}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: homepage
+      version: ${HOMEPAGE_VERSION:-4.8.0}
+      sourceRef:
+        kind: HelmRepository
+        name: homepage
+        namespace: ${HOMEPAGE_NAMESPACE:-homepage}
+      interval: 12h
+  values:
+    config:
+      allowedHosts:
+        - "${HOSTNAME}.${DOMAIN}"
+    route:
+      main:
+        enabled: true
+        parentRefs:
+          - name: ${GATEWAY_NAME}
+            namespace: ${GATEWAY_NAMESPACE:-default}
+        hostnames:
+          - "${HOSTNAME}.${DOMAIN}"

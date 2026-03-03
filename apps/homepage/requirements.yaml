@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${HOMEPAGE_NAMESPACE:-homepage}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: homepage
+  namespace: ${HOMEPAGE_NAMESPACE:-homepage}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/m0nsterrr/helm-charts
