@@ -1,5 +1,5 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2beta1
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: vcluster
@@ -38,9 +38,9 @@ spec:
           replicas: 1  # Set to 3 for true HA in production
       persistence:
         volumeClaim:
-          enabled: ${VCLUSTER_STORAGE_ENABLED:true}
+          enabled: ${VCLUSTER_STORAGE_ENABLED:-true}
           retentionPolicy: Retain
-          size: ${VCLUSTER_STORAGE_SIZE:10Gi}
+          size: ${VCLUSTER_STORAGE_SIZE:-10Gi}
           storageClass: ${VCLUSTER_STORAGE_CLASS}
           accessModes: ["ReadWriteOnce"]
     sync:
