@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${HEADLAMP_NAMESPACE:-headlamp}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: HelmRepository
+metadata:
+  name: headlamp
+  namespace: ${HEADLAMP_NAMESPACE:-headlamp}
+spec:
+  interval: 1h
+  url: https://kubernetes-sigs.github.io/headlamp/
