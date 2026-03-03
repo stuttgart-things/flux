@@ -17,7 +17,7 @@ spec:
       interval: 12h
   values:
     redis-stack:
-      enabled: ${REDIS_STACK_ENABLED:true}
+      enabled: ${REDIS_STACK_ENABLED:-true}
       sentinel:
         service:
           type: ${REDIS_SERVICE_TYPE:-ClusterIP}
@@ -28,11 +28,11 @@ spec:
         service:
           type: ${REDIS_SERVICE_TYPE:-ClusterIP}
         persistence:
-          enabled: ${REDIS_STORAGE_ENABLED:true}
+          enabled: ${REDIS_STORAGE_ENABLED:-true}
           storageClass: ${REDIS_STORAGE_CLASS}
-          size: ${REDIS_STORAGE_SIZE:8Gi}
+          size: ${REDIS_STORAGE_SIZE:-8Gi}
       replica:
         persistence:
-          enabled: ${REDIS_STORAGE_ENABLED:true}
+          enabled: ${REDIS_STORAGE_ENABLED:-true}
           storageClass: ${REDIS_STORAGE_CLASS}
-          size: ${REDIS_STORAGE_SIZE:8Gi}
+          size: ${REDIS_STORAGE_SIZE:-8Gi}
