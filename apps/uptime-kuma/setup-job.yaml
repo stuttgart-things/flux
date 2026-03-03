@@ -1,0 +1,150 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-monitors
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+data:
+  monitors.json: |
+    [
+      {
+        "name": "Flux Web UI",
+        "type": "http",
+        "url": "https://${FLUX_HOSTNAME}.${DOMAIN}",
+        "interval": 60,
+        "maxretries": 3,
+        "accepted_statuscodes": ["200-299"]
+      },
+      {
+        "name": "Vault",
+        "type": "http",
+        "url": "https://${VAULT_HOSTNAME}.${DOMAIN}",
+        "interval": 60,
+        "maxretries": 3,
+        "accepted_statuscodes": ["200-399"]
+      },
+      {
+        "name": "Claim Machinery API",
+        "type": "http",
+        "url": "https://${CLAIM_API_HOSTNAME}.${DOMAIN}",
+        "interval": 60,
+        "maxretries": 3,
+        "accepted_statuscodes": ["200-299"]
+      },
+      {
+        "name": "Uptime Kuma",
+        "type": "http",
+        "url": "https://${UPTIME_HOSTNAME}.${DOMAIN}",
+        "interval": 60,
+        "maxretries": 3,
+        "accepted_statuscodes": ["200-399"]
+      }
+    ]
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: uptime-kuma-admin
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+type: Opaque
+stringData:
+  username: ${UPTIME_KUMA_ADMIN_USER:-admin}
+  password: ${UPTIME_KUMA_ADMIN_PASSWORD:-admin}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: uptime-kuma-setup
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: "enabled"
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 600
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: python:3.12-slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              pip install -q uptime-kuma-api &&
+              python3 /scripts/setup.py
+          env:
+            - name: KUMA_URL
+              value: "http://uptime-kuma.${UPTIME_KUMA_NAMESPACE:-uptime-kuma}.svc:3001"
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-admin
+                  key: username
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: uptime-kuma-admin
+                  key: password
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+            - name: monitors
+              mountPath: /config
+      volumes:
+        - name: scripts
+          configMap:
+            name: uptime-kuma-setup-script
+        - name: monitors
+          configMap:
+            name: uptime-kuma-monitors
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-setup-script
+  namespace: ${UPTIME_KUMA_NAMESPACE:-uptime-kuma}
+data:
+  setup.py: |
+    import json
+    import os
+    import sys
+    import time
+    from uptime_kuma_api import UptimeKumaApi
+
+    url = os.environ["KUMA_URL"]
+    user = os.environ["ADMIN_USER"]
+    password = os.environ["ADMIN_PASSWORD"]
+
+    print(f"Connecting to {url}...")
+    api = UptimeKumaApi(url, timeout=30, wait_events=3)
+
+    # Setup admin account if needed
+    if api.need_setup():
+        print("Running initial setup...")
+        api.setup(user, password)
+        print("Admin account created.")
+    else:
+        print("Setup already done, logging in...")
+        api.login(user, password)
+
+    # Load desired monitors
+    with open("/config/monitors.json") as f:
+        desired = json.load(f)
+
+    # Get existing monitors
+    existing = {m["name"]: m for m in api.get_monitors()}
+    print(f"Found {len(existing)} existing monitors.")
+
+    # Create or update monitors
+    for monitor in desired:
+        name = monitor["name"]
+        if name in existing:
+            print(f"  Monitor '{name}' already exists, skipping.")
+        else:
+            print(f"  Creating monitor '{name}'...")
+            api.add_monitor(**monitor)
+            print(f"  Monitor '{name}' created.")
+
+    print("Done. All monitors configured.")
+    api.disconnect()
