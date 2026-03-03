@@ -16,6 +16,14 @@ spec:
         namespace: ${HEADLAMP_NAMESPACE:-headlamp}
       interval: 12h
   values:
+    config:
+      watchPlugins: true
+    pluginsManager:
+      enabled: true
+      configContent: |
+        plugins:
+          - name: prometheus
+            source: https://github.com/headlamp-k8s/plugins/releases/download/prometheus-0.8.2/prometheus-0.8.2.tar.gz
     httpRoute:
       enabled: true
       parentRefs:
