@@ -12,32 +12,28 @@ data:
         "type": "http",
         "url": "https://${FLUX_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3,
-        "accepted_statuscodes": ["200-299"]
+        "maxretries": 3
       },
       {
         "name": "Vault",
         "type": "http",
         "url": "https://${VAULT_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3,
-        "accepted_statuscodes": ["200-399"]
+        "maxretries": 3
       },
       {
         "name": "Claim Machinery API",
         "type": "http",
         "url": "https://${CLAIM_API_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3,
-        "accepted_statuscodes": ["200-299"]
+        "maxretries": 3
       },
       {
         "name": "Uptime Kuma",
         "type": "http",
         "url": "https://${UPTIME_HOSTNAME}.${DOMAIN}",
         "interval": 60,
-        "maxretries": 3,
-        "accepted_statuscodes": ["200-399"]
+        "maxretries": 3
       }
     ]
 ---
