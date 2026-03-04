@@ -42,3 +42,25 @@ spec:
                   image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
                   args:
                     - server
+    # Override profile.yaml content via postBuild substitution
+    - target:
+        kind: ConfigMap
+        name: claim-machinery-api-profile
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: claim-machinery-api-profile
+        data:
+          profile.yaml: ${TEMPLATE_PROFILES}
+    # Allow overriding TEMPLATE_PROFILE_PATH (e.g. to an HTTP URL)
+    - target:
+        kind: ConfigMap
+        name: claim-machinery-api
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: claim-machinery-api
+        data:
+          TEMPLATE_PROFILE_PATH: ${CLAIM_MACHINERY_PROFILE_PATH}
