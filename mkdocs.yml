@@ -1,0 +1,53 @@
+site_name: stuttgart-things/flux
+site_description: Flux CD GitOps repository for deploying infrastructure and applications to Kubernetes
+repo_url: https://github.com/stuttgart-things/flux
+edit_uri: edit/main/docs/
+
+plugins:
+  - techdocs-core
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Prerequisites: getting-started/prerequisites.md
+      - Quick Start: getting-started/quick-start.md
+  - Bootstrap:
+      - Overview: bootstrap/overview.md
+      - Flux Operator: bootstrap/flux-operator.md
+      - Flux CLI: bootstrap/flux-cli.md
+      - Blueprints (Dagger + KCL): bootstrap/blueprints.md
+      - SOPS Secrets: bootstrap/sops-secrets.md
+  - Development:
+      - Adding Components: development/adding-components.md
+      - Conventions: development/conventions.md
+      - Releasing: development/releasing.md
+  - Apps:
+      - Overview: apps/index.md
+      - Argo CD: apps/argo-cd.md
+      - Claim Machinery API: apps/claim-machinery-api.md
+      - Clusterbook: apps/clusterbook.md
+      - Flux Web: apps/flux-web.md
+      - Headlamp: apps/headlamp.md
+      - Homepage: apps/homepage.md
+      - Homerun Base Stack: apps/homerun-base-stack.md
+      - Homerun IoT Stack: apps/homerun-iot-stack.md
+      - Keycloak: apps/keycloak.md
+      - MinIO: apps/minio.md
+      - OpenLDAP: apps/openldap.md
+      - Uptime Kuma: apps/uptime-kuma.md
+      - Vault: apps/vault.md
+      - vCluster: apps/vcluster.md
+  - Infrastructure:
+      - Overview: infra/index.md
+      - cert-manager: infra/cert-manager.md
+      - Cilium: infra/cilium.md
+      - ingress-nginx: infra/ingress-nginx.md
+      - MetalLB: infra/metallb.md
+      - NFS CSI Driver: infra/nfs-csi.md
+      - OpenEBS: infra/openebs.md
+      - Prometheus: infra/prometheus.md
+      - Vault: infra/vault.md
+  - CI/CD:
+      - Overview: cicd/index.md
+      - Crossplane: cicd/crossplane.md
+      - Tekton: cicd/tekton.md

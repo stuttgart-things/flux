@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: flux
+  description: Flux CD GitOps repository for deploying infrastructure and applications to Kubernetes
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: stuttgart-things/flux
+  tags:
+    - flux
+    - gitops
+    - kubernetes
+    - kustomize
+    - helm
+  links:
+    - url: https://github.com/stuttgart-things/flux
+      title: GitHub Repository
+      icon: github
+spec:
+  type: library
+  lifecycle: production
+  owner: stuttgart-things
