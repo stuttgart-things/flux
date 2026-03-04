@@ -1,0 +1,103 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: backstage-deployment
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+spec:
+  dependsOn:
+    - name: backstage-configuration
+      namespace: ${BACKSTAGE_NAMESPACE:-portal}
+  interval: 30m
+  chart:
+    spec:
+      chart: backstage
+      version: ${BACKSTAGE_VERSION:-2.6.3}
+      sourceRef:
+        kind: HelmRepository
+        name: backstage
+        namespace: ${BACKSTAGE_NAMESPACE:-portal}
+      interval: 12h
+  values:
+    global:
+      storageClass: ${BACKSTAGE_STORAGE_CLASS:-nfs4-csi}
+    ingress:
+      enabled: false
+    postgresql:
+      enabled: true
+      auth:
+        username: backstage
+        password: ${BACKSTAGE_POSTGRESQL_PASSWORD}
+      architecture: standalone
+    backstage:
+      replicas: ${BACKSTAGE_REPLICAS:-1}
+      image:
+        registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}
+        repository: ${BACKSTAGE_IMAGE_REPOSITORY:-stuttgart-things/sthings-backstage}
+        tag: "${BACKSTAGE_IMAGE_TAG}"
+      extraEnvVars:
+        - name: APP_TITLE
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: APP_TITLE
+        - name: ORGANIZATION_NAME
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: ORGANIZATION_NAME
+        - name: APP_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: APP_BASE_URL
+        - name: BACKEND_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: BACKEND_BASE_URL
+        - name: CORS_ORIGIN
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: CORS_ORIGIN
+        - name: CLAIM_MACHINERY_API_URL
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: CLAIM_MACHINERY_API_URL
+        - name: CLAIM_MACHINERY_REGISTRY_URL
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: CLAIM_MACHINERY_REGISTRY_URL
+        - name: AUTH_ENVIRONMENT
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: AUTH_ENVIRONMENT
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: GITHUB_TOKEN
+        - name: GITHUB_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: GITHUB_CLIENT_ID
+        - name: GITHUB_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: GITHUB_CLIENT_SECRET
+        - name: BACKEND_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: BACKEND_SECRET
+      extraAppConfig:
+        - filename: app-config.extra.yaml
+          configMapRef: backstage-app-config
+        - filename: app-config.catalog.yaml
+          configMapRef: backstage-catalog-config

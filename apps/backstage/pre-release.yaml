@@ -1,0 +1,115 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: backstage-configuration
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: sthings-cluster
+      version: 0.3.20
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things
+        namespace: ${BACKSTAGE_NAMESPACE:-portal}
+      interval: 12h
+  values:
+    configmaps:
+      backstage-app-config:
+        name: backstage-app-config
+        namespace: ${BACKSTAGE_NAMESPACE:-portal}
+        app-config.extra.yaml: |
+          app:
+            title: $${APP_TITLE:-Backstage}
+            baseUrl: $${APP_BASE_URL}
+          organization:
+            name: $${ORGANIZATION_NAME}
+          backend:
+            auth:
+              keys:
+                - secret: $${BACKEND_SECRET:-change-me-in-production}
+            baseUrl: $${BACKEND_BASE_URL:-http://localhost:7007}
+            listen:
+              port: $${BACKEND_PORT:-7007}
+            csp:
+              connect-src: ["'self'", 'http:', 'https:']
+            cors:
+              origin: $${CORS_ORIGIN:-http://localhost:3000}
+              methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+              credentials: true
+            database:
+              client: better-sqlite3
+              connection: ':memory:'
+          integrations:
+            github:
+              - host: github.com
+                token: $${GITHUB_TOKEN}
+          proxy:
+            endpoints:
+              '/claim-machinery':
+                target: $${CLAIM_MACHINERY_API_URL:-https://claim-api.example.com}
+                changeOrigin: true
+                pathRewrite:
+                  '^/api/proxy/claim-machinery': ''
+                allowedHeaders: ['*']
+                credentials: 'dangerously-allow-unauthenticated'
+              '/machinery-registry':
+                target: $${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.example.com}
+                changeOrigin: true
+                pathRewrite:
+                  '^/api/proxy/machinery-registry': ''
+                allowedHeaders: ['*']
+                credentials: 'dangerously-allow-unauthenticated'
+          techdocs:
+            builder: 'local'
+            generator:
+              runIn: 'local'
+            publisher:
+              type: 'local'
+          auth:
+            environment: development
+            providers:
+              guest: {}
+              github:
+                development:
+                  clientId: $${GITHUB_CLIENT_ID}
+                  clientSecret: $${GITHUB_CLIENT_SECRET}
+                  signIn:
+                    resolvers:
+                      - resolver: usernameMatchingUserEntityName
+          scaffolder: {}
+          claimMachinery:
+            apiUrl: $${CLAIM_MACHINERY_API_URL:-https://claim-api.example.com}
+          catalog:
+            import:
+              entityFilename: catalog-info.yaml
+              pullRequestBranchName: backstage-integration
+            rules:
+              - allow: [Component, System, API, Resource, Location, Template]
+            locations: []
+          kubernetes:
+            serviceLocatorMethod:
+              type: multiTenant
+            clusterLocatorMethods:
+              - type: localKubectlProxy
+          permission:
+            enabled: true
+    secrets:
+      backstage-secrets:
+        name: backstage-secrets
+        namespace: ${BACKSTAGE_NAMESPACE:-portal}
+        secretKVs:
+          APP_TITLE: ${BACKSTAGE_APP_TITLE:-Stuttgart Things Backstage}
+          ORGANIZATION_NAME: ${BACKSTAGE_ORGANIZATION_NAME:-stuttgart-things}
+          APP_BASE_URL: https://backstage.${DOMAIN}
+          BACKEND_BASE_URL: https://backstage.${DOMAIN}
+          CORS_ORIGIN: https://backstage.${DOMAIN}
+          CLAIM_MACHINERY_API_URL: https://claim-api.${DOMAIN}
+          CLAIM_MACHINERY_REGISTRY_URL: https://registry-api.${DOMAIN}
+          AUTH_ENVIRONMENT: development
+          GITHUB_TOKEN: ${BACKSTAGE_GITHUB_TOKEN}
+          GITHUB_CLIENT_ID: ${BACKSTAGE_GITHUB_CLIENT_ID}
+          GITHUB_CLIENT_SECRET: ${BACKSTAGE_GITHUB_CLIENT_SECRET}
+          BACKEND_SECRET: ${BACKSTAGE_BACKEND_SECRET}

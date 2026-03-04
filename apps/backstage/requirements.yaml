@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${BACKSTAGE_NAMESPACE:-portal}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: backstage
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/backstage/charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things
