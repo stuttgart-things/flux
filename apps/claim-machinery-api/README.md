@@ -7,13 +7,12 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
 | `CLAIM_MACHINERY_API_NAMESPACE` | `claim-machinery` | no | Target namespace |
-| `CLAIM_MACHINERY_API_VERSION` | `v0.6.0` | no | OCI tag + container image tag |
+| `CLAIM_MACHINERY_API_VERSION` | `v0.10.0` | no | OCI tag + container image tag |
 | `GATEWAY_NAME` | - | yes | Gateway parentRef name |
 | `GATEWAY_NAMESPACE` | `default` | no | Gateway parentRef namespace |
 | `HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `DOMAIN` | - | yes | HTTPRoute domain suffix |
-| `TEMPLATE_PROFILES` | - | yes | Full profile.yaml content (template URL list) |
-| `CLAIM_MACHINERY_PROFILE_PATH` | `/app/config/profile.yaml` | no | Override to external HTTP URL |
+| `CLAIM_MACHINERY_PROFILE_PATH` | `/app/config/profile.yaml` | no | Override to HTTP URL serving profile.yaml |
 
 ## GIT-REPOSITORY MANIFEST
 
@@ -56,16 +55,12 @@ spec:
   postBuild:
     substitute:
       CLAIM_MACHINERY_API_NAMESPACE: claim-machinery
-      CLAIM_MACHINERY_API_VERSION: v0.6.0
+      CLAIM_MACHINERY_API_VERSION: v0.10.0
       GATEWAY_NAME: whatever-gateway
       GATEWAY_NAMESPACE: default
       HOSTNAME: claim-api
       DOMAIN: whatever.sthings-vsphere.labul.sva.de
-      CLAIM_MACHINERY_PROFILE_PATH: /app/config/profile.yaml
-      TEMPLATE_PROFILES: |
-        templates:
-          - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-volumeclaim/templates/volumeclaim-simple.yaml
-          - https://raw.githubusercontent.com/stuttgart-things/kcl/refs/heads/main/crossplane/claim-xplane-harborproject/templates/harborproject-simple.yaml
+      CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/stuttgart-things/refs/heads/main/profiles/claim-machinery-api/labul-vsphere.yaml
 EOF
 ```
 
