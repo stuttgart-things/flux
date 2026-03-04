@@ -1,0 +1,42 @@
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: cloud-config
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/cloud-config:${CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION:-v0.5.1}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: volume-claim
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/volume-claim:${CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION:-v0.1.1}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: storage-platform
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/storage-platform:${CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION:-v0.6.0}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: ansible-run
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/ansible-run:${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: pipeline-integration
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/pipeline-integration:${CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION:-v0.1.2}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: harvester-vm
+spec:
+  package: ghcr.io/stuttgart-things/crossplane/harvester-vm:${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}
