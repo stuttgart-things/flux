@@ -55,6 +55,6 @@ spec:
                     type: PathPrefix
                     value: /
               backendRefs:
-                - name: backstage
+                - name: backstage-deployment
                   namespace: ${BACKSTAGE_NAMESPACE:-portal}
                   port: 7007
