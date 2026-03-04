@@ -96,6 +96,10 @@ spec:
               - type: localKubectlProxy
           permission:
             enabled: true
+      backstage-helm-overrides:
+        name: backstage-helm-overrides
+        namespace: ${BACKSTAGE_NAMESPACE:-portal}
+        imageTag: ${BACKSTAGE_IMAGE_TAG}
     secrets:
       backstage-secrets:
         name: backstage-secrets

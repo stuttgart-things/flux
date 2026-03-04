@@ -9,6 +9,11 @@ spec:
     - name: backstage-configuration
       namespace: ${BACKSTAGE_NAMESPACE:-portal}
   interval: 30m
+  valuesFrom:
+    - kind: ConfigMap
+      name: backstage-helm-overrides
+      valuesKey: imageTag
+      targetPath: backstage.image.tag
   chart:
     spec:
       chart: backstage
@@ -34,7 +39,6 @@ spec:
       image:
         registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}
         repository: ${BACKSTAGE_IMAGE_REPOSITORY:-stuttgart-things/sthings-backstage}
-        tag: !!str ${BACKSTAGE_IMAGE_TAG}
       extraEnvVars:
         - name: APP_TITLE
           valueFrom:
