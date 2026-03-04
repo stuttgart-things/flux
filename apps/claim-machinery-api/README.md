@@ -60,7 +60,7 @@ spec:
       GATEWAY_NAMESPACE: default
       HOSTNAME: claim-api
       DOMAIN: whatever.sthings-vsphere.labul.sva.de
-      CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/stuttgart-things/refs/heads/main/profiles/claim-machinery-api/labul-vsphere.yaml
+      CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/refs/heads/main/profiles/labul-vsphere.yaml
 EOF
 ```
 
