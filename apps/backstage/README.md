@@ -38,6 +38,23 @@ spec:
 EOF
 ```
 
+## HELM OVERRIDES
+
+Create a ConfigMap for values that must stay as strings (e.g. numeric image tags):
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-helm-overrides
+  namespace: portal
+data:
+  imageTag: "260218.1436"
+EOF
+```
+
 ## CATALOG CONFIG
 
 Create a ConfigMap with your catalog locations in the target namespace. Add as many locations as needed:
@@ -89,7 +106,6 @@ spec:
     substitute:
       BACKSTAGE_NAMESPACE: portal
       BACKSTAGE_VERSION: "2.6.3"
-      BACKSTAGE_IMAGE_TAG: "260218.1436"
       BACKSTAGE_IMAGE_REGISTRY: ghcr.io
       BACKSTAGE_IMAGE_REPOSITORY: stuttgart-things/sthings-backstage
       BACKSTAGE_STORAGE_CLASS: nfs4-csi
@@ -111,7 +127,7 @@ EOF
 |----------|---------|--------|-------------|
 | `BACKSTAGE_NAMESPACE` | `portal` | substitute | Target namespace |
 | `BACKSTAGE_VERSION` | `2.6.3` | substitute | Backstage Helm chart version |
-| `BACKSTAGE_IMAGE_TAG` | - | substitute | Container image tag |
+| `BACKSTAGE_IMAGE_TAG` | - | ConfigMap `backstage-helm-overrides` | Container image tag (via `valuesFrom`) |
 | `BACKSTAGE_IMAGE_REGISTRY` | `ghcr.io` | substitute | Container image registry |
 | `BACKSTAGE_IMAGE_REPOSITORY` | `stuttgart-things/sthings-backstage` | substitute | Container image repository |
 | `BACKSTAGE_STORAGE_CLASS` | `nfs4-csi` | substitute | Kubernetes storage class |
