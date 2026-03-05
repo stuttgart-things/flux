@@ -1,0 +1,32 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ${KOMOPLANE_NAME:-komoplane}
+  namespace: ${KOMOPLANE_NAMESPACE:-komoplane}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: komoplane
+      version: ${KOMOPLANE_VERSION:-0.1.6}
+      sourceRef:
+        kind: HelmRepository
+        name: komodorio
+        namespace: ${KOMOPLANE_NAMESPACE:-komoplane}
+      interval: 12h
+  values:
+    komoplane:
+      debug: false
+      mrCacheTTL: 1m
+      mrdCacheTTL: 5m
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+    ingress:
+      enabled: false
