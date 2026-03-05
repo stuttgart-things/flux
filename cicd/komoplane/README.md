@@ -44,7 +44,7 @@ spec:
   postBuild:
     substitute:
       KOMOPLANE_NAMESPACE: komoplane
-      KOMOPLANE_VERSION: "0.1.7"
+      KOMOPLANE_VERSION: "0.1.6"
       KOMOPLANE_HOSTNAME: komoplane
       DOMAIN: example.com
       GATEWAY_NAME: my-gateway

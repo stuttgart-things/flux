@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: komoplane
-      version: ${KOMOPLANE_VERSION:-0.1.7}
+      version: ${KOMOPLANE_VERSION:-0.1.6}
       sourceRef:
         kind: HelmRepository
         name: komodorio
