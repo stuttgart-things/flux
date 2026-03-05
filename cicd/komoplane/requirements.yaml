@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${KOMOPLANE_NAMESPACE:-komoplane}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: komodorio
+  namespace: ${KOMOPLANE_NAMESPACE:-komoplane}
+spec:
+  interval: 1h
+  url: https://helm-charts.komodor.io
