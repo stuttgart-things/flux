@@ -25,7 +25,7 @@ Ask the user (if not already provided):
 #### `README.md`
 Always generate a README with:
 1. Title: `# stuttgart-things/flux/<component-name>`
-2. A **SECRETS MANIFEST** section (if the app uses secrets like passwords/tokens) with a `kubectl apply` example creating the Secret in `flux-system` namespace
+2. A **SECRETS MANIFEST (SOPS ENCRYPTED)** section (if the app uses secrets like passwords/tokens) showing the plaintext Secret YAML, the `sops --encrypt` command with age, and the equivalent `dagger call -m github.com/stuttgart-things/dagger/sops@v0.82.1 encrypt/decrypt` commands
 3. A **GIT-REPOSITORY MANIFEST** section with a `kubectl apply` example creating the `flux-apps` GitRepository source in `flux-system` namespace (the Kustomization references this as `sourceRef`)
 4. A **KUSTOMIZATION EXAMPLE** section with a `kubectl apply` example showing the full Kustomization manifest including all `postBuild.substitute` variables with sensible example values
 5. If the app has optional sub-components, add separate sections for each

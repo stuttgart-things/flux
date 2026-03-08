@@ -1,20 +1,50 @@
 # stuttgart-things/flux/redis-stack
 
-## SECRETS MANIFEST
+## SECRETS MANIFEST (SOPS ENCRYPTED)
 
-```bash
-kubectl apply -f - <<EOF
+Create a plaintext secret file (e.g., `homerun2-secrets.yaml`):
+
+```yaml
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: redis-stack
+  name: homerun2-secrets
   namespace: flux-system
 type: Opaque
 stringData:
   REDIS_STACK_PASSWORD: "your-secure-password" #pragma: allowlist secret
-EOF
 ```
+
+Encrypt with SOPS using age (via local sops):
+
+```bash
+sops --encrypt \
+  --age <AGE_PUBLIC_KEY> \
+  --encrypted-regex '^(data|stringData)$' \
+  --input-type yaml --output-type yaml \
+  homerun2-secrets.yaml > homerun2-secrets.enc.yaml \
+  && mv homerun2-secrets.enc.yaml homerun2-secrets.yaml
+```
+
+Or encrypt via Dagger:
+
+```bash
+# encrypt
+dagger call -m github.com/stuttgart-things/dagger/sops@v0.82.1 encrypt \
+  --age-key env:SOPS_AGE_KEY \
+  --unencrypted-file homerun2-secrets.yaml \
+  --encrypted-regex '^(data|stringData)$' \
+  export --path=homerun2-secrets.yaml
+
+# decrypt (for verification)
+dagger call -m github.com/stuttgart-things/dagger/sops@v0.82.1 decrypt \
+  --age-key env:SOPS_AGE_KEY \
+  --encrypted-file homerun2-secrets.yaml \
+  export --path=/tmp/homerun2-secrets.decrypted.yaml
+```
+
+Commit the encrypted file to the cluster repo. Flux will decrypt it at reconciliation time using the `sops-age` secret.
 
 ## GIT-REPOSITORY MANIFEST
 
