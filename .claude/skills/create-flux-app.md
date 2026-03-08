@@ -22,6 +22,16 @@ Ask the user (if not already provided):
 
 ### Always create these files:
 
+#### `README.md`
+Always generate a README with:
+1. Title: `# stuttgart-things/flux/<component-name>`
+2. A **SECRETS MANIFEST** section (if the app uses secrets like passwords/tokens) with a `kubectl apply` example creating the Secret in `flux-system` namespace
+3. A **GIT-REPOSITORY MANIFEST** section with a `kubectl apply` example creating the `flux-apps` GitRepository source in `flux-system` namespace (the Kustomization references this as `sourceRef`)
+4. A **KUSTOMIZATION EXAMPLE** section with a `kubectl apply` example showing the full Kustomization manifest including all `postBuild.substitute` variables with sensible example values
+5. If the app has optional sub-components, add separate sections for each
+
+Follow the pattern from existing READMEs (e.g., `homerun-base-stack/README.md`, `vault/README.md`).
+
 #### `kustomization.yaml`
 ```yaml
 ---
