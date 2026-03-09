@@ -40,6 +40,17 @@ spec:
               containers:
                 - name: homerun2-omni-pitcher
                   image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v1.2.0}
+    # Override the Redis password secret
+    - target:
+        kind: Secret
+        name: homerun2-omni-pitcher-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-omni-pitcher-redis
+        data:
+          password: ${HOMERUN2_REDIS_PASSWORD_B64}
     # Override Redis connection to point to the co-deployed redis-stack
     - target:
         kind: Deployment
@@ -59,5 +70,3 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
-                    - name: REDIS_PASSWORD
-                      value: ${HOMERUN2_REDIS_PASSWORD}
