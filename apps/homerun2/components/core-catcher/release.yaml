@@ -59,5 +59,7 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
+                    - name: REDIS_PASSWORD
+                      value: ${HOMERUN2_REDIS_PASSWORD}
                     - name: CATCHER_MODE
                       value: "web"
