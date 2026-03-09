@@ -13,6 +13,9 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | `HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `DOMAIN` | - | yes | HTTPRoute domain suffix |
 | `CLAIM_MACHINERY_PROFILE_PATH` | `/app/config/profile.yaml` | no | Override to HTTP URL serving profile.yaml |
+| `CLAIM_MACHINERY_ENABLE_HOMERUN` | `false` | no | Enable homerun2 notifications (`true`/`1`/`yes`) |
+| `CLAIM_MACHINERY_HOMERUN_URL` | - | no | Omni-pitcher base URL (required when homerun enabled) |
+| `CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN` | - | no | Bearer token for pitcher `/pitch` endpoint |
 
 ## GIT-REPOSITORY MANIFEST
 
@@ -61,6 +64,10 @@ spec:
       HOSTNAME: claim-api
       DOMAIN: whatever.sthings-vsphere.labul.sva.de
       CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/refs/heads/main/profiles/labul-vsphere.yaml
+      # Optional: homerun2 notifications
+      CLAIM_MACHINERY_ENABLE_HOMERUN: "true"
+      CLAIM_MACHINERY_HOMERUN_URL: https://pitcher.example.sthings-vsphere.labul.sva.de
+      # CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN: "<from substituteFrom secret>"
 EOF
 ```
 

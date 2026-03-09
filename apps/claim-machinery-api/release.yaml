@@ -42,7 +42,7 @@ spec:
                   image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
                   args:
                     - server
-    # Override TEMPLATE_PROFILE_PATH (e.g. to an HTTP URL serving profile.yaml)
+    # Override TEMPLATE_PROFILE_PATH and configure homerun2 notifications
     - target:
         kind: ConfigMap
         name: claim-machinery-api
@@ -53,3 +53,6 @@ spec:
           name: claim-machinery-api
         data:
           TEMPLATE_PROFILE_PATH: ${CLAIM_MACHINERY_PROFILE_PATH}
+          ENABLE_HOMERUN: "${CLAIM_MACHINERY_ENABLE_HOMERUN:-false}"
+          HOMERUN_URL: "${CLAIM_MACHINERY_HOMERUN_URL:-}"
+          HOMERUN_AUTH_TOKEN: "${CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN:-}"
