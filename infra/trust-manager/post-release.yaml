@@ -1,0 +1,36 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trust-manager-configuration
+  namespace: ${TRUST_MANAGER_NAMESPACE:-cert-manager}
+spec:
+  interval: 30m
+  dependsOn:
+    - name: trust-manager
+      namespace: ${TRUST_MANAGER_NAMESPACE:-cert-manager}
+  chart:
+    spec:
+      chart: sthings-cluster
+      version: 0.3.20
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things
+        namespace: ${TRUST_MANAGER_NAMESPACE:-cert-manager}
+      interval: 12h
+  values:
+    customresources:
+      cluster-trust-bundle:
+        apiVersion: trust.cert-manager.io/v1alpha1
+        kind: Bundle
+        metadata:
+          name: ${TRUST_BUNDLE_NAME:-cluster-trust-bundle}
+        spec:
+          sources:
+            - useDefaultCAs: true
+            - inNamespace:
+                name: ${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}
+                key: ${TRUST_BUNDLE_CA_KEY:-ca.crt}
+          target:
+            configMap:
+              key: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
