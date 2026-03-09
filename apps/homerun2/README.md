@@ -46,6 +46,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 |----------|---------|----------|---------|
 | `HOMERUN2_OMNI_PITCHER_VERSION` | `v1.2.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+| `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for the `/pitch` endpoint (use substituteFrom Secret) |
 
 ### Core Catcher
 
@@ -70,6 +71,7 @@ type: Opaque
 stringData:
   HOMERUN2_REDIS_PASSWORD: "your-secure-password" #pragma: allowlist secret
   HOMERUN2_REDIS_PASSWORD_B64: "<base64-encoded-password>" #pragma: allowlist secret
+  HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: "your-auth-token" #pragma: allowlist secret
 ```
 
 Generate the base64 value:
