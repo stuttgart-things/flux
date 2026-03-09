@@ -1,0 +1,63 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-core-catcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-core-catcher-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Remove the Ingress from the kustomize base (we use Gateway API HTTPRoute)
+    - target:
+        kind: Ingress
+        name: homerun2-core-catcher
+      patch: |
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: homerun2-core-catcher
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-core-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-core-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-core-catcher
+                  image: ghcr.io/stuttgart-things/homerun2-core-catcher:${HOMERUN2_CORE_CATCHER_VERSION:-v0.5.0}
+    # Override Redis connection to point to the co-deployed redis-stack
+    - target:
+        kind: Deployment
+        name: homerun2-core-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-core-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-core-catcher
+                  env:
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
+                    - name: CATCHER_MODE
+                      value: "web"

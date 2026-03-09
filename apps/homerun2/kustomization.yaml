@@ -4,3 +4,4 @@ kind: Kustomization
 components:
   - components/redis-stack
   - components/omni-pitcher
+  - components/core-catcher
