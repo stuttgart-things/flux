@@ -28,10 +28,10 @@ spec:
         spec:
           sources:
             - useDefaultCAs: true
-            - inNamespace:
+            - secret:
                 name: ${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}
                 key: ${TRUST_BUNDLE_CA_KEY:-ca.crt}
-            - inNamespace:
+            - secret:
                 name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
                 key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
           target:
