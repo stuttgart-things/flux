@@ -94,9 +94,9 @@ Or encrypt via Dagger:
 ```bash
 # encrypt
 dagger call -m github.com/stuttgart-things/dagger/sops@v0.82.1 encrypt \
-  --age-key env:SOPS_AGE_KEY \
-  --unencrypted-file homerun2-flux-secrets.yaml \
-  --encrypted-regex '^(data|stringData)$' \
+  --age-key env:AGE_PUB \
+  --plaintext-file homerun2-flux-secrets.yaml \
+  --file-extension yaml \
   export --path=homerun2-flux-secrets.yaml
 
 # decrypt (for verification)
