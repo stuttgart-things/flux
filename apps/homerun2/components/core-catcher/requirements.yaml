@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-core-catcher-kustomize
   ref:
-    tag: ${HOMERUN2_CORE_CATCHER_VERSION:-v0.5.0}
+    tag: ${HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION:-v0.5.0}
