@@ -238,6 +238,90 @@ Uses the Kustomize Components pattern:
 
 Adding more homerun2 services is done by adding new component folders under `components/`.
 
+## TESTING WITH CURL
+
+Send test events to the omni-pitcher `/pitch` endpoint:
+
+**Minimal event:**
+
+```bash
+curl -X POST https://pitcher.<DOMAIN>/pitch \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <AUTH_TOKEN>" \
+  -d '{
+    "title": "Test Message",
+    "message": "This is a test message"
+  }'
+```
+
+**Full event with all fields:**
+
+```bash
+curl -X POST https://pitcher.<DOMAIN>/pitch \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <AUTH_TOKEN>" \
+  -d '{
+    "title": "Deployment Notification",
+    "message": "Service xyz deployed successfully to production",
+    "severity": "success",
+    "author": "ci-pipeline",
+    "system": "demo-system",
+    "tags": "deployment,production,success",
+    "assigneeaddress": "ops-team@example.com",
+    "assigneename": "Ops Team",
+    "artifacts": "docker://registry.example.com/xyz:1.0.0",
+    "url": "http://example.com/deployment/xyz"
+  }'
+```
+
+**Example using the movie-scripts cluster:**
+
+```bash
+curl -X POST https://pitcher.movie-scripts2.sthings-vsphere.labul.sva.de/pitch \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <AUTH_TOKEN>" \
+  -d '{
+    "title": "Infrastructure Alert",
+    "message": "CPU usage exceeded 90% on node-3",
+    "severity": "warning",
+    "author": "monitoring",
+    "system": "movie-scripts",
+    "tags": "infra,cpu,alert"
+  }'
+```
+
+**Health check:**
+
+```bash
+curl https://pitcher.<DOMAIN>/health
+```
+
+**Payload fields:**
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `title` | string | yes | - | Short title of the message |
+| `message` | string | yes | - | Message content |
+| `severity` | string | no | `info` | `info`, `warning`, `error`, `success` |
+| `author` | string | no | `unknown` | Creator of the message |
+| `system` | string | no | `homerun2-omni-pitcher` | Originating system |
+| `tags` | string | no | - | Comma-separated tags |
+| `assigneeaddress` | string | no | - | Assignee email/address |
+| `assigneename` | string | no | - | Assignee name |
+| `artifacts` | string | no | - | Related artifacts (e.g., container image) |
+| `url` | string | no | - | Related URL |
+
+**Response:**
+
+```json
+{
+  "objectId": "550e8400-e29b-41d4-a716-446655440000-demo-system",
+  "streamId": "messages",
+  "status": "success",
+  "message": "Message successfully enqueued"
+}
+```
+
 ## RELATED DOCUMENTATION
 
 - [homerun2-omni-pitcher](https://stuttgart-things.github.io/homerun2-omni-pitcher/) — API gateway docs

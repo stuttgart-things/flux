@@ -14,6 +14,7 @@ Application HelmReleases and OCI kustomizations.
 | [Homepage](homepage.md) | HelmRepository (OCI) | `homepage` | `4.8.0` |
 | [Homerun Base Stack](homerun-base-stack.md) | HelmRepository (OCI) | `homerun` | `v0.1.2` |
 | [Homerun IoT Stack](homerun-iot-stack.md) | HelmRepository (OCI) | `homerun` | `v0.2.0` |
+| [Homerun2](homerun2.md) | OCIRepository (Components) | `omni-pitcher` / `core-catcher` | `v1.2.0` / `v0.5.0` |
 | [Keycloak](keycloak.md) | HelmRepository (OCI) | `keycloak` | `24.4.9` |
 | [MinIO](minio.md) | HelmRepository (OCI) | `minio` | `16.0.10` |
 | [OpenLDAP](openldap.md) | HelmRepository | `openldap-stack-ha` | `v4.3.2` |
