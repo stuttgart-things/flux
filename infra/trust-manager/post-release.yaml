@@ -31,6 +31,9 @@ spec:
             - inNamespace:
                 name: ${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}
                 key: ${TRUST_BUNDLE_CA_KEY:-ca.crt}
+            - inNamespace:
+                name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
+                key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
           target:
             configMap:
               key: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
