@@ -7,6 +7,16 @@ metadata:
     toolkit.fluxcd.io/tenant: sthings-team
 ---
 apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: HelmRepository
+metadata:
+  name: stuttgart-things
+  namespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
 kind: OCIRepository
 metadata:
   name: claim-machinery-api-kustomize
