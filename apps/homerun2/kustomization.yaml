@@ -5,3 +5,4 @@ components:
   - components/redis-stack
   - components/omni-pitcher
   - components/core-catcher
+  - components/k8s-pitcher

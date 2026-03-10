@@ -9,6 +9,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `redis-stack` | HelmRelease | Redis Stack with Sentinel (integral dependency) |
 | `omni-pitcher` | OCIRepository + Flux Kustomization | HTTP gateway for Redis Stream ingestion |
 | `core-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer with web dashboard |
+| `k8s-pitcher` | OCIRepository + Flux Kustomization | K8s cluster watcher (informers + collectors) |
 
 ## SUBSTITUTION VARIABLES
 
@@ -56,6 +57,18 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v0.5.0` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
+### K8s Pitcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_K8S_PITCHER_VERSION` | `v0.2.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
+| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for pitcher endpoint (use substituteFrom Secret) |
+| `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
+| `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap name containing the K8sPitcherProfile YAML |
+
+The k8s-pitcher component **deletes** the KCL-generated profile ConfigMap. The calling side must provide its own profile ConfigMap with cluster-specific configuration (pitcher address, collectors, informers). For CRD watching, add the CRD API group to the ClusterRole on the calling side.
+
 ## SECRETS MANIFEST (SOPS ENCRYPTED)
 
 Create a plaintext secret file (e.g., `homerun2-flux-secrets.yaml`):
@@ -72,6 +85,7 @@ stringData:
   HOMERUN2_REDIS_PASSWORD: "your-secure-password" #pragma: allowlist secret
   HOMERUN2_REDIS_PASSWORD_B64: "<base64-encoded-password>" #pragma: allowlist secret
   HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: "your-auth-token" #pragma: allowlist secret
+  HOMERUN2_K8S_PITCHER_AUTH_TOKEN: "your-auth-token" #pragma: allowlist secret
 ```
 
 Generate the base64 value:
@@ -159,6 +173,11 @@ spec:
       HOMERUN2_CORE_CATCHER_VERSION: v0.5.0
       HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: v0.5.0-web
       HOMERUN2_CORE_CATCHER_HOSTNAME: catcher
+      # K8s Pitcher
+      HOMERUN2_K8S_PITCHER_VERSION: v0.2.0
+      HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
+      HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
+      # Redis Stack
       HOMERUN2_REDIS_VERSION: "17.1.4"
       HOMERUN2_REDIS_SERVICE_TYPE: ClusterIP
       HOMERUN2_REDIS_PERSISTENCE_ENABLED: "true"
@@ -204,6 +223,11 @@ spec:
       HOMERUN2_CORE_CATCHER_VERSION: v0.5.0
       HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: v0.5.0-web
       HOMERUN2_CORE_CATCHER_HOSTNAME: catcher
+      # K8s Pitcher
+      HOMERUN2_K8S_PITCHER_VERSION: v0.2.0
+      HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
+      HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
+      # Redis Stack
       HOMERUN2_REDIS_VERSION: "17.1.4"
       HOMERUN2_REDIS_SERVICE_TYPE: ClusterIP
       HOMERUN2_REDIS_PERSISTENCE_ENABLED: "true"
@@ -220,23 +244,72 @@ spec:
         name: homerun2-flux-secrets
 ```
 
+**K8s Pitcher profile ConfigMap** (calling side defines this separately):
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-k8s-pitcher-profile
+  namespace: homerun2-flux
+data:
+  profile.yaml: |
+    apiVersion: homerun2.sthings.io/v1alpha1
+    kind: K8sPitcherProfile
+    metadata:
+      name: movie-scripts
+    spec:
+      pitcher:
+        addr: https://pitcher.movie-scripts2.sthings-vsphere.labul.sva.de/pitch
+        insecure: false
+      auth:
+        tokenFrom:
+          secretKeyRef:
+            name: homerun2-k8s-pitcher-token
+            namespace: homerun2-flux
+            key: auth-token
+      collectors:
+        - kind: Node
+          interval: 60s
+        - kind: Pod
+          namespace: "*"
+          interval: 30s
+        - kind: Event
+          namespace: "*"
+          interval: 15s
+      informers:
+        - group: ""
+          version: v1
+          resource: pods
+          namespace: "*"
+          events: [add, update, delete]
+        - group: apps
+          version: v1
+          resource: deployments
+          namespace: homerun2-flux
+          events: [add, update, delete]
+```
+
 **Resulting endpoints:**
 
 | Service | URL |
 |---------|-----|
 | Omni Pitcher | `https://pitcher.movie-scripts2.sthings-vsphere.labul.sva.de` |
 | Core Catcher | `https://catcher.movie-scripts2.sthings-vsphere.labul.sva.de` |
+| K8s Pitcher | *(cluster-internal, watches K8s API and pitches to Omni Pitcher)* |
 | Redis Stack | `redis-stack.homerun2-flux.svc.cluster.local:6379` (internal) |
 
 ## HOW IT WORKS
 
 Uses the Kustomize Components pattern:
 
-1. **Root kustomization.yaml** composes the components (`redis-stack` + `omni-pitcher` + `core-catcher`)
+1. **Root kustomization.yaml** composes the components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher`)
 2. **Outer Flux Kustomization** (consumer) reads `./apps/homerun2` from GitRepository, substitutes variables
 3. **Redis Stack component** deploys Redis via HelmRelease into the shared namespace
 4. **Omni Pitcher component** creates an OCIRepository + inner Flux Kustomization that reconciles the kustomize base from OCI, patches secrets, overrides image tag, and wires Redis connection
 5. **Core Catcher component** same pattern as pitcher — patches secrets, sets `CATCHER_MODE=web`, removes KCL-generated HTTPRoute (replaced by component-level HTTPRoute with custom hostname)
+6. **K8s Pitcher component** watches the K8s API via informers/collectors and sends events to omni-pitcher. Mounts CA trust bundle for TLS. Profile ConfigMap is defined on the calling side (cluster-specific config)
 
 Adding more homerun2 services is done by adding new component folders under `components/`.
 
