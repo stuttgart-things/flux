@@ -15,7 +15,7 @@ K8s API → informers (real-time add/update/delete)  → HTTP POST → omni-pitc
 |----------|---------|----------|---------|
 | `HOMERUN2_K8S_PITCHER_VERSION` | `v0.2.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Target namespace |
-| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for pitcher endpoint (use `substituteFrom` Secret) |
+| `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from `substituteFrom` Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap with K8sPitcherProfile YAML |
 

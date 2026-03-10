@@ -63,7 +63,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 |----------|---------|----------|---------|
 | `HOMERUN2_K8S_PITCHER_VERSION` | `v0.2.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
-| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for pitcher endpoint (use substituteFrom Secret) |
+| `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap name containing the K8sPitcherProfile YAML |
 
@@ -85,7 +85,6 @@ stringData:
   HOMERUN2_REDIS_PASSWORD: "your-secure-password" #pragma: allowlist secret
   HOMERUN2_REDIS_PASSWORD_B64: "<base64-encoded-password>" #pragma: allowlist secret
   HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: "your-auth-token" #pragma: allowlist secret
-  HOMERUN2_K8S_PITCHER_AUTH_TOKEN: "your-auth-token" #pragma: allowlist secret
 ```
 
 Generate the base64 value:
