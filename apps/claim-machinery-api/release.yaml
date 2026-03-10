@@ -55,7 +55,27 @@ spec:
           TEMPLATE_PROFILE_PATH: ${CLAIM_MACHINERY_PROFILE_PATH}
           ENABLE_HOMERUN: "${CLAIM_MACHINERY_ENABLE_HOMERUN:-false}"
           HOMERUN_URL: "${CLAIM_MACHINERY_HOMERUN_URL:-}"
-          HOMERUN_AUTH_TOKEN: "${CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN:-}"
+    # Inject homerun auth token from Secret
+    - target:
+        kind: Deployment
+        name: claim-machinery-api
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: claim-machinery-api
+        spec:
+          template:
+            spec:
+              containers:
+                - name: claim-machinery-api
+                  env:
+                    - name: HOMERUN_AUTH_TOKEN
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${CLAIM_MACHINERY_AUTH_SECRET_NAME:-claim-machinery-auth}
+                          key: ${CLAIM_MACHINERY_AUTH_SECRET_KEY:-HOMERUN_AUTH_TOKEN}
+                          optional: true
     # Mount trust-manager CA bundle for TLS trust
     - target:
         kind: Deployment

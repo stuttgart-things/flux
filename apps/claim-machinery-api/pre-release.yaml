@@ -1,0 +1,24 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: claim-machinery-api-configuration
+  namespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: sthings-cluster
+      version: 0.3.20
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things
+        namespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+      interval: 12h
+  values:
+    secrets:
+      claim-machinery-auth:
+        name: ${CLAIM_MACHINERY_AUTH_SECRET_NAME:-claim-machinery-auth}
+        namespace: ${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}
+        secretKVs:
+          HOMERUN_AUTH_TOKEN: ${CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN:-}

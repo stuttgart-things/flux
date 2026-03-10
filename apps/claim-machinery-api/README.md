@@ -15,7 +15,9 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | `CLAIM_MACHINERY_PROFILE_PATH` | `/app/config/profile.yaml` | no | Override to HTTP URL serving profile.yaml |
 | `CLAIM_MACHINERY_ENABLE_HOMERUN` | `false` | no | Enable homerun2 notifications (`true`/`1`/`yes`) |
 | `CLAIM_MACHINERY_HOMERUN_URL` | - | no | Omni-pitcher base URL (required when homerun enabled) |
-| `CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN` | - | no | Bearer token for pitcher `/pitch` endpoint |
+| `CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN` | - | no | Bearer token for pitcher `/pitch` endpoint (stored in Secret via pre-release) |
+| `CLAIM_MACHINERY_AUTH_SECRET_NAME` | `claim-machinery-auth` | no | Secret name for the auth token |
+| `CLAIM_MACHINERY_AUTH_SECRET_KEY` | `HOMERUN_AUTH_TOKEN` | no | Key within the auth secret |
 | `CLAIM_MACHINERY_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | no | ConfigMap name created by trust-manager containing CA bundle |
 | `CLAIM_MACHINERY_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | no | Key within the trust bundle ConfigMap |
 | `CLAIM_MACHINERY_SSL_CERT_DIR` | `/etc/ssl/custom` | no | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
@@ -87,5 +89,6 @@ EOF
 
 Two-layer Flux reconciliation:
 
-1. **Outer Kustomization** (above) reads `./apps/claim-machinery-api` from the GitRepository, substitutes variables, and creates the Namespace + HelmRepository + OCIRepository + inner Kustomization + HTTPRoute on the cluster
-2. **Inner Kustomization** (`release.yaml`) reconciles the OCI kustomize base from `ghcr.io/stuttgart-things/claim-machinery-api-kustomize`, patches out the Ingress (replaced by HTTPRoute), overrides the container image tag, mounts the trust-manager CA bundle, and applies the resulting manifests
+1. **Outer Kustomization** (above) reads `./apps/claim-machinery-api` from the GitRepository, substitutes variables, and creates the Namespace + HelmRepository + OCIRepository + pre-release HelmRelease + inner Kustomization + HTTPRoute on the cluster
+2. **Pre-release HelmRelease** (`pre-release.yaml`) uses `sthings-cluster` to create a Secret containing the homerun auth token in the target namespace
+3. **Inner Kustomization** (`release.yaml`) reconciles the OCI kustomize base from `ghcr.io/stuttgart-things/claim-machinery-api-kustomize`, patches out the Ingress (replaced by HTTPRoute), overrides the container image tag, injects the auth token from the Secret, mounts the trust-manager CA bundle, and applies the resulting manifests
