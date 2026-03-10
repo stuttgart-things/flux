@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: homerun2-k8s-pitcher-kustomize
+  namespace: ${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2-flux}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
+  ref:
+    tag: ${HOMERUN2_K8S_PITCHER_VERSION:-v0.2.0}
