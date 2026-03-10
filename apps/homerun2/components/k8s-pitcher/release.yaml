@@ -41,3 +41,57 @@ spec:
           name: homerun2-k8s-pitcher-token
         stringData:
           auth-token: ${HOMERUN2_K8S_PITCHER_AUTH_TOKEN:-changeme}
+    # Mount trust-manager CA bundle for TLS trust
+    - target:
+        kind: Deployment
+        name: homerun2-k8s-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-k8s-pitcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: trust-bundle
+                  configMap:
+                    name: ${HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}
+                    optional: true
+              containers:
+                - name: homerun2-k8s-pitcher
+                  env:
+                    - name: SSL_CERT_DIR
+                      value: /etc/ssl/custom
+                  volumeMounts:
+                    - name: trust-bundle
+                      mountPath: /etc/ssl/custom/trust-bundle.pem
+                      subPath: trust-bundle.pem
+                      readOnly: true
+    # Override the profile ConfigMap reference
+    # The calling side defines the profile CM with cluster-specific config
+    - target:
+        kind: Deployment
+        name: homerun2-k8s-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-k8s-pitcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: profile
+                  configMap:
+                    name: ${HOMERUN2_K8S_PITCHER_PROFILE_CM:-homerun2-k8s-pitcher-profile}
+    # Remove the KCL-generated profile ConfigMap (calling side provides its own)
+    - target:
+        kind: ConfigMap
+        name: homerun2-k8s-pitcher-profile
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-k8s-pitcher-profile
+        $patch: delete
