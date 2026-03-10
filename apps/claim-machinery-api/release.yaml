@@ -56,7 +56,7 @@ spec:
           ENABLE_HOMERUN: "${CLAIM_MACHINERY_ENABLE_HOMERUN:-false}"
           HOMERUN_URL: "${CLAIM_MACHINERY_HOMERUN_URL:-}"
           HOMERUN_AUTH_TOKEN: "${CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN:-}"
-    # Mount cluster CA certificate for TLS trust
+    # Mount trust-manager CA bundle for TLS trust
     - target:
         kind: Deployment
         name: claim-machinery-api
@@ -69,12 +69,9 @@ spec:
           template:
             spec:
               volumes:
-                - name: cluster-ca
-                  secret:
-                    secretName: ${CLAIM_MACHINERY_CA_SECRET_NAME:-cluster-ca-secret}
-                    items:
-                      - key: ${CLAIM_MACHINERY_CA_SECRET_KEY:-ca.crt}
-                        path: cluster-ca.crt
+                - name: trust-bundle
+                  configMap:
+                    name: ${CLAIM_MACHINERY_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
                     optional: true
               containers:
                 - name: claim-machinery-api
@@ -82,7 +79,7 @@ spec:
                     - name: SSL_CERT_DIR
                       value: ${CLAIM_MACHINERY_SSL_CERT_DIR:-/etc/ssl/custom}
                   volumeMounts:
-                    - name: cluster-ca
-                      mountPath: ${CLAIM_MACHINERY_SSL_CERT_DIR:-/etc/ssl/custom}/cluster-ca.crt
-                      subPath: cluster-ca.crt
+                    - name: trust-bundle
+                      mountPath: ${CLAIM_MACHINERY_SSL_CERT_DIR:-/etc/ssl/custom}/${CLAIM_MACHINERY_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      subPath: ${CLAIM_MACHINERY_TRUST_BUNDLE_KEY:-trust-bundle.pem}
                       readOnly: true
