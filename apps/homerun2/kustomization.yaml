@@ -6,3 +6,4 @@ components:
   - components/omni-pitcher
   - components/core-catcher
   - components/k8s-pitcher
+  - components/scout

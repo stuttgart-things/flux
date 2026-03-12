@@ -1,0 +1,93 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-scout
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-scout-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Remove the Ingress from the kustomize base (we use Gateway API HTTPRoute)
+    - target:
+        kind: Ingress
+        name: homerun2-scout
+      patch: |
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: homerun2-scout
+        $patch: delete
+    # Remove the KCL-generated HTTPRoute (we provide our own via the component)
+    - target:
+        kind: HTTPRoute
+        name: homerun2-scout
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-scout
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-scout
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-scout
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-scout
+                  image: ghcr.io/stuttgart-things/homerun2-scout:${HOMERUN2_SCOUT_VERSION:-v0.5.0}
+    # Override the auth token secret
+    - target:
+        kind: Secret
+        name: homerun2-scout-token
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-scout-token
+        stringData:
+          auth-token: ${HOMERUN2_SCOUT_AUTH_TOKEN:-changeme}
+    # Override the Redis password secret
+    - target:
+        kind: Secret
+        name: homerun2-scout-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-scout-redis
+        data:
+          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+    # Override Redis connection and scout config
+    - target:
+        kind: Deployment
+        name: homerun2-scout
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-scout
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-scout
+                  env:
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
