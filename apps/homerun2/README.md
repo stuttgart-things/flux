@@ -61,7 +61,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_K8S_PITCHER_VERSION` | `v0.2.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_K8S_PITCHER_VERSION` | `v0.4.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
@@ -173,7 +173,7 @@ spec:
       HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: v0.5.0-web
       HOMERUN2_CORE_CATCHER_HOSTNAME: catcher
       # K8s Pitcher
-      HOMERUN2_K8S_PITCHER_VERSION: v0.2.0
+      HOMERUN2_K8S_PITCHER_VERSION: v0.4.0
       HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
       HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
       # Redis Stack
@@ -223,7 +223,7 @@ spec:
       HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: v0.5.0-web
       HOMERUN2_CORE_CATCHER_HOSTNAME: catcher
       # K8s Pitcher
-      HOMERUN2_K8S_PITCHER_VERSION: v0.2.0
+      HOMERUN2_K8S_PITCHER_VERSION: v0.4.0
       HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
       HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
       # Redis Stack

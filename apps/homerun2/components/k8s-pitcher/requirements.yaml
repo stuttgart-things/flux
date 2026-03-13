@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
   ref:
-    tag: ${HOMERUN2_K8S_PITCHER_VERSION:-v0.2.0}
+    tag: ${HOMERUN2_K8S_PITCHER_VERSION:-v0.4.0}
