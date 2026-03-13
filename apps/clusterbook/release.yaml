@@ -1,53 +1,74 @@
 ---
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
 metadata:
   name: clusterbook
   namespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
 spec:
-  interval: 30m
-  chart:
-    spec:
-      chart: clusterbook
-      version: ${CLUSTERBOOK_VERSION:-v1.3.1-chart}
-      sourceRef:
-        kind: HelmRepository
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: clusterbook-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
         name: clusterbook
-        namespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
-      interval: 12h
-  values:
-    customresources:
-      clusterbook-ingress-certificate:
-        apiVersion: cert-manager.io/v1
-        kind: Certificate
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
         metadata:
-          name: clusterbook-ingress
-          labels:
-            app: clusterbook
+          name: clusterbook
         spec:
-          commonName: ${HOSTNAME}.${DOMAIN}
-          dnsNames:
-            - ${HOSTNAME}.${DOMAIN}
-          issuerRef:
-            name: ${ISSUER_NAME}
-            kind: ${ISSUER_TYPE}
-          secretName: ${TLS_SECRET_NAME}
-    ingress:
-      clusterbook:
-        labels:
-          app: clusterbook
+          template:
+            spec:
+              containers:
+                - name: clusterbook
+                  image: ghcr.io/stuttgart-things/clusterbook:${CLUSTERBOOK_VERSION:-v1.11.0}
+    # Override PowerDNS config in ConfigMap
+    - target:
+        kind: ConfigMap
+        name: clusterbook-config
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: clusterbook-config
+        data:
+          PDNS_ENABLED: ${PDNS_ENABLED:-false}
+          PDNS_URL: ${PDNS_URL:-}
+          PDNS_ZONE: ${PDNS_ZONE:-}
+    # Add secretRef for PDNS token to Deployment
+    - target:
+        kind: Deployment
         name: clusterbook
-        ingressClassName: nginx
-        annotations:
-          nginx.ingress.kubernetes.io/ssl-redirect: "true"
-          nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
-        service:
-          name: clusterbook-service
-          port: 80
-          path: /
-          pathType: Prefix
-        hostname: ${HOSTNAME}
-        domain: ${DOMAIN}
-        tls:
-          secretName: ${TLS_SECRET_NAME}
-          host: ${HOSTNAME}.${DOMAIN}
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterbook
+        spec:
+          template:
+            spec:
+              containers:
+                - name: clusterbook
+                  envFrom:
+                    - configMapRef:
+                        name: clusterbook-config
+                    - secretRef:
+                        name: clusterbook-pdns
+    # Remove the KCL-generated HTTPRoute (we provide our own via flux)
+    - target:
+        kind: HTTPRoute
+        name: clusterbook
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: clusterbook
+        $patch: delete

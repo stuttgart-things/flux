@@ -6,12 +6,13 @@ metadata:
   labels:
     toolkit.fluxcd.io/tenant: sthings-team
 ---
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
 metadata:
-  name: clusterbook
+  name: clusterbook-kustomize
   namespace: ${CLUSTERBOOK_NAMESPACE:-clusterbook}
 spec:
-  type: oci
-  interval: 24h
-  url: oci://ghcr.io/stuttgart-things/clusterbook
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/clusterbook-kustomize
+  ref:
+    tag: ${CLUSTERBOOK_VERSION:-v1.11.0}
