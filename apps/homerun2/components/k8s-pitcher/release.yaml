@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-k8s-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-k8s-pitcher:${HOMERUN2_K8S_PITCHER_VERSION:-v0.2.0}
+                  image: ghcr.io/stuttgart-things/homerun2-k8s-pitcher:${HOMERUN2_K8S_PITCHER_VERSION:-v0.4.0}
     # Override the auth token secret
     - target:
         kind: Secret
