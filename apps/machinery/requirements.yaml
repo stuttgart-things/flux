@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${MACHINERY_NAMESPACE:-machinery}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: machinery-kustomize
+  namespace: ${MACHINERY_NAMESPACE:-machinery}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/machinery-kustomize
+  ref:
+    tag: ${MACHINERY_VERSION:-latest}

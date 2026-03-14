@@ -1,0 +1,42 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery
+  namespace: ${MACHINERY_NAMESPACE:-machinery}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: machinery-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${MACHINERY_NAMESPACE:-machinery}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: machinery
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery
+                  image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-latest}
+    # Remove the KCL-generated HTTPRoute (we provide our own via flux)
+    - target:
+        kind: HTTPRoute
+        name: machinery
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: machinery
+        $patch: delete
