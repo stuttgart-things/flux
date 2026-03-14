@@ -30,6 +30,46 @@ spec:
               containers:
                 - name: machinery
                   image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-v1.0.0}
+    # Add HTTP port to deployment
+    - target:
+        kind: Deployment
+        name: machinery
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery
+                  ports:
+                    - name: grpc
+                      containerPort: 50051
+                      protocol: TCP
+                    - name: http
+                      containerPort: 8080
+                      protocol: TCP
+    # Add HTTP port to service
+    - target:
+        kind: Service
+        name: machinery
+      patch: |
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: machinery
+        spec:
+          ports:
+            - name: grpc
+              port: 50051
+              targetPort: grpc
+              protocol: TCP
+            - name: http
+              port: 8080
+              targetPort: http
+              protocol: TCP
     # Remove the KCL-generated HTTPRoute (we provide our own via flux)
     - target:
         kind: HTTPRoute
