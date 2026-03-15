@@ -61,6 +61,16 @@ spec:
           name: homerun2-light-catcher-redis
         data:
           password: ${HOMERUN2_REDIS_PASSWORD_B64}
+    # Delete the KCL-generated profile ConfigMap (calling side provides its own)
+    - target:
+        kind: ConfigMap
+        name: homerun2-light-catcher-profile
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-light-catcher-profile
+        $patch: delete
     # Override Redis connection and WLED endpoint
     - target:
         kind: Deployment
