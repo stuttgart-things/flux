@@ -9,3 +9,4 @@ components:
   - components/scout
   - components/light-catcher
   - components/wled-mock
+  - components/demo-pitcher
