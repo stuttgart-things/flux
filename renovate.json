@@ -3,5 +3,29 @@
   "extends": ["config:base"],
   "flux": {
     "fileMatch": ["\\.yaml$"]
-  }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update default values in Flux variable substitution patterns like ${VAR:-v1.2.3}",
+      "fileMatch": ["\\.yaml$"],
+      "matchStrings": [
+        "url:\\s*oci://(?<depName>[^\\s]+)\\s*\\n\\s*ref:\\s*\\n\\s*tag:\\s*\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update default image tags in Flux patches like image: ghcr.io/org/app:${VAR:-v1.2.3}",
+      "fileMatch": ["\\.yaml$"],
+      "matchStrings": [
+        "image:\\s*(?<depName>[^:$\\s]+):\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ]
 }
