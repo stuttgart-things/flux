@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: homerun2-light-catcher-kustomize
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
+  ref:
+    tag: ${HOMERUN2_LIGHT_CATCHER_VERSION:-v0.3.0}
