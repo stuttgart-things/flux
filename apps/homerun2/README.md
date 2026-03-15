@@ -10,6 +10,9 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `omni-pitcher` | OCIRepository + Flux Kustomization | HTTP gateway for Redis Stream ingestion |
 | `core-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer with web dashboard |
 | `k8s-pitcher` | OCIRepository + Flux Kustomization | K8s cluster watcher (informers + collectors) |
+| `scout` | OCIRepository + Flux Kustomization | Scout service with web dashboard |
+| `light-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer triggering WLED light effects |
+| `wled-mock` | OCIRepository + Flux Kustomization | WLED mock server with dashboard (for dev/testing) |
 
 ## SUBSTITUTION VARIABLES
 
@@ -66,6 +69,22 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap name containing the K8sPitcherProfile YAML |
+
+### Light Catcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v0.3.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+
+### WLED Mock
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_WLED_MOCK_VERSION` | `v0.3.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_WLED_MOCK_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+
+The WLED mock provides a dashboard simulating a WLED device. Use it during development/testing instead of a real WLED device. The light-catcher's profile should point its endpoints to `homerun2-wled-mock.NAMESPACE.svc.cluster.local`.
 
 The k8s-pitcher component **deletes** the KCL-generated profile ConfigMap. The calling side must provide its own profile ConfigMap with cluster-specific configuration (pitcher address, collectors, informers). For CRD watching, add the CRD API group to the ClusterRole on the calling side.
 
@@ -176,6 +195,11 @@ spec:
       HOMERUN2_K8S_PITCHER_VERSION: v0.4.0
       HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
       HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
+      # Light Catcher + WLED Mock
+      HOMERUN2_LIGHT_CATCHER_VERSION: v0.3.0
+      HOMERUN2_LIGHT_CATCHER_HOSTNAME: light-catcher
+      HOMERUN2_WLED_MOCK_VERSION: v0.3.0
+      HOMERUN2_WLED_MOCK_HOSTNAME: wled-mock
       # Redis Stack
       HOMERUN2_REDIS_VERSION: "17.1.4"
       HOMERUN2_REDIS_SERVICE_TYPE: ClusterIP
@@ -226,6 +250,11 @@ spec:
       HOMERUN2_K8S_PITCHER_VERSION: v0.4.0
       HOMERUN2_K8S_PITCHER_NAMESPACE: homerun2-flux
       HOMERUN2_K8S_PITCHER_PROFILE_CM: homerun2-k8s-pitcher-profile
+      # Light Catcher + WLED Mock
+      HOMERUN2_LIGHT_CATCHER_VERSION: v0.3.0
+      HOMERUN2_LIGHT_CATCHER_HOSTNAME: light-catcher
+      HOMERUN2_WLED_MOCK_VERSION: v0.3.0
+      HOMERUN2_WLED_MOCK_HOSTNAME: wled-mock
       # Redis Stack
       HOMERUN2_REDIS_VERSION: "17.1.4"
       HOMERUN2_REDIS_SERVICE_TYPE: ClusterIP
@@ -296,6 +325,8 @@ data:
 |---------|-----|
 | Omni Pitcher | `https://pitcher.movie-scripts2.sthings-vsphere.labul.sva.de` |
 | Core Catcher | `https://catcher.movie-scripts2.sthings-vsphere.labul.sva.de` |
+| Light Catcher | `https://light-catcher.movie-scripts2.sthings-vsphere.labul.sva.de` |
+| WLED Mock | `https://wled-mock.movie-scripts2.sthings-vsphere.labul.sva.de` |
 | K8s Pitcher | *(cluster-internal, watches K8s API and pitches to Omni Pitcher)* |
 | Redis Stack | `redis-stack.homerun2-flux.svc.cluster.local:6379` (internal) |
 
@@ -303,12 +334,14 @@ data:
 
 Uses the Kustomize Components pattern:
 
-1. **Root kustomization.yaml** composes the components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher`)
+1. **Root kustomization.yaml** composes the components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher` + `scout` + `light-catcher` + `wled-mock`)
 2. **Outer Flux Kustomization** (consumer) reads `./apps/homerun2` from GitRepository, substitutes variables
 3. **Redis Stack component** deploys Redis via HelmRelease into the shared namespace
 4. **Omni Pitcher component** creates an OCIRepository + inner Flux Kustomization that reconciles the kustomize base from OCI, patches secrets, overrides image tag, and wires Redis connection
 5. **Core Catcher component** same pattern as pitcher — patches secrets, sets `CATCHER_MODE=web`, removes KCL-generated HTTPRoute (replaced by component-level HTTPRoute with custom hostname)
 6. **K8s Pitcher component** watches the K8s API via informers/collectors and sends events to omni-pitcher. Mounts CA trust bundle for TLS. Profile ConfigMap is defined on the calling side (cluster-specific config)
+7. **Light Catcher component** consumes messages from Redis Streams and triggers WLED light effects based on configurable YAML profiles. Exposes an HTMX dashboard via HTTPRoute
+8. **WLED Mock component** provides a mock WLED device with dashboard for development/testing. The light-catcher profile endpoints should point to `homerun2-wled-mock.NAMESPACE.svc.cluster.local` when using the mock
 
 Adding more homerun2 services is done by adding new component folders under `components/`.
 
@@ -400,3 +433,4 @@ curl https://pitcher.<DOMAIN>/health
 
 - [homerun2-omni-pitcher](https://stuttgart-things.github.io/homerun2-omni-pitcher/) — API gateway docs
 - [homerun2-core-catcher](https://stuttgart-things.github.io/homerun2-core-catcher/) — Consumer/dashboard docs
+- [homerun2-light-catcher](https://stuttgart-things.github.io/homerun2-light-catcher/) — WLED light effects consumer docs
