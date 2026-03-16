@@ -81,8 +81,8 @@ spec:
               containers:
                 - name: homerun2-demo-pitcher
                   env:
-                    - name: SSL_CERT_DIR
-                      value: /etc/ssl/custom
+                    - name: SSL_CERT_FILE
+                      value: /etc/ssl/custom/trust-bundle.pem
                   volumeMounts:
                     - name: trust-bundle
                       mountPath: /etc/ssl/custom/trust-bundle.pem
