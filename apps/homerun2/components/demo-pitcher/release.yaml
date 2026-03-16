@@ -113,3 +113,8 @@ spec:
                       value: https://pitcher.${DOMAIN}
                     - name: PITCH_TARGET
                       value: omni-pitcher
+                    - name: AUTH_TOKEN
+                      valueFrom:
+                        secretKeyRef:
+                          name: homerun2-omni-pitcher-token
+                          key: auth-token
