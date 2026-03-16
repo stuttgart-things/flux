@@ -110,6 +110,6 @@ spec:
                     - name: OMNI_PITCHER_API_PATH
                       value: pitch
                     - name: OMNI_PITCHER_URL
-                      value: https://pitcher.${DOMAIN}/
+                      value: https://pitcher.${DOMAIN}
                     - name: PITCH_TARGET
                       value: omni-pitcher
