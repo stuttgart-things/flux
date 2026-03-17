@@ -1,0 +1,84 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-led-catcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-led-catcher-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Remove the KCL-generated HTTPRoute (we provide our own via the component)
+    - target:
+        kind: HTTPRoute
+        name: homerun2-led-catcher
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-led-catcher
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-led-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-led-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-led-catcher
+                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-latest}
+    # Override the Redis password secret
+    - target:
+        kind: Secret
+        name: homerun2-led-catcher-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-led-catcher-redis
+        data:
+          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+    # Delete the KCL-generated profile ConfigMap (calling side provides its own)
+    - target:
+        kind: ConfigMap
+        name: homerun2-led-catcher-profile
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-led-catcher-profile
+        $patch: delete
+    # Override Redis connection
+    - target:
+        kind: Deployment
+        name: homerun2-led-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-led-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-led-catcher
+                  env:
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
+                    - name: LED_MODE
+                      value: web

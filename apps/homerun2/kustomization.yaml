@@ -10,3 +10,4 @@ components:
   - components/light-catcher
   - components/wled-mock
   - components/demo-pitcher
+  - components/led-catcher
