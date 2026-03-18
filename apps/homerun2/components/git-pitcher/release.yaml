@@ -89,6 +89,32 @@ spec:
                       mountPath: /etc/ssl/custom/trust-bundle.pem
                       subPath: trust-bundle.pem
                       readOnly: true
+    # Remove the KCL-generated watch ConfigMap (calling side provides its own)
+    - target:
+        kind: ConfigMap
+        name: homerun2-git-pitcher-watch-config
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-git-pitcher-watch-config
+        $patch: delete
+    # Override the watch-config volume to point to the cluster-provided ConfigMap
+    - target:
+        kind: Deployment
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-git-pitcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: watch-config
+                  configMap:
+                    name: ${HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM:-homerun2-git-pitcher-watch-config}
     # Override Redis connection to point to the co-deployed redis-stack
     - target:
         kind: Deployment
