@@ -1,0 +1,100 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-git-pitcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-git-pitcher-kcl
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-git-pitcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-git-pitcher
+                  image: ghcr.io/stuttgart-things/homerun2-git-pitcher:${HOMERUN2_GIT_PITCHER_VERSION:-v0.4.0}
+    # Override the Redis password secret
+    - target:
+        kind: Secret
+        name: homerun2-git-pitcher-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-git-pitcher-redis
+        data:
+          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+    # Override the GitHub token secret
+    - target:
+        kind: Secret
+        name: homerun2-git-pitcher-github
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-git-pitcher-github
+        data:
+          token: ${HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64}
+    # Mount trust-manager CA bundle for TLS trust
+    - target:
+        kind: Deployment
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-git-pitcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: trust-bundle
+                  configMap:
+                    name: ${HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}
+                    optional: true
+              containers:
+                - name: homerun2-git-pitcher
+                  env:
+                    - name: SSL_CERT_DIR
+                      value: /etc/ssl/custom
+                  volumeMounts:
+                    - name: trust-bundle
+                      mountPath: /etc/ssl/custom/trust-bundle.pem
+                      subPath: trust-bundle.pem
+                      readOnly: true
+    # Override Redis connection to point to the co-deployed redis-stack
+    - target:
+        kind: Deployment
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-git-pitcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-git-pitcher
+                  env:
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
