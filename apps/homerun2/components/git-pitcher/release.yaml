@@ -134,3 +134,5 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
+                    - name: REDIS_STREAM
+                      value: messages
