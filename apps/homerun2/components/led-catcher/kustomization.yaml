@@ -5,3 +5,4 @@ resources:
   - requirements.yaml
   - release.yaml
   - httproute.yaml
+  - profile.yaml
