@@ -10,11 +10,21 @@ spec:
   timeout: 5m
   sourceRef:
     kind: OCIRepository
-    name: homerun2-git-pitcher-kcl
+    name: homerun2-git-pitcher-kustomize
   prune: true
   wait: true
   targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
   patches:
+    # Remove the KCL-generated Namespace (managed by the parent stack)
+    - target:
+        kind: Namespace
+        name: homerun2
+      patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: homerun2
+        $patch: delete
     # Override the container image tag
     - target:
         kind: Deployment
@@ -29,7 +39,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-git-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-git-pitcher:${HOMERUN2_GIT_PITCHER_VERSION:-v0.4.0}
+                  image: ghcr.io/stuttgart-things/homerun2-git-pitcher:${HOMERUN2_GIT_PITCHER_VERSION:-v0.5.0}
     # Override the Redis password secret
     - target:
         kind: Secret

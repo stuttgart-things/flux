@@ -2,10 +2,10 @@
 apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
 kind: OCIRepository
 metadata:
-  name: homerun2-git-pitcher-kcl
+  name: homerun2-git-pitcher-kustomize
   namespace: ${HOMERUN2_NAMESPACE:-homerun2}
 spec:
   interval: 1h
-  url: oci://ghcr.io/stuttgart-things/homerun2-git-pitcher-kcl
+  url: oci://ghcr.io/stuttgart-things/homerun2-git-pitcher-kustomize
   ref:
-    tag: ${HOMERUN2_GIT_PITCHER_VERSION:-v0.4.0}
+    tag: ${HOMERUN2_GIT_PITCHER_VERSION:-v0.5.0}

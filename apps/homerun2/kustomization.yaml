@@ -11,3 +11,4 @@ components:
   - components/wled-mock
   - components/demo-pitcher
   - components/led-catcher
+  - components/git-pitcher
