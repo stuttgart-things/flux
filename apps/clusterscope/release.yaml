@@ -2,18 +2,18 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta2
 kind: OCIRepository
 metadata:
-  name: clusterscope
+  name: clusterscope-kustomize
   namespace: flux-system
 spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/clusterscope-kustomize
   ref:
-    tag: v0.3.0
+    tag: ${CLUSTERSCOPE_VERSION:-v0.6.0}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: clusterscope-deploy
+  name: clusterscope
   namespace: flux-system
 spec:
   interval: 1h
@@ -21,7 +21,84 @@ spec:
   timeout: 5m
   sourceRef:
     kind: OCIRepository
-    name: clusterscope
+    name: clusterscope-kustomize
   path: ./
   prune: true
   wait: true
+  targetNamespace: ${CLUSTERSCOPE_NAMESPACE:-clusterscope}
+  patches:
+    # Set -root to the git-sync synced subdirectory
+    - target:
+        kind: Deployment
+        name: clusterscope
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterscope
+        spec:
+          template:
+            spec:
+              containers:
+                - name: clusterscope
+                  args:
+                    - '-root=${GIT_SYNC_DIR:-/data/repo/clusters}'
+                    - '-tech=${CLUSTERSCOPE_TECH:-flux}'
+                    - '-serve=:${CLUSTERSCOPE_PORT:-8080}'
+    # Add git-sync sidecar container
+    - target:
+        kind: Deployment
+        name: clusterscope
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterscope
+        spec:
+          template:
+            spec:
+              containers:
+                - name: git-sync
+                  image: ${GIT_SYNC_IMAGE:-registry.k8s.io/git-sync/git-sync:v4.4.0}
+                  args:
+                    - '--repo=${GIT_SYNC_REPO}'
+                    - '--ref=${GIT_SYNC_BRANCH:-main}'
+                    - '--root=/data'
+                    - '--period=${GIT_SYNC_PERIOD:-60s}'
+                    - '--depth=1'
+                  env:
+                    - name: GITSYNC_ONE_TIME
+                      value: "false"
+                  resources:
+                    limits:
+                      cpu: 100m
+                      memory: 128Mi
+                    requests:
+                      cpu: 10m
+                      memory: 32Mi
+                  securityContext:
+                    readOnlyRootFilesystem: true
+                    runAsNonRoot: true
+                    allowPrivilegeEscalation: false
+                    capabilities:
+                      drop:
+                        - ALL
+                    runAsUser: 65533
+                  volumeMounts:
+                    - name: gitdata
+                      mountPath: /data
+                    - name: git-sync-tmp
+                      mountPath: /tmp
+              volumes:
+                - name: git-sync-tmp
+                  emptyDir: {}
+    # Remove the KCL-generated HTTPRoute (managed via httproute.yaml)
+    - target:
+        kind: HTTPRoute
+        name: clusterscope
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: clusterscope
+        $patch: delete
