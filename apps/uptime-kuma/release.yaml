@@ -21,3 +21,12 @@ spec:
       accessMode: ReadWriteOnce
       size: ${UPTIME_KUMA_STORAGE_SIZE:-4Gi}
       storageClassName: ${UPTIME_KUMA_STORAGE_CLASS:-nfs4-csi}
+    additionalVolumes:
+      - name: trust-bundle
+        configMap:
+          name: cluster-trust-bundle
+    additionalVolumeMounts:
+      - name: trust-bundle
+        mountPath: /etc/ssl/certs/trust-bundle.pem
+        subPath: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
+        readOnly: true
