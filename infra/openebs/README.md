@@ -51,3 +51,12 @@ spec:
       REPLICATED_MAYASTOR_ENABLED: "false"
 EOF
 ```
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-openebs \
+-o ./infra/ \
+--filename-pattern "{{.name}}.yaml"
+```

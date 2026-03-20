@@ -47,3 +47,14 @@ EOF
 - **release.yaml** - HelmRelease deploying the Flux Operator web UI in server-only mode from `oci://ghcr.io/controlplaneio-fluxcd/charts`
 - **networkpolicy.yaml** - NetworkPolicy allowing ingress on port 9080 for the flux-web pod
 - **requirements.yaml** - HelmRepository pointing to the flux-operator OCI registry
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-flux-web \
+-p fluxWebGatewayName=my-gateway \
+-p fluxWebDomain=example.sthings-vsphere.labul.sva.de \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+```

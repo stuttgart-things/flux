@@ -67,3 +67,13 @@ EOF
 1. **Requirements** (`requirements.yaml`) creates the namespace and HelmRepository sources
 2. **Release** (`release.yaml`) installs trust-manager via the jetstack Helm chart
 3. **Post-release** (`post-release.yaml`) uses `sthings-cluster` to create a `Bundle` that merges the default public CA trust store with the cluster CA from `cluster-ca-secret`, distributing a combined `trust-bundle.pem` ConfigMap to all namespaces
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-trust-manager \
+-p "dependsOnNames=cert-manager-install" \
+-o ./infra/ \
+--filename-pattern "{{.name}}.yaml"
+```

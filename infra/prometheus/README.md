@@ -107,3 +107,15 @@ kube_pod_container_status_restarts_total > 0
 - **release.yaml** - HelmRelease from `https://prometheus-community.github.io/helm-charts` (standalone prometheus, no Grafana/alertmanager)
 - **httproute.yaml** - Gateway API HTTPRoute for Prometheus UI access
 - **requirements.yaml** - Namespace and HelmRepository
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-prometheus \
+-p prometheusGatewayName=my-gateway \
+-p prometheusDomain=example.sthings-vsphere.labul.sva.de \
+-p prometheusStorageClass=openebs-hostpath \
+-o ./infra/ \
+--filename-pattern "{{.name}}.yaml"
+```

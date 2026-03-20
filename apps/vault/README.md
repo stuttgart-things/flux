@@ -127,3 +127,27 @@ spec:
       VAULT_DOMAIN: example.com
 EOF
 ```
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-vault \
+-p vaultIngressDomain=example.sthings-vsphere.labul.sva.de \
+-p vaultStorageClass=openebs-hostpath \
+-p vaultIssuerName=selfsigned \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+
+claims render --non-interactive \
+-t flux-kustomization-vault-autounseal \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+
+claims render --non-interactive \
+-t flux-kustomization-vault-httproute \
+-p vaultHttprouteGatewayName=my-gateway \
+-p vaultHttprouteDomain=example.sthings-vsphere.labul.sva.de \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+```

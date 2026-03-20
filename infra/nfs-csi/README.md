@@ -130,3 +130,15 @@ ssh <nfs-server> "ls -la <NFS_SHARE_PATH>/<CLUSTER_NAME>/"
 kubectl delete deployment test-nfs
 kubectl delete pvc test-nfs-pvc
 ```
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-nfs-csi \
+-p nfsServerFqdn=10.31.101.26 \
+-p nfsSharePath=/data/col1/sthings \
+-p nfsCsiClusterName=my-cluster \
+-o ./infra/ \
+--filename-pattern "{{.name}}.yaml"
+```

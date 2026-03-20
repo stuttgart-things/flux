@@ -59,3 +59,14 @@ Paste the token into the headlamp login screen.
 - **release.yaml** - HelmRelease from `https://kubernetes-sigs.github.io/headlamp/` with chart-native Gateway API HTTPRoute support
 - **rbac.yaml** - ClusterRoleBinding granting `cluster-admin` to the headlamp ServiceAccount
 - **requirements.yaml** - Namespace and HelmRepository
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-headlamp \
+-p headlampGatewayName=my-gateway \
+-p headlampDomain=example.sthings-vsphere.labul.sva.de \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+```

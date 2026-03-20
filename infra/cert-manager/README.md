@@ -78,3 +78,12 @@ spec:
         name: cert-manager-secret
 EOF
 ```
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-cert-manager-install \
+-o ./infra/ \
+--filename-pattern "{{.name}}.yaml"
+```
