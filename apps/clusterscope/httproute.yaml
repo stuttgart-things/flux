@@ -1,0 +1,20 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: clusterscope
+  namespace: ${CLUSTERSCOPE_NAMESPACE:-clusterscope}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - "${HOSTNAME:-clusterscope}.${DOMAIN}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: clusterscope
+          port: 8080
