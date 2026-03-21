@@ -46,6 +46,10 @@ spec:
                     - '-tech=${CLUSTERSCOPE_TECH:-flux}'
                     - '-serve=:${CLUSTERSCOPE_PORT:-8080}'
     # Add git-sync sidecar container
+    # Auth for private repos: create a secret with username+password (HTTPS) or ssh key (SSH):
+    #   kubectl create secret generic git-sync-auth \
+    #     --from-literal=username=token --from-literal=password=<TOKEN> -n clusterscope
+    # Then set GIT_SYNC_AUTH_SECRET=git-sync-auth in the Flux environment / postBuild substitution.
     - target:
         kind: Deployment
         name: clusterscope
@@ -69,6 +73,17 @@ spec:
                   env:
                     - name: GITSYNC_ONE_TIME
                       value: "false"
+                    # HTTPS auth (token/password) – uncomment and set GIT_SYNC_AUTH_SECRET:
+                    # - name: GITSYNC_USERNAME
+                    #   valueFrom:
+                    #     secretKeyRef:
+                    #       name: ${GIT_SYNC_AUTH_SECRET:-git-sync-auth}
+                    #       key: username
+                    # - name: GITSYNC_PASSWORD
+                    #   valueFrom:
+                    #     secretKeyRef:
+                    #       name: ${GIT_SYNC_AUTH_SECRET:-git-sync-auth}
+                    #       key: password
                   resources:
                     limits:
                       cpu: 100m
