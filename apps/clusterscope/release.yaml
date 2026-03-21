@@ -8,7 +8,7 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/clusterscope-kustomize
   ref:
-    tag: ${CLUSTERSCOPE_VERSION:-v0.6.0}
+    tag: ${CLUSTERSCOPE_VERSION:-0.11.0}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
