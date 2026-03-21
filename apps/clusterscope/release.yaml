@@ -117,3 +117,47 @@ spec:
         metadata:
           name: clusterscope
         $patch: delete
+---
+# Multi-repo deployment: sidecars (git-sync-harvester, git-sync-st-clusters, …) are
+# baked into the OCI artifact by KCL — no runtime patching needed.
+# Enable by setting CLUSTERSCOPE_MULTI_REPO=enabled in the Flux postBuild substitution.
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: clusterscope-kustomize-multi-repo
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/clusterscope-kustomize-multi-repo
+  ref:
+    tag: ${CLUSTERSCOPE_VERSION:-latest}
+  # suspend: true  # remove to activate
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: clusterscope-deploy-multi-repo
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: clusterscope-kustomize-multi-repo
+  path: ./
+  prune: true
+  wait: true
+  targetNamespace: ${CLUSTERSCOPE_NAMESPACE:-clusterscope}
+  # suspend: true  # remove to activate
+  patches:
+    # Remove the KCL-generated HTTPRoute (managed via httproute.yaml)
+    - target:
+        kind: HTTPRoute
+        name: clusterscope
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: clusterscope
+        $patch: delete
