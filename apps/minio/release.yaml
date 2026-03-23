@@ -27,7 +27,7 @@ spec:
     image:
       registry: ${MINIO_REGISTRY:-ghcr.io}
       repository: ${MINIO_REPOSITORY:-stuttgart-things/minio}
-      tag: ${MINIO_IMAGE_TAG:-RELEASE.2024-06-11T00-09-59Z}
+      tag: ${MINIO_IMAGE_TAG:-2025.4.22-debian-12-r1}
     networkPolicy:
       enabled: true
       allowExternal: true
