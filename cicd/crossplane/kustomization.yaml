@@ -4,3 +4,4 @@ kind: Kustomization
 components:
   - components/install
   - components/functions
+  - components/configs
