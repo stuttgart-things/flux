@@ -190,6 +190,9 @@ EOF
 | `ISSUER_NAME` | *(required)* | cert-manager ClusterIssuer name |
 | `ISSUER_KIND` | *(required)* | Issuer kind (ClusterIssuer) |
 | `IMAGE_AVP` | `ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.32.3-3.17.2` | Vault plugin sidecar image |
+| `AVP_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with CA bundle (from trust-manager) |
+| `AVP_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | Key in the trust bundle ConfigMap |
+| `AVP_SSL_CERT_DIR` | `/etc/ssl/custom` | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
 | `ARGO_CD_PASSWORD_MTIME` | `2024-09-16T12:51:06UTC` | Admin password modification time |
 | `ARGO_CD_SERVER_ADMIN_PASSWORD` | *(from Secret)* | Admin password (bcrypt htpasswd hash) |
 | `VAULT_ROLE_ID` | *(from Secret)* | Vault AppRole Role ID |
