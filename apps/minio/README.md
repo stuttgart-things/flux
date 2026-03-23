@@ -234,15 +234,64 @@ Then add `EXTRA_CONFIG_MAP: minio-env-config` to the Kustomization substitutions
 ## Claims CLI
 
 ```bash
+# Render Kustomization
 claims render --non-interactive \
 -t flux-kustomization-minio \
 -p sourceRefName=flux-apps \
--p CLUSTER_ISSUER=cluster-issuer-approle \
--p INGRESS_HOSTNAME_CONSOLE=artifacts-console \
--p INGRESS_HOSTNAME_API=artifacts \
--p INGRESS_DOMAIN=example.sthings-vsphere.labul.sva.de \
+-p minioClusterIssuer=vault-pki \
+-p minioIngressHostnameConsole=artifacts-console \
+-p minioIngressHostnameApi=artifacts \
+-p minioIngressDomain=example.sthings-vsphere.labul.sva.de \
 -o ./apps/ \
 --filename-pattern "{{.name}}.yaml"
+
+# Render HTTPRoute
+claims render --non-interactive \
+-t flux-kustomization-minio-httproute \
+-p sourceRefName=flux-apps \
+-p minioIngressHostnameConsole=artifacts-console \
+-p minioIngressHostnameApi=artifacts \
+-p minioIngressDomain=example.sthings-vsphere.labul.sva.de \
+-p minioGatewayName=my-gateway \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+
+# Create SOPS-encrypted secret
+claims encrypt --non-interactive \
+-t flux-kustomization-minio \
+--name minio-secrets \
+--namespace flux-system \
+--param MINIO_ADMIN_USER=admin \
+--param MINIO_ADMIN_PASSWORD=<your-password> \
+-o ./secrets/
 ```
 
 See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)
+
+## Verify Deployment
+
+```bash
+# Kustomizations
+kubectl get kustomizations -n flux-system minio minio-httproute
+
+# HelmReleases
+kubectl get helmreleases -n minio
+
+# Pods
+kubectl get pods -n minio
+
+# HTTPRoutes
+kubectl get httproutes -n minio
+
+# TLS Certificates
+kubectl get certificates -n minio
+
+# Services
+kubectl get svc -n minio
+
+# Test S3 API connectivity
+curl -sk https://<INGRESS_HOSTNAME_API>.<INGRESS_DOMAIN>/minio/health/live
+
+# Test Console access
+curl -sk -o /dev/null -w "%{http_code}" https://<INGRESS_HOSTNAME_CONSOLE>.<INGRESS_DOMAIN>
+```
