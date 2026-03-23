@@ -60,11 +60,6 @@ spec:
       enabled: true
       storageClass: ${STORAGE_CLASS:-nfs4-csi}
       size: ${MINIO_STORAGE_SIZE:-10Gi}
-    extraEnvVars:
-      - name: MINIO_SERVER_URL
-        value: https://${INGRESS_HOSTNAME_API}.${INGRESS_DOMAIN}
-      - name: MINIO_BROWSER_REDIRECT_URL
-        value: https://${INGRESS_HOSTNAME_CONSOLE}.${INGRESS_DOMAIN}
     resources:
       requests:
         memory: 256Mi
