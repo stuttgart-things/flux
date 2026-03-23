@@ -59,7 +59,6 @@ spec:
       TEKTON_IMAGE_PULL_POLICY: Always
       TEKTON_PRUNER_DISABLED: "false"
       TEKTON_PRUNER_SCHEDULE: "0 8 * * *"
-      TEKTON_PRUNER_KEEP: "100"
       TEKTON_PRUNER_KEEP_SINCE: "1440"
   healthChecks:
     - apiVersion: apps/v1
@@ -84,8 +83,7 @@ EOF
 | `TEKTON_IMAGE_PULL_POLICY` | `Always` | Default image pull policy for task steps |
 | `TEKTON_PRUNER_DISABLED` | `false` | Disable automatic pruning of old runs |
 | `TEKTON_PRUNER_SCHEDULE` | `0 8 * * *` | Cron schedule for pruner |
-| `TEKTON_PRUNER_KEEP` | `100` | Number of runs to keep |
-| `TEKTON_PRUNER_KEEP_SINCE` | `1440` | Keep runs newer than N minutes |
+| `TEKTON_PRUNER_KEEP_SINCE` | `1440` | Keep runs newer than N minutes (mutually exclusive with `keep`) |
 
 ## Updating the Operator
 

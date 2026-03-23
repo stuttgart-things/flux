@@ -16,5 +16,4 @@ spec:
     resources:
       - taskrun
       - pipelinerun
-    keep: ${TEKTON_PRUNER_KEEP:-100}
     keep-since: ${TEKTON_PRUNER_KEEP_SINCE:-1440}
