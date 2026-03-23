@@ -56,7 +56,6 @@ spec:
       TEKTON_PROFILE: all
       TEKTON_ENABLE_API_FIELDS: beta
       TEKTON_DISABLE_INLINE_SPEC: ""
-      TEKTON_IMAGE_PULL_POLICY: Always
       TEKTON_PRUNER_DISABLED: "false"
       TEKTON_PRUNER_SCHEDULE: "0 8 * * *"
       TEKTON_PRUNER_KEEP_SINCE: "1440"
@@ -80,7 +79,6 @@ EOF
 | `TEKTON_PROFILE` | `all` | Install profile: `all`, `basic`, or `lite` |
 | `TEKTON_ENABLE_API_FIELDS` | `beta` | API fields stability level: `stable`, `beta`, `alpha` |
 | `TEKTON_DISABLE_INLINE_SPEC` | `""` | Disable inline spec for: `pipeline`, `pipelinerun`, `taskrun` (comma-separated) |
-| `TEKTON_IMAGE_PULL_POLICY` | `Always` | Default image pull policy for task steps |
 | `TEKTON_PRUNER_DISABLED` | `false` | Disable automatic pruning of old runs |
 | `TEKTON_PRUNER_SCHEDULE` | `0 8 * * *` | Cron schedule for pruner |
 | `TEKTON_PRUNER_KEEP_SINCE` | `1440` | Keep runs newer than N minutes (mutually exclusive with `keep`) |
