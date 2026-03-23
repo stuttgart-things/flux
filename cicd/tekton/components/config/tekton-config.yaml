@@ -8,6 +8,8 @@ spec:
   profile: ${TEKTON_PROFILE:-all}
   pipeline:
     enable-api-fields: ${TEKTON_ENABLE_API_FIELDS:-beta}
+    disable-inline-spec: ${TEKTON_DISABLE_INLINE_SPEC:-""}
+    default-image-pull-policy: ${TEKTON_IMAGE_PULL_POLICY:-Always}
   pruner:
     disabled: ${TEKTON_PRUNER_DISABLED:-false}
     schedule: ${TEKTON_PRUNER_SCHEDULE:-"0 8 * * *"}

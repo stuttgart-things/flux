@@ -55,6 +55,8 @@ spec:
       TEKTON_TARGET_NAMESPACE: tekton-pipelines
       TEKTON_PROFILE: all
       TEKTON_ENABLE_API_FIELDS: beta
+      TEKTON_DISABLE_INLINE_SPEC: ""
+      TEKTON_IMAGE_PULL_POLICY: Always
       TEKTON_PRUNER_DISABLED: "false"
       TEKTON_PRUNER_SCHEDULE: "0 8 * * *"
       TEKTON_PRUNER_KEEP: "100"
@@ -78,6 +80,8 @@ EOF
 | `TEKTON_TARGET_NAMESPACE` | `tekton-pipelines` | Namespace for Tekton Pipelines components |
 | `TEKTON_PROFILE` | `all` | Install profile: `all`, `basic`, or `lite` |
 | `TEKTON_ENABLE_API_FIELDS` | `beta` | API fields stability level: `stable`, `beta`, `alpha` |
+| `TEKTON_DISABLE_INLINE_SPEC` | `""` | Disable inline spec for: `pipeline`, `pipelinerun`, `taskrun` (comma-separated) |
+| `TEKTON_IMAGE_PULL_POLICY` | `Always` | Default image pull policy for task steps |
 | `TEKTON_PRUNER_DISABLED` | `false` | Disable automatic pruning of old runs |
 | `TEKTON_PRUNER_SCHEDULE` | `0 8 * * *` | Cron schedule for pruner |
 | `TEKTON_PRUNER_KEEP` | `100` | Number of runs to keep |
