@@ -21,6 +21,8 @@ spec:
       interval: 12h
   values:
     server:
+      extraArgs:
+        - --insecure
       ingress:
         enabled: ${ARGO_CD_INGRESS_ENABLED:-false}
         annotations:
