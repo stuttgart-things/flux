@@ -201,7 +201,7 @@ Then add `EXTRA_CONFIG_MAP: minio-env-config` to the Kustomization substitutions
 | `MINIO_VERSION` | `16.0.10` | Helm chart version (stuttgart-things) |
 | `MINIO_REGISTRY` | `ghcr.io` | Container image registry |
 | `MINIO_REPOSITORY` | `stuttgart-things/minio` | Container image repository |
-| `MINIO_IMAGE_TAG` | `RELEASE.2024-06-11T00-09-59Z` | Container image tag |
+| `MINIO_IMAGE_TAG` | `2025.4.22-debian-12-r1` | Container image tag |
 | `CLUSTER_ISSUER` | *(required)* | cert-manager ClusterIssuer name |
 | `INGRESS_HOSTNAME_CONSOLE` | *(required)* | Console hostname prefix |
 | `INGRESS_HOSTNAME_API` | *(required)* | API hostname prefix |
