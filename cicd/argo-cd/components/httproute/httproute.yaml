@@ -1,0 +1,16 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd-server
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME:-cilium-gateway}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - "${ARGO_CD_HOSTNAME}.${ARGO_CD_DOMAIN}"
+  rules:
+    - backendRefs:
+        - name: argocd-deployment-server
+          port: 443
