@@ -1,0 +1,16 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tekton-dashboard
+  namespace: ${TEKTON_DASHBOARD_NAMESPACE:-tekton-pipelines}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME:-cilium-gateway}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - "${TEKTON_DASHBOARD_HOSTNAME}.${TEKTON_DASHBOARD_DOMAIN}"
+  rules:
+    - backendRefs:
+        - name: tekton-dashboard
+          port: 9097

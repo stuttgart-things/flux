@@ -8,6 +8,7 @@ Deploys the [Tekton Operator](https://tekton.dev/docs/operator/) v0.79.0 via ven
 |---|---|
 | `components/operator` | Tekton Operator (CRDs, RBAC, Deployments, ConfigMaps) |
 | `components/config` | TektonConfig CR (controls which Tekton sub-components get installed) |
+| `components/dashboard-httproute` | Gateway API HTTPRoute for Tekton Dashboard |
 
 ## Requirements
 
