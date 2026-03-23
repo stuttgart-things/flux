@@ -1,67 +1,61 @@
-# stuttgart-things/flux/minio
+# stuttgart-things/flux/apps/minio
 
-## SECRET
+Deploys MinIO object storage via the stuttgart-things Helm chart (`charts/minio/minio` v16.0.10).
 
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: minio
-  namespace: flux-system
-type: Opaque
-stringData:
-  MINIO_ADMIN_USER: "your-secure-username" #pragma: allowlist secret
-  MINIO_ADMIN_PASSWORD: "your-secure-password" #pragma: allowlist secret
-EOF
+## Structure
+
+```
+minio/
+├── kustomization.yaml          # Base: namespace + certs + deployment
+├── requirements.yaml           # Namespace + HelmRepository (OCI)
+├── pre-release.yaml            # cert-manager Certificates (console + API)
+├── release.yaml                # MinIO HelmRelease
+└── components/
+    └── httproute/              # Optional: Gateway API HTTPRoutes (console + API)
+        ├── kustomization.yaml
+        └── httproute.yaml
 ```
 
-## EXTRA CONFIG
+## Requirements
+
+<details><summary>ADD GITREPOSITORY</summary>
 
 ```bash
 kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: minio
-  labels:
-    toolkit.fluxcd.io/tenant: sthings-team
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: minio-env-config
-  namespace: minio
-data:
-  MINIO_IDENTITY_OPENID_CONFIG_URL: "https://keycloak.fluxdev-3.sthings-vsphere.labul.example.com/realms/master/.well-known/openid-configuration"
-  MINIO_IDENTITY_OPENID_REDIRECT_URI: "https://artifacts-console.fluxdev-3.sthings-vsphere.labul.example.com/oauth_callback"
-  MINIO_IDENTITY_OPENID_CLIENT_ID: minio
-  MINIO_IDENTITY_OPENID_SCOPES: openid,profile,email,groups
-  MINIO_IDENTITY_OPENID_CLAIM_NAME: preferred_username
-EOF
-```
-
-## GIT-REPOSITORY MANIFEST
-
-```bash
-kubectl apply -f - <<EOF
----
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: GitRepository
 metadata:
-  name: stuttgart-things-flux-minio-dev
+  name: flux-apps
   namespace: flux-system
 spec:
   interval: 1m0s
-  url: https://github.com/stuttgart-things/flux.git
   ref:
-    branch: feat/add-minio
+    branch: main
+  url: https://github.com/stuttgart-things/flux.git
 EOF
 ```
 
-## KUSTOMIZATION EXAMPLE
+</details>
+
+<details><summary>CREATE SECRET</summary>
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-secrets
+  namespace: flux-system
+type: Opaque
+stringData:
+  MINIO_ADMIN_USER: "your-username" # pragma: allowlist secret
+  MINIO_ADMIN_PASSWORD: "your-password" # pragma: allowlist secret
+EOF
+```
+
+</details>
+
+## Deployment (with nginx Ingress)
 
 ```bash
 kubectl apply -f - <<EOF
@@ -77,25 +71,178 @@ spec:
   timeout: 5m
   sourceRef:
     kind: GitRepository
-    name: stuttgart-things-flux-minio-dev
+    name: flux-apps
   path: ./apps/minio
   prune: true
   wait: true
   postBuild:
     substitute:
-      CLUSTER_ISSUER: cluster-issuer-approle
-      INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.labul.example.com
-      INGRESS_HOSTNAME_API: artifacts
-      INGRESS_HOSTNAME_CONSOLE: artifacts-console
       MINIO_NAMESPACE: minio
-      MINIO_VERSION: 14.8.0
+      MINIO_VERSION: "16.0.10"
+      MINIO_INGRESS_ENABLED: "true"
+      MINIO_INGRESS_CLASS: nginx
+      CLUSTER_ISSUER: cluster-issuer-approle
+      INGRESS_HOSTNAME_CONSOLE: artifacts-console
+      INGRESS_HOSTNAME_API: artifacts
+      INGRESS_DOMAIN: example.sthings-vsphere.labul.sva.de
       STORAGE_CLASS: nfs4-csi
-      EXTRA_CONFIG_MAP: minio-env-config
-      MINIO_REGISTRY: ghcr.io
-      MINIO_REPOSITORY: stuttgart-things/minio
-      MINIO_IMAGE_TAG: RELEASE.2024-06-11T00-09-59Z
+      MINIO_STORAGE_SIZE: 10Gi
     substituteFrom:
       - kind: Secret
-        name: minio
+        name: minio-secrets
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: minio-deployment
+      namespace: minio
 EOF
 ```
+
+## Deployment (with Gateway API HTTPRoute)
+
+For clusters using Cilium Gateway API instead of nginx ingress, deploy the base with ingress disabled plus the httproute component:
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/minio
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      MINIO_NAMESPACE: minio
+      MINIO_VERSION: "16.0.10"
+      MINIO_INGRESS_ENABLED: "false"
+      CLUSTER_ISSUER: cluster-issuer-approle
+      INGRESS_HOSTNAME_CONSOLE: artifacts-console
+      INGRESS_HOSTNAME_API: artifacts
+      INGRESS_DOMAIN: example.sthings-vsphere.labul.sva.de
+      STORAGE_CLASS: nfs4-csi
+      MINIO_STORAGE_SIZE: 10Gi
+    substituteFrom:
+      - kind: Secret
+        name: minio-secrets
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: minio-deployment
+      namespace: minio
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio-httproute
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/minio/components/httproute
+  prune: true
+  wait: true
+  dependsOn:
+    - name: minio
+  postBuild:
+    substitute:
+      MINIO_NAMESPACE: minio
+      INGRESS_HOSTNAME_CONSOLE: artifacts-console
+      INGRESS_HOSTNAME_API: artifacts
+      INGRESS_DOMAIN: example.sthings-vsphere.labul.sva.de
+      GATEWAY_NAME: my-gateway
+      GATEWAY_NAMESPACE: default
+EOF
+```
+
+## Optional: OpenID Integration
+
+To enable Keycloak/OpenID authentication, create a ConfigMap before deploying:
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-env-config
+  namespace: minio
+data:
+  MINIO_IDENTITY_OPENID_CONFIG_URL: "https://keycloak.example.com/realms/master/.well-known/openid-configuration"
+  MINIO_IDENTITY_OPENID_REDIRECT_URI: "https://artifacts-console.example.com/oauth_callback"
+  MINIO_IDENTITY_OPENID_CLIENT_ID: minio
+  MINIO_IDENTITY_OPENID_SCOPES: openid,profile,email,groups
+  MINIO_IDENTITY_OPENID_CLAIM_NAME: preferred_username
+EOF
+```
+
+Then add `EXTRA_CONFIG_MAP: minio-env-config` to the Kustomization substitutions and uncomment `extraEnvVarsCM` in `release.yaml`.
+
+## Parameters
+
+### Base
+
+| Variable | Default | Description |
+|---|---|---|
+| `MINIO_NAMESPACE` | `minio` | Target namespace |
+| `MINIO_VERSION` | `16.0.10` | Helm chart version (stuttgart-things) |
+| `MINIO_REGISTRY` | `ghcr.io` | Container image registry |
+| `MINIO_REPOSITORY` | `stuttgart-things/minio` | Container image repository |
+| `MINIO_IMAGE_TAG` | `RELEASE.2024-06-11T00-09-59Z` | Container image tag |
+| `CLUSTER_ISSUER` | *(required)* | cert-manager ClusterIssuer name |
+| `INGRESS_HOSTNAME_CONSOLE` | *(required)* | Console hostname prefix |
+| `INGRESS_HOSTNAME_API` | *(required)* | API hostname prefix |
+| `INGRESS_DOMAIN` | *(required)* | Base domain |
+| `MINIO_INGRESS_ENABLED` | `false` | Enable nginx Ingress (disable when using HTTPRoute) |
+| `MINIO_INGRESS_CLASS` | `nginx` | IngressClassName (when ingress enabled) |
+| `STORAGE_CLASS` | `nfs4-csi` | StorageClass for persistent volumes |
+| `MINIO_STORAGE_SIZE` | `10Gi` | Persistent volume size |
+| `MINIO_ADMIN_USER` | *(from Secret)* | MinIO root user |
+| `MINIO_ADMIN_PASSWORD` | *(from Secret)* | MinIO root password |
+
+### HTTPRoute Component
+
+| Variable | Default | Description |
+|---|---|---|
+| `GATEWAY_NAME` | `cilium-gateway` | Gateway resource name |
+| `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
+| `INGRESS_HOSTNAME_CONSOLE` | *(required)* | Console hostname prefix |
+| `INGRESS_HOSTNAME_API` | *(required)* | API hostname prefix |
+| `INGRESS_DOMAIN` | *(required)* | Base domain |
+| `MINIO_NAMESPACE` | `minio` | Namespace for HTTPRoute resources |
+
+## Endpoints
+
+| Endpoint | Port | Description |
+|---|---|---|
+| Console | 9001 | MinIO web console UI |
+| API (S3) | 9000 | S3-compatible API |
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-minio \
+-p sourceRefName=flux-apps \
+-p CLUSTER_ISSUER=cluster-issuer-approle \
+-p INGRESS_HOSTNAME_CONSOLE=artifacts-console \
+-p INGRESS_HOSTNAME_API=artifacts \
+-p INGRESS_DOMAIN=example.sthings-vsphere.labul.sva.de \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+```
+
+See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)
