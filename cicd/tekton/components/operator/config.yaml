@@ -1,0 +1,265 @@
+apiVersion: v1
+data:
+  _example: "################################\n#                              #\n\
+    #    EXAMPLE CONFIGURATION     #\n#                              #\n################################\n\
+    \n# This block is not actually functional configuration,\n# but serves to illustrate\
+    \ the available configuration\n# options and document them in a way that is accessible\n\
+    # to users that `kubectl edit` this config map.\n#\n# These sample configuration\
+    \ options may be copied out of\n# this example block and unindented to be in the\
+    \ data block\n# to actually change the configuration.\n\n# Common configuration\
+    \ for all Knative codebase\nzap-logger-config: |\n  {\n    \"level\": \"info\"\
+    ,\n    \"development\": false,\n    \"outputPaths\": [\"stdout\"],\n    \"errorOutputPaths\"\
+    : [\"stderr\"],\n    \"encoding\": \"json\",\n    \"encoderConfig\": {\n     \
+    \ \"timeKey\": \"ts\",\n      \"levelKey\": \"level\",\n      \"nameKey\": \"\
+    logger\",\n      \"callerKey\": \"caller\",\n      \"messageKey\": \"msg\",\n\
+    \      \"stacktraceKey\": \"stacktrace\",\n      \"lineEnding\": \"\",\n     \
+    \ \"levelEncoder\": \"\",\n      \"timeEncoder\": \"iso8601\",\n      \"durationEncoder\"\
+    : \"\",\n      \"callerEncoder\": \"\"\n    }\n  }\n"
+  loglevel.tekton-operator-cluster-operations: info
+  loglevel.tekton-operator-lifecycle: info
+  loglevel.tekton-operator-webhook: info
+  zap-logger-config: "{\n  \"level\": \"info\",\n  \"development\": false,\n  \"sampling\"\
+    : {\n    \"initial\": 100,\n    \"thereafter\": 100\n  },\n  \"outputPaths\":\
+    \ [\"stdout\"],\n  \"errorOutputPaths\": [\"stderr\"],\n  \"encoding\": \"json\"\
+    ,\n  \"encoderConfig\": {\n    \"timeKey\": \"timestamp\",\n    \"levelKey\":\
+    \ \"level\",\n    \"nameKey\": \"logger\",\n    \"callerKey\": \"caller\",\n \
+    \   \"messageKey\": \"msg\",\n    \"stacktraceKey\": \"stacktrace\",\n    \"lineEnding\"\
+    : \"\",\n    \"levelEncoder\": \"\",\n    \"timeEncoder\": \"iso8601\",\n    \"\
+    durationEncoder\": \"\",\n    \"callerEncoder\": \"\"\n  }\n}\n"
+kind: ConfigMap
+metadata:
+  labels:
+    operator.tekton.dev/release: v0.79.0
+  name: config-logging
+  namespace: tekton-operator
+---
+apiVersion: v1
+data:
+  AUTOINSTALL_COMPONENTS: 'true'
+  DEFAULT_TARGET_NAMESPACE: tekton-pipelines
+kind: ConfigMap
+metadata:
+  labels:
+    operator.tekton.dev/release: v0.79.0
+  name: tekton-config-defaults
+  namespace: tekton-operator
+---
+apiVersion: v1
+data:
+  _example: '################################
+
+    #                              #
+
+    #    EXAMPLE CONFIGURATION     #
+
+    #                              #
+
+    ################################
+
+    # This block is not actually functional configuration,
+
+    # but serves to illustrate the available configuration
+
+    # options and document them in a way that is accessible
+
+    # to users that `kubectl edit` this config map.
+
+    #
+
+    # These sample configuration options may be copied out of
+
+    # this example block and unindented to be in the data block
+
+    # to actually change the configuration.
+
+    # metrics.backend-destination field specifies the system metrics destination.
+
+    # It supports either prometheus (the default) or stackdriver.
+
+    # Note: Using Stackdriver will incur additional charges.
+
+    metrics.backend-destination: prometheus
+
+    # metrics.stackdriver-project-id field specifies the Stackdriver project ID. This
+
+    # field is optional. When running on GCE, application default credentials will
+    be
+
+    # used and metrics will be sent to the cluster''s project if this field is
+
+    # not provided.
+
+    metrics.stackdriver-project-id: "<your stackdriver project id>"
+
+    # metrics.allow-stackdriver-custom-metrics indicates whether it is allowed
+
+    # to send metrics to Stackdriver using "global" resource type and custom
+
+    # metric type. Setting this flag to "true" could cause extra Stackdriver
+
+    # charge.  If metrics.backend-destination is not Stackdriver, this is
+
+    # ignored.
+
+    metrics.allow-stackdriver-custom-metrics: "false"
+
+    '
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: default
+  name: tekton-config-observability
+  namespace: tekton-operator
+---
+apiVersion: v1
+data:
+  _example: '################################
+
+    #                              #
+
+    #    EXAMPLE CONFIGURATION     #
+
+    #                              #
+
+    ################################
+
+    # This block is not actually functional configuration,
+
+    # but serves to illustrate the available configuration
+
+    # options and document them in a way that is accessible
+
+    # to users that `kubectl edit` this config map.
+
+    #
+
+    # These sample configuration options may be copied out of
+
+    # this example block and unindented to be in the data block
+
+    # to actually change the configuration.
+
+    # lease-duration is how long non-leaders will wait to try to acquire the
+
+    # lock; 15 seconds is the value used by core kubernetes controllers.
+
+    lease-duration: "60s"
+
+    # renew-deadline is how long a leader will try to renew the lease before
+
+    # giving up; 10 seconds is the value used by core kubernetes controllers.
+
+    renew-deadline: "40s"
+
+    # retry-period is how long the leader election client waits between tries of
+
+    # actions; 2 seconds is the value used by core kubernetes controllers.
+
+    retry-period: "10s"
+
+    # buckets is the number of buckets used to partition key space of each
+
+    # Reconciler. If this number is M and the replica number of the controller
+
+    # is N, the N replicas will compete for the M buckets. The owner of a
+
+    # bucket will take care of the reconciling for the keys partitioned into
+
+    # that bucket.
+
+    buckets: "1"
+
+    '
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: default
+    operator.tekton.dev/release: v0.79.0
+  name: tekton-operator-controller-config-leader-election
+  namespace: tekton-operator
+---
+apiVersion: v1
+data:
+  version: v0.79.0
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: default
+  name: tekton-operator-info
+  namespace: tekton-operator
+---
+apiVersion: v1
+data:
+  _example: '################################
+
+    #                              #
+
+    #    EXAMPLE CONFIGURATION     #
+
+    #                              #
+
+    ################################
+
+    # This block is not actually functional configuration,
+
+    # but serves to illustrate the available configuration
+
+    # options and document them in a way that is accessible
+
+    # to users that `kubectl edit` this config map.
+
+    #
+
+    # These sample configuration options may be copied out of
+
+    # this example block and unindented to be in the data block
+
+    # to actually change the configuration.
+
+    # lease-duration is how long non-leaders will wait to try to acquire the
+
+    # lock; 15 seconds is the value used by core kubernetes controllers.
+
+    lease-duration: "60s"
+
+    # renew-deadline is how long a leader will try to renew the lease before
+
+    # giving up; 10 seconds is the value used by core kubernetes controllers.
+
+    renew-deadline: "40s"
+
+    # retry-period is how long the leader election client waits between tries of
+
+    # actions; 2 seconds is the value used by core kubernetes controllers.
+
+    retry-period: "10s"
+
+    # buckets is the number of buckets used to partition key space of each
+
+    # Reconciler. If this number is M and the replica number of the controller
+
+    # is N, the N replicas will compete for the M buckets. The owner of a
+
+    # bucket will take care of the reconciling for the keys partitioned into
+
+    # that bucket.
+
+    buckets: "1"
+
+    '
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: default
+    operator.tekton.dev/release: devel
+  name: tekton-operator-webhook-config-leader-election
+  namespace: tekton-operator
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: tekton-operator
+    name: tekton-operator-webhook
+  name: tekton-operator-webhook-certs
+  namespace: tekton-operator
