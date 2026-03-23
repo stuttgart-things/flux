@@ -45,7 +45,7 @@ spec:
                 command:
                   - sh
                   - "-c"
-                  - "grep -rl 'avp.kubernetes.io' . --include='*.yaml'"
+                  - "find . -name '*.yaml' | xargs grep -l 'avp.kubernetes.io'"
             generate:
               command:
                 - argocd-vault-plugin
