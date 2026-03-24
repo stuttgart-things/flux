@@ -70,7 +70,7 @@ spec:
   wait: true
   postBuild:
     substitute:
-      CERT_MANAGER_VERSION: 1.16.2
+      CERT_MANAGER_VERSION: v1.19.2
       CERT_MANAGER_NAMESPACE: cert-manager
       CERT_MANAGER_INSTALL_CRDS: "true"
     substituteFrom:
@@ -87,3 +87,5 @@ claims render --non-interactive \
 -o ./infra/ \
 --filename-pattern "{{.name}}.yaml"
 ```
+
+See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)
