@@ -1,0 +1,112 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harbor
+  namespace: ${HARBOR_NAMESPACE:-harbor}
+spec:
+  dependsOn:
+    - name: harbor-certificate-configuration
+      namespace: ${HARBOR_NAMESPACE:-harbor}
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: harbor
+      version: ${HARBOR_VERSION:-27.0.3}
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: ${HARBOR_NAMESPACE:-harbor}
+      interval: 12h
+  values:
+    externalURL: ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
+    clusterDomain: cluster.local
+    adminPassword: ${HARBOR_ADMIN_PASSWORD}
+
+    global:
+      imageRegistry: docker.io
+      defaultStorageClass: ${STORAGE_CLASS:-nfs4-csi}
+      storageClass: ${STORAGE_CLASS:-nfs4-csi}
+      security:
+        allowInsecureImages: true
+
+    nginx:
+      image:
+        repository: bitnamilegacy/nginx
+
+    portal:
+      image:
+        repository: bitnamilegacy/harbor-portal
+
+    core:
+      image:
+        repository: bitnamilegacy/harbor-core
+
+    jobservice:
+      image:
+        repository: bitnamilegacy/harbor-jobservice
+
+    registry:
+      server:
+        image:
+          repository: bitnamilegacy/harbor-registry
+      controller:
+        image:
+          repository: bitnamilegacy/harbor-registryctl
+
+    trivy:
+      image:
+        repository: bitnamilegacy/harbor-adapter-trivy
+
+    exporter:
+      image:
+        repository: bitnamilegacy/harbor-exporter
+
+    volumePermissions:
+      image:
+        repository: bitnamilegacy/os-shell
+
+    exposureType: ingress
+    service:
+      type: ClusterIP
+
+    ipFamily:
+      ipv6:
+        enabled: false
+      ipv4:
+        enabled: true
+
+    ingress:
+      core:
+        ingressClassName: ${INGRESS_CLASS_NAME:-nginx}
+        hostname: ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
+        tls: true
+        extraTls:
+          - hosts:
+              - ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
+            secretName: ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}-tls
+        annotations:
+          ingress.kubernetes.io/ssl-redirect: "true"
+          ingress.kubernetes.io/proxy-body-size: "0"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+
+    persistence:
+      enabled: ${HARBOR_PERSISTENCE_ENABLED:-true}
+      resourcePolicy: ''
+      persistentVolumeClaim:
+        registry:
+          size: ${HARBOR_PV_SIZE_REGISTRY:-12Gi}
+        trivy:
+          size: ${HARBOR_PV_SIZE_TRIVY:-5Gi}
+        jobservice:
+          size: ${HARBOR_PV_SIZE_JOBSERVICE:-1Gi}
+
+    postgresql:
+      image:
+        repository: bitnamilegacy/postgresql
+
+    redis:
+      image:
+        repository: bitnamilegacy/redis
