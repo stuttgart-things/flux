@@ -1,0 +1,36 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: harbor-project-proxy
+  namespace: ${HARBOR_NAMESPACE:-harbor}
+spec:
+  dependsOn:
+    - name: harbor
+      namespace: ${HARBOR_NAMESPACE:-harbor}
+  interval: 30m
+  timeout: 5m
+  chart:
+    spec:
+      chart: harbor-project-proxy
+      version: ${HARBOR_PROJECT_PROXY_VERSION:-0.0.1}
+      sourceRef:
+        kind: HelmRepository
+        name: harbor-project-proxy
+        namespace: ${HARBOR_NAMESPACE:-harbor}
+      interval: 12h
+  values:
+    replicaCount: 1
+    harborUpstream: http://harbor-core.${HARBOR_NAMESPACE:-harbor}.svc
+    ingress:
+      enabled: true
+      className: ${INGRESS_CLASS_NAME:-nginx}
+      hosts:
+        - host: "*.${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}"
+          paths:
+            - path: /
+              pathType: ImplementationSpecific
+      tls:
+        - secretName: ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}-tls
+          hosts:
+            - "*.${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}"

@@ -1,0 +1,10 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: harbor-project-proxy
+  namespace: ${HARBOR_NAMESPACE:-harbor}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/hiddenmarten
