@@ -67,7 +67,7 @@ spec:
       image:
         repository: bitnamilegacy/os-shell
 
-    exposureType: ingress
+    exposureType: ${EXPOSURE_TYPE:-ingress}
     service:
       type: ClusterIP
 
