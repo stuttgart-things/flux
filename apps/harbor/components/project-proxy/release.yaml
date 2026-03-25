@@ -23,7 +23,7 @@ spec:
     replicaCount: 1
     harborUpstream: http://harbor-core.${HARBOR_NAMESPACE:-harbor}.svc
     ingress:
-      enabled: true
+      enabled: ${INGRESS_ENABLED:-true}
       className: ${INGRESS_CLASS_NAME:-nginx}
       hosts:
         - host: "*.${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}"
