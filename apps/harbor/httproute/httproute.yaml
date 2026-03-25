@@ -11,6 +11,32 @@ spec:
   hostnames:
     - "${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}"
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/
+        - path:
+            type: PathPrefix
+            value: /v2/
+        - path:
+            type: PathPrefix
+            value: /service/
+        - path:
+            type: PathPrefix
+            value: /c/
+        - path:
+            type: PathPrefix
+            value: /chartrepo/
+        - path:
+            type: PathPrefix
+            value: /harbor/
+      backendRefs:
         - name: harbor-core
+          port: 80
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: harbor-portal
           port: 80
