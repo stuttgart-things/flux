@@ -14,6 +14,17 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `light-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer triggering WLED light effects |
 | `wled-mock` | OCIRepository + Flux Kustomization | WLED mock server with dashboard (for dev/testing) |
 | `demo-pitcher` | OCIRepository + Flux Kustomization | Web UI for manually pitching demo messages to Redis Streams |
+| `led-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer for LED display output |
+| `git-pitcher` | OCIRepository + Flux Kustomization | Watches Git repositories and pitches events to Redis Streams |
+
+## Profiles
+
+Profiles provide pre-composed subsets of components for different deployment scenarios. Use `path: ./apps/homerun2/profiles/<name>` in the Flux Kustomization instead of `path: ./apps/homerun2` (which deploys all 10 components).
+
+| Profile | Components | Use case |
+|---------|------------|----------|
+| `profiles/core` | redis-stack, omni-pitcher, core-catcher | Minimal deployment: message ingestion + web dashboard |
+| *(root)* | all 10 components | Full stack deployment |
 
 ## SUBSTITUTION VARIABLES
 
@@ -91,6 +102,26 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 |----------|---------|----------|---------|
 | `HOMERUN2_DEMO_PITCHER_VERSION` | `v1.4.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+
+### LED Catcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_LED_CATCHER_VERSION` | `v0.1.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+
+### Git Pitcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_GIT_PITCHER_VERSION` | `v0.5.0` | no | OCI kustomize base + container image tag |
+
+### Scout
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_SCOUT_VERSION` | `v0.7.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_SCOUT_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 The WLED mock provides a dashboard simulating a WLED device. Use it during development/testing instead of a real WLED device. The light-catcher's profile should point its endpoints to `homerun2-wled-mock.NAMESPACE.svc.cluster.local`.
 
@@ -359,7 +390,66 @@ Uses the Kustomize Components pattern:
 8. **WLED Mock component** provides a mock WLED device with dashboard for development/testing. The light-catcher profile endpoints should point to `homerun2-wled-mock.NAMESPACE.svc.cluster.local` when using the mock
 9. **Demo Pitcher component** provides a web UI for manually composing and pitching demo messages directly to Redis Streams. Useful for testing and demos without needing curl or the omni-pitcher API
 
-Adding more homerun2 services is done by adding new component folders under `components/`.
+Adding more homerun2 services is done by adding new component folders under `components/`. New profiles can be created under `profiles/` by composing the desired components.
+
+## COMPLETE EXAMPLE: STHINGS-PLATFORM CLUSTER (CORE PROFILE)
+
+Minimal deployment using the `profiles/core` profile (redis-stack + omni-pitcher + core-catcher only):
+
+**Cluster config** (`clusters/labul/vsphere/sthings-platform/apps/homerun2.yaml`):
+
+```yaml
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/homerun2/profiles/core
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: homerun2
+      FLUX_SOURCE_API_VERSION: v1
+      GATEWAY_NAME: sthings-platform-gateway
+      GATEWAY_NAMESPACE: default
+      DOMAIN: sthings-platform.sthings-vsphere.labul.sva.de
+      HOMERUN2_OMNI_PITCHER_VERSION: v1.6.2
+      HOMERUN2_OMNI_PITCHER_HOSTNAME: omni
+      HOMERUN2_CORE_CATCHER_VERSION: v0.8.0
+      HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: v0.7.1
+      HOMERUN2_CORE_CATCHER_HOSTNAME: core
+      HOMERUN2_REDIS_VERSION: "17.1.4"
+      HOMERUN2_REDIS_SERVICE_TYPE: ClusterIP
+      HOMERUN2_REDIS_PERSISTENCE_ENABLED: "true"
+      HOMERUN2_REDIS_STORAGE_CLASS: nfs4-csi
+      HOMERUN2_REDIS_STORAGE_SIZE: 8Gi
+      HOMERUN2_REDIS_IMAGE_REGISTRY: ghcr.io
+      HOMERUN2_REDIS_IMAGE_REPOSITORY: stuttgart-things/redis-stack-server
+      HOMERUN2_REDIS_IMAGE_VERSION: 7.2.0-v18
+      HOMERUN2_REDIS_SENTINEL_REGISTRY: ghcr.io
+      HOMERUN2_REDIS_SENTINEL_REPOSITORY: stuttgart-things/redis-sentinel
+      HOMERUN2_REDIS_SENTINEL_VERSION: 7.4.2-debian-12-r9
+    substituteFrom:
+      - kind: Secret
+        name: homerun2-secrets
+```
+
+**Resulting endpoints:**
+
+| Service | URL |
+|---------|-----|
+| Omni Pitcher | `https://omni.sthings-platform.sthings-vsphere.labul.sva.de` |
+| Core Catcher | `https://core.sthings-platform.sthings-vsphere.labul.sva.de` |
+| Redis Stack | `redis-stack.homerun2.svc.cluster.local:6379` (internal) |
 
 ## TESTING WITH CURL
 
