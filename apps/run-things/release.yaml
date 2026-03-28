@@ -1,0 +1,53 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: run-things
+  namespace: ${RUN_THINGS_NAMESPACE:-run-things}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: run-things-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${RUN_THINGS_NAMESPACE:-run-things}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: run-things
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: run-things
+        spec:
+          template:
+            spec:
+              containers:
+                - name: run-things
+                  image: ghcr.io/stuttgart-things/run-things:${RUN_THINGS_VERSION:-v0.2.0}
+    # Override config in ConfigMap
+    - target:
+        kind: ConfigMap
+        name: run-things-config
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: run-things-config
+        data:
+          CONFIG_NAME: ${RUN_THINGS_CONFIG_NAME:-portal-labul}
+    # Remove the KCL-generated HTTPRoute (we provide our own via flux)
+    - target:
+        kind: HTTPRoute
+        name: run-things
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: run-things
+        $patch: delete
