@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${RUN_THINGS_NAMESPACE:-run-things}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: run-things-kustomize
+  namespace: ${RUN_THINGS_NAMESPACE:-run-things}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/run-things-kustomize
+  ref:
+    tag: ${RUN_THINGS_VERSION:-v0.2.0}
