@@ -15,4 +15,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/run-things-kustomize
   ref:
-    tag: ${RUN_THINGS_VERSION:-v0.2.0}
+    tag: ${RUN_THINGS_VERSION:-1.0.0}
