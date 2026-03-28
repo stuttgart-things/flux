@@ -28,6 +28,7 @@ spec:
       RUN_THINGS_VERSION: v0.2.0
       RUN_THINGS_HOSTNAME: run-things
       RUN_THINGS_CONFIG_NAME: portal-labul
+      FLUX_SOURCE_API_VERSION: v1beta2
       GATEWAY_NAME: movie-scripts2-gateway
       GATEWAY_NAMESPACE: default
       DOMAIN: movie-scripts2.sthings-vsphere.labul.sva.de
@@ -42,6 +43,7 @@ EOF
 | `RUN_THINGS_VERSION` | `v0.2.0` | Image + kustomize OCI tag |
 | `RUN_THINGS_HOSTNAME` | `run-things` | HTTPRoute hostname prefix |
 | `RUN_THINGS_CONFIG_NAME` | `portal-labul` | ServicePortal CR name |
+| `FLUX_SOURCE_API_VERSION` | `v1` | OCIRepository API version (`v1` or `v1beta2`) |
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
 | `DOMAIN` | *(required)* | Domain suffix for HTTPRoute hostname |
