@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: run-things
-                  image: ghcr.io/stuttgart-things/run-things:${RUN_THINGS_VERSION:-v0.2.0}
+                  image: ghcr.io/stuttgart-things/run-things:${RUN_THINGS_VERSION:-1.0.0}
     # Override config in ConfigMap
     - target:
         kind: ConfigMap
