@@ -25,4 +25,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/claim-machinery-api-kustomize
   ref:
-    tag: ${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
+    tag: ${CLAIM_MACHINERY_API_VERSION:-0.21.1}
