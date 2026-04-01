@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: clusterbook
-                  image: ghcr.io/stuttgart-things/clusterbook:${CLUSTERBOOK_VERSION:-v1.11.0}
+                  image: ghcr.io/stuttgart-things/clusterbook:${CLUSTERBOOK_VERSION:-1.24.0}
     # Override PowerDNS config in ConfigMap
     - target:
         kind: ConfigMap
