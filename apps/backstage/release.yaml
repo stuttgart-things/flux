@@ -39,6 +39,8 @@ spec:
       image:
         registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}
         repository: ${BACKSTAGE_IMAGE_REPOSITORY:-stuttgart-things/sthings-backstage}
+        tag: ${BACKSTAGE_IMAGE_TAG:-latest}
+        digest: ${BACKSTAGE_IMAGE_DIGEST:-""}
       extraEnvVars:
         - name: APP_TITLE
           valueFrom:
