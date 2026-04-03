@@ -16,7 +16,7 @@ metadata:
   namespace: flux-system
 type: Opaque
 stringData:
-  REDIS_PASSWORD: "your-secure-password"
+  REDIS_PASSWORD: "your-secure-password" # pragma: allowlist secret
 EOF
 ```
 

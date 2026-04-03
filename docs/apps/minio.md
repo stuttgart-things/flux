@@ -17,7 +17,7 @@ metadata:
 type: Opaque
 stringData:
   MINIO_ADMIN_USER: "your-username"
-  MINIO_ADMIN_PASSWORD: "your-password"
+  MINIO_ADMIN_PASSWORD: "your-password" # pragma: allowlist secret
 EOF
 ```
 

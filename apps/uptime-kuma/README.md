@@ -240,3 +240,16 @@ data:
 kubectl apply -f setup-job.yaml
 kubectl logs -n uptime-kuma job/uptime-kuma-setup -f
 ```
+
+## Claims CLI
+
+```bash
+claims render --non-interactive \
+-t flux-kustomization-uptime-kuma \
+-p uptimeKumaGatewayName=my-gateway \
+-p uptimeKumaDomain=example.sthings-vsphere.labul.sva.de \
+-o ./apps/ \
+--filename-pattern "{{.name}}.yaml"
+```
+
+See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)

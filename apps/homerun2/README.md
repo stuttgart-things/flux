@@ -23,7 +23,8 @@ Profiles provide pre-composed subsets of components for different deployment sce
 
 | Profile | Components | Use case |
 |---------|------------|----------|
-| `profiles/core` | redis-stack, omni-pitcher, core-catcher | Minimal deployment: message ingestion + web dashboard |
+| `profiles/core` | redis-stack, omni-pitcher, core-catcher, scout | Minimal deployment: message ingestion + web dashboard + monitoring |
+| `profiles/cicd` | core + git-pitcher | CI/CD-focused: core stack + Git event watching |
 | *(root)* | all 10 components | Full stack deployment |
 
 ## SUBSTITUTION VARIABLES

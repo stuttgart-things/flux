@@ -142,3 +142,5 @@ claims render --non-interactive \
 -o ./infra/ \
 --filename-pattern "{{.name}}.yaml"
 ```
+
+See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)

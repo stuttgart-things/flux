@@ -16,7 +16,7 @@ nav:
       - Flux Operator: bootstrap/flux-operator.md
       - Flux CLI: bootstrap/flux-cli.md
       - Blueprints (Dagger + KCL): bootstrap/blueprints.md
-      - SOPS Secrets: bootstrap/sops-secrets.md
+      - SOPS Secrets: bootstrap/sops-secrets.md # pragma: allowlist secret
   - Development:
       - Adding Components: development/adding-components.md
       - Conventions: development/conventions.md

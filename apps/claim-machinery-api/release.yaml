@@ -59,7 +59,7 @@ spec:
     - target:
         kind: Deployment
         name: claim-machinery-api
-      patch: |
+      patch: | # pragma: allowlist secret
         apiVersion: apps/v1
         kind: Deployment
         metadata:

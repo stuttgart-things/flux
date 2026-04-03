@@ -16,7 +16,7 @@ metadata:
   namespace: flux-system
 type: Opaque
 stringData:
-  HOMERUN2_REDIS_PASSWORD: "your-secure-password"
+  HOMERUN2_REDIS_PASSWORD: "your-secure-password" # pragma: allowlist secret
   HOMERUN2_REDIS_PASSWORD_B64: "<base64-encoded-password>"
 EOF
 ```

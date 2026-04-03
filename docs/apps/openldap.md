@@ -17,7 +17,7 @@ metadata:
 type: Opaque
 stringData:
   ADMIN_USER: "admin"
-  ADMIN_PASSWORD: "your-secure-password"
+  ADMIN_PASSWORD: "your-secure-password" # pragma: allowlist secret
 EOF
 ```
 
@@ -62,7 +62,7 @@ spec:
       STORAGE_SIZE: 8Gi
       STORAGE_CLASS: nfs4-csi
       TEST_ENABLED: "false"
-      LTB_PASSWD_ENABLED: "false"
+      LTB_PASSWD_ENABLED: "false" # pragma: allowlist secret
       PHP_ADMIN_ENABLED: "false"
       ENABLE_LDAP_PORT: "true"
       ENABLE_LDAPS_PORT: "false"

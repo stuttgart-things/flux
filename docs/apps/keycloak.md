@@ -17,7 +17,7 @@ metadata:
 type: Opaque
 stringData:
   ADMIN_USER: "admin"
-  ADMIN_PASSWORD: "your-secure-password"
+  ADMIN_PASSWORD: "your-secure-password" # pragma: allowlist secret
 EOF
 ```
 

@@ -131,14 +131,14 @@ data:
     url = os.environ["KUMA_URL"]
     namespace = os.environ["NAMESPACE"]
     user = os.environ["ADMIN_USER"]
-    secret_name = "uptime-kuma-admin"
+    secret_name = "uptime-kuma-admin"  # pragma: allowlist secret
 
     # Load in-cluster k8s config
     config.load_incluster_config()
     v1 = client.CoreV1Api()
 
     # Check if admin secret already exists
-    password = None
+    password = None  # pragma: allowlist secret
     try:
         secret = v1.read_namespaced_secret(secret_name, namespace)
         import base64
@@ -150,10 +150,10 @@ data:
             alphabet = string.ascii_letters + string.digits
             password = ''.join(secrets.choice(alphabet) for _ in range(24))
             # Create the secret
-            secret = client.V1Secret(
+            secret = client.V1Secret(  # pragma: allowlist secret
                 metadata=client.V1ObjectMeta(name=secret_name),
                 type="Opaque",
-                string_data={"username": user, "password": password}
+                string_data={"username": user, "password": password}  # pragma: allowlist secret
             )
             v1.create_namespaced_secret(namespace, secret)
             print(f"Generated password and created secret '{secret_name}'.")

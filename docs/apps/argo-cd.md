@@ -65,7 +65,7 @@ spec:
       INGRESS_SECRET_NAME: argocd-server-tls
       ISSUER_NAME: cluster-issuer-approle
       ISSUER_KIND: ClusterIssuer
-      ARGO_CD_PASSWORD_MTIME: "2024-09-16T12:51:06UTC"
+      ARGO_CD_PASSWORD_MTIME: "2024-09-16T12:51:06UTC" # pragma: allowlist secret
     substituteFrom:
       - kind: Secret
         name: argocd-secrets
