@@ -300,6 +300,58 @@ spec:
 |-----|-------------|
 | `imageTag` | Container image tag, kept as string to avoid YAML float coercion |
 
+## Optional: Internal CA Trust (Vault PKI)
+
+When Backstage needs to call internal services over HTTPS with certificates issued by a private CA (e.g. Vault PKI via cert-manager), Node.js must be configured to trust the CA. This is done by mounting the trust-manager `cluster-trust-bundle` ConfigMap and setting `NODE_EXTRA_CA_CERTS`.
+
+### 1. Create a ConfigMap for the env var
+
+Add to your cluster's `backstage-prereqs.yaml`:
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-ca-env
+  namespace: backstage
+data:
+  NODE_EXTRA_CA_CERTS: /etc/ssl/custom/trust-bundle.pem
+```
+
+### 2. Patch the HelmRelease via Kustomization
+
+Add a `patches` block to your cluster's `backstage.yaml` Kustomization:
+
+```yaml
+  patches:
+    - target:
+        kind: HelmRelease
+        name: backstage-deployment
+      patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: backstage-deployment
+        spec:
+          values:
+            backstage:
+              extraVolumes:
+                - name: trust-bundle
+                  configMap:
+                    name: cluster-trust-bundle
+                    optional: true
+              extraVolumeMounts:
+                - name: trust-bundle
+                  mountPath: /etc/ssl/custom/trust-bundle.pem
+                  subPath: trust-bundle.pem
+                  readOnly: true
+              extraEnvVarsCM:
+                - backstage-ca-env
+```
+
+This requires trust-manager to be deployed on the cluster with a `Bundle` resource that populates the `cluster-trust-bundle` ConfigMap.
+
 ## Verify
 
 ```bash
