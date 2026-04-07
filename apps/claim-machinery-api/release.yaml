@@ -39,7 +39,7 @@ spec:
             spec:
               containers:
                 - name: claim-machinery-api
-                  image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.5.6}
+                  image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.21.1}
                   args:
                     - server
     # Override TEMPLATE_PROFILE_PATH and configure homerun2 notifications
