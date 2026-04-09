@@ -30,7 +30,7 @@ spec:
               containers:
                 - name: machinery
                   image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-v1.0.0}
-    # Inject MACHINERY_CONFIG from ConfigMap (if exists)
+    # Mount MACHINERY_CONFIG from ConfigMap as a file
     - target:
         kind: Deployment
         name: machinery
@@ -46,11 +46,16 @@ spec:
                 - name: machinery
                   env:
                     - name: MACHINERY_CONFIG
-                      valueFrom:
-                        configMapKeyRef:
-                          name: machinery-config
-                          key: config.json
-                          optional: true
+                      value: /etc/machinery/config.json
+                  volumeMounts:
+                    - name: machinery-config
+                      mountPath: /etc/machinery
+                      readOnly: true
+              volumes:
+                - name: machinery-config
+                  configMap:
+                    name: machinery-config
+                    optional: true
     # Add HTTP port to deployment
     - target:
         kind: Deployment
