@@ -30,6 +30,27 @@ spec:
               containers:
                 - name: machinery
                   image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-v1.0.0}
+    # Inject MACHINERY_CONFIG from ConfigMap (if exists)
+    - target:
+        kind: Deployment
+        name: machinery
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery
+                  env:
+                    - name: MACHINERY_CONFIG
+                      valueFrom:
+                        configMapKeyRef:
+                          name: machinery-config
+                          key: config.json
+                          optional: true
     # Add HTTP port to deployment
     - target:
         kind: Deployment
