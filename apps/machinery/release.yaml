@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: machinery
-                  image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-1.1.0}
+                  image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-1.3.0}
     # Mount MACHINERY_CONFIG from ConfigMap as a file
     - target:
         kind: Deployment
