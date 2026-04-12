@@ -33,7 +33,7 @@ spec:
               externalAccess:
                 - type: static
                   options:
-                    token: $${DAPR_SERVICE_TOKEN}
+                    token: $${EXTERNAL_ACCESS_TOKEN}
                     subject: dapr-workflow-service
                   accessRestrictions:
                     - plugin: scaffolder
@@ -123,4 +123,4 @@ spec:
           GITHUB_CLIENT_ID: ${BACKSTAGE_GITHUB_CLIENT_ID}
           GITHUB_CLIENT_SECRET: ${BACKSTAGE_GITHUB_CLIENT_SECRET}
           BACKEND_SECRET: ${BACKSTAGE_BACKEND_SECRET}
-          DAPR_SERVICE_TOKEN: ${BACKSTAGE_DAPR_SERVICE_TOKEN}
+          EXTERNAL_ACCESS_TOKEN: ${BACKSTAGE_EXTERNAL_ACCESS_TOKEN}
