@@ -102,6 +102,11 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: BACKEND_SECRET
+        - name: DAPR_SERVICE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: DAPR_SERVICE_TOKEN
       extraAppConfig:
         - filename: app-config.extra.yaml
           configMapRef: backstage-app-config

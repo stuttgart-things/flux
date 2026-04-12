@@ -49,6 +49,7 @@ stringData:
   BACKSTAGE_GITHUB_CLIENT_SECRET: "9c20..."                   #pragma: allowlist secret
   BACKSTAGE_BACKEND_SECRET: "backstage-backend-secret-key-…"  #pragma: allowlist secret
   BACKSTAGE_POSTGRESQL_PASSWORD: "backstage"                  #pragma: allowlist secret
+  BACKSTAGE_DAPR_SERVICE_TOKEN: "c2Wc7O/7EAxNhMd9…"            #pragma: allowlist secret
 ```
 
 ```bash
@@ -217,6 +218,7 @@ stringData:
   BACKSTAGE_GITHUB_CLIENT_SECRET: "..."                       #pragma: allowlist secret
   BACKSTAGE_BACKEND_SECRET: "..."                             #pragma: allowlist secret
   BACKSTAGE_POSTGRESQL_PASSWORD: "..."                        #pragma: allowlist secret
+  BACKSTAGE_DAPR_SERVICE_TOKEN: "..."                         #pragma: allowlist secret
 ```
 
 ### backstage.yaml
@@ -293,6 +295,7 @@ spec:
 | `BACKSTAGE_GITHUB_CLIENT_SECRET` | GitHub OAuth App client secret |
 | `BACKSTAGE_BACKEND_SECRET` | Signing key for Backstage backend auth |
 | `BACKSTAGE_POSTGRESQL_PASSWORD` | Password for the bundled PostgreSQL instance |
+| `BACKSTAGE_DAPR_SERVICE_TOKEN` | Static external-access token for the `dapr-workflow-service` subject (restricted to `scaffolder` + `catalog` plugins). Consumed by the dapr-workflows/backstage-template-execution app. |
 
 ### Helm Override (set in `backstage-helm-overrides` ConfigMap)
 
