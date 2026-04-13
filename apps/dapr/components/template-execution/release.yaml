@@ -84,3 +84,17 @@ spec:
         metadata:
           name: backstage-ca
         $patch: delete
+    # Override the Redis host the Dapr statestore Component points at.
+    # The KCL base bakes `redis-stack.homerun2-flux.svc.cluster.local:6379`
+    # as the build-time default (homerun2 dev cluster); per-cluster
+    # deployments set DAPR_BACKSTAGE_TPL_REDIS_HOST to their own Redis
+    # endpoint via the cluster-side Flux Kustomization's postBuild.substitute.
+    - target:
+        group: dapr.io
+        version: v1alpha1
+        kind: Component
+        name: statestore
+      patch: |
+        - op: replace
+          path: /spec/metadata/0/value
+          value: ${DAPR_BACKSTAGE_TPL_REDIS_HOST:-redis-stack.homerun2-flux.svc.cluster.local:6379}
