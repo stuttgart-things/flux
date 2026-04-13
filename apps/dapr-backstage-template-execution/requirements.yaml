@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: dapr-backstage-template-execution-kustomize
+  namespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/dapr-backstage-template-execution-kustomize
+  ref:
+    tag: ${DAPR_BACKSTAGE_TPL_VERSION:-60b81b0cbb6b}
