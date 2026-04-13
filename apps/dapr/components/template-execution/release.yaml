@@ -15,7 +15,11 @@ spec:
   wait: true
   targetNamespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
   patches:
-    # Override the container image tag
+    # Override the container image tag and strip the CA volume / mount /
+    # SSL_CERT_FILE env so the pod can start without a real backstage-ca
+    # ConfigMap in the cluster. Re-add a real CA (or re-enable _enableCA
+    # in main.k and provide the ConfigMap here) when TLS trust for
+    # Backstage is actually needed.
     - target:
         kind: Deployment
         name: backstage-template-execution
@@ -27,9 +31,18 @@ spec:
         spec:
           template:
             spec:
+              volumes:
+                - $patch: delete
+                  name: backstage-ca
               containers:
                 - name: workflow
                   image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-49b147e70413}
+                  volumeMounts:
+                    - $patch: delete
+                      name: backstage-ca
+                  env:
+                    - $patch: delete
+                      name: SSL_CERT_FILE
     # Drop placeholder Secrets from the kustomize base — real secrets come
     # from this flux app (see secrets.yaml) so they can be managed via SOPS
     # or substituteFrom.
