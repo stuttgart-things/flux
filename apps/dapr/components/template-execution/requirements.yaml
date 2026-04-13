@@ -15,4 +15,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/dapr-backstage-template-execution-kustomize
   ref:
-    tag: ${DAPR_BACKSTAGE_TPL_VERSION:-60b81b0cbb6b}
+    tag: ${DAPR_BACKSTAGE_TPL_VERSION:-49b147e70413}

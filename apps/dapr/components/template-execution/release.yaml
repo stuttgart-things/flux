@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: workflow
-                  image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-60b81b0cbb6b}
+                  image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-49b147e70413}
     # Drop placeholder Secrets from the kustomize base — real secrets come
     # from this flux app (see secrets.yaml) so they can be managed via SOPS
     # or substituteFrom.
