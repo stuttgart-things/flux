@@ -1,0 +1,73 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-backstage-template-execution
+  namespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: dapr-backstage-template-execution-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: backstage-template-execution
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backstage-template-execution
+        spec:
+          template:
+            spec:
+              containers:
+                - name: workflow
+                  image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-60b81b0cbb6b}
+    # Drop placeholder Secrets from the kustomize base — real secrets come
+    # from this flux app (see secrets.yaml) so they can be managed via SOPS
+    # or substituteFrom.
+    - target:
+        kind: Secret
+        name: github-token
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: github-token
+        $patch: delete
+    - target:
+        kind: Secret
+        name: backstage-auth-token
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: backstage-auth-token
+        $patch: delete
+    - target:
+        kind: Secret
+        name: redis-password
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: redis-password
+        $patch: delete
+    # Drop the placeholder CA ConfigMap from the kustomize base; provide the
+    # real CA via substituteFrom or disable CA mount at build time.
+    - target:
+        kind: ConfigMap
+        name: backstage-ca
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: backstage-ca
+        $patch: delete
