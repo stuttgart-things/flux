@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${KRO_NAMESPACE:-kro-system}
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kro
+  namespace: ${KRO_NAMESPACE:-kro-system}
+spec:
+  interval: 24h
+  type: oci
+  url: oci://registry.k8s.io/kro/charts
