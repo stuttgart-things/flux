@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${DAPR_REDIS_NAMESPACE:-dapr-redis}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things-redis
+  namespace: ${DAPR_REDIS_NAMESPACE:-dapr-redis}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/charts/redis
