@@ -50,3 +50,9 @@ EOF
 |---|---|
 | `https://<hostname>.<domain>/` | HTMX dashboard |
 | `<hostname>.<domain>:50051` | gRPC API |
+
+## Note: PipelineRuns re-appearing daily
+
+Machinery only **watches** Crossplane XRs (`AnsibleRun`, `VMProvision`, …) and surfaces their status — it does not create PipelineRuns itself. PipelineRuns shown in its dashboard are rendered by the `stage-time` compositions via Crossplane's `provider-kubernetes` `Object`s (`managementPolicies: ["*"]`).
+
+If runs in the CI namespace appear to re-trigger every morning, the cause is the cluster-wide Tekton operator pruner deleting them, followed by Crossplane recreating them on the next reconcile. The fix lives in `cicd/tekton` — see that app's README section *Caveat: Pruner + Crossplane-managed PipelineRuns* and the opt-in `components/ci-namespace` component that annotates the namespace with `operator.tekton.dev/prune.skip=true`.
