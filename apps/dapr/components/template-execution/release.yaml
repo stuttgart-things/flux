@@ -22,6 +22,24 @@ spec:
     # ConfigMap-backed volume of the same name — strategic merge can't
     # swap a volume's source in place, so we delete the base volume /
     # mount / env first and re-add Secret-backed equivalents.
+    # Make the daprd sidecar HTTP API reachable via the
+    # backstage-template-execution-dapr service so other pods (e.g. the
+    # kro-managed BackstageTemplateRun trigger Job) can POST workflow
+    # start requests. Default is 127.0.0.1 — we widen it to 0.0.0.0
+    # via the standard Dapr pod annotation.
+    - target:
+        kind: Deployment
+        name: backstage-template-execution
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backstage-template-execution
+        spec:
+          template:
+            metadata:
+              annotations:
+                dapr.io/sidecar-listen-addresses: "0.0.0.0"
     - target:
         kind: Deployment
         name: backstage-template-execution
