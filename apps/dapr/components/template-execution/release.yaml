@@ -15,11 +15,13 @@ spec:
   wait: true
   targetNamespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
   patches:
-    # Override the container image tag and strip the CA volume / mount /
-    # SSL_CERT_FILE env so the pod can start without a real backstage-ca
-    # ConfigMap in the cluster. Re-add a real CA (or re-enable _enableCA
-    # in main.k and provide the ConfigMap here) when TLS trust for
-    # Backstage is actually needed.
+    # Override the container image tag and wire the backstage-ca Secret
+    # (provided cluster-side, e.g. clusters/labul/vsphere/cd-mgmt-1/apps/
+    # dapr-backstage-ca.yaml) into the workflow container so the pod
+    # trusts the internal CA that signs the Backstage endpoint.
+    # The kustomize base ships a placeholder ConfigMap-backed volume;
+    # we replace it with the Secret-backed one here and point
+    # SSL_CERT_FILE at the mounted PEM.
     - target:
         kind: Deployment
         name: backstage-template-execution
@@ -32,17 +34,23 @@ spec:
           template:
             spec:
               volumes:
-                - $patch: delete
-                  name: backstage-ca
+                - name: backstage-ca
+                  $patch: replace
+                  secret:
+                    secretName: backstage-ca
+                    items:
+                      - key: ca.crt
+                        path: ca.crt
               containers:
                 - name: workflow
                   image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-49b147e70413}
                   volumeMounts:
-                    - $patch: delete
-                      name: backstage-ca
+                    - name: backstage-ca
+                      mountPath: /etc/backstage-ca
+                      readOnly: true
                   env:
-                    - $patch: delete
-                      name: SSL_CERT_FILE
+                    - name: SSL_CERT_FILE
+                      value: /etc/backstage-ca/ca.crt
     # Drop placeholder Secrets from the kustomize base — real secrets come
     # from this flux app (see secrets.yaml) so they can be managed via SOPS
     # or substituteFrom.

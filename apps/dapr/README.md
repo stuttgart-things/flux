@@ -107,6 +107,36 @@ variables and their defaults:
   `BACKSTAGE_AUTH_TOKEN` / `REDIS_PASSWORD` via a SOPS-encrypted Secret or
   `substituteFrom`.
 
+## Backstage CA trust
+
+The `template-execution` workflow talks to Backstage over HTTPS. When the
+Backstage endpoint is served with a cert signed by an internal CA (e.g.
+`CN=infra.sthings-vsphere.labul.sva.de`), the pod will fail TLS
+verification with `unable to get local issuer certificate` unless that
+CA is mounted into the `workflow` container.
+
+Download the internal CA straight from the Vault PKI endpoint (same
+pattern as `stuttgart-things/images/sthings-alpine/Dockerfile`):
+
+```bash
+# CN=infra.sthings-vsphere.labul.sva.de — signs *.platform.sthings-vsphere.labul.sva.de
+wget -O /tmp/infra-vsphere-ca.crt \
+  https://vault.infra.sthings-vsphere.labul.sva.de/v1/pki/ca/pem \
+  --no-check-certificate
+
+# verify
+openssl x509 -in /tmp/infra-vsphere-ca.crt -noout -subject -issuer -dates
+```
+
+Ship the PEM as a `Secret` named `backstage-ca` in the
+`${DAPR_BACKSTAGE_TPL_NAMESPACE}` namespace (key: `ca.crt`). The
+`template-execution` component re-adds the volume, mount and
+`SSL_CERT_FILE` env on the `workflow` container so the CA is trusted at
+runtime — see
+[`components/template-execution/release.yaml`](./components/template-execution/release.yaml).
+An example cluster-side Secret lives at
+`stuttgart-things/clusters/labul/vsphere/cd-mgmt-1/apps/dapr-backstage-ca.yaml`.
+
 ## Adding a new dapr-based workflow app
 
 1. Create `components/<new-app>/` with its own `requirements.yaml`,
