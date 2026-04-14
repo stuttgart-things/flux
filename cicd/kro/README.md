@@ -1,4 +1,4 @@
-# stuttgart-things/flux/infra/kro
+# stuttgart-things/flux/cicd/kro
 
 [kro](https://kro.run) — the Kube Resource Orchestrator — installed via
 its upstream Helm chart (`oci://registry.k8s.io/kro/charts/kro`) so you
@@ -27,7 +27,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-infra
-  path: ./infra/kro
+  path: ./cicd/kro
   prune: true
   wait: true
   postBuild:
