@@ -15,13 +15,36 @@ spec:
   wait: true
   targetNamespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
   patches:
-    # Override the container image tag and wire the backstage-ca Secret
-    # (provided cluster-side, e.g. clusters/labul/vsphere/cd-mgmt-1/apps/
-    # dapr-backstage-ca.yaml) into the workflow container so the pod
-    # trusts the internal CA that signs the Backstage endpoint.
-    # The kustomize base ships a placeholder ConfigMap-backed volume;
-    # we replace it with the Secret-backed one here and point
-    # SSL_CERT_FILE at the mounted PEM.
+    # Wire the backstage-ca Secret (provided cluster-side, e.g.
+    # clusters/labul/vsphere/cd-mgmt-1/apps/dapr-backstage-ca.yaml) into
+    # the workflow container so the pod trusts the internal CA that
+    # signs the Backstage endpoint. The kustomize base ships a
+    # ConfigMap-backed volume of the same name — strategic merge can't
+    # swap a volume's source in place, so we delete the base volume /
+    # mount / env first and re-add Secret-backed equivalents.
+    - target:
+        kind: Deployment
+        name: backstage-template-execution
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: backstage-template-execution
+        spec:
+          template:
+            spec:
+              volumes:
+                - $patch: delete
+                  name: backstage-ca
+              containers:
+                - name: workflow
+                  image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-49b147e70413}
+                  volumeMounts:
+                    - $patch: delete
+                      name: backstage-ca
+                  env:
+                    - $patch: delete
+                      name: SSL_CERT_FILE
     - target:
         kind: Deployment
         name: backstage-template-execution
@@ -35,7 +58,6 @@ spec:
             spec:
               volumes:
                 - name: backstage-ca
-                  $patch: replace
                   secret:
                     secretName: backstage-ca
                     items:
@@ -43,7 +65,6 @@ spec:
                         path: ca.crt
               containers:
                 - name: workflow
-                  image: ghcr.io/stuttgart-things/dapr-backstage-template-execution:${DAPR_BACKSTAGE_TPL_IMAGE_TAG:-49b147e70413}
                   volumeMounts:
                     - name: backstage-ca
                       mountPath: /etc/backstage-ca
