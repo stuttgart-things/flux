@@ -15,6 +15,60 @@ helm install kargo \
   --wait
 ```
 
+## Requirements
+
+<details><summary>ADD GITREPOSITORY</summary>
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-apps
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  url: https://github.com/stuttgart-things/flux.git
+EOF
+```
+
+</details>
+
+<details><summary>CREATE SECRET</summary>
+
+The admin credentials contain `$` characters (bcrypt hashes) that collide with
+Flux's `postBuild.substitute` envsubst-style expansion. Pass them through a
+Kubernetes `Secret` and `substituteFrom` instead of inlining them — Flux reads
+secret values literally, no escaping required.
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kargo-secrets
+  namespace: flux-system
+type: Opaque
+stringData:
+  KARGO_ADMIN_PASSWORD_HASH: '<bcrypt-hash>' # pragma: allowlist secret
+  KARGO_ADMIN_TOKEN_SIGNING_KEY: '<random-signing-key>' # pragma: allowlist secret
+EOF
+```
+
+Generate the values:
+
+```bash
+# Password hash (bcrypt, $2a$ variant)
+htpasswd -bnBC 10 "" '<your-password>' | tr -d ':\n' | sed 's/$2y/$2a/'
+
+# Token signing key
+openssl rand -base64 29 | tr -d "=+/" | head -c 32
+```
+
+</details>
+
 ## Main Kargo Deployment
 
 ```bash
@@ -41,8 +95,6 @@ spec:
       KARGO_VERSION: "1.9.6"
       KARGO_HOSTNAME: kargo
       KARGO_DOMAIN: example.sthings-vsphere.example.com
-      KARGO_ADMIN_PASSWORD_HASH: "<bcrypt-hash>"
-      KARGO_ADMIN_TOKEN_SIGNING_KEY: "<random-signing-key>"
       KARGO_ADMIN_TOKEN_TTL: 24h
       KARGO_SERVICE_TYPE: ClusterIP
       KARGO_API_TLS_ENABLED: "false"
@@ -53,18 +105,16 @@ spec:
       INGRESS_CLASS_NAME: nginx
       ISSUER_NAME: cluster-issuer-approle
       ISSUER_KIND: ClusterIssuer
+    substituteFrom:
+      - kind: Secret
+        name: kargo-secrets
 EOF
 ```
 
-## Generating admin credentials
-
-```bash
-# Password hash (bcrypt)
-htpasswd -bnBC 10 "" <your-password> | tr -d ':\n' | sed 's/$2y/$2a/'
-
-# Token signing key
-openssl rand -base64 29 | tr -d "=+/" | head -c 32
-```
+`KARGO_ADMIN_PASSWORD_HASH` and `KARGO_ADMIN_TOKEN_SIGNING_KEY` come from the
+`kargo-secrets` Secret via `substituteFrom` — do **not** inline them under
+`substitute:`, as the `$` characters in the bcrypt hash would be mangled by
+envsubst.
 
 ## Optional: HTTPRoute (Gateway API)
 
