@@ -194,6 +194,8 @@ EOF
 | `AVP_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | Key in the trust bundle ConfigMap |
 | `AVP_SSL_CERT_DIR` | `/etc/ssl/custom` | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
 | `ARGO_CD_PASSWORD_MTIME` | `2024-09-16T12:51:06UTC` | Admin password modification time |
+| `ARGO_CD_EXTENSIONS_ENABLED` | `false` | Enable Argo CD UI extensions (spawns the extensions init container on the server) |
+| `ARGO_CD_ROLLOUT_EXTENSION_URL` | `https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.7/extension.tar` | Download URL of the [argo-rollouts UI extension](https://github.com/argoproj-labs/rollout-extension) (only used when `ARGO_CD_EXTENSIONS_ENABLED=true`) |
 | `ARGO_CD_SERVER_ADMIN_PASSWORD` | *(from Secret)* | Admin password (bcrypt htpasswd hash) |
 | `VAULT_ROLE_ID` | *(from Secret)* | Vault AppRole Role ID |
 | `VAULT_SECRET_ID` | *(from Secret)* | Vault AppRole Secret ID |
