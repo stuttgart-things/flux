@@ -23,6 +23,13 @@ spec:
     server:
       extraArgs:
         - --insecure
+      extensions:
+        enabled: ${ARGO_CD_EXTENSIONS_ENABLED:-false}
+        extensionList:
+          - name: argo-rollouts
+            env:
+              - name: EXTENSION_URL
+                value: ${ARGO_CD_ROLLOUT_EXTENSION_URL:-https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.7/extension.tar}
       ingress:
         enabled: ${ARGO_CD_INGRESS_ENABLED:-false}
         annotations:
