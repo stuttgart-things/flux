@@ -1,0 +1,16 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kargo
+  namespace: ${KARGO_NAMESPACE:-kargo}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME:-cilium-gateway}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - "${KARGO_HOSTNAME:-kargo}.${KARGO_DOMAIN}"
+  rules:
+    - backendRefs:
+        - name: kargo-api
+          port: 443

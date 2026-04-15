@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${KARGO_NAMESPACE:-kargo}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: akuity
+  namespace: ${KARGO_NAMESPACE:-kargo}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/akuity/kargo-charts
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things
+  namespace: ${KARGO_NAMESPACE:-kargo}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things

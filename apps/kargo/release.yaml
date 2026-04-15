@@ -1,0 +1,46 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kargo
+  namespace: ${KARGO_NAMESPACE:-kargo}
+spec:
+  dependsOn:
+    - name: kargo-certificate-configuration
+      namespace: ${KARGO_NAMESPACE:-kargo}
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: kargo
+      version: ${KARGO_VERSION:-1.3.0}
+      sourceRef:
+        kind: HelmRepository
+        name: akuity
+        namespace: ${KARGO_NAMESPACE:-kargo}
+      interval: 12h
+  values:
+    api:
+      host: ${KARGO_HOSTNAME:-kargo}.${KARGO_DOMAIN}
+      adminAccount:
+        passwordHash: ${KARGO_ADMIN_PASSWORD_HASH}
+        tokenSigningKey: ${KARGO_ADMIN_TOKEN_SIGNING_KEY}
+        tokenTTL: ${KARGO_ADMIN_TOKEN_TTL:-24h}
+      service:
+        type: ${KARGO_SERVICE_TYPE:-ClusterIP}
+      tls:
+        enabled: ${KARGO_API_TLS_ENABLED:-false}
+      ingress:
+        enabled: ${INGRESS_ENABLED:-false}
+        ingressClassName: ${INGRESS_CLASS_NAME:-nginx}
+        tls:
+          enabled: ${KARGO_INGRESS_TLS_ENABLED:-true}
+        annotations:
+          cert-manager.io/cluster-issuer: ${ISSUER_NAME}
+    controller:
+      logLevel: ${KARGO_LOG_LEVEL:-INFO}
+    webhooksServer:
+      tls:
+        selfSignedCert: ${KARGO_WEBHOOKS_SELF_SIGNED_CERT:-true}
+    garbageCollector:
+      logLevel: ${KARGO_LOG_LEVEL:-INFO}
