@@ -38,7 +38,7 @@ spec:
   postBuild:
     substitute:
       KARGO_NAMESPACE: kargo
-      KARGO_VERSION: "1.3.0"
+      KARGO_VERSION: "1.9.6"
       KARGO_HOSTNAME: kargo
       KARGO_DOMAIN: example.sthings-vsphere.example.com
       KARGO_ADMIN_PASSWORD_HASH: "<bcrypt-hash>"
