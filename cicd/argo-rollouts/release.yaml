@@ -1,0 +1,46 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: argo-rollouts
+  namespace: ${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: argo-rollouts
+      version: ${ARGO_ROLLOUTS_VERSION:-2.40.9}
+      sourceRef:
+        kind: HelmRepository
+        name: argo
+        namespace: ${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}
+      interval: 12h
+  values:
+    installCRDs: ${ARGO_ROLLOUTS_INSTALL_CRDS:-true}
+    keepCRDs: ${ARGO_ROLLOUTS_KEEP_CRDS:-true}
+    clusterInstall: ${ARGO_ROLLOUTS_CLUSTER_INSTALL:-true}
+    createClusterAggregateRoles: ${ARGO_ROLLOUTS_CREATE_CLUSTER_AGGREGATE_ROLES:-true}
+    controller:
+      replicas: ${ARGO_ROLLOUTS_CONTROLLER_REPLICAS:-2}
+      logging:
+        level: ${ARGO_ROLLOUTS_LOG_LEVEL:-info}
+        format: ${ARGO_ROLLOUTS_LOG_FORMAT:-text}
+      metrics:
+        enabled: ${ARGO_ROLLOUTS_METRICS_ENABLED:-false}
+        serviceMonitor:
+          enabled: ${ARGO_ROLLOUTS_SERVICEMONITOR_ENABLED:-false}
+    providerRBAC:
+      enabled: true
+      providers:
+        gatewayAPI: true
+    dashboard:
+      enabled: ${ARGO_ROLLOUTS_DASHBOARD_ENABLED:-true}
+      readonly: ${ARGO_ROLLOUTS_DASHBOARD_READONLY:-false}
+      replicas: ${ARGO_ROLLOUTS_DASHBOARD_REPLICAS:-1}
+      service:
+        type: ClusterIP
+        port: 3100
+        targetPort: 3100
+      ingress:
+        enabled: false
