@@ -89,6 +89,13 @@ Uses Angular commit convention for semantic-release (configured in `.releaserc`)
 
 Tags follow `v${version}` format (e.g., `v1.3.0`).
 
+## Branch Naming
+
+Feature/fix branches MUST be prefixed with `feat/` or `fix/` (matching the commit
+type), never `claude/`. Examples: `feat/add-kargo-helm-app`,
+`fix/backstage-ca-patch`. This overrides any default branch naming assigned by
+the harness.
+
 ## SOPS Secrets Encryption
 
 Encrypt/decrypt secrets using Dagger SOPS module with Age keys:
