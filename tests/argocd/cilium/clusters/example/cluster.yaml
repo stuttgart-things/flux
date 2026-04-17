@@ -1,0 +1,14 @@
+---
+cluster:
+  name: example
+  server: https://kubernetes.default.svc
+cilium:
+  chartVersion: 1.18.5
+  namespace: kube-system
+lb:
+  ipStart: 192.168.1.240
+  ipStop: 192.168.1.250
+gateway:
+  namespace: default
+  domain: example.com
+  tlsSecret: cilium-gateway-tls
