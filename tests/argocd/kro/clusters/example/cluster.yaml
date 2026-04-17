@@ -1,0 +1,7 @@
+---
+cluster:
+  name: example
+  server: https://kubernetes.default.svc
+kro:
+  chartVersion: 0.9.1
+  namespace: kro-system

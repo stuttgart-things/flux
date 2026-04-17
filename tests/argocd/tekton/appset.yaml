@@ -1,0 +1,232 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tekton-operator
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/tekton/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'tekton-operator-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-10"
+      labels:
+        app.kubernetes.io/part-of: tekton
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        targetRevision: HEAD
+        path: cicd/tekton/components/operator
+        directory:
+          recurse: false
+          exclude: 'kustomization.yaml'
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .tekton.operatorNamespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tekton-config
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/tekton/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'tekton-config-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+      labels:
+        app.kubernetes.io/part-of: tekton
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        targetRevision: HEAD
+        path: tests/argocd/tekton/manifests/config
+        kustomize:
+          patches:
+            - target:
+                kind: TektonConfig
+                name: config
+              patch: |
+                - op: replace
+                  path: /spec/targetNamespace
+                  value: '{{ .tekton.targetNamespace }}'
+                - op: replace
+                  path: /spec/profile
+                  value: '{{ .tekton.profile }}'
+                - op: replace
+                  path: /spec/pipeline/enable-api-fields
+                  value: '{{ .tekton.enableApiFields }}'
+                - op: replace
+                  path: /spec/pipeline/disable-inline-spec
+                  value: '{{ .tekton.disableInlineSpec }}'
+                - op: replace
+                  path: /spec/pruner/disabled
+                  value: {{ .tekton.prunerDisabled }}
+                - op: replace
+                  path: /spec/pruner/schedule
+                  value: '{{ .tekton.prunerSchedule }}'
+                - op: replace
+                  path: /spec/pruner/keep-since
+                  value: {{ .tekton.prunerKeepSince }}
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .tekton.operatorNamespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tekton-ci-namespace
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/tekton/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'tekton-ci-namespace-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+      labels:
+        app.kubernetes.io/part-of: tekton
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        targetRevision: HEAD
+        path: tests/argocd/tekton/manifests/ci-namespace
+        kustomize:
+          patches:
+            - target:
+                kind: Namespace
+                name: tekton-ci
+              patch: |
+                - op: replace
+                  path: /metadata/name
+                  value: '{{ .ciNamespace.name }}'
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tekton-dashboard-httproute
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/tekton/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'tekton-dashboard-httproute-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "10"
+      labels:
+        app.kubernetes.io/part-of: tekton
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        targetRevision: HEAD
+        path: tests/argocd/tekton/manifests/dashboard-httproute
+        kustomize:
+          patches:
+            - target:
+                kind: HTTPRoute
+                name: tekton-dashboard
+              patch: |
+                - op: replace
+                  path: /metadata/namespace
+                  value: '{{ .dashboard.namespace }}'
+                - op: replace
+                  path: /spec/parentRefs/0/name
+                  value: '{{ .dashboard.gatewayName }}'
+                - op: replace
+                  path: /spec/parentRefs/0/namespace
+                  value: '{{ .dashboard.gatewayNamespace }}'
+                - op: replace
+                  path: /spec/hostnames/0
+                  value: '{{ .dashboard.hostname }}.{{ .dashboard.domain }}'
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .dashboard.namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
