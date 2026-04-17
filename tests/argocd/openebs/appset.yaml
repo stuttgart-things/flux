@@ -1,0 +1,45 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: openebs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/openebs/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'openebs-{{ .cluster.name }}'
+      labels:
+        app.kubernetes.io/part-of: openebs
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      sources:
+        - repoURL: https://openebs.github.io/openebs
+          chart: openebs
+          targetRevision: '{{ .openebs.chartVersion }}'
+          helm:
+            releaseName: openebs
+            valueFiles:
+              - $values/tests/argocd/openebs/clusters/{{ .cluster.name }}/values.yaml
+        - repoURL: https://github.com/stuttgart-things/flux.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .openebs.namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

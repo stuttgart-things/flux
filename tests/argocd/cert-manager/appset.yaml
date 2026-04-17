@@ -1,0 +1,136 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager-install
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/cert-manager/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'cert-manager-install-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "-10"
+      labels:
+        app.kubernetes.io/part-of: cert-manager
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      sources:
+        - repoURL: https://charts.jetstack.io
+          chart: cert-manager
+          targetRevision: '{{ .certManager.chartVersion }}'
+          helm:
+            releaseName: cert-manager
+            valueFiles:
+              - $values/tests/argocd/cert-manager/clusters/{{ .cluster.name }}/values.yaml
+        - repoURL: https://github.com/stuttgart-things/flux.git
+          targetRevision: HEAD
+          ref: values
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .certManager.namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cert-manager-bootstrap
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - missingkey=error
+  generators:
+    - git:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        revision: HEAD
+        files:
+          - path: tests/argocd/cert-manager/clusters/*/cluster.yaml
+  template:
+    metadata:
+      name: 'cert-manager-bootstrap-{{ .cluster.name }}'
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+      labels:
+        app.kubernetes.io/part-of: cert-manager
+        cluster: '{{ .cluster.name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/flux.git
+        targetRevision: HEAD
+        path: tests/argocd/cert-manager/manifests/bootstrap
+        kustomize:
+          patches:
+            - target:
+                kind: Certificate
+                name: cluster-ca
+              patch: |
+                - op: replace
+                  path: /metadata/name
+                  value: '{{ .bootstrap.caName }}'
+                - op: replace
+                  path: /metadata/namespace
+                  value: '{{ .certManager.namespace }}'
+                - op: replace
+                  path: /spec/commonName
+                  value: '{{ .bootstrap.caName }}'
+                - op: replace
+                  path: /spec/secretName
+                  value: '{{ .bootstrap.caSecret }}'
+            - target:
+                kind: ClusterIssuer
+                name: cluster-ca
+              patch: |
+                - op: replace
+                  path: /spec/ca/secretName
+                  value: '{{ .bootstrap.caSecret }}'
+            - target:
+                kind: Certificate
+                name: wildcard-tls
+              patch: |
+                - op: replace
+                  path: /metadata/name
+                  value: '{{ .bootstrap.wildcardCertName }}'
+                - op: replace
+                  path: /metadata/namespace
+                  value: '{{ .bootstrap.wildcardNamespace }}'
+                - op: replace
+                  path: /spec/secretName
+                  value: '{{ .bootstrap.wildcardSecret }}'
+                - op: replace
+                  path: /spec/commonName
+                  value: '*.{{ .bootstrap.domain }}'
+                - op: replace
+                  path: /spec/dnsNames/0
+                  value: '*.{{ .bootstrap.domain }}'
+      destination:
+        server: '{{ .cluster.server }}'
+        namespace: '{{ .certManager.namespace }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
