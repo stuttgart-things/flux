@@ -1,0 +1,7 @@
+---
+cluster:
+  name: example
+  server: https://kubernetes.default.svc
+openebs:
+  chartVersion: 4.2.0
+  namespace: openebs
