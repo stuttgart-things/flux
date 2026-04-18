@@ -98,7 +98,7 @@ spec:
       extraContainers:
         - name: argocd-vault-plugin
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.32.3-3.17.2}
+          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.35.3-4.1.4-5.8.1}
           env:
             - name: SSL_CERT_DIR
               value: ${AVP_SSL_CERT_DIR:-/etc/ssl/custom}
@@ -124,7 +124,7 @@ spec:
               readOnly: true
         - name: argocd-vault-plugin-helm
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.32.3-3.17.2}
+          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.35.3-4.1.4-5.8.1}
           env:
             - name: SSL_CERT_DIR
               value: ${AVP_SSL_CERT_DIR:-/etc/ssl/custom}
@@ -150,7 +150,7 @@ spec:
               readOnly: true
         - name: argocd-vault-plugin-kustomize
           command: [/var/run/argocd/argocd-cmp-server]
-          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.32.3-3.17.2}
+          image: ${IMAGE_AVP:-ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.35.3-4.1.4-5.8.1}
           env:
             - name: SSL_CERT_DIR
               value: ${AVP_SSL_CERT_DIR:-/etc/ssl/custom}
