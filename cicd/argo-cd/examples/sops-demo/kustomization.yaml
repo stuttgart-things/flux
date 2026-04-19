@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# secret.yaml lands here at plugin-generate time:
+# sops-decrypt-kustomize decrypts secret.enc.yaml → secret.yaml,
+# then runs `kustomize build .`.
+resources:
+  - configmap.yaml
+  - secret.yaml
