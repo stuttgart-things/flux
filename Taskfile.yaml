@@ -8,6 +8,20 @@ vars:
   CROSSPLANE_PACKAGE_REGISTRY: ghcr.io
   DAGGER_CROSSPLANE_MODULE: github.com/stuttgart-things/dagger/crossplane
   DAGGER_CROSSPLANE_MODULE_VERSION: v0.0.2
+  DAGGER_DOCKER_MODULE: github.com/stuttgart-things/dagger/docker
+  DAGGER_DOCKER_MODULE_VERSION: main
+
+  # sthings-sops-cmp image (Argo CD CMP sidecar for SOPS).
+  # Tag scheme: sops-age-kustomize-helm — keep in sync with ARG defaults in
+  # cicd/argo-cd/sops-cmp/Dockerfile.
+  SOPS_CMP_CONTEXT: ./cicd/argo-cd/sops-cmp
+  SOPS_CMP_REGISTRY: ghcr.io
+  SOPS_CMP_REPOSITORY: stuttgart-things/sthings-sops-cmp
+  SOPS_CMP_SOPS_VERSION: 3.12.2
+  SOPS_CMP_AGE_VERSION: 1.3.1
+  SOPS_CMP_KUSTOMIZE_VERSION: 5.8.1
+  SOPS_CMP_HELM_VERSION: 4.1.4
+  SOPS_CMP_TAG: "{{.SOPS_CMP_SOPS_VERSION}}-{{.SOPS_CMP_AGE_VERSION}}-{{.SOPS_CMP_KUSTOMIZE_VERSION}}-{{.SOPS_CMP_HELM_VERSION}}"
 
 includes:
   git:
@@ -72,3 +86,39 @@ tasks:
 
         # Run the selected task
         [ -n "$task_name" ] && task "$task_name"
+
+  lint-sops-cmp:
+    desc: Hadolint the sthings-sops-cmp Dockerfile via dagger
+    cmds:
+      - |
+        dagger call -m {{.DAGGER_DOCKER_MODULE}}@{{.DAGGER_DOCKER_MODULE_VERSION}} lint \
+          --src {{.SOPS_CMP_CONTEXT}} \
+          --progress plain
+
+  build-sops-cmp:
+    desc: Build sthings-sops-cmp container image locally via dagger (no push)
+    cmds:
+      - echo "Building {{.SOPS_CMP_REGISTRY}}/{{.SOPS_CMP_REPOSITORY}}:{{.SOPS_CMP_TAG}}"
+      - |
+        dagger call -m {{.DAGGER_DOCKER_MODULE}}@{{.DAGGER_DOCKER_MODULE_VERSION}} build \
+          --src {{.SOPS_CMP_CONTEXT}} \
+          --progress plain
+
+  push-sops-cmp:
+    desc: Build & push sthings-sops-cmp to ghcr.io via dagger
+    preconditions:
+      - sh: test -n "$GITHUB_USER"
+        msg: "GITHUB_USER env var must be set"
+      - sh: test -n "$GITHUB_TOKEN"
+        msg: "GITHUB_TOKEN env var must be set"
+    cmds:
+      - echo "Pushing {{.SOPS_CMP_REGISTRY}}/{{.SOPS_CMP_REPOSITORY}}:{{.SOPS_CMP_TAG}}"
+      - |
+        dagger call -m {{.DAGGER_DOCKER_MODULE}}@{{.DAGGER_DOCKER_MODULE_VERSION}} build-and-push \
+          --source {{.SOPS_CMP_CONTEXT}} \
+          --repository-name {{.SOPS_CMP_REPOSITORY}} \
+          --registry-url {{.SOPS_CMP_REGISTRY}} \
+          --tag {{.SOPS_CMP_TAG}} \
+          --registry-username env:GITHUB_USER \
+          --registry-password env:GITHUB_TOKEN \
+          --progress plain

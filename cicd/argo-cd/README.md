@@ -193,6 +193,8 @@ EOF
 | `AVP_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with CA bundle (from trust-manager) |
 | `AVP_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | Key in the trust bundle ConfigMap |
 | `AVP_SSL_CERT_DIR` | `/etc/ssl/custom` | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
+| `IMAGE_SOPS_CMP` | `ghcr.io/stuttgart-things/sthings-sops-cmp:3.12.2-1.3.1-5.8.1-4.1.4` | SOPS CMP sidecar image (sops + age + kustomize + helm) |
+| `ARGOCD_SOPS_AGE_KEY_SECRET` | `argocd-sops-age-key` | Secret with `keys.txt` (age private keys) mounted at `/.config/sops/age/` |
 | `ARGO_CD_PASSWORD_MTIME` | `2024-09-16T12:51:06UTC` | Admin password modification time |
 | `ARGO_CD_EXTENSIONS_ENABLED` | `false` | Enable Argo CD UI extensions (spawns the extensions init container on the server) |
 | `ARGO_CD_ROLLOUT_EXTENSION_URL` | `https://github.com/argoproj-labs/rollout-extension/releases/download/v0.3.7/extension.tar` | Download URL of the [argo-rollouts UI extension](https://github.com/argoproj-labs/rollout-extension) (only used when `ARGO_CD_EXTENSIONS_ENABLED=true`) |
@@ -224,6 +226,33 @@ Three AVP sidecar containers run alongside the repo-server for secret injection:
 
 Sidecar image: `ghcr.io/stuttgart-things/sthings-avp:1.18.1-1.32.3-3.17.2` (AVP 1.18.1, kubectl 1.32.3, kustomize 3.17.2)
 
+## SOPS Plugin Sidecars
+
+Three SOPS sidecar containers run alongside the repo-server for decrypting SOPS-encrypted manifests (Option C from [#96](https://github.com/stuttgart-things/flux/issues/96)):
+
+| Plugin | Purpose |
+|---|---|
+| `sops-decrypt` | Emits only the files it decrypts — apps where every manifest is a `*.enc.yaml` |
+| `sops-decrypt-kustomize` | Decrypts `*.enc.yaml` in place, then runs `kustomize build` |
+| `sops-decrypt-helm` | Decrypts `*.enc.yaml` in place, then runs `helm template` |
+
+Sidecar image: `ghcr.io/stuttgart-things/sthings-sops-cmp:3.12.2-1.3.1-5.8.1-4.1.4` (sops 3.12.2, age 1.3.1, kustomize 5.8.1, helm 4.1.4). Built via `task build-sops-cmp` / `task push-sops-cmp`, Dockerfile at `cicd/argo-cd/sops-cmp/Dockerfile`.
+
+All three discover on the presence of any `*.enc.yaml` file. Because that rule overlaps with the AVP kustomize/helm discovery, apps **must** select the plugin explicitly on the `Application`:
+
+```yaml
+spec:
+  source:
+    plugin:
+      name: sops-decrypt-kustomize
+```
+
+### Age key contract
+
+The sidecars read the age private key from `/.config/sops/age/keys.txt`, sourced from a Secret named `argocd-sops-age-key` (override via `ARGOCD_SOPS_AGE_KEY_SECRET`). The volume is `optional: true` — the sidecars start without it, but decryption returns an error at generate time until the Secret exists.
+
+How the Secret gets into the cluster is **out of scope for this flux app**. Pick whatever fits the consumer's stack: `kubectl create secret generic argocd-sops-age-key --from-file=keys.txt=...`, a separate Flux Kustomization with a SOPS-encrypted Secret manifest, `external-secrets`, `sealed-secrets`, etc. The Secret must have a `keys.txt` key containing one or more `AGE-SECRET-KEY-...` lines.
+
 ## Verify
 
 ```bash
@@ -244,9 +273,13 @@ kubectl get certificates -n argocd
 
 # Check CMP plugins are loaded
 kubectl get cm argocd-cmp-cm -n argocd -o yaml | grep 'name: argocd-vault-plugin'
+kubectl get cm argocd-cmp-cm -n argocd -o yaml | grep 'name: sops-decrypt'
 
-# Check AVP sidecar containers
+# Check repo-server sidecar containers (AVP + SOPS)
 kubectl get pods -n argocd -l app.kubernetes.io/component=repo-server -o jsonpath='{.items[0].spec.containers[*].name}'
+
+# Age-key Secret present?
+kubectl get secret argocd-sops-age-key -n argocd
 ```
 
 See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)
