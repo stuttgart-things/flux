@@ -35,3 +35,6 @@ Session.vim
 **/charts/*.tgz
 
 .history
+
+# SOPS plaintext skeletons — only the .enc.yaml siblings should be committed
+cicd/argo-cd/examples/sops-demo/secret.yaml

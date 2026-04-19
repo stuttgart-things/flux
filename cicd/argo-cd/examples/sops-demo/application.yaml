@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sops-demo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/stuttgart-things/flux.git
+    targetRevision: main
+    path: cicd/argo-cd/examples/sops-demo
+    plugin:
+      name: sops-decrypt-kustomize
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sops-demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
