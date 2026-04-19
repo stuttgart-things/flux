@@ -20,7 +20,7 @@ spec:
         namespace: ${HARBOR_NAMESPACE:-harbor}
       interval: 12h
   values:
-    externalURL: ${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
+    externalURL: https://${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
     clusterDomain: cluster.local
     adminPassword: ${HARBOR_ADMIN_PASSWORD}
 
