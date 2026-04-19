@@ -27,7 +27,7 @@ ARG KUSTOMIZE_VERSION=5.8.1
 ARG HELM_VERSION=4.1.4
 
 # ---------- Stage 1: download and verify tools ----------
-FROM --platform=${BUILDPLATFORM} alpine:3.21 AS tools
+FROM --platform=${BUILDPLATFORM} alpine:3.23 AS tools
 
 ARG SOPS_VERSION
 ARG AGE_VERSION
@@ -71,7 +71,7 @@ RUN curl -fsSL -o helm.tgz \
  && /usr/local/bin/helm version --short
 
 # ---------- Stage 2: final runtime image ----------
-FROM alpine:3.21
+FROM alpine:3.23
 
 ARG SOPS_VERSION
 ARG AGE_VERSION
