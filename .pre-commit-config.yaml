@@ -1,3 +1,7 @@
+# SOPS-encrypted files must never be modified by hooks — any whitespace or
+# EOF rewrite invalidates the MAC and the file can no longer be decrypted.
+exclude: '\.enc\.ya?ml$'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
