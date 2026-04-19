@@ -92,7 +92,7 @@ spec:
                 - sh
                 - "-c"
                 - |
-                  helm template "${ARGOCD_APP_NAME}" -f <(echo "${ARGOCD_ENV_HELM_VALUES}") --include-crds . -n "${ARGOCD_APP_NAMESPACE}" | argocd-vault-plugin generate -
+                  helm template "$${ARGOCD_APP_NAME}" -f <(echo "$${ARGOCD_ENV_HELM_VALUES}") --include-crds . -n "$${ARGOCD_APP_NAMESPACE}" | argocd-vault-plugin generate -
             lockRepo: false
           sops-decrypt:
             allowConcurrency: true
@@ -131,7 +131,7 @@ spec:
                 - |
                   set -e
                   find . -name '*.enc.yaml' | while read -r f; do
-                    sops -d "$f" > "${f%.enc.yaml}.yaml"
+                    sops -d "$f" > "$${f%.enc.yaml}.yaml"
                     rm -f "$f"
                   done
                   kustomize build .
@@ -156,13 +156,13 @@ spec:
                 - |
                   set -e
                   find . -name '*.enc.yaml' | while read -r f; do
-                    sops -d "$f" > "${f%.enc.yaml}.yaml"
+                    sops -d "$f" > "$${f%.enc.yaml}.yaml"
                     rm -f "$f"
                   done
-                  helm template "${ARGOCD_APP_NAME}" \
-                    -f <(echo "${ARGOCD_ENV_HELM_VALUES}") \
+                  helm template "$${ARGOCD_APP_NAME}" \
+                    -f <(echo "$${ARGOCD_ENV_HELM_VALUES}") \
                     --include-crds . \
-                    -n "${ARGOCD_APP_NAMESPACE}"
+                    -n "$${ARGOCD_APP_NAMESPACE}"
             lockRepo: false
     repoServer:
       extraContainers:
