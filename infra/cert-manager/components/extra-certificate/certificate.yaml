@@ -2,15 +2,15 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: "${EXTRA_CERT_NAME}"
-  namespace: "${EXTRA_CERT_NAMESPACE:-default}"
+  name: ${EXTRA_CERT_NAME}
+  namespace: ${EXTRA_CERT_NAMESPACE:-default}
 spec:
-  secretName: "${EXTRA_CERT_SECRET_NAME}"
+  secretName: ${EXTRA_CERT_SECRET_NAME}
   issuerRef:
-    name: "${EXTRA_CERT_ISSUER:-vault-pki}"
-    kind: "${EXTRA_CERT_ISSUER_KIND:-ClusterIssuer}"
-  commonName: "${EXTRA_CERT_COMMON_NAME}"
+    name: ${EXTRA_CERT_ISSUER:-vault-pki}
+    kind: ${EXTRA_CERT_ISSUER_KIND:-ClusterIssuer}
+  commonName: '*.${EXTRA_CERT_DOMAIN}'
   dnsNames:
-    - "${EXTRA_CERT_COMMON_NAME}"
-  duration: "${EXTRA_CERT_DURATION:-2160h}"
-  renewBefore: "${EXTRA_CERT_RENEW_BEFORE:-360h}"
+    - '*.${EXTRA_CERT_DOMAIN}'
+  duration: 2160h
+  renewBefore: 360h
