@@ -15,4 +15,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/clusterbook-kustomize
   ref:
-    tag: ${CLUSTERBOOK_VERSION:-1.24.0}
+    tag: ${CLUSTERBOOK_VERSION:-1.25.0}
