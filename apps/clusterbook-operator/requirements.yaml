@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: clusterbook-operator-kustomize
+  namespace: ${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/clusterbook-operator-kustomize
+  ref:
+    tag: ${CLUSTERBOOK_OPERATOR_VERSION:-v0.15.0}

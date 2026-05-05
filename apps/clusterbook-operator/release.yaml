@@ -1,0 +1,32 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: clusterbook-operator
+  namespace: ${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: clusterbook-operator-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}
+  patches:
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: clusterbook-operator
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterbook-operator
+        spec:
+          template:
+            spec:
+              containers:
+                - name: manager
+                  image: ghcr.io/stuttgart-things/clusterbook-operator:${CLUSTERBOOK_OPERATOR_VERSION:-v0.15.0}
