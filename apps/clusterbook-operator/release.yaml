@@ -30,3 +30,32 @@ spec:
               containers:
                 - name: manager
                   image: ghcr.io/stuttgart-things/clusterbook-operator:${CLUSTERBOOK_OPERATOR_VERSION:-v0.15.0}
+    # Mount trust-manager CA bundle so the operator can verify the
+    # internal clusterbook server (clusterbook.infra.sthings-vsphere…)
+    # when ProviderConfig.spec.insecureSkipVerify is false.
+    - target:
+        kind: Deployment
+        name: clusterbook-operator
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterbook-operator
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: trust-bundle
+                  configMap:
+                    name: ${CLUSTERBOOK_OPERATOR_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+                    optional: true
+              containers:
+                - name: manager
+                  env:
+                    - name: SSL_CERT_DIR
+                      value: ${CLUSTERBOOK_OPERATOR_SSL_CERT_DIR:-/etc/ssl/custom}
+                  volumeMounts:
+                    - name: trust-bundle
+                      mountPath: ${CLUSTERBOOK_OPERATOR_SSL_CERT_DIR:-/etc/ssl/custom}/${CLUSTERBOOK_OPERATOR_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      subPath: ${CLUSTERBOOK_OPERATOR_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      readOnly: true
