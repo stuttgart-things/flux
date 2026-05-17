@@ -1,4 +1,11 @@
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${FLUX_WEB_NAMESPACE:-flux-system}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
