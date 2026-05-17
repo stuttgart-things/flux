@@ -13,7 +13,6 @@ Infrastructure components for Kubernetes clusters.
 | [NFS CSI Driver](nfs-csi.md) | `csi-driver-nfs` | `v4.13.1` | NFS CSI driver with StorageClass provisioning |
 | [OpenEBS](openebs.md) | `openebs` | `4.2.0` | Container-attached storage (hostpath) |
 | [Prometheus](prometheus.md) | `prometheus` | `28.13.0` | Monitoring with Gateway API HTTPRoute |
-| [Vault](vault.md) | `vault` | `1.9.0` | HashiCorp Vault (infra-focused, minimal config) |
 
 ## Deployment Order
 
@@ -24,4 +23,4 @@ For a new cluster, a typical deployment order is:
 3. **OpenEBS** or **NFS CSI** — storage
 4. **cert-manager** — TLS certificates
 5. **Prometheus** — monitoring
-6. **Vault** — secrets management
+6. **Vault** ([apps/vault](../apps/vault.md)) — secrets management

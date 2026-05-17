@@ -111,4 +111,3 @@ Add a second Kustomization pointing to `./apps/vault/httproute` with `INGRESS_EN
 
 - Uses OCI HelmRepository from `oci://ghcr.io/stuttgart-things`
 - Includes `pre-release.yaml` for TLS certificate via `sthings-cluster` helper chart
-- See also [infra/vault](../infra/vault.md) for a minimal infrastructure-focused Vault deployment
