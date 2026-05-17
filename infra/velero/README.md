@@ -124,22 +124,20 @@ Requires External Secrets Operator and a `ClusterSecretStore` already installed 
 
 ## Trust bundle for self-signed S3 endpoints
 
-If your MinIO/S3 endpoint is served with a certificate signed by a private CA (e.g. Vault PKI), enable the `components/trust-bundle/` kustomize Component. It mounts a trust-manager-published ConfigMap (default: `cluster-trust-bundle`, key `trust-bundle.pem`) into the velero pod and sets `AWS_CA_BUNDLE` so the AWS Go SDK verifies the endpoint against it.
+The base mounts a trust-manager-published ConfigMap into the velero pod at `/etc/ssl/custom` with `optional: true`, so the mount is always present and harmless if no ConfigMap exists. To **activate** it (have Go's crypto/x509 use the bundle instead of the system CA store), set `VELERO_SSL_CERT_DIR` to the mount path:
 
 ```yaml
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-spec:
-  path: ./infra/velero
-  components:
-    - ./components/trust-bundle
-  postBuild:
-    substitute:
-      VELERO_TRUST_BUNDLE_CONFIGMAP: cluster-trust-bundle
-      VELERO_TRUST_BUNDLE_KEY: trust-bundle.pem
+postBuild:
+  substitute:
+    VELERO_SSL_CERT_DIR: /etc/ssl/custom
+    # Optional overrides if your bundle ConfigMap name/path differ from the defaults:
+    # VELERO_TRUST_BUNDLE_CONFIGMAP: cluster-trust-bundle
+    # VELERO_TRUST_BUNDLE_MOUNT_PATH: /etc/ssl/custom
 ```
 
-The ConfigMap volume is mounted with `optional: true` so the velero pod can start even if trust-manager hasn't yet replicated the ConfigMap into the namespace.
+When `VELERO_SSL_CERT_DIR` is unset (default empty), Go treats the env var as not-set and falls back to the system CA store. The pattern mirrors `apps/clusterbook-operator`.
+
+> **Note:** `SSL_CERT_DIR` _replaces_ Go's default CA directory list — your trust-manager Bundle must include `useDefaultCAs: true` if you also need public CAs (e.g. for AWS S3 over the public internet).
 
 ## Required variables
 
@@ -167,6 +165,6 @@ The ConfigMap volume is mounted with `optional: true` so the velero pod can star
 | `VELERO_ESO_ACCESS_KEY_PROPERTY` | `access_key` | KV property for access key (mode 2 only) |
 | `VELERO_ESO_SECRET_KEY_PROPERTY` | `secret_key` | KV property for secret key (mode 2 only) |
 | `VELERO_ESO_REFRESH_INTERVAL` | `1h` | ESO refresh interval (mode 2 only) |
-| `VELERO_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | trust-manager ConfigMap to mount (trust-bundle Component only) |
-| `VELERO_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | Key inside the ConfigMap (trust-bundle Component only) |
-| `VELERO_TRUST_BUNDLE_MOUNT_PATH` | `/etc/ssl/custom` | Mount path inside the velero pod (trust-bundle Component only) |
+| `VELERO_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | trust-manager ConfigMap mounted into the velero pod (always mounted, `optional: true`) |
+| `VELERO_TRUST_BUNDLE_MOUNT_PATH` | `/etc/ssl/custom` | Mount path for the trust-bundle ConfigMap |
+| `VELERO_SSL_CERT_DIR` | *(empty)* | When set, points Go's `crypto/x509` at the trust-bundle mount; empty falls back to system CAs |

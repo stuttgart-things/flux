@@ -27,7 +27,24 @@ spec:
     credentials:
       useSecret: true
       existingSecret: cloud-credentials
+    # Trust-bundle: mount is always present with optional: true (harmless
+    # if trust-manager hasn't published the ConfigMap to this namespace).
+    # SSL_CERT_DIR is empty by default — Go's crypto/x509 treats unset/""
+    # the same as not-set, so system CAs are used. To activate the bundle,
+    # consumers set VELERO_SSL_CERT_DIR=/etc/ssl/custom (or wherever the
+    # bundle is mounted). Pattern mirrors apps/clusterbook-operator.
+    extraVolumes:
+      - name: trust-bundle
+        configMap:
+          name: ${VELERO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+          optional: true
+    extraVolumeMounts:
+      - name: trust-bundle
+        mountPath: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}
+        readOnly: true
     configuration:
+      extraEnvVars:
+        SSL_CERT_DIR: ${VELERO_SSL_CERT_DIR:-}
       backupStorageLocation:
         - name: default
           provider: aws
