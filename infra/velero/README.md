@@ -4,6 +4,83 @@ HashiCorp Velero install for cluster and PV backup/restore, wired for S3-compati
 
 Required by parent issue [#111](https://github.com/stuttgart-things/flux/issues/111) (sharded Crossplane control planes) and child issue [#115](https://github.com/stuttgart-things/flux/issues/115) (restore-hook gating for provider readiness).
 
+## Provisioning a bucket-scoped S3 user
+
+For self-hosted MinIO, create a dedicated user with access limited to the velero bucket rather than reusing MinIO root credentials. Two paths — pick one:
+
+### Option A: MinIO Console
+
+1. **Policies → Create Policy** — name `velero-<bucket>-rw` (e.g. `velero-test-rw`), paste:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "VeleroBucketLevel",
+         "Effect": "Allow",
+         "Action": [
+           "s3:GetBucketLocation",
+           "s3:ListBucket",
+           "s3:ListBucketMultipartUploads"
+         ],
+         "Resource": ["arn:aws:s3:::<bucket>"]
+       },
+       {
+         "Sid": "VeleroObjectLevel",
+         "Effect": "Allow",
+         "Action": [
+           "s3:GetObject",
+           "s3:PutObject",
+           "s3:DeleteObject",
+           "s3:AbortMultipartUpload",
+           "s3:ListMultipartUploadParts"
+         ],
+         "Resource": ["arn:aws:s3:::<bucket>/*"]
+       }
+     ]
+   }
+   ```
+
+2. **Users → Create User** — Access Key `velero` (or similar), generate a strong Secret Key.
+3. Attach the `velero-<bucket>-rw` policy to the user.
+4. Drop the Access/Secret Key into a SOPS-encrypted `Secret` keyed as `VELERO_S3_ACCESS_KEY` / `VELERO_S3_SECRET_KEY`, then reference it via `postBuild.substituteFrom` in the consumer Kustomization (see [Substitution](#1-substitution-default) below).
+
+### Option B: Terraform (`aminueza/minio` provider)
+
+```hcl
+resource "minio_iam_policy" "velero" {
+  name = "velero-test-rw"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "VeleroBucketLevel"
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketLocation", "s3:ListBucket", "s3:ListBucketMultipartUploads"]
+        Resource = ["arn:aws:s3:::velero-test"]
+      },
+      {
+        Sid      = "VeleroObjectLevel"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+        Resource = ["arn:aws:s3:::velero-test/*"]
+      }
+    ]
+  })
+}
+
+resource "minio_iam_user"                  "velero" { name = "velero" }
+resource "minio_iam_user_policy_attachment" "velero" {
+  user_name   = minio_iam_user.velero.name
+  policy_name = minio_iam_policy.velero.id
+}
+resource "minio_iam_service_account" "velero" { target_user = minio_iam_user.velero.name }
+
+output "velero_access_key" { value = minio_iam_service_account.velero.access_key }
+output "velero_secret_key" { value = minio_iam_service_account.velero.secret_key; sensitive = true }
+```
+
 ## Credential modes
 
 Two mutually-exclusive ways to populate the `cloud-credentials` Secret consumed by the Velero HelmRelease:
