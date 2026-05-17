@@ -55,3 +55,11 @@ spec:
     upgradeJob:
       enabled: false
     cleanUpCRDs: false
+    # The chart's upgradeCRDs pre-install hook needs a kubectl image.
+    # bitnami sunset their free Docker Hub catalogue in late 2025
+    # (docker.io/bitnami/kubectl has only `latest` and SHA tags now);
+    # working semver tags moved to bitnamilegacy.
+    kubectl:
+      image:
+        repository: ${VELERO_KUBECTL_IMAGE_REPOSITORY:-docker.io/bitnamilegacy/kubectl}
+        tag: ${VELERO_KUBECTL_IMAGE_TAG:-1.33.4}

@@ -71,6 +71,8 @@ The ConfigMap volume is mounted with `optional: true` so the velero pod can star
 | `VELERO_NAMESPACE` | `velero` | Target namespace |
 | `VELERO_VERSION` | `9.0.0` | velero Helm chart version |
 | `VELERO_PLUGIN_AWS_VERSION` | `v1.13.0` | velero-plugin-for-aws image tag |
+| `VELERO_KUBECTL_IMAGE_REPOSITORY` | `docker.io/bitnamilegacy/kubectl` | kubectl image used by the chart's CRD-install hook (bitnami sunset their free namespace late 2025) |
+| `VELERO_KUBECTL_IMAGE_TAG` | `1.33.4` | kubectl image tag for the CRD-install hook |
 | `VELERO_BUCKET` | *(required)* | S3 bucket name |
 | `VELERO_S3_ENDPOINT` | *(required)* | S3 endpoint URL (MinIO URL for self-hosted) |
 | `VELERO_S3_REGION` | `minio` | S3 region (MinIO accepts any string) |
