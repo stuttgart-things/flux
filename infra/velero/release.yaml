@@ -5,9 +5,6 @@ metadata:
   name: velero
   namespace: ${VELERO_NAMESPACE:-velero}
 spec:
-  dependsOn:
-    - name: velero-credentials
-      namespace: ${VELERO_NAMESPACE:-velero}
   interval: 30m
   timeout: 10m
   chart:

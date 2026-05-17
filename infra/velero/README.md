@@ -10,7 +10,7 @@ Two mutually-exclusive ways to populate the `cloud-credentials` Secret consumed 
 
 ### 1. Substitution (default)
 
-The base `pre-release.yaml` uses the `sthings-cluster` helper chart to create the Secret from Flux `postBuild.substitute` values (`VELERO_S3_ACCESS_KEY`, `VELERO_S3_SECRET_KEY`). Pair with SOPS for the actual credential values:
+The base `pre-release.yaml` is a plain `Secret` manifest populated from Flux `postBuild.substitute` values (`VELERO_S3_ACCESS_KEY`, `VELERO_S3_SECRET_KEY`). Pair with SOPS for the actual credential values:
 
 ```yaml
 postBuild:
@@ -21,7 +21,7 @@ postBuild:
 
 ### 2. External Secrets Operator (opt-in)
 
-Use the kustomize Component at `components/external-secret/` to pull credentials from Vault via ESO instead. Enable it in your consumer Flux `Kustomization` overlay and patch out the `pre-release.yaml` resource so the two don't fight over `cloud-credentials`:
+Use the kustomize Component at `components/external-secret/` to pull credentials from Vault via ESO instead. Enable it in your consumer Flux `Kustomization` overlay and patch out the base `cloud-credentials` Secret so the two don't fight over it:
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -32,14 +32,14 @@ spec:
     - ./components/external-secret
   patches:
     - target:
-        kind: HelmRelease
-        name: velero-credentials
+        kind: Secret
+        name: cloud-credentials
       patch: |
         $patch: delete
-        apiVersion: helm.toolkit.fluxcd.io/v2
-        kind: HelmRelease
+        apiVersion: v1
+        kind: Secret
         metadata:
-          name: velero-credentials
+          name: cloud-credentials
           namespace: velero
 ```
 
@@ -83,7 +83,6 @@ The ConfigMap volume is mounted with `optional: true` so the velero pod can star
 | `VELERO_DEPLOY_NODE_AGENT` | `false` | Deploy node-agent for filesystem backup (Kopia/Restic) |
 | `VELERO_METRICS_ENABLED` | `true` | Expose Prometheus metrics |
 | `VELERO_SERVICE_MONITOR_ENABLED` | `false` | Create a Prometheus ServiceMonitor |
-| `STHINGS_CLUSTER_VERSION` | `0.3.20` | sthings-cluster helper chart version (mode 1 only) |
 | `VELERO_ESO_SECRET_STORE_NAME` | `vault-cluster` | ClusterSecretStore name (mode 2 only) |
 | `VELERO_ESO_SECRET_STORE_KIND` | `ClusterSecretStore` | Secret store kind (mode 2 only) |
 | `VELERO_ESO_SECRET_PATH` | `kv/data/velero/s3` | Vault KV path holding the S3 credentials (mode 2 only) |
