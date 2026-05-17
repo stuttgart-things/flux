@@ -26,7 +26,7 @@ spec:
             mountPath: /target
     credentials:
       useSecret: true
-      existingSecret: ${VELERO_CREDENTIALS_SECRET_NAME:-cloud-credentials}
+      existingSecret: cloud-credentials
     configuration:
       backupStorageLocation:
         - name: default

@@ -78,7 +78,6 @@ The ConfigMap volume is mounted with `optional: true` so the velero pod can star
 | `VELERO_S3_REGION` | `minio` | S3 region (MinIO accepts any string) |
 | `VELERO_S3_FORCE_PATH_STYLE` | `true` | Path-style URLs (required for MinIO) |
 | `VELERO_S3_INSECURE_SKIP_TLS_VERIFY` | `false` | Skip TLS verify on S3 endpoint |
-| `VELERO_CREDENTIALS_SECRET_NAME` | `cloud-credentials` | Secret consumed by Velero |
 | `VELERO_S3_ACCESS_KEY` | *(required in mode 1)* | MinIO access key |
 | `VELERO_S3_SECRET_KEY` | *(required in mode 1)* | MinIO secret key |
 | `VELERO_SNAPSHOTS_ENABLED` | `false` | Enable volume snapshots |
