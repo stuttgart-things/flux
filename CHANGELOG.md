@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/stuttgart-things/flux/compare/v1.6.0...v1.7.0) (2026-05-17)
+
+
+### Features
+
+* **velero:** bake trust-bundle mount into base, gate via SSL_CERT_DIR ([#127](https://github.com/stuttgart-things/flux/issues/127)) ([8a8a3ff](https://github.com/stuttgart-things/flux/commit/8a8a3ff79bf3ed804293c58bb1a47e2874babd85))
+
 # [1.6.0](https://github.com/stuttgart-things/flux/compare/v1.5.0...v1.6.0) (2026-05-17)
 
 
