@@ -1,0 +1,60 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: velero
+  namespace: ${VELERO_NAMESPACE:-velero}
+spec:
+  dependsOn:
+    - name: velero-credentials
+      namespace: ${VELERO_NAMESPACE:-velero}
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: velero
+      version: ${VELERO_VERSION:-9.0.0}
+      sourceRef:
+        kind: HelmRepository
+        name: vmware-tanzu
+        namespace: ${VELERO_NAMESPACE:-velero}
+      interval: 12h
+  values:
+    initContainers:
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.13.0}
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+          - name: plugins
+            mountPath: /target
+    credentials:
+      useSecret: true
+      existingSecret: ${VELERO_CREDENTIALS_SECRET_NAME:-cloud-credentials}
+    configuration:
+      backupStorageLocation:
+        - name: default
+          provider: aws
+          bucket: ${VELERO_BUCKET}
+          default: true
+          config:
+            region: ${VELERO_S3_REGION:-minio}
+            s3ForcePathStyle: "${VELERO_S3_FORCE_PATH_STYLE:-true}"
+            s3Url: ${VELERO_S3_ENDPOINT}
+            insecureSkipTLSVerify: "${VELERO_S3_INSECURE_SKIP_TLS_VERIFY:-false}"
+      volumeSnapshotLocation:
+        - name: default
+          provider: aws
+          config:
+            region: ${VELERO_S3_REGION:-minio}
+    snapshotsEnabled: ${VELERO_SNAPSHOTS_ENABLED:-false}
+    deployNodeAgent: ${VELERO_DEPLOY_NODE_AGENT:-false}
+    metrics:
+      enabled: ${VELERO_METRICS_ENABLED:-true}
+      serviceMonitor:
+        enabled: ${VELERO_SERVICE_MONITOR_ENABLED:-false}
+        additionalLabels:
+          release: prometheus
+    schedules: {}
+    upgradeJob:
+      enabled: false
+    cleanUpCRDs: false

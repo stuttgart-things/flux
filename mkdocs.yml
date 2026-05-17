@@ -46,6 +46,7 @@ nav:
       - NFS CSI Driver: infra/nfs-csi.md
       - OpenEBS: infra/openebs.md
       - Prometheus: infra/prometheus.md
+      - Velero: infra/velero.md
   - CI/CD:
       - Overview: cicd/index.md
       - Crossplane: cicd/crossplane.md

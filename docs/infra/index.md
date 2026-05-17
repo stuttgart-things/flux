@@ -13,6 +13,7 @@ Infrastructure components for Kubernetes clusters.
 | [NFS CSI Driver](nfs-csi.md) | `csi-driver-nfs` | `v4.13.1` | NFS CSI driver with StorageClass provisioning |
 | [OpenEBS](openebs.md) | `openebs` | `4.2.0` | Container-attached storage (hostpath) |
 | [Prometheus](prometheus.md) | `prometheus` | `28.13.0` | Monitoring with Gateway API HTTPRoute |
+| [Velero](velero.md) | `velero` | `9.0.0` | Cluster + PV backup/restore, S3-compatible (MinIO) |
 
 ## Deployment Order
 
