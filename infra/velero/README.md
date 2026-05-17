@@ -139,6 +139,21 @@ When `VELERO_SSL_CERT_DIR` is unset (default empty), Go treats the env var as no
 
 > **Note:** `SSL_CERT_DIR` _replaces_ Go's default CA directory list — your trust-manager Bundle must include `useDefaultCAs: true` if you also need public CAs (e.g. for AWS S3 over the public internet).
 
+## ServiceMonitor (Prometheus scraping)
+
+Setting `VELERO_SERVICE_MONITOR_ENABLED=true` makes the chart render a `monitoring.coreos.com/v1` `ServiceMonitor` resource. That CRD is **not** part of the standalone `prometheus` Helm chart — it ships with [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) or a standalone install of the [prometheus-operator](https://github.com/prometheus-operator/prometheus-operator).
+
+If the CRD is missing the Helm install will fail with:
+
+```
+no matches for kind "ServiceMonitor" in version "monitoring.coreos.com/v1"
+```
+
+Workarounds:
+
+- **Have prometheus-operator** → set `VELERO_SERVICE_MONITOR_ENABLED=true` (default uses label `release: prometheus` for Prometheus discovery; override via the chart's `metrics.serviceMonitor.additionalLabels` if your operator selects differently).
+- **No operator, just want metrics** → leave `VELERO_SERVICE_MONITOR_ENABLED=false` (default). The `/metrics` endpoint is still exposed on the velero Service (port `8085`); scrape it with a static `prometheus.yml` job or a `kubernetes_sd_configs` scrape rule.
+
 ## Required variables
 
 | Variable | Default | Description |

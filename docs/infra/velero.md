@@ -17,6 +17,10 @@ The base layer creates the `cloud-credentials` Secret via the `sthings-cluster` 
 
 The base mounts the trust-manager-published `cluster-trust-bundle` ConfigMap into the velero pod at `/etc/ssl/custom` with `optional: true` — harmless when no ConfigMap is published. To activate it, set `VELERO_SSL_CERT_DIR=/etc/ssl/custom` so Go's `crypto/x509` reads the bundle instead of the system CA store. Empty default = system CAs. See the [README](https://github.com/stuttgart-things/flux/blob/main/infra/velero/README.md#trust-bundle-for-self-signed-s3-endpoints) for the trust-manager Bundle requirements.
 
+## ServiceMonitor prerequisite
+
+`VELERO_SERVICE_MONITOR_ENABLED=true` requires the `monitoring.coreos.com/v1` `ServiceMonitor` CRD — provided by [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) or a standalone prometheus-operator install. The standalone `prometheus` Helm chart does **not** ship the CRD; enabling the toggle without the operator present causes the Helm install to fail with `no matches for kind "ServiceMonitor"`. With no operator, leave the toggle off — the `/metrics` endpoint stays exposed on the velero Service and can be scraped via a static job.
+
 ## Deployment
 
 ### GitRepository
