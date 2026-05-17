@@ -1,0 +1,29 @@
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  # Mount the trust-manager Bundle ConfigMap into the velero pod and point
+  # the AWS SDK at it via AWS_CA_BUNDLE so MinIO endpoints signed by the
+  # cluster/Vault PKI are trusted.
+  - target:
+      kind: HelmRelease
+      name: velero
+    patch: |
+      - op: add
+        path: /spec/values/extraVolumes
+        value:
+          - name: trust-bundle
+            configMap:
+              name: ${VELERO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+              optional: true
+      - op: add
+        path: /spec/values/extraVolumeMounts
+        value:
+          - name: trust-bundle
+            mountPath: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}
+            readOnly: true
+      - op: add
+        path: /spec/values/configuration/extraEnvVars
+        value:
+          AWS_CA_BUNDLE: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}/${VELERO_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+          SSL_CERT_FILE: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}/${VELERO_TRUST_BUNDLE_KEY:-trust-bundle.pem}

@@ -45,6 +45,25 @@ spec:
 
 Requires External Secrets Operator and a `ClusterSecretStore` already installed in the cluster.
 
+## Trust bundle for self-signed S3 endpoints
+
+If your MinIO/S3 endpoint is served with a certificate signed by a private CA (e.g. Vault PKI), enable the `components/trust-bundle/` kustomize Component. It mounts a trust-manager-published ConfigMap (default: `cluster-trust-bundle`, key `trust-bundle.pem`) into the velero pod and sets `AWS_CA_BUNDLE` so the AWS Go SDK verifies the endpoint against it.
+
+```yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+spec:
+  path: ./infra/velero
+  components:
+    - ./components/trust-bundle
+  postBuild:
+    substitute:
+      VELERO_TRUST_BUNDLE_CONFIGMAP: cluster-trust-bundle
+      VELERO_TRUST_BUNDLE_KEY: trust-bundle.pem
+```
+
+The ConfigMap volume is mounted with `optional: true` so the velero pod can start even if trust-manager hasn't yet replicated the ConfigMap into the namespace.
+
 ## Required variables
 
 | Variable | Default | Description |
@@ -71,3 +90,6 @@ Requires External Secrets Operator and a `ClusterSecretStore` already installed 
 | `VELERO_ESO_ACCESS_KEY_PROPERTY` | `access_key` | KV property for access key (mode 2 only) |
 | `VELERO_ESO_SECRET_KEY_PROPERTY` | `secret_key` | KV property for secret key (mode 2 only) |
 | `VELERO_ESO_REFRESH_INTERVAL` | `1h` | ESO refresh interval (mode 2 only) |
+| `VELERO_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | trust-manager ConfigMap to mount (trust-bundle Component only) |
+| `VELERO_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | Key inside the ConfigMap (trust-bundle Component only) |
+| `VELERO_TRUST_BUNDLE_MOUNT_PATH` | `/etc/ssl/custom` | Mount path inside the velero pod (trust-bundle Component only) |

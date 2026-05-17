@@ -13,6 +13,10 @@ Anchors the work in [#111](https://github.com/stuttgart-things/flux/issues/111) 
 
 The base layer creates the `cloud-credentials` Secret via the `sthings-cluster` helper chart using substitution variables. To use ESO instead, enable the `components/external-secret/` kustomize Component and patch out the helper-chart HelmRelease — see the [README](https://github.com/stuttgart-things/flux/blob/main/infra/velero/README.md#2-external-secrets-operator-opt-in) for the patch.
 
+## Trust bundle for self-signed S3 endpoints
+
+For MinIO/S3 endpoints served with a private-CA certificate (Vault PKI etc.), enable the `components/trust-bundle/` Component. It mounts a trust-manager Bundle ConfigMap into the velero pod and sets `AWS_CA_BUNDLE` so the AWS Go SDK verifies the endpoint against it. The volume mount uses `optional: true` so the pod starts even before trust-manager has replicated the ConfigMap.
+
 ## Deployment
 
 ### GitRepository
