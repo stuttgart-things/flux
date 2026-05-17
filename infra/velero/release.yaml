@@ -19,7 +19,7 @@ spec:
   values:
     initContainers:
       - name: velero-plugin-for-aws
-        image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.13.0}
+        image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-1.14.0}
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: plugins
