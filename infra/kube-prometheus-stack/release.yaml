@@ -1,0 +1,147 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: ${KPS_NAMESPACE:-monitoring}
+spec:
+  interval: 30m
+  timeout: 15m
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: ${KPS_VERSION:-85.2.1}
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: ${KPS_NAMESPACE:-monitoring}
+      interval: 12h
+  values:
+    # CRDs (prometheus-operator) are rendered as normal templates by the
+    # chart's crds subchart. If a future upgrade fails with "metadata.
+    # annotations: Too long", install the CRDs via a separate Kustomization
+    # and set crds.enabled=false here -- see README.
+    crds:
+      enabled: true
+
+    # Keep the chart's curated default alert rules -- these are what
+    # Alertmanager fires on (e.g. KubePodCrashLooping would have caught
+    # the snapshot-controller 11k-restart loop on day one).
+    defaultRules:
+      create: true
+
+    # ---- Control-plane scrape jobs: disabled ----
+    # Cilium runs in kube-proxy-replacement mode (no kube-proxy DaemonSet),
+    # and RKE2 static-pod control-plane components bind their metrics
+    # endpoints to localhost. The default ServiceMonitors would only
+    # produce permanent "TargetDown" noise. Node, workload, kubelet and
+    # kube-apiserver metrics are unaffected and still scraped.
+    kubeProxy:
+      enabled: false
+    kubeControllerManager:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+
+    # ---- prometheus-operator ----
+    prometheusOperator:
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+        limits:
+          memory: 256Mi
+
+    # ---- Prometheus ----
+    prometheus:
+      prometheusSpec:
+        replicas: 1
+        # 60s (vs the chart default 30s) roughly halves scrape CPU and
+        # TSDB write volume -- the main "performance cost" lever.
+        scrapeInterval: ${KPS_SCRAPE_INTERVAL:-60s}
+        evaluationInterval: ${KPS_SCRAPE_INTERVAL:-60s}
+        retention: ${KPS_PROMETHEUS_RETENTION:-15d}
+        # Discover ServiceMonitors / PodMonitors / Rules from ALL
+        # namespaces, not just objects carrying this release's label.
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
+        probeSelectorNilUsesHelmValues: false
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 1536Mi
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: ${KPS_PROMETHEUS_STORAGE_CLASS:-nfs4-csi}
+              accessModes:
+                - ReadWriteOnce
+              resources:
+                requests:
+                  storage: ${KPS_PROMETHEUS_STORAGE_SIZE:-10Gi}
+
+    # ---- Alertmanager ----
+    # Enabled so alert rules actually route somewhere. Receivers (Slack /
+    # email / webhook) are wired up later via alertmanager.config.
+    alertmanager:
+      enabled: true
+      alertmanagerSpec:
+        replicas: 1
+        retention: 120h
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+      # No storage block -> emptyDir. Silences do not survive a restart,
+      # which is acceptable for this cluster.
+
+    # ---- Grafana ----
+    # Ephemeral: no PVC. The bundled dashboards are provisioned from
+    # ConfigMaps by the sidecar on every start, so nothing is lost on
+    # restart. Manual in-UI dashboard/user edits would not persist.
+    grafana:
+      enabled: true
+      replicas: 1
+      adminPassword: ${KPS_GRAFANA_ADMIN_PASSWORD:-prom-operator}
+      # Bundled Kubernetes / Node Exporter / Prometheus dashboards.
+      defaultDashboardsEnabled: true
+      defaultDashboardsTimezone: browser
+      persistence:
+        enabled: false
+      # Routed via Gateway API HTTPRoute (httproute.yaml), not chart Ingress.
+      ingress:
+        enabled: false
+      grafana.ini:
+        server:
+          root_url: "https://${HOSTNAME}.${DOMAIN}"
+      resources:
+        requests:
+          cpu: 20m
+          memory: 64Mi
+        limits:
+          memory: 192Mi
+
+    # ---- node-exporter (DaemonSet, one pod per node) ----
+    prometheus-node-exporter:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 24Mi
+        limits:
+          memory: 64Mi
+
+    # ---- kube-state-metrics ----
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 128Mi
