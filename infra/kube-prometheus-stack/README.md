@@ -107,9 +107,19 @@ auto-provisioned. Add more dashboards by creating a ConfigMap labelled
 
 The chart's `defaultRules` are enabled, so alerts like `KubePodCrashLooping`,
 `TargetDown` and `KubePersistentVolumeFillingUp` evaluate out of the box.
-**Alertmanager currently routes to a null receiver** — wire real receivers
-(Slack / email / webhook) by adding an `alertmanager.config` block to
-`release.yaml`.
+
+Alertmanager routes `warning|critical` alerts to a **Microsoft Teams**
+channel via the native `msteamsv2` receiver; `info` alerts and the
+always-on `Watchdog` fall through to the `null` receiver and are dropped.
+
+**Prerequisite:** the cluster must provide a Secret named
+`alertmanager-msteams` in the release namespace with key `webhook-url`
+(a Teams *Workflows* "Post to a channel when a webhook request is
+received" URL). It is mounted by the operator at
+`/etc/alertmanager/secrets/alertmanager-msteams/webhook-url` and read via
+`webhook_url_file`, so the URL never lands in git or the HelmRelease
+values. Store it SOPS-encrypted. To add Slack/email, extend
+`alertmanager.config.receivers` in `release.yaml`.
 
 ## Cutover
 
