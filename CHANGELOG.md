@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/stuttgart-things/flux/compare/v1.8.1...v1.9.0) (2026-05-22)
+
+
+### Features
+
+* **kube-prometheus-stack:** route warning|critical alerts to MS Teams ([#138](https://github.com/stuttgart-things/flux/issues/138)) ([389c876](https://github.com/stuttgart-things/flux/commit/389c87613625cf5486bd0a7cb6accc245364a58e))
+
 ## [1.8.1](https://github.com/stuttgart-things/flux/compare/v1.8.0...v1.8.1) (2026-05-22)
 
 
