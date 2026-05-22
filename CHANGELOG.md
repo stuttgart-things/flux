@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/stuttgart-things/flux/compare/v1.7.0...v1.8.0) (2026-05-22)
+
+
+### Features
+
+* **kube-prometheus-stack:** add observability stack component ([#136](https://github.com/stuttgart-things/flux/issues/136)) ([d1c2347](https://github.com/stuttgart-things/flux/commit/d1c2347ff3376a5b50e2735655ab42e1bfffe176))
+
 # [1.7.0](https://github.com/stuttgart-things/flux/compare/v1.6.0...v1.7.0) (2026-05-17)
 
 
