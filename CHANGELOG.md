@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/stuttgart-things/flux/compare/v1.9.0...v1.10.0) (2026-05-22)
+
+
+### Features
+
+* **prometheus-msteams:** add Teams proxy, route Alertmanager via it ([#139](https://github.com/stuttgart-things/flux/issues/139)) ([098a129](https://github.com/stuttgart-things/flux/commit/098a1299b2341719cb2c9e2944e4b226e1ba9939))
+
 # [1.9.0](https://github.com/stuttgart-things/flux/compare/v1.8.1...v1.9.0) (2026-05-22)
 
 
