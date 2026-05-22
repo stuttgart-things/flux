@@ -108,18 +108,18 @@ auto-provisioned. Add more dashboards by creating a ConfigMap labelled
 The chart's `defaultRules` are enabled, so alerts like `KubePodCrashLooping`,
 `TargetDown` and `KubePersistentVolumeFillingUp` evaluate out of the box.
 
-Alertmanager routes `warning|critical` alerts to a **Microsoft Teams**
-channel via the native `msteamsv2` receiver; `info` alerts and the
-always-on `Watchdog` fall through to the `null` receiver and are dropped.
+Alertmanager routes `warning|critical` alerts to **Microsoft Teams**;
+`info` alerts and the always-on `Watchdog` fall through to the `null`
+receiver and are dropped.
 
-**Prerequisite:** the cluster must provide a Secret named
-`alertmanager-msteams` in the release namespace with key `webhook-url`
-(a Teams *Workflows* "Post to a channel when a webhook request is
-received" URL). It is mounted by the operator at
-`/etc/alertmanager/secrets/alertmanager-msteams/webhook-url` and read via
-`webhook_url_file`, so the URL never lands in git or the HelmRelease
-values. Store it SOPS-encrypted. To add Slack/email, extend
-`alertmanager.config.receivers` in `release.yaml`.
+Delivery goes through the **`prometheus-msteams`** proxy (separate
+component) via a generic `webhook_configs` pointing at
+`http://prometheus-msteams.<ns>.svc.cluster.local:2000/alertmanager`. The
+proxy formats the Teams Adaptive Card, so the Teams webhook URL lives
+with that component, not here. See `infra/prometheus-msteams`.
+
+To add Slack/email, extend `alertmanager.config.receivers` in
+`release.yaml`.
 
 ## Cutover
 
