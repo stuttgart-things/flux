@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/stuttgart-things/flux/compare/v1.8.0...v1.8.1) (2026-05-22)
+
+
+### Bug Fixes
+
+* **kube-prometheus-stack:** raise Grafana memory limit to stop OOMKill ([#137](https://github.com/stuttgart-things/flux/issues/137)) ([a199cfb](https://github.com/stuttgart-things/flux/commit/a199cfbc102dc7c6e231fd741ee4012ed65e6de8))
+
 # [1.8.0](https://github.com/stuttgart-things/flux/compare/v1.7.0...v1.8.0) (2026-05-22)
 
 
