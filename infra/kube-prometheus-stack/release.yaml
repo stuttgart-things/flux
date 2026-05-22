@@ -86,19 +86,15 @@ spec:
                   storage: ${KPS_PROMETHEUS_STORAGE_SIZE:-10Gi}
 
     # ---- Alertmanager ----
-    # Routes warning|critical alerts to an MS Teams channel via the
-    # native msteamsv2 receiver. info-level alerts and the always-on
+    # Routes warning|critical alerts to MS Teams via the in-cluster
+    # prometheus-msteams proxy (generic webhook_configs); the proxy
+    # formats the Adaptive Card. info-level alerts and the always-on
     # Watchdog fall through to the null receiver and are dropped.
     alertmanager:
       enabled: true
       alertmanagerSpec:
         replicas: 1
         retention: 120h
-        # prometheus-operator mounts this Secret at
-        # /etc/alertmanager/secrets/alertmanager-msteams/ — the cluster
-        # must provide it (key: webhook-url = Teams workflow webhook).
-        secrets:
-          - alertmanager-msteams
         resources:
           requests:
             cpu: 10m
@@ -121,9 +117,11 @@ spec:
         receivers:
           - name: 'null'
           - name: msteams
-            msteamsv2_configs:
-              # URL kept out of git/values — read from the mounted secret.
-              - webhook_url_file: /etc/alertmanager/secrets/alertmanager-msteams/webhook-url
+            webhook_configs:
+              # Delivered via the in-cluster prometheus-msteams proxy,
+              # which converts this to a Teams Adaptive Card. /alertmanager
+              # is the proxy connector name.
+              - url: http://prometheus-msteams.${KPS_NAMESPACE:-monitoring}.svc.cluster.local:2000/alertmanager
                 send_resolved: true
         inhibit_rules:
           - source_matchers: ['severity = "critical"']

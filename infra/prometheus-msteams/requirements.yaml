@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${PROMETHEUS_MSTEAMS_NAMESPACE:-monitoring}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+# The stakater/prometheus-msteams chart is not published to a Helm
+# registry, so the chart is sourced straight from the Git repo at a
+# pinned tag; the HelmRelease points spec.chart at the in-repo path.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: prometheus-msteams
+  namespace: ${PROMETHEUS_MSTEAMS_NAMESPACE:-monitoring}
+spec:
+  interval: 24h
+  url: https://github.com/stakater/prometheus-msteams
+  ref:
+    tag: ${PROMETHEUS_MSTEAMS_VERSION:-v1.0.2}

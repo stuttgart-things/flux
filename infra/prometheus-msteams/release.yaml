@@ -1,0 +1,36 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: prometheus-msteams
+  namespace: ${PROMETHEUS_MSTEAMS_NAMESPACE:-monitoring}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: chart/prometheus-msteams
+      sourceRef:
+        kind: GitRepository
+        name: prometheus-msteams
+        namespace: ${PROMETHEUS_MSTEAMS_NAMESPACE:-monitoring}
+      interval: 12h
+  values:
+    replicaCount: 1
+    image:
+      repository: ghcr.io/stakater/public/prometheus-msteams
+      pullPolicy: IfNotPresent
+    # Power Automate Workflow webhook mode: prometheus-msteams formats the
+    # Teams Adaptive Card itself, so a stock "webhook request received"
+    # flow can post it directly -- no per-flow GUI customisation needed.
+    workflowWebhook: true
+    # Alertmanager posts to http://prometheus-msteams:2000/alertmanager.
+    # ${MSTEAMS_WEBHOOK_URL} is injected by the consuming Flux Kustomization
+    # via postBuild substituteFrom a Secret, so the URL never enters git.
+    connectors:
+      - alertmanager: '${MSTEAMS_WEBHOOK_URL}'
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 64Mi
