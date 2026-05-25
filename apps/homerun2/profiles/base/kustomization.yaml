@@ -5,4 +5,5 @@ components:
   - ../../components/redis-stack
   - ../../components/omni-pitcher
   - ../../components/core-catcher
+  - ../../components/notification-catcher
   - ../../components/scout

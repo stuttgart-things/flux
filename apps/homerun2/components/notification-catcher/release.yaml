@@ -1,0 +1,77 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-notification-catcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-notification-catcher-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Container image tag — pinned via the cluster's substitution Secret.
+    - target:
+        kind: Deployment
+        name: homerun2-notification-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-notification-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-notification-catcher
+                  image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v1.2.0}
+
+    # Redis password — same SOPS-backed secret value the rest of homerun2 uses.
+    - target:
+        kind: Secret
+        name: homerun2-notification-catcher-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-notification-catcher-redis
+        data:
+          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+
+    # Redis connection — point at the co-deployed redis-stack rather than the
+    # KCL default. (The kustomize base already defaults to redis-stack.<ns>
+    # but we set it explicitly to mirror the core-catcher / omni-pitcher
+    # components and to make the namespace override visible here.)
+    - target:
+        kind: ConfigMap
+        name: homerun2-notification-catcher-env
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-notification-catcher-env
+        data:
+          REDIS_ADDR: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+          REDIS_PORT: "6379"
+
+    # Output secrets — webhook URLs for each Notifier the catcher dispatches
+    # to. The KCL base emits placeholders; Flux substituteFrom on the
+    # parent homerun2 stack rewrites ${TEAMS_WEBHOOK_URL} from the cluster's
+    # homerun2-flux-secrets Secret. If TEAMS_WEBHOOK_URL is not provided
+    # by substituteFrom, the catcher fails startup (silent misconfig is
+    # the worst failure mode for a dispatch service).
+    - target:
+        kind: Secret
+        name: homerun2-notification-catcher-secrets
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-notification-catcher-secrets
+        stringData:
+          TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL}

@@ -1,0 +1,41 @@
+---
+# Routing config for omni-pitcher.
+#
+# Mounted into the omni-pitcher pod at /etc/omni-pitcher/routes.yaml via a
+# patch in release.yaml; the same patch sets ROUTES_CONFIG to that path so
+# the pitcher loads this at startup (see internal/routing/loader.go in
+# stuttgart-things/homerun2-omni-pitcher).
+#
+# Alertmanager and Grafana both POST to /pitch/grafana; both go to the
+# `alerts` stream so homerun2-notification-catcher (which consumes that
+# stream by default) can fan them out to Teams / generic webhooks based on
+# its own YAML config.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-omni-pitcher-routes
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+data:
+  routes.yaml: |
+    # Allowlist — every stream named in `routes:` or `default_stream`
+    # must appear here, else omni-pitcher fails startup.
+    streams:
+      - messages
+      - alerts
+      - github-events
+
+    # Catch-all stream when no rule matches.
+    default_stream: messages
+
+    # Ordered rules — first match wins.
+    routes:
+      # Alertmanager + Grafana webhooks → alerts stream for the
+      # notification-catcher pipeline.
+      - match:
+          endpoint: /pitch/grafana
+        stream: alerts
+
+      # GitHub webhook traffic stays on its dedicated stream.
+      - match:
+          endpoint: /pitch/github
+        stream: github-events
