@@ -26,8 +26,8 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | `v1.2.0` | OCI kustomize artifact version |
-| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | `v1.2.0` | Container image tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | `v1.4.0` | OCI kustomize artifact version |
+| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | `v1.4.0` | Container image tag |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `TEAMS_WEBHOOK_URL` | *(required)* | Power Automate webhook URL for the destination Teams channel |
 
@@ -39,6 +39,7 @@ OCIRepository + Flux Kustomization
 - Patches the Redis password Secret with the cluster's `HOMERUN2_REDIS_PASSWORD_B64`.
 - Patches the env ConfigMap to point at `redis-stack.<namespace>.svc.cluster.local:6379`.
 - Patches the output-secrets Secret with `TEAMS_WEBHOOK_URL`.
+- **Sets `DRY_RUN=true`** so the first reconciliation logs `dry-run: would send …` instead of posting to Teams. Remove this patch once routing is verified in `kubectl logs`.
 
 ## Routing config
 
