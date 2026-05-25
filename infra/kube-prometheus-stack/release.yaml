@@ -86,10 +86,16 @@ spec:
                   storage: ${KPS_PROMETHEUS_STORAGE_SIZE:-10Gi}
 
     # ---- Alertmanager ----
-    # Routes warning|critical alerts to MS Teams via the in-cluster
-    # prometheus-msteams proxy (generic webhook_configs); the proxy
-    # formats the Adaptive Card. info-level alerts and the always-on
-    # Watchdog fall through to the null receiver and are dropped.
+    # Routes warning|critical alerts to MS Teams via the homerun2-notification-catcher
+    # pipeline:
+    #     AM ─▶ omni-pitcher /pitch/grafana ─▶ Redis stream "alerts"
+    #                                            └▶ notification-catcher ─▶ Teams
+    # The catcher does the Adaptive Card formatting (Go code, version-
+    # controlled) and applies its own filter (severity_min: warning) as a
+    # second-layer gate. info-level alerts and the always-on Watchdog still
+    # fall through to the null receiver and are dropped here.
+    # Replaces the previous prometheus-msteams proxy hop (kept deployed for
+    # now until the new path is verified; remove the proxy in a follow-up).
     alertmanager:
       enabled: true
       alertmanagerSpec:
@@ -118,11 +124,16 @@ spec:
           - name: 'null'
           - name: msteams
             webhook_configs:
-              # Delivered via the in-cluster prometheus-msteams proxy,
-              # which converts this to a Teams Adaptive Card. /alertmanager
-              # is the proxy connector name.
-              - url: http://prometheus-msteams.${KPS_NAMESPACE:-monitoring}.svc.cluster.local:2000/alertmanager
+              # Delivered to homerun2-omni-pitcher's /pitch/grafana endpoint
+              # (Alertmanager's webhook v4 payload is field-compatible with
+              # Grafana's). Bearer token matches the pitcher's AUTH_TOKEN.
+              # See: stuttgart-things/homerun2-notification-catcher/docs/alertmanager.md
+              - url: http://homerun2-omni-pitcher.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local/pitch/grafana
                 send_resolved: true
+                http_config:
+                  authorization:
+                    type: Bearer
+                    credentials: ${HOMERUN2_OMNI_PITCHER_AUTH_TOKEN:-changeme}
         inhibit_rules:
           - source_matchers: ['severity = "critical"']
             target_matchers: ['severity =~ "warning|info"']

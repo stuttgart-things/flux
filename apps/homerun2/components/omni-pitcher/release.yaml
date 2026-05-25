@@ -81,3 +81,33 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
+    # Mount the routing config (./routes-configmap.yaml) into the pitcher
+    # and point ROUTES_CONFIG at it so /pitch/grafana traffic lands on the
+    # `alerts` stream for notification-catcher to fan out to Teams.
+    - target:
+        kind: Deployment
+        name: homerun2-omni-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-omni-pitcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-omni-pitcher
+                  env:
+                    - name: ROUTES_CONFIG
+                      value: /etc/omni-pitcher/routes.yaml
+                  volumeMounts:
+                    - name: routes
+                      mountPath: /etc/omni-pitcher
+                      readOnly: true
+              volumes:
+                - name: routes
+                  configMap:
+                    name: homerun2-omni-pitcher-routes
+                    items:
+                      - key: routes.yaml
+                        path: routes.yaml
