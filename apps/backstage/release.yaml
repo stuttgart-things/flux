@@ -107,30 +107,6 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: EXTERNAL_ACCESS_TOKEN
-        # ZITADEL / OIDC auth — Part 2 of the PR-preview auth spike
-        # (stuttgart-things/sthings-backstage#82). AUTH_OIDC_ENABLED gates
-        # both the backend module load and the SignInPage button; setting
-        # it to "true" surfaces the Zitadel sign-in option. The three
-        # secret-backed values come from the SOPS-encrypted
-        # backstage-secrets (BACKSTAGE_ZITADEL_*) provisioned by the
-        # zitadel-config Terraform module.
-        - name: AUTH_OIDC_ENABLED
-          value: "true"
-        - name: ZITADEL_ISSUER
-          valueFrom:
-            secretKeyRef:
-              name: backstage-secrets
-              key: ZITADEL_ISSUER
-        - name: ZITADEL_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: backstage-secrets
-              key: ZITADEL_CLIENT_ID
-        - name: ZITADEL_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: backstage-secrets
-              key: ZITADEL_CLIENT_SECRET
       extraAppConfig:
         - filename: app-config.extra.yaml
           configMapRef: backstage-app-config
