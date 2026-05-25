@@ -84,7 +84,7 @@ spec:
     # Output secrets — webhook URLs for each Notifier the catcher dispatches
     # to. The KCL base emits placeholders; Flux substituteFrom on the
     # parent homerun2 stack rewrites ${TEAMS_WEBHOOK_URL} from the cluster's
-    # homerun2-flux-secrets Secret. If TEAMS_WEBHOOK_URL is not provided
+    # homerun2-secrets Secret. If TEAMS_WEBHOOK_URL is not provided
     # by substituteFrom, the catcher fails startup (silent misconfig is
     # the worst failure mode for a dispatch service).
     - target:
