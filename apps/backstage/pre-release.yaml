@@ -124,3 +124,9 @@ spec:
           GITHUB_CLIENT_SECRET: ${BACKSTAGE_GITHUB_CLIENT_SECRET}
           BACKEND_SECRET: ${BACKSTAGE_BACKEND_SECRET}
           EXTERNAL_ACCESS_TOKEN: ${BACKSTAGE_EXTERNAL_ACCESS_TOKEN}
+          # ZITADEL OIDC client (see sthings-backstage#82 + zitadel-config TF module).
+          # Empty defaults so unset BACKSTAGE_ZITADEL_* doesn't break substitution
+          # in clusters that don't (yet) provision the secret.
+          ZITADEL_ISSUER: ${BACKSTAGE_ZITADEL_ISSUER:-}
+          ZITADEL_CLIENT_ID: ${BACKSTAGE_ZITADEL_CLIENT_ID:-}
+          ZITADEL_CLIENT_SECRET: ${BACKSTAGE_ZITADEL_CLIENT_SECRET:-}
