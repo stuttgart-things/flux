@@ -31,7 +31,7 @@ OCIRepository + Flux Kustomization
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `TEAMS_WEBHOOK_URL` | *(required)* | Power Automate webhook URL for the destination Teams channel |
 
-`TEAMS_WEBHOOK_URL` must be supplied via the parent stack's `substituteFrom: homerun2-flux-secrets`.
+`TEAMS_WEBHOOK_URL` must be supplied via the parent stack's `substituteFrom: homerun2-secrets`.
 
 ## Customizations
 
@@ -50,6 +50,6 @@ The catcher reads `/etc/notification-catcher/config.yaml` (a ConfigMap mounted b
 To wire in a new sink that needs a secret env var (PagerDuty, Slack, …):
 
 1. Extend the kustomize-base profile in `homerun2-notification-catcher/tests/kcl-deploy-profile.yaml` with the additional `outputSecrets` key and the YAML output stanza.
-2. Add the secret value to `homerun2-flux-secrets` (SOPS-encrypted) in the cluster repo.
+2. Add the secret value to `homerun2-secrets` (SOPS-encrypted) in the cluster repo.
 3. Add a patch here mapping the new key into the `<name>-secrets` Secret stringData (or extend the existing patch).
 4. Cut a new release of `homerun2-notification-catcher`; bump `HOMERUN2_NOTIFICATION_CATCHER_VERSION` here.
