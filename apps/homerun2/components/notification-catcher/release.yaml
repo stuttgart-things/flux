@@ -69,6 +69,14 @@ spec:
     # KCL default. (The kustomize base already defaults to redis-stack.<ns>
     # but we set it explicitly to mirror the core-catcher / omni-pitcher
     # components and to make the namespace override visible here.)
+    #
+    # REDIS_STREAM=messages: the omni-pitcher version currently deployed
+    # (v1.6.2) does not have the config-driven stream routing (added in
+    # v1.9.0+), so every /pitch/* webhook lands in the default stream
+    # `messages` regardless of the routes-configmap. Pinning catcher to
+    # `messages` keeps it picking up alerts until omni-pitcher is bumped.
+    # Once on v1.9.0+, drop this line (chart default is also `messages`
+    # as of homerun2-notification-catcher v2.0.2).
     - target:
         kind: ConfigMap
         name: homerun2-notification-catcher-env
@@ -80,6 +88,7 @@ spec:
         data:
           REDIS_ADDR: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
           REDIS_PORT: "6379"
+          REDIS_STREAM: messages
 
     # Output secrets — webhook URLs for each Notifier the catcher dispatches
     # to. The KCL base emits placeholders; Flux substituteFrom on the
