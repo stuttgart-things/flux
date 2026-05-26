@@ -1,3 +1,23 @@
+# [1.11.0](https://github.com/stuttgart-things/flux/compare/v1.10.0...v1.11.0) (2026-05-26)
+
+
+### Bug Fixes
+
+* **notification-catcher:** pin REDIS_STREAM=messages ([#145](https://github.com/stuttgart-things/flux/issues/145)) ([6a4a1f7](https://github.com/stuttgart-things/flux/commit/6a4a1f770276fe74ff4e34f25a0fa772489f7a56))
+
+
+### Features
+
+* **backstage:** enable OIDC (Zitadel) sign-in alongside GitHub ([#141](https://github.com/stuttgart-things/flux/issues/141)) ([b77fd53](https://github.com/stuttgart-things/flux/commit/b77fd53d4c68996a7a67e6783d3ae0d89fce89df)), closes [stuttgart-things#2219](https://github.com/stuttgart-things/issues/2219) [stuttgart-things#2218](https://github.com/stuttgart-things/issues/2218)
+* **homerun2:** land notification-catcher + route Alertmanager through it ([42a62f1](https://github.com/stuttgart-things/flux/commit/42a62f1fad87fd815d0f2d42c59222f60cf037a7)), closes [#9](https://github.com/stuttgart-things/flux/issues/9) [#9](https://github.com/stuttgart-things/flux/issues/9)
+* **infra:** external-secrets install + Vault cluster-store components ([2dfd447](https://github.com/stuttgart-things/flux/commit/2dfd447181d26380520ae148da6fe8513e6f98fb)), closes [stuttgart-things/homerun2-omni-pitcher#116](https://github.com/stuttgart-things/homerun2-omni-pitcher/issues/116)
+* **notification-catcher:** make DRY_RUN substitutable ([#146](https://github.com/stuttgart-things/flux/issues/146)) ([e4407f7](https://github.com/stuttgart-things/flux/commit/e4407f7fa5b42e6df5f3fba760686718b3aef6ad))
+
+
+### Reverts
+
+* **backstage:** disable OIDC env wiring — Backstage v1.4.0 image broken ([#144](https://github.com/stuttgart-things/flux/issues/144)) ([ac9cc97](https://github.com/stuttgart-things/flux/commit/ac9cc97ccb772b2ffbd2f7529814553325ef29a9)), closes [#141](https://github.com/stuttgart-things/flux/issues/141)
+
 # [1.10.0](https://github.com/stuttgart-things/flux/compare/v1.9.0...v1.10.0) (2026-05-22)
 
 
