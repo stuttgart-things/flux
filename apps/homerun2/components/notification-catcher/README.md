@@ -39,7 +39,7 @@ OCIRepository + Flux Kustomization
 - Patches the Redis password Secret with the cluster's `HOMERUN2_REDIS_PASSWORD_B64`.
 - Patches the env ConfigMap to point at `redis-stack.<namespace>.svc.cluster.local:6379`.
 - Patches the output-secrets Secret with `TEAMS_WEBHOOK_URL`.
-- **Sets `DRY_RUN=true`** so the first reconciliation logs `dry-run: would send …` instead of posting to Teams. Remove this patch once routing is verified in `kubectl logs`.
+- **Defaults `DRY_RUN=true`** so the first reconciliation logs `dry-run: would send …` instead of posting to Teams. Flip it from the consuming Kustomization once routing is verified in `kubectl logs` by setting `postBuild.substitute.HOMERUN2_NOTIFICATION_CATCHER_DRYRUN: "false"`.
 
 ## Routing config
 

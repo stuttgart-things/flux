@@ -32,9 +32,11 @@ spec:
                   image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v1.4.0}
 
     # First-reconciliation guard: every dispatched alert is logged
-    # ("dry-run: would send …") instead of POSTing to Teams. Set DRY_RUN to
-    # any falsy value (or remove this patch) once routing is confirmed in
-    # `kubectl logs deploy/homerun2-notification-catcher`.
+    # ("dry-run: would send …") instead of POSTing to Teams. Defaults to
+    # "true" so a fresh cluster never spams Teams; flip it from the
+    # consuming Kustomization once routing is confirmed in
+    # `kubectl logs deploy/homerun2-notification-catcher`:
+    #   postBuild.substitute.HOMERUN2_NOTIFICATION_CATCHER_DRYRUN: "false"
     # Requires homerun2-notification-catcher v1.3.0 or later.
     - target:
         kind: Deployment
@@ -51,7 +53,7 @@ spec:
                 - name: homerun2-notification-catcher
                   env:
                     - name: DRY_RUN
-                      value: "true"
+                      value: "${HOMERUN2_NOTIFICATION_CATCHER_DRYRUN:=true}"
 
     # Redis password — same SOPS-backed secret value the rest of homerun2 uses.
     - target:
