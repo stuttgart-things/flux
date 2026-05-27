@@ -25,6 +25,21 @@ spec:
         metadata:
           name: homerun2
         $patch: delete
+    # Remove the KCL-generated HTTPRoute. The bundle started shipping one
+    # with placeholder hostname (homerun2-git-pitcher.example.com) and parent
+    # homerun2-dev-gateway/default (preview-env default), which leaves a
+    # stray route on clusters that don't have that Gateway. Drop it here;
+    # if a real route is needed on a given cluster, add it as a sibling
+    # httproute.yaml the same way core-catcher does.
+    - target:
+        kind: HTTPRoute
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-git-pitcher
+        $patch: delete
     # Override the container image tag
     - target:
         kind: Deployment
