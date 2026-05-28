@@ -15,16 +15,6 @@ spec:
   wait: true
   targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
   patches:
-    # Remove the KCL-generated Namespace (managed by the parent stack)
-    - target:
-        kind: Namespace
-        name: homerun2
-      patch: |
-        apiVersion: v1
-        kind: Namespace
-        metadata:
-          name: homerun2
-        $patch: delete
     # Remove the KCL-generated HTTPRoute. The bundle started shipping one
     # with placeholder hostname (homerun2-git-pitcher.example.com) and parent
     # homerun2-dev-gateway/default (preview-env default), which leaves a
