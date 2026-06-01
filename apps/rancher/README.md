@@ -69,7 +69,7 @@ spec:
   postBuild:
     substitute:
       RANCHER_NAMESPACE: cattle-system
-      RANCHER_VERSION: 2.11.2
+      RANCHER_VERSION: 2.14.2
       RANCHER_REPLICAS: "3"
       INGRESS_HOSTNAME: rancher
       INGRESS_DOMAIN: fluxdev-3.sthings-vsphere.example.com
@@ -89,7 +89,7 @@ Run `task get-variables` against this folder to list all `\${VAR:-default}` subs
 | Variable | Default | Purpose |
 |---|---|---|
 | `RANCHER_NAMESPACE` | `cattle-system` | Target namespace |
-| `RANCHER_VERSION` | `2.11.2` | Rancher chart version |
+| `RANCHER_VERSION` | `2.14.2` | Rancher chart version |
 | `RANCHER_REPLICAS` | `3` | Rancher replica count |
 | `STHINGS_CLUSTER_VERSION` | `0.3.20` | `sthings-cluster` helper chart version |
 | `INGRESS_HOSTNAME` | `rancher` | Hostname prefix |
