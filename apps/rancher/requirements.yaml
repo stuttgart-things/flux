@@ -1,0 +1,26 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${RANCHER_NAMESPACE:-cattle-system}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: rancher-stable
+  namespace: ${RANCHER_NAMESPACE:-cattle-system}
+spec:
+  interval: 24h
+  url: https://releases.rancher.com/server-charts/stable
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things
+  namespace: ${RANCHER_NAMESPACE:-cattle-system}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things

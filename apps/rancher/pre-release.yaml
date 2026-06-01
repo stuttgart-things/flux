@@ -1,0 +1,39 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: rancher-certificate-configuration
+  namespace: ${RANCHER_NAMESPACE:-cattle-system}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: sthings-cluster
+      version: ${STHINGS_CLUSTER_VERSION:-0.3.20}
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things
+        namespace: ${RANCHER_NAMESPACE:-cattle-system}
+      interval: 12h
+  values:
+    customresources:
+      rancher-ingress-certificate:
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: rancher-ingress
+          namespace: ${RANCHER_NAMESPACE:-cattle-system}
+        spec:
+          commonName: ${INGRESS_HOSTNAME:-rancher}.${INGRESS_DOMAIN}
+          dnsNames:
+            - ${INGRESS_HOSTNAME:-rancher}.${INGRESS_DOMAIN}
+          issuerRef:
+            name: ${CLUSTER_ISSUER}
+            kind: ClusterIssuer
+          secretName: ${INGRESS_HOSTNAME:-rancher}.${INGRESS_DOMAIN}-tls
+    secrets:
+      rancher-cacerts:
+        name: tls-ca
+        dataType: stringData
+        secretKVs:
+          cacerts.pem: ${CA_BUNDLE}
