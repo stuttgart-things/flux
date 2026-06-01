@@ -14,13 +14,24 @@ Deploys [Rancher](https://artifacthub.io/packages/helm/rancher-stable/rancher) v
 
 ## SECRET
 
+The app reads the initial admin password from a `BOOTSTRAP_PASSWORD` key in a
+`Secret` wired in via the Kustomization's `substituteFrom`.
+
+**Production (GitOps):** commit the Secret **SOPS-encrypted** next to the app so
+Flux decrypts and applies it — no manual `kubectl apply`. See the
+`stuttgart-things` repo, e.g.
+`clusters/labul/vsphere/platform-sthings/apps/rancher-secrets.enc.yaml`
+(`sops --encrypt --age <recipient> rancher-secrets.yaml`).
+
+**Quick dev bootstrap** (non-GitOps):
+
 ```bash
 kubectl apply -f - <<EOF
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: rancher
+  name: rancher-secrets
   namespace: flux-system
 type: Opaque
 stringData:
@@ -29,6 +40,10 @@ EOF
 ```
 
 ## GIT-REPOSITORY MANIFEST
+
+`apps/rancher` is on `main`; production consumes it via the shared
+`apps-upstream` `GitRepository`. For a standalone/dev deploy you can point at
+`main` directly:
 
 ```bash
 kubectl apply -f - <<EOF
@@ -42,7 +57,7 @@ spec:
   interval: 1m0s
   url: https://github.com/stuttgart-things/flux.git
   ref:
-    branch: feature/add-rancher
+    branch: main
 EOF
 ```
 
@@ -78,7 +93,7 @@ spec:
       GATEWAY_NAMESPACE: default
     substituteFrom:
       - kind: Secret
-        name: rancher
+        name: rancher-secrets
 EOF
 ```
 
