@@ -31,9 +31,3 @@ spec:
             name: ${CLUSTER_ISSUER}
             kind: ClusterIssuer
           secretName: ${INGRESS_HOSTNAME:-rancher}.${INGRESS_DOMAIN}-tls
-    secrets:
-      rancher-cacerts:
-        name: tls-ca
-        dataType: stringData
-        secretKVs:
-          cacerts.pem: ${CA_BUNDLE}

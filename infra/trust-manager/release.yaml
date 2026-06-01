@@ -19,3 +19,8 @@ spec:
     app:
       trust:
         namespace: ${TRUST_MANAGER_TRUST_NAMESPACE:-cert-manager}
+    # Allow Bundles to write trust bundles into Secrets (e.g. rancher's privateCA tls-ca)
+    secretTargets:
+      enabled: true
+      authorizedSecrets:
+        - ${TRUST_BUNDLE_SECRET_NAME:-tls-ca}
