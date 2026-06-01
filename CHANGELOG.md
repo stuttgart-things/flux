@@ -1,3 +1,19 @@
+# [1.12.0](https://github.com/stuttgart-things/flux/compare/v1.11.0...v1.12.0) (2026-06-01)
+
+
+### Bug Fixes
+
+* **apps/rancher:** default to chart 2.14.2 for k8s 1.34/1.35 support ([f8395ce](https://github.com/stuttgart-things/flux/commit/f8395ce6c2cb6e025f381fa1df3c60db5fabc31a))
+* **apps/rancher:** point HTTPRoute backend at rancher-deployment service ([f258f50](https://github.com/stuttgart-things/flux/commit/f258f505c7b629f35d8c578423953e9487202b8d))
+* **homerun2/git-pitcher:** delete stray bundle HTTPRoute ([6c9da9c](https://github.com/stuttgart-things/flux/commit/6c9da9c4c0d415c320f2af4d5f8a8fbb6556b1e7))
+* **homerun2/git-pitcher:** drop dead Namespace delete-patch from Flux release ([8089c85](https://github.com/stuttgart-things/flux/commit/8089c850189f7d622b8286319fc5209ee0f7de22)), closes [stuttgart-things/homerun2-omni-pitcher#132](https://github.com/stuttgart-things/homerun2-omni-pitcher/issues/132) [#150](https://github.com/stuttgart-things/flux/issues/150)
+
+
+### Features
+
+* **apps/rancher:** add Rancher app with HTTPRoute and private CA support ([a779c31](https://github.com/stuttgart-things/flux/commit/a779c3178b6d6163cbcd83013a2a0117b13063b4))
+* **rancher,trust-manager:** source rancher privateCA tls-ca from trust-manager ([8a2dbaa](https://github.com/stuttgart-things/flux/commit/8a2dbaaaafdf26e1f520d8d8d74181bb44cf4fd2))
+
 # [1.11.0](https://github.com/stuttgart-things/flux/compare/v1.10.0...v1.11.0) (2026-05-26)
 
 
