@@ -55,6 +55,6 @@ spec:
                     type: PathPrefix
                     value: /
               backendRefs:
-                - name: rancher
+                - name: rancher-deployment
                   namespace: ${RANCHER_NAMESPACE:-cattle-system}
                   port: 80
