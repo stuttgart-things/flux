@@ -6,7 +6,11 @@ Deploys [Rancher](https://artifacthub.io/packages/helm/rancher-stable/rancher) v
 - TLS is terminated at the Gateway API `Gateway`; the chart runs with `ingress.enabled: false`
   and `tls: external`, and traffic is routed via a `HTTPRoute` (port `80`).
 - A private/internal CA is trusted via `privateCA: true` and the `tls-ca` secret
-  (`cacerts.pem`), supplied through the `${CA_BUNDLE}` substitution.
+  (`cacerts.pem`). That secret is distributed into the namespace by **trust-manager**
+  (see `infra/trust-manager`), so no CA material needs to be supplied to this app.
+
+> **Requires** `infra/trust-manager` with `secretTargets.enabled: true` and a Bundle
+> writing the `tls-ca` secret (`cacerts.pem`) into `${RANCHER_NAMESPACE}`.
 
 ## SECRET
 
@@ -21,10 +25,6 @@ metadata:
 type: Opaque
 stringData:
   BOOTSTRAP_PASSWORD: "ChangeMe123" #pragma: allowlist secret
-  CA_BUNDLE: |
-    -----BEGIN CERTIFICATE-----
-    ...your private CA bundle...
-    -----END CERTIFICATE-----
 EOF
 ```
 
@@ -98,4 +98,3 @@ Run `task get-variables` against this folder to list all `\${VAR:-default}` subs
 | `GATEWAY_NAME` | _(required)_ | Gateway API `Gateway` name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
 | `BOOTSTRAP_PASSWORD` | _(secret)_ | Initial admin bootstrap password |
-| `CA_BUNDLE` | _(secret)_ | Private CA bundle (`cacerts.pem`) |

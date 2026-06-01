@@ -37,3 +37,24 @@ spec:
           target:
             configMap:
               key: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
+      # Private-CA bundle written to a Secret for Rancher's privateCA (cacerts.pem).
+      # The synced Secret takes the Bundle's name, so it must match secretTargets.authorizedSecrets.
+      rancher-tls-ca:
+        apiVersion: trust.cert-manager.io/v1alpha1
+        kind: Bundle
+        metadata:
+          name: ${TRUST_BUNDLE_SECRET_NAME:-tls-ca}
+        spec:
+          sources:
+            - secret:
+                name: ${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}
+                key: ${TRUST_BUNDLE_CA_KEY:-ca.crt}
+            - secret:
+                name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
+                key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
+          target:
+            secret:
+              key: ${TRUST_BUNDLE_SECRET_TARGET_KEY:-cacerts.pem}
+            namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: ${TRUST_BUNDLE_SECRET_NAMESPACE:-cattle-system}
