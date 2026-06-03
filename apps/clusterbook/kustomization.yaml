@@ -6,3 +6,4 @@ resources:
   - release.yaml
   - httproute.yaml
   - pdns-secret.yaml
+  - ddwrt-secret.yaml

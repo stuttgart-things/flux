@@ -33,9 +33,15 @@ spec:
       PDNS_ENABLED: "true"
       PDNS_URL: https://pdns.sthings-vsphere.labul.sva.de
       PDNS_ZONE: sthings.io
+      DDWRT_ENABLED: "true"
+      DDWRT_HOST: 192.168.1.1
+      DDWRT_USER: root
+      DDWRT_ZONE: sthings.lab
     substituteFrom:
       - kind: Secret
         name: clusterbook-pdns-vars
+      - kind: Secret
+        name: clusterbook-ddwrt-vars
 EOF
 ```
 
@@ -53,6 +59,11 @@ EOF
 | `PDNS_URL` | *(empty)* | PowerDNS API base URL |
 | `PDNS_ZONE` | *(empty)* | PowerDNS DNS zone |
 | `PDNS_TOKEN` | *(required if PDNS enabled)* | PowerDNS API key (via `substituteFrom` Secret) |
+| `DDWRT_ENABLED` | `false` | Enable DD-WRT integration |
+| `DDWRT_HOST` | *(empty)* | DD-WRT router host/IP |
+| `DDWRT_USER` | *(empty)* | DD-WRT login user |
+| `DDWRT_ZONE` | *(empty)* | DD-WRT DNS zone |
+| `DDWRT_PASSWORD` | *(required if DD-WRT enabled)* | DD-WRT login password (via `substituteFrom` Secret) |
 
 ## NetworkConfig CR
 

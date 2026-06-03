@@ -30,7 +30,7 @@ spec:
               containers:
                 - name: clusterbook
                   image: ghcr.io/stuttgart-things/clusterbook:${CLUSTERBOOK_VERSION:-1.25.2}
-    # Override PowerDNS config in ConfigMap
+    # Override PowerDNS + DD-WRT config in ConfigMap
     - target:
         kind: ConfigMap
         name: clusterbook-config
@@ -43,7 +43,11 @@ spec:
           PDNS_ENABLED: ${PDNS_ENABLED:-false}
           PDNS_URL: ${PDNS_URL:-}
           PDNS_ZONE: ${PDNS_ZONE:-}
-    # Add secretRef for PDNS token to Deployment
+          DDWRT_ENABLED: ${DDWRT_ENABLED:-false}
+          DDWRT_HOST: ${DDWRT_HOST:-}
+          DDWRT_USER: ${DDWRT_USER:-}
+          DDWRT_ZONE: ${DDWRT_ZONE:-}
+    # Add secretRefs for PDNS token + DD-WRT password to Deployment
     - target:
         kind: Deployment
         name: clusterbook
@@ -62,6 +66,8 @@ spec:
                         name: clusterbook-config
                     - secretRef:
                         name: clusterbook-pdns
+                    - secretRef:
+                        name: clusterbook-ddwrt
     # Remove the KCL-generated HTTPRoute (we provide our own via flux)
     - target:
         kind: HTTPRoute
