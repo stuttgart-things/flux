@@ -1,11 +1,9 @@
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${VAULT_NAMESPACE:-vault}
-  labels:
-    toolkit.fluxcd.io/tenant: sthings-team
----
+# NOTE: The vault Namespace is intentionally NOT declared here. It is owned by
+# the main vault Kustomization (apps/vault/requirements.yaml). Declaring it in
+# both bases makes two Flux Kustomizations fight over the namespace's ownership
+# labels, which churns the Cilium security identity of every pod in the
+# namespace and intermittently breaks pod networking (EPERM on connect).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
