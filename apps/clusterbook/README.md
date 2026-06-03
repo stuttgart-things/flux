@@ -25,7 +25,7 @@ spec:
   postBuild:
     substitute:
       CLUSTERBOOK_NAMESPACE: clusterbook
-      CLUSTERBOOK_VERSION: v1.11.0
+      CLUSTERBOOK_VERSION: v1.25.7
       CLUSTERBOOK_HOSTNAME: clusterbook
       GATEWAY_NAME: movie-scripts2-gateway
       GATEWAY_NAMESPACE: default
@@ -50,7 +50,7 @@ EOF
 | Variable | Default | Description |
 |---|---|---|
 | `CLUSTERBOOK_NAMESPACE` | `clusterbook` | Target namespace |
-| `CLUSTERBOOK_VERSION` | `v1.11.0` | Image + kustomize OCI tag |
+| `CLUSTERBOOK_VERSION` | `v1.25.7` | Image + kustomize OCI tag |
 | `CLUSTERBOOK_HOSTNAME` | `clusterbook` | HTTPRoute hostname prefix |
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
