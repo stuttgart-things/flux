@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${CNPG_NAMESPACE:-cnpg-system}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cloudnative-pg
+  namespace: ${CNPG_NAMESPACE:-cnpg-system}
+spec:
+  interval: 24h
+  url: https://cloudnative-pg.github.io/charts

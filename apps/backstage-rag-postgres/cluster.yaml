@@ -1,0 +1,61 @@
+---
+# CloudNativePG Cluster dedicated to the Backstage RAG-AI plugin. Single
+# instance (PoC — no HA), pgvector enabled, base/WAL backups to MinIO.
+# Requires apps/cnpg-operator and the rag-postgres-creds / rag-postgres-s3-creds
+# ExternalSecrets (external-secret.yaml) to exist first.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: rag-postgres
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+  labels:
+    backup: backstage-rag-postgres
+spec:
+  instances: ${RAG_PG_INSTANCES:-1}
+  # Custom operand image: CNPG standard images don't bundle pgvector.
+  # Built from image/Dockerfile, pushed to ghcr.io/stuttgart-things.
+  imageName: ${RAG_PG_IMAGE:-ghcr.io/stuttgart-things/postgresql-pgvector}:${RAG_PG_IMAGE_TAG:-16}
+
+  bootstrap:
+    initdb:
+      database: ${RAG_PG_DATABASE:-backstage_rag}
+      owner: ${RAG_PG_OWNER:-rag}
+      # Owner username/password come from the rag-postgres-creds basic-auth
+      # Secret (created by external-secret.yaml from Vault).
+      secret:
+        name: rag-postgres-creds
+      # Enable pgvector in the freshly bootstrapped database.
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS vector;
+
+  storage:
+    size: ${RAG_PG_STORAGE_SIZE:-5Gi}
+    storageClass: ${STORAGE_CLASS:-nfs4-csi}
+
+  resources:
+    requests:
+      cpu: ${RAG_PG_CPU_REQUEST:-100m}
+      memory: ${RAG_PG_MEMORY_REQUEST:-256Mi}
+    limits:
+      cpu: ${RAG_PG_CPU_LIMIT:-1}
+      memory: ${RAG_PG_MEMORY_LIMIT:-1Gi}
+
+  # WAL + base backups straight to our MinIO via Barman Cloud. The Velero
+  # Schedule in backup.yaml covers the Kubernetes objects; this covers the
+  # database contents — together they give full DR.
+  backup:
+    retentionPolicy: ${RAG_BACKUP_RETENTION:-7d}
+    barmanObjectStore:
+      destinationPath: s3://${RAG_S3_BUCKET:-backstage-rag-backups}/
+      endpointURL: ${RAG_S3_ENDPOINT:-https://artifacts.${INGRESS_DOMAIN}}
+      s3Credentials:
+        accessKeyId:
+          name: rag-postgres-s3-creds
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: rag-postgres-s3-creds
+          key: SECRET_ACCESS_KEY
+      wal:
+        compression: gzip
+      data:
+        compression: gzip

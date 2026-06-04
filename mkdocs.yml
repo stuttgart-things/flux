@@ -24,7 +24,9 @@ nav:
   - Apps:
       - Overview: apps/index.md
       - Argo CD: apps/argo-cd.md
+      - Backstage RAG Postgres: apps/backstage-rag-postgres.md
       - Claim Machinery API: apps/claim-machinery-api.md
+      - CNPG Operator: apps/cnpg-operator.md
       - Clusterbook: apps/clusterbook.md
       - Flux Web: apps/flux-web.md
       - Headlamp: apps/headlamp.md
