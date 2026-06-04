@@ -77,6 +77,12 @@ docker buildx build \
   --push apps/backstage-rag-postgres/image
 ```
 
+The CNPG operand image is pulled by the kubelet (not Flux), so the GHCR package
+must be **public** — otherwise pods fail with `ErrImagePull`. New packages
+default to private; make it public once (Package settings → Change visibility),
+or add an `imagePullSecret` to the namespace and reference it via
+`spec.imagePullSecrets` in `cluster.yaml`.
+
 ## Backups
 
 CNPG writes WAL + base backups to MinIO via `barmanObjectStore`. Pre-create the

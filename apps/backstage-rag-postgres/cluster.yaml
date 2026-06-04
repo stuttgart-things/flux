@@ -24,8 +24,11 @@ spec:
       # Secret (created by external-secret.yaml from Vault).
       secret:
         name: rag-postgres-creds
-      # Enable pgvector in the freshly bootstrapped database.
-      postInitSQL:
+      # Enable pgvector in the freshly bootstrapped *application* database.
+      # postInitApplicationSQL runs against the app DB (RAG_PG_DATABASE);
+      # postInitSQL would run against the `postgres` DB instead, leaving the
+      # extension absent from the database the RAG plugin actually connects to.
+      postInitApplicationSQL:
         - CREATE EXTENSION IF NOT EXISTS vector;
 
   storage:
