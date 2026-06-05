@@ -1,0 +1,10 @@
+---
+# Reusable, fleet-generic Argo CD configuration applied into the argocd
+# namespace. Per-cluster data (ClusterbookCluster CRs) and the choice of which
+# platform AppSets to enable stay in the consumer/cluster repo — they differ per
+# fleet and are selected via labels on the ClusterbookCluster CR.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - appset-cluster-projects.yaml
+  - proj-cicd.yaml

@@ -1,0 +1,40 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-projects
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            auto-project: "true"
+  template:
+    metadata:
+      name: 'proj-{{ .name }}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/stuttgart-things/argocd.git
+        targetRevision: main
+        path: config/cluster-project/chart
+        helm:
+          releaseName: 'proj-{{ .name }}'
+          valuesObject:
+            cluster:
+              name: '{{ .name }}'
+              server: '{{ .server }}'
+            allowAll: '{{ index .metadata.labels "allow-all" | default "false" }}'
+            tier: '{{ index .metadata.labels "tier" | default "" }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true

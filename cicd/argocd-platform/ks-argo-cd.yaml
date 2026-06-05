@@ -1,0 +1,41 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ${BUNDLE_NAME:-argocd-platform}-argo-cd
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-apps-upstream}
+  path: ./cicd/argo-cd
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      ARGO_CD_VERSION: ${ARGO_CD_VERSION:-9.4.15}
+      ARGO_CD_NAMESPACE: ${ARGO_CD_NAMESPACE:-argocd}
+      ARGO_CD_INGRESS_ENABLED: ${ARGO_CD_INGRESS_ENABLED:-false}
+      INGRESS_HOSTNAME: ${INGRESS_HOSTNAME:-argocd}
+      INGRESS_DOMAIN: ${INGRESS_DOMAIN:-platform.sthings-vsphere.labul.sva.de}
+      INGRESS_SECRET_NAME: ${INGRESS_SECRET_NAME:-argocd-server-tls}
+      ISSUER_NAME: ${ISSUER_NAME:-vault-pki}
+      ISSUER_KIND: ${ISSUER_KIND:-ClusterIssuer}
+      ARGO_CD_PASSWORD_MTIME: ${ARGO_CD_PASSWORD_MTIME:-2026-03-23T02:00:00UTC}
+      AVP_TRUST_BUNDLE_CONFIGMAP: ${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+      AVP_TRUST_BUNDLE_KEY: ${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+      AVP_SSL_CERT_DIR: ${AVP_SSL_CERT_DIR:-/etc/ssl/custom}
+    substituteFrom:
+      - kind: Secret
+        name: ${ARGO_CD_SECRETS_NAME:-argocd-secrets}
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: argocd-deployment
+      namespace: ${ARGO_CD_NAMESPACE:-argocd}

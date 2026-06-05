@@ -1,0 +1,27 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ${BUNDLE_NAME:-argocd-platform}-clusterbook-operator
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: app
+spec:
+  # Wait for Argo CD to be healthy before installing the operator: the operator
+  # writes Argo CD cluster-secrets and reads the argocd namespace.
+  dependsOn:
+    - name: ${BUNDLE_NAME:-argocd-platform}-argo-cd
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-apps-upstream}
+  path: ./apps/clusterbook-operator
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      CLUSTERBOOK_OPERATOR_NAMESPACE: ${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}
+      CLUSTERBOOK_OPERATOR_VERSION: ${CLUSTERBOOK_OPERATOR_VERSION:-v0.19.0}
