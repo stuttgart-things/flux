@@ -1,0 +1,23 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: ${BUNDLE_NAME:-argocd-platform}-platform-kind
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: argocd
+spec:
+  # Needs the Argo CD CRDs (ApplicationSet) installed by the bundle first.
+  dependsOn:
+    - name: ${BUNDLE_NAME:-argocd-platform}-argo-cd
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  prune: true
+  wait: true
+  force: false
+  sourceRef:
+    kind: GitRepository
+    name: ${ARGOCD_CATALOG_SOURCE:-argocd-catalog}
+  path: ./platforms/kind

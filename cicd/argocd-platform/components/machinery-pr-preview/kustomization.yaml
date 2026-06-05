@@ -1,0 +1,6 @@
+---
+# Opt-in platform: machinery-pr-preview (argocd-catalog ./platforms/machinery-pr-preview)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-platform-machinery-pr-preview.yaml

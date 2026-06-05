@@ -1,0 +1,6 @@
+---
+# Opt-in platform: kind (argocd-catalog ./platforms/kind)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-platform-kind.yaml
