@@ -1,0 +1,22 @@
+---
+# Cluster-scoped ClusterbookProviderConfig, applied DIRECTLY by the consumer
+# (parent) Kustomization as a raw resource in base/ — NOT via the nested
+# ks-argocd-config child. That one-hop path is deliberate: insecureSkipVerify
+# is a boolean, and routing a bare boolean through a child Kustomization's
+# postBuild.substitute (map[string]string) breaks (kustomize drops the quotes
+# -> Flux rejects the typed bool). Applied directly, the substituted value
+# lands in the CRD's real boolean field, so both apiURL and insecureSkipVerify
+# are cleanly substitutable.
+#
+# Seed-once: prune/reconcile disabled so Flux plants it and the operator owns
+# runtime/status afterward.
+apiVersion: clusterbook.stuttgart-things.com/v1alpha1
+kind: ClusterbookProviderConfig
+metadata:
+  name: default
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+    kustomize.toolkit.fluxcd.io/reconcile: disabled
+spec:
+  apiURL: ${CLUSTERBOOK_API_URL}
+  insecureSkipVerify: ${CLUSTERBOOK_INSECURE_SKIP_VERIFY:-false}

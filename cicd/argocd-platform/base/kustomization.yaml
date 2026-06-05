@@ -8,13 +8,16 @@
 #     └─> clusterbook-operator   (registers downstream clusters + stamps labels)
 #     └─> argocd-config          (AppProjects + cluster-generator ApplicationSet)
 #
-# The three resources below are themselves Flux Kustomization CRs that point
-# back at existing bases in this repo. When the parent (consumer) Kustomization
-# builds, Flux substitutes ${VAR:-default} into the child CR text, so each child
-# ends up with concrete postBuild.substitute values.
+# ks-*.yaml are Flux Kustomization CRs that point back at existing bases in this
+# repo; the consumer's substitute fills their ${VAR:-default} values.
+#
+# clusterbook-providerconfig.yaml is a RAW resource (not a child Kustomization)
+# so the consumer substitutes it one-hop and its boolean insecureSkipVerify
+# field works (see the file's header for why).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ks-argo-cd.yaml
   - ks-clusterbook-operator.yaml
   - ks-argocd-config.yaml
+  - clusterbook-providerconfig.yaml
