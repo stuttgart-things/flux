@@ -19,18 +19,18 @@ spec:
   wait: true
   postBuild:
     substitute:
-      ARGO_CD_VERSION: ${ARGO_CD_VERSION:-9.4.15}
-      ARGO_CD_NAMESPACE: ${ARGO_CD_NAMESPACE:-argocd}
-      ARGO_CD_INGRESS_ENABLED: ${ARGO_CD_INGRESS_ENABLED:-false}
-      INGRESS_HOSTNAME: ${INGRESS_HOSTNAME:-argocd}
-      INGRESS_DOMAIN: ${INGRESS_DOMAIN:-platform.sthings-vsphere.labul.sva.de}
-      INGRESS_SECRET_NAME: ${INGRESS_SECRET_NAME:-argocd-server-tls}
-      ISSUER_NAME: ${ISSUER_NAME:-vault-pki}
-      ISSUER_KIND: ${ISSUER_KIND:-ClusterIssuer}
-      ARGO_CD_PASSWORD_MTIME: ${ARGO_CD_PASSWORD_MTIME:-2026-03-23T02:00:00UTC}
-      AVP_TRUST_BUNDLE_CONFIGMAP: ${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
-      AVP_TRUST_BUNDLE_KEY: ${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}
-      AVP_SSL_CERT_DIR: ${AVP_SSL_CERT_DIR:-/etc/ssl/custom}
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-9.4.15}"
+      ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
+      ARGO_CD_INGRESS_ENABLED: "${ARGO_CD_INGRESS_ENABLED:-false}"
+      INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
+      INGRESS_DOMAIN: "${INGRESS_DOMAIN:-platform.sthings-vsphere.labul.sva.de}"
+      INGRESS_SECRET_NAME: "${INGRESS_SECRET_NAME:-argocd-server-tls}" # pragma: allowlist secret
+      ISSUER_NAME: "${ISSUER_NAME:-vault-pki}"
+      ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
+      ARGO_CD_PASSWORD_MTIME: "${ARGO_CD_PASSWORD_MTIME:-2026-03-23T02:00:00UTC}" # pragma: allowlist secret
+      AVP_TRUST_BUNDLE_CONFIGMAP: "${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
+      AVP_TRUST_BUNDLE_KEY: "${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+      AVP_SSL_CERT_DIR: "${AVP_SSL_CERT_DIR:-/etc/ssl/custom}"
     substituteFrom:
       - kind: Secret
         name: ${ARGO_CD_SECRETS_NAME:-argocd-secrets}
