@@ -1,0 +1,25 @@
+---
+# Example overlay: the bundle base + ALL catalog platforms enabled.
+#
+# Opt-in model: the base (argo-cd + clusterbook-operator + config) carries NO
+# platforms. Each platform is a kustomize component under ../../components.
+# Copy this dir per cluster and delete the components you don't want — each
+# platform's AppSets are label-gated, so an enabled-but-unlabeled platform
+# matches zero clusters and is harmless.
+#
+# Point your consumer Flux Kustomization at this path, e.g.
+#   path: ./cicd/argocd-platform/overlays/full
+# or at ./cicd/argocd-platform/base for the platform-free base.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/network
+  - ../../components/security
+  - ../../components/cicd
+  - ../../components/storage
+  - ../../components/kind
+  - ../../components/homerun2-pr-preview
+  - ../../components/machinery-pr-preview
+  - ../../components/machinery-catalog-locator-pr-preview

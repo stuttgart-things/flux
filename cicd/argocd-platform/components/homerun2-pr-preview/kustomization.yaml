@@ -1,0 +1,6 @@
+---
+# Opt-in platform: homerun2-pr-preview (argocd-catalog ./platforms/homerun2-pr-preview)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-platform-homerun2-pr-preview.yaml

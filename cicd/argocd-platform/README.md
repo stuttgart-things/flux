@@ -1,25 +1,60 @@
 # argocd-platform
 
 A **bundle** that stands up the full Argo CD platform from a single Flux
-`Kustomization`. Instead of the consumer wiring up Argo CD, the
-clusterbook-operator, and the Argo CD config as three separate Kustomizations,
-they point one Kustomization at `./cicd/argocd-platform` and get all three —
-correctly ordered.
+`Kustomization`. The consumer points one Kustomization at the bundle and gets
+Argo CD, the clusterbook-operator, the reusable Argo CD config, and any
+opted-in platform stacks — all correctly ordered via `dependsOn`.
 
-## What it deploys
+## Layout
 
 ```
-argocd-platform-argo-cd            # ./cicd/argo-cd            (HelmRelease — Argo CD itself)
-  ├─ argocd-platform-clusterbook-operator   # ./apps/clusterbook-operator   (dependsOn argo-cd)
-  └─ argocd-platform-argocd-config          # ./cicd/argocd-platform/config (dependsOn argo-cd)
+cicd/argocd-platform/
+├── base/                  # the platform-free core (point here for "just Argo CD + operator")
+│   ├── kustomization.yaml
+│   ├── ks-argo-cd.yaml            → ./cicd/argo-cd            (HelmRelease)
+│   ├── ks-clusterbook-operator.yaml → ./apps/clusterbook-operator  (dependsOn argo-cd)
+│   ├── ks-argocd-config.yaml      → ./cicd/argocd-platform/base/config (dependsOn argo-cd)
+│   └── config/                    # appset-cluster-projects + proj-cicd
+├── components/            # one opt-in kustomize Component per catalog platform
+│   ├── network/  security/  cicd/  storage/
+│   ├── kind/
+│   └── homerun2-pr-preview/  machinery-pr-preview/  machinery-catalog-locator-pr-preview/
+└── overlays/
+    └── full/              # base + ALL platforms enabled (copy & trim per cluster)
 ```
 
-The bundle's `kustomization.yaml` does not list raw manifests — it lists three
-Flux `Kustomization` CRs (`ks-*.yaml`). When the consumer's Kustomization builds
-the bundle, Flux substitutes `${VAR:-default}` into those child CRs, so each one
-ends up with concrete `postBuild.substitute` values. `dependsOn` guarantees
-Argo CD is healthy before the operator or any Argo CD CR (AppProject /
-ApplicationSet) is applied — avoiding CRD races.
+Nothing here lists raw manifests — every `ks-*.yaml` is a Flux `Kustomization`
+CR. When the consumer's Kustomization builds the bundle, Flux substitutes
+`${VAR:-default}` into those child CRs, so each ends up with concrete values.
+`dependsOn` guarantees Argo CD is healthy before the operator or any Argo CD CR
+(AppProject / ApplicationSet) applies — no CRD races.
+
+## Platforms are opt-in (kustomize components)
+
+The **base carries no platforms**. Each catalog platform
+(`argocd-catalog/platforms/<name>`) is a kustomize *component* that adds one
+`dependsOn`-ordered Flux `Kustomization` pointing at the `argocd-catalog`
+source. You enable platforms by listing components in an overlay:
+
+```yaml
+# cicd/argocd-platform/overlays/<your-cluster>/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/network
+  - ../../components/cicd
+  # …add only what this cluster needs
+```
+
+`overlays/full` is a ready-made overlay with all 8 platforms enabled — copy it
+and delete what you don't want. Enabling a platform is safe even if a cluster
+uses none of it: the AppSets are **label-gated**, so an enabled-but-unlabeled
+platform matches zero clusters and deploys nothing.
+
+Available components: `network`, `security`, `cicd`, `storage`, `kind`,
+`homerun2-pr-preview`, `machinery-pr-preview`, `machinery-catalog-locator-pr-preview`.
 
 ## The label chain
 
@@ -31,19 +66,14 @@ argo-cd up
         └─> platform AppSets         (from argocd-catalog) → select on those labels → deploy
 ```
 
-## What is / isn't in the bundle
-
-| In the bundle (fleet-generic, reusable) | Stays per-cluster (consumer repo) |
-|---|---|
-| `cicd/argo-cd` (Argo CD install) | `ClusterbookCluster` CRs (`clusterbook-cluster-<name>.yaml`) |
-| `apps/clusterbook-operator` | Which platforms to enable (`*-platform-appsets.yaml` → `argocd-catalog`) |
-| `config/appset-cluster-projects.yaml` (AppProject per cluster) | Label gates on the ClusterbookCluster CR (`network-platform/*`, …) |
-| `config/proj-cicd.yaml` (cicd AppProject) | |
-
-Platform selection is label-driven on the `ClusterbookCluster` CR, so the bundle
-stays generic and each fleet opts into platforms without forking it.
+So two independent decisions: **which platforms are installed** (components in
+the overlay, here) and **which clusters they target** (labels on the
+`ClusterbookCluster` CRs, in the consumer repo).
 
 ## Consumer usage
+
+Point a Flux `Kustomization` at `./cicd/argocd-platform/base` (platform-free) or
+at an overlay path such as `./cicd/argocd-platform/overlays/full`:
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -58,12 +88,13 @@ spec:
   sourceRef:
     kind: GitRepository
     name: apps-upstream          # url: https://github.com/stuttgart-things/flux.git
-  path: ./cicd/argocd-platform
+  path: ./cicd/argocd-platform/overlays/full
   prune: true
   wait: true
   postBuild:
     substitute:
       FLUX_SOURCE: apps-upstream
+      ARGOCD_CATALOG_SOURCE: argocd-catalog
       ARGO_CD_VERSION: "9.4.15"
       ARGO_CD_NAMESPACE: argocd
       INGRESS_DOMAIN: platform.sthings-vsphere.labul.sva.de
@@ -76,7 +107,9 @@ spec:
 
 > The `${ARGO_CD_*}` substitutions feed `cicd/argo-cd`, which also reads the
 > `argocd-secrets` Secret via `substituteFrom`. That Secret must exist in
-> `flux-system` on the target cluster.
+> `flux-system` on the target cluster. Enabling any platform component also
+> requires the `argocd-catalog` GitRepository source (`${ARGOCD_CATALOG_SOURCE}`)
+> on the cluster.
 
 ## Variables
 
@@ -87,14 +120,15 @@ task get-variables   # extract every ${VAR:-default} in this folder
 | Variable | Default | Used by |
 |---|---|---|
 | `BUNDLE_NAME` | `argocd-platform` | child Kustomization names + `dependsOn` refs |
-| `FLUX_SOURCE` | `apps-upstream` | `sourceRef.name` of every child Kustomization |
+| `FLUX_SOURCE` | `apps-upstream` | `sourceRef.name` of the base child Kustomizations |
+| `ARGOCD_CATALOG_SOURCE` | `argocd-catalog` | `sourceRef.name` of every platform component |
 | `ARGO_CD_VERSION` | `9.4.15` | argo-cd |
 | `ARGO_CD_NAMESPACE` | `argocd` | argo-cd, health check |
 | `CLUSTERBOOK_OPERATOR_VERSION` | `v0.19.0` | clusterbook-operator |
 | `CLUSTERBOOK_OPERATOR_NAMESPACE` | `clusterbook-system` | clusterbook-operator |
 
 (plus the Argo CD ingress / issuer / AVP vars passed through to `cicd/argo-cd` —
-see `ks-argo-cd.yaml`.)
+see `base/ks-argo-cd.yaml`.)
 
 > Run multiple isolated bundles on one cluster by setting a distinct
 > `BUNDLE_NAME` per consumer Kustomization.

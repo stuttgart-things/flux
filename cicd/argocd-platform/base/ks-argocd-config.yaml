@@ -17,6 +17,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-apps-upstream}
-  path: ./cicd/argocd-platform/config
+  path: ./cicd/argocd-platform/base/config
   prune: true
   wait: true
