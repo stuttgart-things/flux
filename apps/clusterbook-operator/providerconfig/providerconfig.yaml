@@ -1,0 +1,13 @@
+---
+# Parameterized ClusterbookProviderConfig (cluster-scoped). The env-specific
+# apiURL is supplied by the consumer Flux Kustomization via postBuild.substitute
+# (e.g. clusters/<env>/clusterbook-providerconfig.yaml), keeping this base
+# generic. insecureSkipVerify is a real boolean field in the CRD, so the
+# substituted bare value is valid as-is.
+apiVersion: clusterbook.stuttgart-things.com/v1alpha1
+kind: ClusterbookProviderConfig
+metadata:
+  name: ${CLUSTERBOOK_PROVIDERCONFIG_NAME:-default}
+spec:
+  apiURL: ${CLUSTERBOOK_API_URL}
+  insecureSkipVerify: ${CLUSTERBOOK_INSECURE_SKIP_VERIFY:-false}
