@@ -1,3 +1,19 @@
+# [1.13.0](https://github.com/stuttgart-things/flux/compare/v1.12.0...v1.13.0) (2026-06-05)
+
+
+### Bug Fixes
+
+* create pgvector extension in the application database ([adb8519](https://github.com/stuttgart-things/flux/commit/adb8519b106c05fcfb3dc18e05802c0b0690fb12))
+* stop autounseal from co-owning the vault namespace ([#155](https://github.com/stuttgart-things/flux/issues/155)) ([d3f4689](https://github.com/stuttgart-things/flux/commit/d3f4689047f67df3ac0ebb8059247d5a3df12f89))
+
+
+### Features
+
+* add argocd-platform bundle (argo-cd + clusterbook-operator + config) ([83516b8](https://github.com/stuttgart-things/flux/commit/83516b8255bc611d69fc842a8d2eaf617a0a4548))
+* add DD-WRT support to clusterbook and bump to v1.25.7 ([#154](https://github.com/stuttgart-things/flux/issues/154)) ([11bd465](https://github.com/stuttgart-things/flux/commit/11bd46582dd5fd1638e2463796dab71ec51d6bcd))
+* add pgvector Postgres (CNPG) for Backstage RAG-AI plugin ([f3a313d](https://github.com/stuttgart-things/flux/commit/f3a313de0c9ddd107f6f654311a79fef29fe208c))
+* make argocd-platform platforms opt-in via kustomize components ([#158](https://github.com/stuttgart-things/flux/issues/158)) ([ffb5c9f](https://github.com/stuttgart-things/flux/commit/ffb5c9f57e1aff83b407cac51dcefbae5900a3fe))
+
 # [1.12.0](https://github.com/stuttgart-things/flux/compare/v1.11.0...v1.12.0) (2026-06-01)
 
 
