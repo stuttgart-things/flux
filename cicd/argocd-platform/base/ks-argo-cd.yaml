@@ -21,7 +21,12 @@ spec:
     substitute:
       ARGO_CD_VERSION: "${ARGO_CD_VERSION:-9.4.15}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
-      ARGO_CD_INGRESS_ENABLED: "${ARGO_CD_INGRESS_ENABLED:-false}"
+      # ARGO_CD_INGRESS_ENABLED is intentionally NOT threaded here. A bare
+      # boolean cannot survive a nested Kustomization substitute: kustomize
+      # build drops the quotes around ${VAR}, envsubst then yields a YAML bool,
+      # and Flux rejects it (postBuild.substitute is map[string]string).
+      # cicd/argo-cd defaults ingress off via ${ARGO_CD_INGRESS_ENABLED:-false}
+      # in its HelmRelease values, where a boolean is valid.
       INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
       INGRESS_DOMAIN: "${INGRESS_DOMAIN:-platform.sthings-vsphere.labul.sva.de}"
       INGRESS_SECRET_NAME: "${INGRESS_SECRET_NAME:-argocd-server-tls}" # pragma: allowlist secret
