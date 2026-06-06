@@ -107,20 +107,6 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: EXTERNAL_ACCESS_TOKEN
-        # PostgreSQL connection for the backend database (client: pg). The
-        # bundled postgresql subchart is named <release>-postgresql; its Secret
-        # holds the backstage user's password under key "password".
-        - name: POSTGRES_HOST
-          value: backstage-deployment-postgresql
-        - name: POSTGRES_PORT
-          value: "5432"
-        - name: POSTGRES_USER
-          value: backstage
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: backstage-deployment-postgresql
-              key: password
       extraAppConfig:
         - filename: app-config.extra.yaml
           configMapRef: backstage-app-config
