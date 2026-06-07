@@ -1,3 +1,22 @@
+# [1.14.0](https://github.com/stuttgart-things/flux/compare/v1.13.0...v1.14.0) (2026-06-07)
+
+
+### Bug Fixes
+
+* **argocd-platform:** don't thread boolean through nested substitute ([ba3e853](https://github.com/stuttgart-things/flux/commit/ba3e8533d0bae375dd3196c773ada4edb307405c))
+* **argocd-platform:** quote substitute values in ks-argo-cd ([21a6ec5](https://github.com/stuttgart-things/flux/commit/21a6ec596fe10b8830de2fed28af87fcbed9b018))
+* **backstage:** drop duplicate POSTGRES_* env vars ([#168](https://github.com/stuttgart-things/flux/issues/168)) ([267a2c7](https://github.com/stuttgart-things/flux/commit/267a2c7853d7bf58c19bacffdaa3a311b42d8cd8))
+* **backstage:** use bundled PostgreSQL instead of better-sqlite3 ([c4f65c5](https://github.com/stuttgart-things/flux/commit/c4f65c513fc77016b467bc43bada418092405f4e))
+* stop semantic-release asset-name collision in .releaserc ([#160](https://github.com/stuttgart-things/flux/issues/160)) ([ae840d7](https://github.com/stuttgart-things/flux/commit/ae840d7099629ad0dc50aeb3b0446aec13186d39))
+
+
+### Features
+
+* add stakater reloader (infra) + auto-reload backstage on config change ([685dfa2](https://github.com/stuttgart-things/flux/commit/685dfa2fa51ed6bc02c7d7745ecac25ae6fb3b5e))
+* **argocd-platform:** bundle the ClusterbookProviderConfig (substitutable) ([aaed369](https://github.com/stuttgart-things/flux/commit/aaed3699c96737fe35d1dccdae34bdd9fc0a857c))
+* **claim-machinery-api:** composable profile path via variable substitution ([52c5b73](https://github.com/stuttgart-things/flux/commit/52c5b736d477f3c8d3ead9677d7fccd5d99c66c7))
+* **clusterbook-operator:** add parameterized providerconfig base ([5bb91d5](https://github.com/stuttgart-things/flux/commit/5bb91d523af3ffac3761ea242eaec216d66fc075))
+
 # [1.13.0](https://github.com/stuttgart-things/flux/compare/v1.12.0...v1.13.0) (2026-06-05)
 
 
