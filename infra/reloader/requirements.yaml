@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${RELOADER_NAMESPACE:-reloader}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stakater
+  namespace: ${RELOADER_NAMESPACE:-reloader}
+spec:
+  interval: 24h
+  url: https://stakater.github.io/stakater-charts

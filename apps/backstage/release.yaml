@@ -35,6 +35,11 @@ spec:
         password: ${BACKSTAGE_POSTGRESQL_PASSWORD}
       architecture: standalone
     backstage:
+      # Stakater Reloader: roll the Deployment when any referenced Secret/
+      # ConfigMap (backstage-secrets, app-config, catalog) changes. No-op on
+      # clusters without the Reloader controller (see infra/reloader).
+      annotations:
+        reloader.stakater.com/auto: "true"
       replicas: ${BACKSTAGE_REPLICAS:-1}
       image:
         registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}

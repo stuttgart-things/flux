@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: reloader
+  namespace: ${RELOADER_NAMESPACE:-reloader}
+spec:
+  interval: 20m
+  chart:
+    spec:
+      chart: reloader
+      version: ${RELOADER_VERSION:-2.2.12}
+      sourceRef:
+        kind: HelmRepository
+        name: stakater
+        namespace: ${RELOADER_NAMESPACE:-reloader}
+      interval: 12h
+  values:
+    reloader:
+      # Watch ConfigMaps/Secrets across all namespaces so any opted-in
+      # workload (annotated reloader.stakater.com/auto: "true") is rolled
+      # when its referenced config changes.
+      watchGlobally: true
+      reloadStrategy: ${RELOADER_RELOAD_STRATEGY:-annotations}
+      deployment:
+        replicas: ${RELOADER_REPLICAS:-1}
