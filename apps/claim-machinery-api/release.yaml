@@ -52,7 +52,13 @@ spec:
         metadata:
           name: claim-machinery-api
         data:
-          TEMPLATE_PROFILE_PATH: ${CLAIM_MACHINERY_PROFILE_PATH}
+          # Profile source precedence:
+          #   CLAIM_MACHINERY_PROFILE_PATH -> full override (any URL, or the
+          #     baked-in /app/config/profile.yaml for a version-pinned profile)
+          #   else compose the remote URL from:
+          #     CLAIM_MACHINERY_PROFILE_REF  (git ref/tag/sha, default main)
+          #     CLAIM_MACHINERY_PROFILE_NAME (profile file name, default labul-vsphere)
+          TEMPLATE_PROFILE_PATH: "${CLAIM_MACHINERY_PROFILE_PATH:-https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/${CLAIM_MACHINERY_PROFILE_REF:-main}/profiles/${CLAIM_MACHINERY_PROFILE_NAME:-labul-vsphere}.yaml}"
           ENABLE_HOMERUN: "${CLAIM_MACHINERY_ENABLE_HOMERUN:-false}"
           HOMERUN_URL: "${CLAIM_MACHINERY_HOMERUN_URL:-}"
     # Inject homerun auth token from Secret
