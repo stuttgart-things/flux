@@ -41,6 +41,21 @@ spec:
       annotations:
         reloader.stakater.com/auto: "true"
       replicas: ${BACKSTAGE_REPLICAS:-1}
+      # Generous startup budget so the first-boot catalog DB migration (against a
+      # fresh Postgres) can finish before liveness kicks in. The chart default
+      # startupProbe only allows ~30s (failureThreshold 3 x periodSeconds 10),
+      # which the first migration overruns -> one SIGKILL/restart. failureThreshold
+      # 30 x 10s = up to ~5m. Liveness stays tight for fast detection once running.
+      startupProbe:
+        httpGet:
+          path: /.backstage/health/v1/liveness
+          port: 7007
+          scheme: HTTP
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: ${BACKSTAGE_STARTUP_FAILURE_THRESHOLD:-30}
+        successThreshold: 1
       image:
         registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}
         repository: ${BACKSTAGE_IMAGE_REPOSITORY:-stuttgart-things/sthings-backstage}
