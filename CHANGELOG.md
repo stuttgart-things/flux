@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/stuttgart-things/flux/compare/v1.14.0...v1.14.1) (2026-06-07)
+
+
+### Bug Fixes
+
+* **backstage:** generous startupProbe for first-boot DB migration ([42cf6dd](https://github.com/stuttgart-things/flux/commit/42cf6dd3a50a9aadff148e6f8e2f2c2f09ca1582))
+
 # [1.14.0](https://github.com/stuttgart-things/flux/compare/v1.13.0...v1.14.0) (2026-06-07)
 
 
