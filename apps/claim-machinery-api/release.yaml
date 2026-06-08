@@ -42,6 +42,20 @@ spec:
                   image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.21.1}
                   args:
                     - server
+    # Opt into Stakater Reloader so a change to the claim-machinery-api
+    # ConfigMap/Secret (e.g. TEMPLATE_PROFILE_PATH) auto-rolls the Deployment.
+    # NOTE: only fires on ConfigMap/Secret changes, not on edits to the
+    # remote profile YAMLs (those are fetched by URL at runtime).
+    - target:
+        kind: Deployment
+        name: claim-machinery-api
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: claim-machinery-api
+          annotations:
+            reloader.stakater.com/auto: "${CLAIM_MACHINERY_RELOADER_AUTO:-true}"
     # Override TEMPLATE_PROFILE_PATH and configure homerun2 notifications
     - target:
         kind: ConfigMap
