@@ -1,3 +1,11 @@
+# [1.15.0](https://github.com/stuttgart-things/flux/compare/v1.14.1...v1.15.0) (2026-06-08)
+
+
+### Features
+
+* add argocd-platform overlays (network-only + sthings-lab) ([97a3215](https://github.com/stuttgart-things/flux/commit/97a3215c14a35d37b35ae2515fae065e354dfe73))
+* **claim-machinery-api:** opt into Stakater Reloader for ConfigMap/Secret changes ([#171](https://github.com/stuttgart-things/flux/issues/171)) ([d06790e](https://github.com/stuttgart-things/flux/commit/d06790ed60c3790671d39825f776b35760267342))
+
 ## [1.14.1](https://github.com/stuttgart-things/flux/compare/v1.14.0...v1.14.1) (2026-06-07)
 
 
