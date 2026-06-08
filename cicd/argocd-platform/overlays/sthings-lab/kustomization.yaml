@@ -1,0 +1,27 @@
+---
+# Per-cluster overlay: sthings-lab
+#
+# This file IS the platform on/off switch for the sthings-lab management
+# cluster. The component list below is the declarative selection — add a line
+# to enable a catalog platform, delete it to disable (and Flux prunes whatever
+# that platform deployed, because the resource leaves the kustomize build).
+#
+# Consume it by pointing ONE Flux Kustomization at this path:
+#   path: ./cicd/argocd-platform/overlays/sthings-lab
+# (keep your existing postBuild.substitute block; add ARGOCD_CATALOG_SOURCE and
+# ensure the argocd-catalog GitRepository source exists in flux-system).
+#
+# Each component adds one dependsOn-ordered Flux Kustomization pointing at the
+# argocd-catalog source's ./platforms/<name>, preinstalling that platform's
+# clusterbook ApplicationSets. They stay dormant until clusterbook-operator
+# labels a cluster Secret (e.g. network-platform: "true" + allocation-ip), so
+# an enabled-but-unlabeled platform matches zero clusters and is harmless.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/network   # cilium LB/gateway + cert-manager chain + trust-manager
+  - ../../components/cicd       # cicd platform stack
+  - ../../components/security   # security platform stack
+  - ../../components/storage    # storage platform stack
