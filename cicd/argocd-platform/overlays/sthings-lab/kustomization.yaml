@@ -25,3 +25,4 @@ components:
   - ../../components/cicd       # cicd platform stack
   - ../../components/security   # security platform stack
   - ../../components/storage    # storage platform stack
+  - ../../components/kind       # kind platform stack
