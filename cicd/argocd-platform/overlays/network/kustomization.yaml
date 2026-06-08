@@ -1,0 +1,27 @@
+---
+# Example overlay: the bundle base + ONLY the network catalog platform.
+#
+# Opt-in model: the base (argo-cd + clusterbook-operator + config) carries NO
+# platforms. This overlay enables just `components/network`, which adds one
+# dependsOn-ordered Flux Kustomization pointing at the argocd-catalog source's
+# ./platforms/network — i.e. it preinstalls the nine *-clusterbook
+# ApplicationSets onto the management cluster.
+#
+# Requirements on the target cluster:
+#   * the `argocd-catalog` GitRepository source (${ARGOCD_CATALOG_SOURCE})
+#     pointing at https://github.com/stuttgart-things/argocd.git
+#   * the `argocd-secrets` Secret in flux-system (consumed by cicd/argo-cd)
+#
+# The AppSets stay dormant until a ClusterbookCluster causes the operator to
+# stamp a cluster Secret with `network-platform: "true"` + the allocation-ip
+# label, so enabling this overlay on a cluster with no labeled clusters is
+# harmless.
+#
+# Point your consumer Flux Kustomization at this path, e.g.
+#   path: ./cicd/argocd-platform/overlays/network
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/network
