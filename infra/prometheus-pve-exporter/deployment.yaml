@@ -1,0 +1,73 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-pve-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: prometheus-pve-exporter
+    app.kubernetes.io/part-of: kube-prometheus-stack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-pve-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus-pve-exporter
+        app.kubernetes.io/part-of: kube-prometheus-stack
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: pve-exporter
+          image: prompve/prometheus-pve-exporter:${PVE_EXPORTER_VERSION}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9221
+              protocol: TCP
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          env:
+            # Target Proxmox host is supplied per-scrape via the ?target= param
+            # set in the PodMonitor (pull model); credentials come from the
+            # SOPS-encrypted secret applied at cluster level.
+            - name: PVE_VERIFY_SSL
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: prometheus-pve-exporter
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
