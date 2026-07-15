@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/stuttgart-things/flux/compare/v1.17.0...v1.18.0) (2026-07-15)
+
+
+### Features
+
+* **ci:** add workflow_dispatch backfill to push all OCI artifacts ([254bed2](https://github.com/stuttgart-things/flux/commit/254bed20aad7a76b673ec0ab307683573740d087))
+
 # [1.17.0](https://github.com/stuttgart-things/flux/compare/v1.16.0...v1.17.0) (2026-07-15)
 
 
