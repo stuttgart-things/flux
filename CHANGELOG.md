@@ -1,3 +1,10 @@
+## [1.18.1](https://github.com/stuttgart-things/flux/compare/v1.18.0...v1.18.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **ci:** run OCI push despite skipped release on manual dispatch ([d237ad0](https://github.com/stuttgart-things/flux/commit/d237ad0e57e4f8c432fd6ca3f8a2184fe9ca0e58))
+
 # [1.18.0](https://github.com/stuttgart-things/flux/compare/v1.17.0...v1.18.0) (2026-07-15)
 
 
