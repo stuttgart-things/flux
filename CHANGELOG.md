@@ -1,3 +1,15 @@
+# [1.17.0](https://github.com/stuttgart-things/flux/compare/v1.16.0...v1.17.0) (2026-07-15)
+
+
+### Bug Fixes
+
+* **ci:** use static job name for OCI push matrix job ([2cf49d1](https://github.com/stuttgart-things/flux/commit/2cf49d19e0c451c5e8e20624c45e0beef174824f))
+
+
+### Features
+
+* **ci:** publish apps/infra as Flux OCI artifacts on merge to main ([6022f43](https://github.com/stuttgart-things/flux/commit/6022f43d77a65cc0e14568763ce8b47a26c74dd9))
+
 # [1.15.0](https://github.com/stuttgart-things/flux/compare/v1.14.1...v1.15.0) (2026-06-08)
 
 
