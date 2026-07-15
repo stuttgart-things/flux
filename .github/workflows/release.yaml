@@ -59,7 +59,7 @@ jobs:
       published: ${{ steps.semantic.outputs.new_release_published }}
       version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0     # full history so commit-analyzer sees every commit
 
@@ -88,7 +88,7 @@ jobs:
       components: ${{ steps.changed.outputs.components }}
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -158,7 +158,7 @@ jobs:
       matrix:
         component: ${{ fromJson(needs.plan.outputs.components) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install Flux CLI
         uses: fluxcd/flux2/action@main
