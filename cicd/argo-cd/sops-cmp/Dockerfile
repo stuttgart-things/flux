@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.24
+# syntax=docker/dockerfile:1.25
 
 # sthings-sops-cmp: Argo CD Config Management Plugin sidecar image.
 # Mirrors the sthings-avp pattern: ships pinned sops + age + kustomize + helm,
