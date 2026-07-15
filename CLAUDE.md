@@ -101,6 +101,15 @@ The `Release` workflow (`.github/workflows/release.yaml`) runs on every push to 
 - **Tags:** the release version (e.g. `v1.17.0`) **and** the rolling `latest`
 - Only changed components get the new version tag; unchanged components keep their existing tags (content — and therefore `latest` — is unchanged). Consumers reference an artifact via `OCIRepository` instead of `GitRepository` (see README → OCI ARTIFACTS).
 
+**Manual backfill / re-push:** the workflow also has a `workflow_dispatch` trigger with a `push-all` boolean input (default `true`). Running it publishes **all** `apps/*` and `infra/*` components at the current release version — used to seed the registry or force a re-push. On manual dispatch the `release` job is skipped (no new tag is cut); the version tag is taken from the latest existing git tag.
+
+```bash
+gh workflow run release.yaml --ref main -f push-all=true    # backfill everything
+gh workflow run release.yaml --ref main -f push-all=false   # changed-only (rarely useful manually)
+```
+
+Note: because `release` is skipped on manual dispatch, the `push` job is gated on `!cancelled() && needs.plan.result == 'success'` — otherwise the skipped `release` would propagate a transitive skip through `plan` and yield an empty push matrix.
+
 Note: the workflow uses third-party actions (semantic-release, flux2). The `stuttgart-things` org restricts non-first-party actions — an unlisted one fails the run with `startup_failure` (0 jobs, no logs) despite passing actionlint; the fix is org-side allowlisting, not a code change.
 
 ## SOPS Secrets Encryption

@@ -313,6 +313,20 @@ EOF
 
 </details>
 
+<details><summary>BACKFILL / RE-PUSH ALL ARTIFACTS (manual)</summary>
+
+The workflow has a `workflow_dispatch` trigger with a `push-all` input (default
+`true`) that publishes **all** components at the current release version — for
+seeding the registry or forcing a re-push. No new release is cut on manual
+dispatch; the version tag is taken from the latest existing git tag.
+
+```bash
+# Push every apps/* and infra/* component (backfill)
+gh workflow run release.yaml --ref main -f push-all=true
+```
+
+</details>
+
 ## DEV
 
 <details><summary>GENERATE KUST</summary>

@@ -6,16 +6,16 @@
   "minimumReleaseAge": "3 days",
   "prConcurrentLimit": 10,
   "flux": {
-    "managerFilePatterns": [
-      "/\\.yaml$/"
+    "fileMatch": [
+      "\\.yaml$"
     ]
   },
   "customManagers": [
     {
       "customType": "regex",
       "description": "Update default values in Flux variable substitution OCI refs like ref.tag: ${VAR:-v1.2.3}",
-      "managerFilePatterns": [
-        "/\\.yaml$/"
+      "fileMatch": [
+        "\\.yaml$"
       ],
       "matchStrings": [
         "url:\\s*oci://(?<depName>[^\\s]+)\\s*\\n\\s*ref:\\s*\\n\\s*tag:\\s*\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
@@ -27,8 +27,8 @@
     {
       "customType": "regex",
       "description": "Update default image tags in Flux patches like image: ghcr.io/org/app:${VAR:-v1.2.3}",
-      "managerFilePatterns": [
-        "/\\.yaml$/"
+      "fileMatch": [
+        "\\.yaml$"
       ],
       "matchStrings": [
         "image:\\s*(?<depName>[^:$\\s]+):\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
