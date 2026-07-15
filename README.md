@@ -262,6 +262,57 @@ metadata:
 
 </details>
 
+## OCI ARTIFACTS
+
+On every merge to `main` the `Release` workflow (`.github/workflows/release.yaml`)
+cuts a SemVer tag via semantic-release and publishes each **changed** `apps/*`
+and `infra/*` component as a Flux OCI artifact to ghcr.io. This lets consumers
+point an `OCIRepository` at a versioned artifact instead of a `GitRepository`.
+
+* **Naming:** `oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>`
+  (e.g. `flux/apps/vault`, `flux/infra/cert-manager`)
+* **Tags:** the release version (e.g. `v1.17.0`) **and** the rolling `latest`
+* Only changed components get the new version tag; unchanged components keep
+  their existing tags (their content — and therefore `latest` — is unchanged)
+
+<details><summary>CONSUME AS OCIREPOSITORY</summary>
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/flux/apps/vault
+  ref:
+    tag: v1.17.0   # or: latest
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: vault
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: vault
+EOF
+```
+
+</details>
+
 ## DEV
 
 <details><summary>GENERATE KUST</summary>
