@@ -89,6 +89,20 @@ Uses Angular commit convention for semantic-release (configured in `.releaserc`)
 
 Tags follow `v${version}` format (e.g., `v1.3.0`).
 
+## Release & OCI Artifact Publishing
+
+The `Release` workflow (`.github/workflows/release.yaml`) runs on every push to `main`:
+
+1. **release** – semantic-release cuts the SemVer tag + GitHub Release and updates `CHANGELOG.md`. Releases now happen in CI — do **not** run `task release` locally as well (it would race on the tag/CHANGELOG).
+2. **plan** – resolves the version tag (new release version, else the latest existing tag) and diffs the merge to find changed `apps/*` / `infra/*` components.
+3. **push** – packages each **changed** component as a Flux OCI artifact via `flux push artifact`.
+
+- **Naming:** `oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>` (e.g. `flux/apps/vault`)
+- **Tags:** the release version (e.g. `v1.17.0`) **and** the rolling `latest`
+- Only changed components get the new version tag; unchanged components keep their existing tags (content — and therefore `latest` — is unchanged). Consumers reference an artifact via `OCIRepository` instead of `GitRepository` (see README → OCI ARTIFACTS).
+
+Note: the workflow uses third-party actions (semantic-release, flux2). The `stuttgart-things` org restricts non-first-party actions — an unlisted one fails the run with `startup_failure` (0 jobs, no logs) despite passing actionlint; the fix is org-side allowlisting, not a code change.
+
 ## SOPS Secrets Encryption
 
 Encrypt/decrypt secrets using Dagger SOPS module with Age keys:
