@@ -113,7 +113,11 @@ jobs:
           echo "${components}" | jq -r '.[]'
 
   push:
-    name: push ${{ matrix.component }}
+    # NB: keep this a static string — referencing ${{ matrix.component }} in a
+    # job-level name fails at startup when the matrix is derived from `needs`
+    # (the graph is built before `needs` resolves). GitHub already appends the
+    # matrix value to each job's display name.
+    name: push OCI artifact
     needs: plan
     if: needs.plan.outputs.components != '[]'
     runs-on: ubuntu-latest
