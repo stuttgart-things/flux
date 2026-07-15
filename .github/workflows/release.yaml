@@ -1,0 +1,159 @@
+---
+# Release + OCI publish for the Flux GitOps monorepo.
+#
+# On every push to main:
+#   1. release  – semantic-release cuts a SemVer tag + GitHub Release from the
+#                 Conventional Commit history (feat -> minor, fix -> patch,
+#                 BREAKING -> major) and updates CHANGELOG.md.
+#   2. plan     – resolves the version tag to publish and computes which
+#                 apps/* and infra/* components changed in this merge.
+#   3. push     – packages each CHANGED component directory as a Flux OCI
+#                 artifact and pushes it to ghcr.io.
+#
+# Naming:  oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>
+# Tags:    <release-version> (e.g. v1.17.0) AND latest
+#
+# Only changed components get the new version tag. Unchanged components keep
+# their existing tags in the registry — since their content did not change,
+# their `latest` already points at the correct manifests. Consumers pin a
+# component independently, e.g.:
+#   OCIRepository -> oci://ghcr.io/stuttgart-things/flux/apps/vault
+#                    ref.tag: ${VAULT_KUSTOMIZE_VERSION:-v1.17.0}
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+# Never run two releases concurrently — they would race on the tag, and the
+# push job depends on the release job, so the whole pipeline serializes here.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # create tags + releases, push CHANGELOG
+      issues: write          # semantic-release success/fail comments
+      pull-requests: write   # semantic-release PR comments
+    outputs:
+      published: ${{ steps.semantic.outputs.new_release_published }}
+      version: ${{ steps.semantic.outputs.new_release_version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0     # full history so commit-analyzer sees every commit
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+
+      - name: semantic-release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          # Plugins not bundled by the action but referenced in .releaserc
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  plan:
+    name: plan OCI push
+    needs: release
+    runs-on: ubuntu-latest
+    outputs:
+      components: ${{ steps.changed.outputs.components }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: version
+        name: Resolve version tag
+        run: |
+          if [ "${{ needs.release.outputs.published }}" = "true" ]; then
+            VERSION="v${{ needs.release.outputs.version }}"
+          else
+            # No release this merge (e.g. only chore/docs commits) — reuse the
+            # latest existing tag so changed components still get a SemVer tag.
+            VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing OCI artifacts with tag: ${VERSION}"
+
+      - id: changed
+        name: Compute changed apps/infra components
+        run: |
+          base="${{ github.event.before }}"
+          head="${{ github.sha }}"
+          # Initial push / new branch: diff against the empty tree
+          if [ "$base" = "0000000000000000000000000000000000000000" ] || [ -z "$base" ]; then
+            base=$(git hash-object -t tree /dev/null)
+          fi
+
+          components=$(
+            git diff --name-only "$base" "$head" \
+              | grep -E '^(apps|infra)/[^/]+/' \
+              | sed -E 's#^((apps|infra)/[^/]+)/.*#\1#' \
+              | sort -u \
+              | jq -R -s -c 'split("\n") | map(select(length>0))'
+          )
+          echo "components=${components}" >> "$GITHUB_OUTPUT"
+          echo "Changed components:"
+          echo "${components}" | jq -r '.[]'
+
+  push:
+    name: push ${{ matrix.component }}
+    needs: plan
+    if: needs.plan.outputs.components != '[]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write        # push OCI artifacts to ghcr.io
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJson(needs.plan.outputs.components) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@main
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push OCI artifact
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          ARTIFACT="oci://ghcr.io/${{ github.repository }}/${{ matrix.component }}"
+
+          flux push artifact "${ARTIFACT}:${VERSION}" \
+            --path="./${{ matrix.component }}" \
+            --source="https://github.com/${{ github.repository }}" \
+            --revision="${VERSION}@sha1:${{ github.sha }}"
+
+          # Move the rolling `latest` tag to this build
+          flux tag artifact "${ARTIFACT}:${VERSION}" --tag=latest
+
+          {
+            echo "## OCI artifact pushed"
+            echo ""
+            echo "- \`${ARTIFACT}:${VERSION}\`"
+            echo "- \`${ARTIFACT}:latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
