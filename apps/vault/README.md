@@ -152,4 +152,23 @@ claims render --non-interactive \
 --filename-pattern "{{.name}}.yaml"
 ```
 
+## Consuming as an OCI artifact
+
+On every merge to `main` this base is published as a Flux OCI artifact to
+`oci://ghcr.io/stuttgart-things/flux/apps/vault`, tagged with the release
+version and `latest`. Point an `OCIRepository` at it instead of the Git source:
+
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: vault
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/flux/apps/vault
+  ref:
+    tag: ${VAULT_KUSTOMIZE_VERSION:-latest}
+```
+
 See also: [claims CLI](https://github.com/stuttgart-things/claims) | [claim-machinery-api](https://github.com/stuttgart-things/claim-machinery-api)
