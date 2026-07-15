@@ -145,7 +145,10 @@ jobs:
     # matrix value to each job's display name.
     name: push OCI artifact
     needs: plan
-    if: needs.plan.outputs.components != '[]'
+    # !cancelled() is required: on manual dispatch the skipped `release` job
+    # propagates a skip through `plan` to this job under the default success()
+    # gate. Explicitly gate on plan succeeding + a non-empty component list.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.components != '[]' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
