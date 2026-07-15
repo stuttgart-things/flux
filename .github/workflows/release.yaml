@@ -25,6 +25,16 @@ on:
   push:
     branches:
       - main
+  # Manual trigger for backfilling / re-pushing artifacts. With push-all=true
+  # (default) every apps/* and infra/* component is published at the current
+  # release version — used to seed the registry or force a re-push. No release
+  # is cut on manual dispatch.
+  workflow_dispatch:
+    inputs:
+      push-all:
+        description: "Push ALL components (backfill), not just changed ones"
+        type: boolean
+        default: true
 
 # Never run two releases concurrently — they would race on the tag, and the
 # push job depends on the release job, so the whole pipeline serializes here.
@@ -38,6 +48,8 @@ permissions:
 jobs:
   release:
     name: semantic-release
+    # Only cut a release on a real push to main — never on manual dispatch.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write        # create tags + releases, push CHANGELOG
@@ -69,6 +81,8 @@ jobs:
   plan:
     name: plan OCI push
     needs: release
+    # release is skipped on manual dispatch — still run the plan/push.
+    if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       components: ${{ steps.changed.outputs.components }}
@@ -84,32 +98,44 @@ jobs:
           if [ "${{ needs.release.outputs.published }}" = "true" ]; then
             VERSION="v${{ needs.release.outputs.version }}"
           else
-            # No release this merge (e.g. only chore/docs commits) — reuse the
-            # latest existing tag so changed components still get a SemVer tag.
+            # No release cut (manual dispatch, or a push with only chore/docs
+            # commits) — reuse the latest existing tag so components still get a
+            # concrete SemVer tag.
             VERSION="$(git describe --tags --abbrev=0 2>/dev/null || echo v0.0.0)"
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Publishing OCI artifacts with tag: ${VERSION}"
 
       - id: changed
-        name: Compute changed apps/infra components
+        name: Compute components to push
         run: |
-          base="${{ github.event.before }}"
-          head="${{ github.sha }}"
-          # Initial push / new branch: diff against the empty tree
-          if [ "$base" = "0000000000000000000000000000000000000000" ] || [ -z "$base" ]; then
-            base=$(git hash-object -t tree /dev/null)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+             && [ "${{ inputs.push-all }}" = "true" ]; then
+            # Backfill: every apps/* and infra/* component directory.
+            components=$(
+              find apps infra -mindepth 1 -maxdepth 1 -type d \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))'
+            )
+            echo "Mode: backfill (all components)"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+            # Initial push / new branch: diff against the empty tree
+            if [ "$base" = "0000000000000000000000000000000000000000" ] || [ -z "$base" ]; then
+              base=$(git hash-object -t tree /dev/null)
+            fi
+            components=$(
+              git diff --name-only "$base" "$head" \
+                | grep -E '^(apps|infra)/[^/]+/' \
+                | sed -E 's#^((apps|infra)/[^/]+)/.*#\1#' \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))'
+            )
+            echo "Mode: changed-only"
           fi
-
-          components=$(
-            git diff --name-only "$base" "$head" \
-              | grep -E '^(apps|infra)/[^/]+/' \
-              | sed -E 's#^((apps|infra)/[^/]+)/.*#\1#' \
-              | sort -u \
-              | jq -R -s -c 'split("\n") | map(select(length>0))'
-          )
           echo "components=${components}" >> "$GITHUB_OUTPUT"
-          echo "Changed components:"
+          echo "Components to push:"
           echo "${components}" | jq -r '.[]'
 
   push:
