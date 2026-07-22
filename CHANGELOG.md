@@ -1,3 +1,10 @@
+## [1.18.3](https://github.com/stuttgart-things/flux/compare/v1.18.2...v1.18.3) (2026-07-22)
+
+
+### Bug Fixes
+
+* openebs hook image must ship a shell, not just kubectl ([#189](https://github.com/stuttgart-things/flux/issues/189)) ([0f59096](https://github.com/stuttgart-things/flux/commit/0f59096aadaa406e312504faa3ad0c4befa49e2c)), closes [#188](https://github.com/stuttgart-things/flux/issues/188)
+
 ## [1.18.2](https://github.com/stuttgart-things/flux/compare/v1.18.1...v1.18.2) (2026-07-22)
 
 
