@@ -1,3 +1,10 @@
+## [1.18.2](https://github.com/stuttgart-things/flux/compare/v1.18.1...v1.18.2) (2026-07-22)
+
+
+### Bug Fixes
+
+* unbreak openebs upgrades, hook image is gone from docker.io ([#188](https://github.com/stuttgart-things/flux/issues/188)) ([7a63477](https://github.com/stuttgart-things/flux/commit/7a6347795bcc45259e23c1b56848895c49e94457))
+
 ## [1.18.1](https://github.com/stuttgart-things/flux/compare/v1.18.0...v1.18.1) (2026-07-15)
 
 
