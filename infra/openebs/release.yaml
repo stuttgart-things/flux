@@ -19,13 +19,18 @@ spec:
     # The chart defaults this hook to docker.io/bitnami/kubectl:1.25.15, which
     # Bitnami has removed from the registry — the pull fails with NotFound, the
     # pre-upgrade hook never completes, and every helm upgrade of this release
-    # times out. Use the upstream Kubernetes kubectl image instead, which is
-    # also far closer to the clusters' API version than 1.25.
+    # times out.
+    #
+    # The replacement must ship a shell: the chart invokes the hook with
+    # command: ["/bin/sh","-c"], so a distroless image such as
+    # registry.k8s.io/kubectl pulls fine but dies with
+    # 'exec: "/bin/sh": no such file or directory'. alpine/kubectl has one, and
+    # 1.35 matches the clusters' API version.
     preUpgradeHook:
       image:
-        registry: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REGISTRY:-registry.k8s.io}
-        repo: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REPO:-kubectl}
-        tag: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_TAG:-v1.34.0}
+        registry: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REGISTRY:-docker.io}
+        repo: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REPO:-alpine/kubectl}
+        tag: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_TAG:-1.35.4}
     openebs-crds:
       csi:
         volumeSnapshots:
