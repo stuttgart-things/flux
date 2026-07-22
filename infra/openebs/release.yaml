@@ -16,6 +16,16 @@ spec:
         namespace: ${OPENEBS_NAMESPACE:-openebs}
       interval: 12h
   values:
+    # The chart defaults this hook to docker.io/bitnami/kubectl:1.25.15, which
+    # Bitnami has removed from the registry — the pull fails with NotFound, the
+    # pre-upgrade hook never completes, and every helm upgrade of this release
+    # times out. Use the upstream Kubernetes kubectl image instead, which is
+    # also far closer to the clusters' API version than 1.25.
+    preUpgradeHook:
+      image:
+        registry: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REGISTRY:-registry.k8s.io}
+        repo: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_REPO:-kubectl}
+        tag: ${OPENEBS_PREUPGRADE_HOOK_IMAGE_TAG:-v1.34.0}
     openebs-crds:
       csi:
         volumeSnapshots:

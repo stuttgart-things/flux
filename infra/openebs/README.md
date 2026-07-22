@@ -43,7 +43,7 @@ spec:
   wait: true
   postBuild:
     substitute:
-      VERSION: 4.2.0
+      OPENEBS_VERSION: 4.2.0
       VOLUMESNAPSHOTS_ENABLED: "false"
       CSI_NODE_INIT_CONTAINERS_ENABLED: "false"
       LOCAL_LVM_ENABLED: "false"
