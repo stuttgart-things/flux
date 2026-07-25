@@ -1,0 +1,13 @@
+---
+# stuttgart-things OCI HelmRepository — source for the `sthings-cluster` chart
+# that post-release.yaml uses to render the AppRole ClusterIssuer. Lives with
+# the approle-issuer component (not the base) because only the issuer needs it.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things

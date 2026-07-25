@@ -1,0 +1,18 @@
+---
+# Opt-in component: the legacy Vault **AppRole** ClusterIssuer
+# (cluster-issuer-approle) + its `stuttgart-things` OCI HelmRepository.
+#
+# NOT part of the base overlay — the base installs only the cert-manager
+# controller. Add this component only on clusters that still use the static
+# AppRole issuer. New clusters use the tokenless Kubernetes-auth ClusterIssuer
+# provisioned out-of-band (VaultK8sAuth + a k8s-auth ClusterIssuer), so they
+# must NOT pull this in.
+#
+# Requires the VAULT_* substitute vars (VAULT_ADDR, VAULT_PKI_PATH,
+# VAULT_CA_BUNDLE, VAULT_ROLE_ID, VAULT_SECRET_ID) — supply them via
+# postBuild.substituteFrom a Secret.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - helmrepository.yaml
+  - post-release.yaml
