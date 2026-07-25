@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/stuttgart-things/flux/compare/v1.18.3...v1.19.0) (2026-07-25)
+
+
+### Features
+
+* **cert-manager:** make the base controller-only, AppRole issuer opt-in ([e383921](https://github.com/stuttgart-things/flux/commit/e3839213d1bc3a5f1b6f1270b65314999e24e597))
+
 ## [1.18.3](https://github.com/stuttgart-things/flux/compare/v1.18.2...v1.18.3) (2026-07-22)
 
 
