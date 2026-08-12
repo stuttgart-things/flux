@@ -40,8 +40,43 @@ spec:
         node:
           initContainers:
             enabled: ${CSI_NODE_INIT_CONTAINERS_ENABLED:-false}
+    # AN OBSERVABILITY STACK NOBODY ASKED FOR, disarmed BEFORE it can arrive.
+    #
+    # These two keys do nothing at the pinned 4.2.0 — that chart has no such
+    # dependencies at all, and its values.yaml does not mention loki, minio or
+    # alloy once. They are here for the version bump, because OPENEBS_VERSION is
+    # substitutable and 4.5.x added:
+    #
+    #   loki   6.29.0   condition: loki.enabled    (default TRUE)
+    #   alloy  1.0.1    condition: alloy.enabled   (default TRUE)
+    #
+    # So raising the version alone would silently deploy a Loki StatefulSet, the
+    # MinIO StatefulSet backing it (MinIO is Loki's object store — a
+    # sub-dependency with no toggle of its own), an Alloy log-shipper DaemonSet
+    # and two extra StorageClasses, onto every cluster consuming this artifact.
+    # Without these lines the artifact would offer no way to say no.
+    #
+    # On a small cluster it is worse than noise: Loki asks for three replicas
+    # with pod anti-affinity, so on a 1+2 node cluster replica 0 sits Pending
+    # forever. openebs-hostpath — the StorageClass this fleet actually uses — is
+    # unaffected either way.
+    #
+    # Harmless at 4.2.0: the chart ships no values.schema.json, so unknown keys
+    # are accepted rather than rejected. Verified against both 4.2.0 and 4.5.1.
+    loki:
+      enabled: ${OPENEBS_LOKI_ENABLED:-false}
+    alloy:
+      enabled: ${OPENEBS_ALLOY_ENABLED:-false}
     engines:
       local:
+        # STATED, NOT INHERITED, and for the same reason as the two above. At
+        # 4.2.0 localpv-provisioner is an unconditional dependency; at 4.5.x it
+        # gained `condition: engines.local.hostpath.enabled`. That is the
+        # provisioner behind openebs-hostpath, i.e. the only reason this fleet
+        # installs openebs at all — so it should not depend on an upstream
+        # default staying true across a bump.
+        hostpath:
+          enabled: ${LOCAL_HOSTPATH_ENABLED:-true}
         lvm:
           enabled: ${LOCAL_LVM_ENABLED:-false}
         zfs:
