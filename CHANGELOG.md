@@ -1,3 +1,10 @@
+## [1.19.1](https://github.com/stuttgart-things/flux/compare/v1.19.0...v1.19.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **openebs:** disarm the observability stack before it can arrive ([#192](https://github.com/stuttgart-things/flux/issues/192)) ([41dcbb3](https://github.com/stuttgart-things/flux/commit/41dcbb3d0bcc5d9fbdc92a875710e5136e37cded))
+
 # [1.19.0](https://github.com/stuttgart-things/flux/compare/v1.18.3...v1.19.0) (2026-07-25)
 
 
