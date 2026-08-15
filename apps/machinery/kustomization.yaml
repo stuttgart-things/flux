@@ -4,4 +4,5 @@ kind: Kustomization
 resources:
   - requirements.yaml
   - release.yaml
+  - watch-config.yaml
   - httproute.yaml

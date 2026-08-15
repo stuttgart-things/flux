@@ -1,0 +1,89 @@
+---
+# The watch-set: which kinds the dashboard shows, and which fields it reads.
+#
+# Shipped as a FILE rather than a substitution variable on purpose. The document
+# is ~60 lines of JSON and identical on every cluster in this fleet; threading it
+# through `postBuild.substitute` would mean escaping it across newlines for no
+# gain. Environments that need a different set override this ConfigMap with a
+# kustomize patch.
+#
+# NOT named `machinery-config`. That name is taken by the Kustomize base, which
+# feeds it to the container via `envFrom` — a `config.json` key there would also
+# be offered as an environment variable, and `config.json` is not a valid env
+# var name, so the kubelet skips it with a warning on every start.
+#
+# Field paths verified against a live cluster (u26-rke2-1 via kind3, 2026-08-15),
+# not derived from the XRD schemas. Array indexing is deliberately absent — the
+# renderer does not support it (examples/configs/README.md in
+# stuttgart-things/machinery); slice-valued paths are flattened instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: machinery-watch-config
+  namespace: ${MACHINERY_NAMESPACE:-machinery}
+  labels:
+    app.kubernetes.io/name: machinery
+    app.kubernetes.io/part-of: stuttgart-things
+data:
+  config.json: |
+    {
+      "port": 50051,
+      "httpPort": 8080,
+      "resources": {
+        "ClusterStack": {
+          "group": "config.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "clusterstacks",
+          "connectionField": "status.share.apiEndpoint",
+          "statusFields": [
+            "status.stage",
+            "status.share.domain",
+            "status.share.ip"
+          ],
+          "infoFields": [
+            { "label": "Distribution", "path": "status.share.clusterType" },
+            { "label": "Version",      "path": "status.share.serverVersion" },
+            { "label": "CNI",          "path": "status.share.cniOwnership" },
+            { "label": "Provider",     "path": "spec.provider" }
+          ]
+        },
+        "Platform": {
+          "group": "config.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "platforms",
+          "statusFields": [
+            "status.readyComponents",
+            "status.componentCount"
+          ],
+          "infoFields": [
+            { "label": "Cluster",   "path": "status.shared.clusterName" },
+            { "label": "Type",      "path": "status.shared.clusterType" },
+            { "label": "Domain",    "path": "status.components.ipReservation.domain" },
+            { "label": "Namespace", "path": "status.shared.namespace" }
+          ]
+        },
+        "XIPReservation": {
+          "group": "resources.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "xipreservations",
+          "connectionField": "status.ipAddresses",
+          "statusFields": [
+            "status.reservationStatus",
+            "status.fqdn"
+          ],
+          "infoFields": [
+            { "label": "Zone",       "path": "status.zone" },
+            { "label": "NetworkKey", "path": "status.networkKey" }
+          ]
+        },
+        "VaultK8sAuth": {
+          "group": "config.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "vaultk8sauths",
+          "infoFields": [
+            { "label": "Vault",   "path": "spec.vaultAddr" },
+            { "label": "Cluster", "path": "spec.clusterName" }
+          ]
+        }
+      }
+    }
