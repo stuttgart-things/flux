@@ -1,3 +1,10 @@
+## [1.19.2](https://github.com/stuttgart-things/flux/compare/v1.19.1...v1.19.2) (2026-08-15)
+
+
+### Bug Fixes
+
+* **apps/machinery:** v-prefixed version default, and ship the watch-set ([#194](https://github.com/stuttgart-things/flux/issues/194)) ([048162f](https://github.com/stuttgart-things/flux/commit/048162f7cfd9aa088160edab0baac072a2ae6210)), closes [stuttgart-things/kcl#115](https://github.com/stuttgart-things/kcl/issues/115) [stuttgart-things/machinery#93](https://github.com/stuttgart-things/machinery/issues/93) [#193](https://github.com/stuttgart-things/flux/issues/193)
+
 ## [1.19.1](https://github.com/stuttgart-things/flux/compare/v1.19.0...v1.19.1) (2026-08-12)
 
 
