@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: machinery
-                  image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-1.13.4}
+                  image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-v1.13.4}
     # Mount MACHINERY_CONFIG from ConfigMap as a file
     - target:
         kind: Deployment
@@ -54,7 +54,10 @@ spec:
               volumes:
                 - name: machinery-config
                   configMap:
-                    name: machinery-config
+                    # NOT `machinery-config` — that ConfigMap belongs to the
+                    # Kustomize base and is consumed via envFrom. See
+                    # watch-config.yaml.
+                    name: machinery-watch-config
                     optional: true
     # Add HTTP port to deployment
     - target:
