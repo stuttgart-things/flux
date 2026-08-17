@@ -1,3 +1,10 @@
+## [1.22.1](https://github.com/stuttgart-things/flux/compare/v1.22.0...v1.22.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **tekton:** default enable-api-fields to beta ([#202](https://github.com/stuttgart-things/flux/issues/202)) ([95b56f2](https://github.com/stuttgart-things/flux/commit/95b56f2059784c046cc632e1e9264a7f718c3274))
+
 # [1.22.0](https://github.com/stuttgart-things/flux/compare/v1.21.0...v1.22.0) (2026-08-17)
 
 
