@@ -105,6 +105,44 @@ The TektonConfig `profile` controls which components the operator installs:
 | `basic` | Pipelines + Triggers |
 | `all` | Pipelines + Triggers + Dashboard |
 
+## Caveat: `profile: all` is not "everything you want"
+
+`all` installs Tekton **Results**, and Results brings a PostgreSQL StatefulSet.
+Two things follow, both seen on u26-rke2-1 on 2026-08-17:
+
+1. A cluster that only runs PipelineRuns gets a database nobody asked for.
+2. On a cluster with **no default StorageClass** the PVC stays `Pending`, the
+   operator blocks on Results, and nothing after it installs — including the
+   Dashboard, which is usually the reason `all` was chosen in the first place.
+
+The symptom is quiet: `TektonConfig` reports
+`Components not in ready state`, `TektonPipeline` and `TektonTrigger` are both
+`Ready=True`, and the Dashboard CR simply never appears.
+
+Results is therefore **disabled by default** (`TEKTON_RESULT_DISABLED`, default
+`true`) rather than dropping the profile to `basic` — `basic` also drops the
+Dashboard. Set it to `false` on a cluster that has a default StorageClass and
+wants a run archive.
+
+## Caveat: `enable-api-fields` and Triggers
+
+`TEKTON_ENABLE_API_FIELDS` defaults to `stable`, not `beta`.
+
+The operator propagates this value from `TektonConfig` to every component, and
+**Triggers accepts only `stable` or `alpha`**. With `beta` the operator writes
+it onto `TektonTrigger`, gets it coerced back, and requeues forever:
+
+```
+TektonConfig   Components not in ready state: TektonTrigger: reconcile again and proceed
+TektonTrigger  Ready=True   (all sub-conditions True, all three pods Running)
+```
+
+The loop never converges and blocks every component after Triggers. Restarting
+the operator does not clear it — the value does.
+
+A cluster that needs beta pipeline features can still set it, but then it needs
+`profile: basic` or an equivalent so Triggers is out of the picture.
+
 ## Caveat: Pruner + Crossplane-managed PipelineRuns
 
 The operator's pruner is a single cluster-wide CronJob (`tekton-pipelines/tekton-resource-pruner-*`) built from `TektonConfig.spec.pruner`. It iterates every namespace containing TaskRuns/PipelineRuns and deletes anything older than `keep-since`.

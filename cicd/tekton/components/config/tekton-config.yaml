@@ -6,8 +6,26 @@ metadata:
 spec:
   targetNamespace: ${TEKTON_TARGET_NAMESPACE:-tekton-pipelines}
   profile: ${TEKTON_PROFILE:-all}
+  # `all` installs Results too, and Results brings a PostgreSQL StatefulSet.
+  # A cluster that only runs PipelineRuns does not want a database, and on one
+  # without a DEFAULT StorageClass the PVC stays Pending, the operator blocks on
+  # it, and NOTHING after Results ever installs — including the Dashboard the
+  # `all` profile was chosen for. Observed on u26-rke2-1, 2026-08-17.
+  #
+  # Disabled by default rather than dropping the profile to `basic`, because
+  # `basic` also drops the Dashboard, and the Dashboard is the reason to run a
+  # profile above `lite` at all. Set TEKTON_RESULT_DISABLED=false on a cluster
+  # that has a default StorageClass and actually wants a run archive.
+  result:
+    disabled: ${TEKTON_RESULT_DISABLED:-true}
   pipeline:
-    enable-api-fields: ${TEKTON_ENABLE_API_FIELDS:-beta}
+    # NOT propagated to Triggers by us — the operator does that itself, and
+    # Triggers accepts only `stable` or `alpha`. Setting `beta` here makes the
+    # operator try to write `beta` onto TektonTrigger, get it coerced back, and
+    # requeue forever with "Components not in ready state: TektonTrigger:
+    # reconcile again and proceed" while TektonTrigger itself reports Ready.
+    # Same cluster, same day. Keep this in step with what Triggers can take.
+    enable-api-fields: ${TEKTON_ENABLE_API_FIELDS:-stable}
     disable-inline-spec: ${TEKTON_DISABLE_INLINE_SPEC:-""}
   pruner:
     disabled: ${TEKTON_PRUNER_DISABLED:-false}
