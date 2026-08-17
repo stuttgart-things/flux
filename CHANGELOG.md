@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/stuttgart-things/flux/compare/v1.21.0...v1.22.0) (2026-08-17)
+
+
+### Features
+
+* **machinery:** watch the VM kinds and AnsibleRun ([#201](https://github.com/stuttgart-things/flux/issues/201)) ([db4d7a7](https://github.com/stuttgart-things/flux/commit/db4d7a73b52a372470021da82fd59d5b303f2018))
+
 # [1.21.0](https://github.com/stuttgart-things/flux/compare/v1.20.1...v1.21.0) (2026-08-17)
 
 
