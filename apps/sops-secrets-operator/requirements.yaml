@@ -1,0 +1,22 @@
+---
+# The OCIRepository lives in flux-system, NOT in the operator's namespace.
+#
+# The kustomize base (config/default, kubebuilder layout) creates
+# sops-secrets-operator-system itself. Creating it here as well would give the
+# namespace two owners across two Kustomizations, and a later `prune` on either
+# would take it out from under the other. flux-system always exists, so the
+# source has somewhere to live without inventing an ordering problem.
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: sops-secrets-operator-kustomize
+  namespace: ${FLUX_NAMESPACE:-flux-system}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/sops-secrets-operator-kustomize
+  ref:
+    # The repo writes config/manager/kustomization.yaml before it tags, so a
+    # tagged tree pins its own image. Verified by building the bundle:
+    # ref=v0.8.5 gave image v0.8.4 — an off-by-one fixed by
+    # stuttgart-things/sops-secrets-operator#90. v0.9.0 gives v0.9.0.
+    tag: ${SOPS_OPERATOR_VERSION:-v0.9.0}
