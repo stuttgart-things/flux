@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/stuttgart-things/flux/compare/v1.20.1...v1.21.0) (2026-08-17)
+
+
+### Features
+
+* **sops-secrets-operator:** a Flux app for the operator ([#199](https://github.com/stuttgart-things/flux/issues/199)) ([e86e66d](https://github.com/stuttgart-things/flux/commit/e86e66d222d5941ca6884fd5102f50ca9d875e33))
+
 ## [1.20.1](https://github.com/stuttgart-things/flux/compare/v1.20.0...v1.20.1) (2026-08-17)
 
 
