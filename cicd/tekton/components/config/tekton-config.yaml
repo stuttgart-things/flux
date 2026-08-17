@@ -19,13 +19,27 @@ spec:
   result:
     disabled: ${TEKTON_RESULT_DISABLED:-true}
   pipeline:
-    # NOT propagated to Triggers by us — the operator does that itself, and
-    # Triggers accepts only `stable` or `alpha`. Setting `beta` here makes the
-    # operator try to write `beta` onto TektonTrigger, get it coerced back, and
-    # requeue forever with "Components not in ready state: TektonTrigger:
-    # reconcile again and proceed" while TektonTrigger itself reports Ready.
-    # Same cluster, same day. Keep this in step with what Triggers can take.
-    enable-api-fields: ${TEKTON_ENABLE_API_FIELDS:-stable}
+    # DEFAULT beta, not Tekton's own `stable`, because every AnsibleRun in this
+    # fleet resolves its pipeline through a git resolver — and resolver params
+    # are gated behind alpha/beta. With `stable` the PipelineRun is refused by
+    # the admission webhook:
+    #
+    #   resolver params requires "enable-api-fields" feature gate to be
+    #   "alpha" or "beta" but it is "stable"
+    #
+    # Measured on u26-rke2-1, 2026-08-17: the AnsibleRun's Object sat at
+    # ReconcileError and no PipelineRun was ever created, so the failure shows
+    # up as a VM stuck before provisioning rather than as a Tekton problem.
+    #
+    # There WAS a reason to fear beta here: the operator propagates this to
+    # TektonTrigger, which accepts only `stable` or `alpha`, and a previous
+    # attempt left it requeueing forever with "Components not in ready state:
+    # TektonTrigger". That did NOT reproduce on operator v0.79.0 — after the
+    # switch TektonConfig reported beta, TektonTrigger stayed `stable`, every
+    # component was Ready and the operator logged zero requeue messages. If it
+    # returns, set TEKTON_ENABLE_API_FIELDS=alpha rather than going back to
+    # stable, since stable takes the resolvers with it.
+    enable-api-fields: ${TEKTON_ENABLE_API_FIELDS:-beta}
     disable-inline-spec: ${TEKTON_DISABLE_INLINE_SPEC:-""}
   pruner:
     disabled: ${TEKTON_PRUNER_DISABLED:-false}

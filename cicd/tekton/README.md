@@ -124,24 +124,41 @@ Results is therefore **disabled by default** (`TEKTON_RESULT_DISABLED`, default
 Dashboard. Set it to `false` on a cluster that has a default StorageClass and
 wants a run archive.
 
-## Caveat: `enable-api-fields` and Triggers
+## `enable-api-fields` defaults to `beta`, and why that reversed
 
-`TEKTON_ENABLE_API_FIELDS` defaults to `stable`, not `beta`.
+**`stable` breaks every AnsibleRun in this fleet.** Their pipelines are resolved
+through a git resolver, and resolver params are gated behind alpha/beta, so the
+admission webhook refuses the PipelineRun outright:
+
+```
+resolver params requires "enable-api-fields" feature gate to be "alpha" or "beta" but it is "stable"
+```
+
+Measured on `u26-rke2-1` (2026-08-17): the `AnsibleRun`'s Crossplane Object sat
+at `ReconcileError` and **no PipelineRun was ever created**, so the symptom is a
+VM stuck before provisioning, not something that looks like a Tekton problem.
+
+### The reason it used to default to `stable`
 
 The operator propagates this value from `TektonConfig` to every component, and
-**Triggers accepts only `stable` or `alpha`**. With `beta` the operator writes
-it onto `TektonTrigger`, gets it coerced back, and requeues forever:
+**Triggers accepts only `stable` or `alpha`**. An earlier attempt at `beta` left
+the operator requeueing forever:
 
 ```
 TektonConfig   Components not in ready state: TektonTrigger: reconcile again and proceed
 TektonTrigger  Ready=True   (all sub-conditions True, all three pods Running)
 ```
 
-The loop never converges and blocks every component after Triggers. Restarting
-the operator does not clear it — the value does.
+That did **not** reproduce on operator **v0.79.0**. After switching a live
+cluster to `beta`: `TektonConfig` reported `beta`, `TektonTrigger` kept
+`stable`, every component stayed `Ready`, and the operator logged zero requeue
+messages.
 
-A cluster that needs beta pipeline features can still set it, but then it needs
-`profile: basic` or an equivalent so Triggers is out of the picture.
+So the trade is no longer "beta risks a stuck operator" but "stable guarantees
+no AnsibleRun runs". If the loop returns on some operator version, set
+`TEKTON_ENABLE_API_FIELDS=alpha` — going back to `stable` takes the resolvers
+with it. A cluster that genuinely needs Triggers out of the picture can use
+`profile: basic`.
 
 ## Caveat: Pruner + Crossplane-managed PipelineRuns
 
