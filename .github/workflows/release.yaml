@@ -111,9 +111,9 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
              && [ "${{ inputs.push-all }}" = "true" ]; then
-            # Backfill: every apps/* and infra/* component directory.
+            # Backfill: every apps/*, infra/* and cicd/* component directory.
             components=$(
-              find apps infra -mindepth 1 -maxdepth 1 -type d \
+              find apps infra cicd -mindepth 1 -maxdepth 1 -type d \
                 | sort -u \
                 | jq -R -s -c 'split("\n") | map(select(length>0))'
             )
@@ -127,8 +127,8 @@ jobs:
             fi
             components=$(
               git diff --name-only "$base" "$head" \
-                | grep -E '^(apps|infra)/[^/]+/' \
-                | sed -E 's#^((apps|infra)/[^/]+)/.*#\1#' \
+                | grep -E '^(apps|infra|cicd)/[^/]+/' \
+                | sed -E 's#^((apps|infra|cicd)/[^/]+)/.*#\1#' \
                 | sort -u \
                 | jq -R -s -c 'split("\n") | map(select(length>0))'
             )
