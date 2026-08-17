@@ -1,0 +1,22 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sops-secrets-operator
+  namespace: ${FLUX_NAMESPACE:-flux-system}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  # The base brings CRDs and a webhook, and the webhook cannot serve until
+  # cert-manager has issued its certificate. 5m is not enough on a cluster
+  # doing both for the first time.
+  timeout: 10m
+  sourceRef:
+    kind: OCIRepository
+    name: sops-secrets-operator-kustomize
+  prune: true
+  wait: true
+  # No targetNamespace: the base is a kubebuilder config/default and already
+  # names sops-secrets-operator-system throughout. Overriding it here would
+  # rewrite the namespace on the Deployment while leaving it in the RBAC
+  # subjects and the webhook's service reference.
