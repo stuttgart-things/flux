@@ -2,8 +2,10 @@
 
 Flux app for [sops-secrets-operator](https://github.com/stuttgart-things/sops-secrets-operator) —
 the operator that turns a `SopsSecret` (an age-encrypted blob committed to git)
-into a real Kubernetes `Secret`. Deploys the OCI kustomize base built from that
-repo's `config/default`.
+into a real Kubernetes `Secret`. Deploys the OCI kustomize base the operator
+publishes as `sops-secrets-operator-kustomize` — rendered from that repo's
+`kcl/` deploy profile, **not** from its `config/default`. The distinction
+matters; see Preconditions.
 
 ## Kustomization Example
 
@@ -44,10 +46,18 @@ bundle running image `v0.8.4`. Fixed in
 
 ## Preconditions
 
-**cert-manager.** The operator ships a validating webhook, and the webhook
-cannot serve until cert-manager has issued its serving certificate. Without it
-the Deployment runs and every `SopsSecret` apply is rejected by a webhook that
-never answers — a failure that reads like a broken CRD.
+**No cert-manager** — and the reason it looks otherwise is worth spelling out,
+because reading the repo suggests the opposite. The operator's kubebuilder
+`config/default` does compose `../webhook` and `../certmanager`, so anyone
+installing with `kubectl apply -k .../config/default` needs cert-manager and
+will be bitten without it.
+
+This app does not install that. It deploys the published
+`sops-secrets-operator-kustomize` artifact, which the release workflow renders
+from the repo's `kcl/` profile — Namespace, 5 CRDs, ServiceAccount,
+ClusterRole + Binding, Deployment, and nothing else. Verified against the
+`v0.9.0` artifact and against a live install (`u26-rke2-1`, 2026-08-17): no
+`ValidatingWebhookConfiguration`, no `Certificate`, no cert volume on the pod.
 
 **An age key.** The operator does not carry one: it resolves the key per
 resource through `spec.decryption.keyRef`, so this app installs the operator and
@@ -64,8 +74,7 @@ That is opt-in and does not remove per-namespace copies: a resource's own
 ## Namespace ownership
 
 The OCIRepository sits in `flux-system`, not in the operator's namespace. The
-base is a kubebuilder `config/default` and creates
-`sops-secrets-operator-system` itself; creating it here as well would give the
+base creates `sops-secrets-operator-system` itself; creating it here as well would give the
 namespace two owners across two Kustomizations, and a `prune` on either would
 take it out from under the other.
 
