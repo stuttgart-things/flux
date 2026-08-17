@@ -1,3 +1,11 @@
+## [1.20.1](https://github.com/stuttgart-things/flux/compare/v1.20.0...v1.20.1) (2026-08-17)
+
+
+### Bug Fixes
+
+* **openebs:** make openebs-hostpath the default StorageClass ([#198](https://github.com/stuttgart-things/flux/issues/198)) ([ab723c1](https://github.com/stuttgart-things/flux/commit/ab723c10cfc242afe60123bb1e9c1c66d9bb7e6b))
+* **tekton:** disable Results by default, and stop feeding Triggers a value it rejects ([#197](https://github.com/stuttgart-things/flux/issues/197)) ([b21eed8](https://github.com/stuttgart-things/flux/commit/b21eed85d30760c815fe7603b64193f13954cdb2))
+
 # [1.20.0](https://github.com/stuttgart-things/flux/compare/v1.19.3...v1.20.0) (2026-08-17)
 
 
