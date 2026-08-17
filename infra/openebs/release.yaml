@@ -67,6 +67,28 @@ spec:
       enabled: ${OPENEBS_LOKI_ENABLED:-false}
     alloy:
       enabled: ${OPENEBS_ALLOY_ENABLED:-false}
+    localpv-provisioner:
+      hostpathClass:
+        # DEFAULT true, unlike the chart. This app only ever lands on target
+        # clusters, and those are rke2 — which ships no default StorageClass at
+        # all. Without one every PVC that does not name a class stays Pending
+        # with "no persistent volumes available for this claim and no storage
+        # class is set", and the workload above it simply never starts.
+        #
+        # Found the expensive way on u26-rke2-1, 2026-08-17: Tekton's `all`
+        # profile installs Results, Results wants a PostgreSQL, its PVC hung,
+        # the Tekton operator blocked on it, and NOTHING after Results ever
+        # installed — including the Dashboard. The cause named neither storage
+        # nor a class; it presented as "the Dashboard never appeared".
+        #
+        # openebs-hostpath is the StorageClass this fleet actually uses, and it
+        # is the only reason openebs is installed. A cluster that installs it
+        # and then leaves it non-default has done half a job.
+        #
+        # Set false on a cluster that already HAS a default — a kind target
+        # carries `standard` from the kind image, and two defaults is a
+        # misconfiguration the API server resolves arbitrarily.
+        isDefaultClass: ${OPENEBS_HOSTPATH_DEFAULT_CLASS:-true}
     engines:
       local:
         # STATED, NOT INHERITED, and for the same reason as the two above. At
