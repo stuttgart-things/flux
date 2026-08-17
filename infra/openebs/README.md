@@ -1,5 +1,34 @@
 # stuttgart-things/flux/infra/openebs
 
+## openebs-hostpath is the default StorageClass
+
+`localpv-provisioner.hostpathClass.isDefaultClass` defaults to **true** here,
+unlike the chart, which ships `false`.
+
+This app only ever lands on target clusters, and those are rke2 — which ships
+no default StorageClass at all. Without one, every PVC that does not name a
+class stays `Pending`:
+
+```
+FailedBinding  no persistent volumes available for this claim and no storage class is set
+```
+
+and the workload above it never starts.
+
+Found the expensive way on u26-rke2-1, 2026-08-17. Tekton's `all` profile
+installs Results, Results wants a PostgreSQL, its PVC hung, the Tekton operator
+blocked on it, and nothing after Results ever installed — including the
+Dashboard. Nothing in the visible failure named storage or a class; it
+presented as "the Dashboard never appeared".
+
+A cluster that installs openebs and leaves its StorageClass non-default has
+done half a job — openebs-hostpath is the reason this fleet installs openebs at
+all.
+
+**Set `OPENEBS_HOSTPATH_DEFAULT_CLASS=false` on a cluster that already has a
+default.** A kind target carries `standard` from the kind image, and two
+defaults is a misconfiguration the API server resolves arbitrarily.
+
 ## REQUIREMENTS
 
 <details><summary>ADD GITREPOSITORY</summary>
