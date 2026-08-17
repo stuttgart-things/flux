@@ -1,0 +1,4 @@
+- [trust-manager Kustomization owns cert-manager namespace](trust-manager-owns-cert-manager-ns.md) — deleting a Flux Kustomization that points at ./infra/trust-manager prunes Namespace/cert-manager and cascades
+- [apps/rancher validated on platform-sthings](rancher-app-validated-platform-sthings.md) — PR #152: HTTPRoute + trust-manager privateCA, chart 2.14.2 for k8s 1.35
+- [platform-sthings RAG env specifics](platform-sthings-rag-env.md) — ESO store vault-homerun2-cd, domain platform.sthings-vsphere, pgvector image public; for backstage-rag-postgres testing
+- [org restricts third-party GitHub Actions](org-actions-allowlist.md) — unlisted actions cause startup_failure (0 jobs, no logs) despite clean actionlint; fix is org allowlisting
