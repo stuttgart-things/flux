@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/stuttgart-things/flux/compare/v1.19.3...v1.20.0) (2026-08-17)
+
+
+### Features
+
+* **release:** publish cicd/* as OCI artifacts too ([#196](https://github.com/stuttgart-things/flux/issues/196)) ([0a63c80](https://github.com/stuttgart-things/flux/commit/0a63c800789c4505ddbe05a04872c26a051dc14f))
+
 ## [1.19.3](https://github.com/stuttgart-things/flux/compare/v1.19.2...v1.19.3) (2026-08-17)
 
 
