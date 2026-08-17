@@ -1,3 +1,10 @@
+## [1.19.3](https://github.com/stuttgart-things/flux/compare/v1.19.2...v1.19.3) (2026-08-17)
+
+
+### Bug Fixes
+
+* **machinery:** grant the app permission to read the kinds it watches ([#195](https://github.com/stuttgart-things/flux/issues/195)) ([a773411](https://github.com/stuttgart-things/flux/commit/a77341144edc73dee99bd81909db70e2474d581e)), closes [#193](https://github.com/stuttgart-things/flux/issues/193)
+
 ## [1.19.2](https://github.com/stuttgart-things/flux/compare/v1.19.1...v1.19.2) (2026-08-15)
 
 
