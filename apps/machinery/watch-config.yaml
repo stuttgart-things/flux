@@ -12,8 +12,14 @@
 # be offered as an environment variable, and `config.json` is not a valid env
 # var name, so the kubelet skips it with a warning on every start.
 #
-# Field paths verified against a live cluster (u26-rke2-1 via kind3, 2026-08-15),
-# not derived from the XRD schemas. Array indexing is deliberately absent — the
+# Field paths verified against a live cluster (u26-rke2-1 via kind3, 2026-08-15;
+# the VM and AnsibleRun kinds 2026-08-17), not derived from the XRD schemas —
+# and for these three that is not a formality: both VM XRDs declare
+# `status.share` as an open object with NO declared properties, so the schema
+# says nothing at all about what is in it. The two VM kinds are separate entries
+# rather than one because their share blocks genuinely differ: proxmox reports
+# `vmId` and `started`, vsphere `moid` and `powerState`. A merged entry would
+# show a blank column for whichever kind you are looking at. Array indexing is deliberately absent — the
 # renderer does not support it (examples/configs/README.md in
 # stuttgart-things/machinery); slice-valued paths are flattened instead.
 apiVersion: v1
@@ -74,6 +80,53 @@ data:
           "infoFields": [
             { "label": "Zone",       "path": "status.zone" },
             { "label": "NetworkKey", "path": "status.networkKey" }
+          ]
+        },
+        "NativeProxmoxVM": {
+          "group": "resources.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "nativeproxmoxvms",
+          "connectionField": "status.share.ip",
+          "statusFields": [
+            "status.share.started",
+            "status.share.ansibleSucceeded"
+          ],
+          "infoFields": [
+            { "label": "VMID",        "path": "status.share.vmId" },
+            { "label": "Environment", "path": "spec.environmentConfig" },
+            { "label": "CPU",         "path": "spec.vm.cpu" },
+            { "label": "Memory",      "path": "spec.vm.memory" }
+          ]
+        },
+        "NativeVsphereVM": {
+          "group": "resources.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "nativevspherevms",
+          "connectionField": "status.share.ip",
+          "statusFields": [
+            "status.share.powerState",
+            "status.share.ansibleSucceeded"
+          ],
+          "infoFields": [
+            { "label": "MOID",        "path": "status.share.moid" },
+            { "label": "Environment", "path": "spec.environmentConfig" },
+            { "label": "CPU",         "path": "spec.vm.cpu" },
+            { "label": "Memory",      "path": "spec.vm.ram" }
+          ]
+        },
+        "AnsibleRun": {
+          "group": "resources.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "ansibleruns",
+          "statusFields": [
+            "status.reason",
+            "status.succeeded"
+          ],
+          "infoFields": [
+            { "label": "PipelineRun", "path": "status.pipelineRunName" },
+            { "label": "Target",      "path": "spec.ansibleTargetHost" },
+            { "label": "Playbooks",   "path": "spec.ansiblePlaybooks" },
+            { "label": "Message",     "path": "status.message" }
           ]
         },
         "VaultK8sAuth": {
