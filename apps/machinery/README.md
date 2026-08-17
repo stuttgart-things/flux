@@ -63,6 +63,34 @@ It is also deliberately **not** called `machinery-config`. That name belongs to 
 
 Field paths are verified against a live cluster rather than read off the XRD schemas. Note that the renderer does not support array indexing (`spec.parentRefs[0].name`); point at the parent path and let it flatten.
 
+## RBAC lives beside the watch set
+
+The kinds machinery displays are configured in [`watch-config.yaml`](watch-config.yaml);
+the permission to read them is in [`rbac.yaml`](rbac.yaml), deliberately in the
+same directory.
+
+It used to be in the kustomize base over in `stuttgart-things/machinery`. That
+is a different repository, so #193 — which retargeted the watch set at this
+fleet's XRs — changed what machinery looks at without changing what it may
+read, and the two disagreed in silence.
+
+The failure is easy to misread. The Deployment reports 1/1, the HTTPRoute
+attaches, HTTPS answers in milliseconds — and every request is a 500, because
+each informer is stuck on
+
+```
+clusterstacks.config.stuttgart-things.com is forbidden:
+User "system:serviceaccount:machinery:machinery" cannot list resource
+"clusterstacks" in API group "config.stuttgart-things.com" at the cluster scope
+```
+
+The grant is read-only (`get`, `list`, `watch`) and cluster-scoped, because the
+XRs are. It covers both groups this fleet uses, `config.stuttgart-things.com`
+and `resources.stuttgart-things.com`.
+
+**Adding a kind to `watch-config.yaml` means adding its group here, in the same
+commit.** That is the point of the two files being neighbours.
+
 ## Endpoints
 
 | Endpoint | Description |

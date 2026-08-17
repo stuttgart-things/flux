@@ -1,0 +1,46 @@
+---
+# The watch set and the permissions to read it MUST live together.
+#
+# The kinds machinery displays are configured HERE, in watch-config.yaml. Its
+# ClusterRole, until now, lived in the kustomize base over in
+# stuttgart-things/machinery — a different repository. So stuttgart-things/flux#193,
+# which retargeted the watch set at this fleet's XRs, changed what machinery
+# looks at without changing what it may read, and the two silently disagreed.
+#
+# The symptom is not subtle once you look, and invisible until you do: the
+# Deployment is 1/1, the HTTPRoute attaches, HTTPS answers — and every request
+# is a 500, because every informer is stuck on
+#
+#   clusterstacks.config.stuttgart-things.com is forbidden:
+#   User "system:serviceaccount:machinery:machinery" cannot list resource
+#   "clusterstacks" ... at the cluster scope
+#
+# Observed on u26-rke2-1, 2026-08-17, on the first deploy through the catalog.
+#
+# Read-only and cluster-scoped, because the XRs are: machinery only ever lists
+# and watches, and it renders whatever `resources` above names. Anyone adding a
+# kind to watch-config.yaml has to add its group here in the same commit — which
+# is the whole reason this file sits beside it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: machinery-watch
+rules:
+  - apiGroups:
+      - config.stuttgart-things.com
+      - resources.stuttgart-things.com
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: machinery-watch
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: machinery-watch
+subjects:
+  - kind: ServiceAccount
+    name: machinery
+    namespace: ${MACHINERY_NAMESPACE:-machinery}
