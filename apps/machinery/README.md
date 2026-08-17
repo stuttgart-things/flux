@@ -56,12 +56,17 @@ The kinds and fields come from `config.json` in the `machinery-watch-config` Con
 | `Platform` | `readyComponents` / `componentCount`, so `3 / 4` is visible without opening the YAML |
 | `XIPReservation` | reservation status, FQDN, addresses |
 | `VaultK8sAuth` | Vault address and cluster (its status is empty today, so Ready comes from conditions) |
+| `NativeProxmoxVM` | IP, VMID, whether it started, and whether its AnsibleRun succeeded |
+| `NativeVsphereVM` | IP, MOID, power state, and whether its AnsibleRun succeeded |
+| `AnsibleRun` | reason and result, plus the PipelineRun name — which is what you need to find the logs |
+
+The two VM kinds are separate entries rather than one, because their `status.share` blocks genuinely differ: proxmox reports `vmId` and `started`, vsphere `moid` and `powerState`. Merged, one column would always be blank.
 
 The file is deliberately **not** a substitution variable: it is one document, identical on every cluster here, and threading ~60 lines of JSON through `postBuild.substitute` would mean escaping it across newlines for nothing. To watch something else, patch the ConfigMap.
 
 It is also deliberately **not** called `machinery-config`. That name belongs to the Kustomize base, which feeds it to the container through `envFrom` — a `config.json` key there would additionally be offered as an environment variable, and `config.json` is not a valid environment variable name.
 
-Field paths are verified against a live cluster rather than read off the XRD schemas. Note that the renderer does not support array indexing (`spec.parentRefs[0].name`); point at the parent path and let it flatten.
+Field paths are verified against a live cluster rather than read off the XRD schemas. For the VM kinds that is not a formality: both XRDs declare `status.share` as an open object with **no** declared properties, so the schema says nothing about what is in it. Note that the renderer does not support array indexing (`spec.parentRefs[0].name`); point at the parent path and let it flatten.
 
 ## RBAC lives beside the watch set
 
