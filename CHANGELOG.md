@@ -1,3 +1,10 @@
+## [1.23.1](https://github.com/stuttgart-things/flux/compare/v1.23.0...v1.23.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **renovate:** stop stripping the v from tags that need it ([#207](https://github.com/stuttgart-things/flux/issues/207)) ([1376ef6](https://github.com/stuttgart-things/flux/commit/1376ef69eec5ed906559561980e5eaf14f4cd85b)), closes [#175](https://github.com/stuttgart-things/flux/issues/175) [#130](https://github.com/stuttgart-things/flux/issues/130) [#134](https://github.com/stuttgart-things/flux/issues/134) [#75](https://github.com/stuttgart-things/flux/issues/75)
+
 # [1.23.0](https://github.com/stuttgart-things/flux/compare/v1.22.2...v1.23.0) (2026-08-20)
 
 
