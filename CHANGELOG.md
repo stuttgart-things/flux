@@ -1,3 +1,10 @@
+## [1.22.2](https://github.com/stuttgart-things/flux/compare/v1.22.1...v1.22.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **renovate:** make HelmRelease chart versions visible to Renovate ([#203](https://github.com/stuttgart-things/flux/issues/203)) ([f1d7d54](https://github.com/stuttgart-things/flux/commit/f1d7d54b059a711ce73a601d8b38b3e3d54fc9c9))
+
 ## [1.22.1](https://github.com/stuttgart-things/flux/compare/v1.22.0...v1.22.1) (2026-08-17)
 
 
