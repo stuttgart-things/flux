@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/stuttgart-things/flux/compare/v1.23.2...v1.24.0) (2026-08-20)
+
+
+### Features
+
+* **renovate:** group homerun2 updates per component instead of one bulk PR ([#212](https://github.com/stuttgart-things/flux/issues/212)) ([f8017ad](https://github.com/stuttgart-things/flux/commit/f8017ad134eac4a8a7099534446d3142db7c66d0)), closes [#206](https://github.com/stuttgart-things/flux/issues/206) [#208](https://github.com/stuttgart-things/flux/issues/208)
+
 ## [1.23.2](https://github.com/stuttgart-things/flux/compare/v1.23.1...v1.23.2) (2026-08-20)
 
 
