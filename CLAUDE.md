@@ -14,6 +14,10 @@ This project uses [go-task](https://taskfile.dev) instead of Make. The Taskfile 
 task get-variables   # Extract all ${VAR:-default} substitution variables from an app folder
 task release         # Run semantic-release (dry-run then actual) and push a new version tag
 task do              # Interactive task picker (requires gum)
+
+task check-renovate    # Fail if a substituted chart version lacks its "# renovate:" annotation
+task lint-renovate     # Validate renovate.json against the current Renovate schema
+task preview-renovate  # Dry-run Renovate locally and list the updates it would propose
 task pr              # Create a pull request (via included git tasks)
 ```
 
@@ -168,12 +172,10 @@ Derive the annotation from the `HelmRepository` the `sourceRef` points at:
 **When adding a HelmRelease, add the annotation too** — without it the chart is
 silently invisible to Renovate and will never be updated.
 
-Verify locally against the real Renovate (`--dry-run` writes nothing):
+`task check-renovate` fails on any chart version that is missing its annotation, and
+`task preview-renovate` runs the real Renovate against the working tree (writing
+nothing) to list the updates it would propose plus any lookup failures.
 
-```bash
-docker run --rm -v "$PWD":/work -w /work \
-  -e RENOVATE_CONFIG_FILE=/work/renovate.json \
-  renovate/renovate:latest --platform=local --dry-run=extract
-```
-
-`skipReason: contains-variable` on a `chart.spec.version` means an annotation is missing.
+Note the substitution variable may contain digits (`${HOMERUN2_REDIS_VERSION:-17.1.4}`),
+so every `matchStrings` regex in `renovate.json` uses `[A-Z0-9_]+` — a narrower
+`[A-Z_]+` silently skips those components.

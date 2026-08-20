@@ -18,7 +18,7 @@
         "\\.yaml$"
       ],
       "matchStrings": [
-        "url:\\s*oci://(?<depName>[^\\s]+)\\s*\\n\\s*ref:\\s*\\n\\s*tag:\\s*\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
+        "url:\\s*oci://(?<depName>[^\\s]+)\\s*\\n\\s*ref:\\s*\\n\\s*tag:\\s*\\$\\{[A-Z0-9_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver",
@@ -31,7 +31,7 @@
         "\\.yaml$"
       ],
       "matchStrings": [
-        "image:\\s*(?<depName>[^:$\\s]+):\\$\\{[A-Z_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
+        "image:\\s*(?<depName>[^:$\\s]+):\\$\\{[A-Z0-9_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver",
@@ -44,7 +44,7 @@
         "\\.yaml$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\\$\\{[A-Z_]+:-(?<currentValue>[^}]+)\\}"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}"
       ]
     }
   ],

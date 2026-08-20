@@ -11,6 +11,10 @@ vars:
   DAGGER_DOCKER_MODULE: github.com/stuttgart-things/dagger/docker
   DAGGER_DOCKER_MODULE_VERSION: main
 
+  # Renovate image used by the lint-/check-/preview-renovate tasks.
+  # Tracks "latest" on purpose — that is what Mend Cloud runs against this repo.
+  RENOVATE_IMAGE: renovate/renovate:latest
+
   # sthings-sops-cmp image (Argo CD CMP sidecar for SOPS).
   # Tag scheme: sops-age-kustomize-helm — keep in sync with ARG defaults in
   # cicd/argo-cd/sops-cmp/Dockerfile.
@@ -122,3 +126,88 @@ tasks:
           --registry-username env:GITHUB_USER \
           --registry-password env:GITHUB_TOKEN \
           --progress plain
+
+  lint-renovate:
+    desc: Validate renovate.json against the current Renovate config schema
+    cmds:
+      - |
+        docker run --rm \
+          -v "${PWD}/renovate.json":/tmp/renovate.json:ro \
+          {{.RENOVATE_IMAGE}} \
+          renovate-config-validator /tmp/renovate.json
+
+  check-renovate:
+    desc: Fail if a substituted HelmRelease chart version lacks its "# renovate:" annotation
+    silent: true
+    cmds:
+      - |
+        # Renovate's flux manager cannot parse ${VAR:-1.2.3} in chart.spec.version;
+        # it drops the dep as "contains-variable" without warning. The annotation on
+        # the preceding line is what feeds the custom manager instead — so a missing
+        # one means that chart silently never gets an update PR.
+        missing=$(find apps infra cicd -name '*.yaml' -print0 \
+          | xargs -0 awk '
+              FNR == 1 { prev = "" }
+              /^[[:space:]]*version:[[:space:]]*\$\{[A-Z0-9_]+:-/ {
+                if (prev !~ /#[[:space:]]*renovate:/) printf "  %s:%d\n", FILENAME, FNR
+              }
+              { prev = $0 }
+            ')
+
+        if [ -n "${missing}" ]; then
+          echo "Chart versions with no '# renovate:' annotation:"
+          echo "${missing}"
+          echo
+          echo "Renovate will never propose an update for these."
+          echo "Derive the annotation from the HelmRepository the sourceRef points at:"
+          echo "  type: oci   -> # renovate: datasource=docker depName=<host>/<path>/<chart>"
+          echo "  plain HTTPS -> # renovate: datasource=helm depName=<chart> registryUrl=<url>"
+          echo "See CLAUDE.md -> Dependency Management."
+          exit 1
+        fi
+
+        echo "OK: every substituted chart version is annotated."
+
+  preview-renovate:
+    desc: Dry-run Renovate over a copy of the working tree and list the updates it would propose
+    silent: true
+    vars:
+      PREVIEW_DIR: /tmp/renovate-preview
+    preconditions:
+      - sh: command -v docker
+        msg: "docker is required to run Renovate locally"
+    cmds:
+      - |
+        # Run against a copy: --dry-run writes no commits, but the container would
+        # still churn caches inside a mounted working tree.
+        rm -rf {{.PREVIEW_DIR}} && mkdir -p {{.PREVIEW_DIR}}
+        tar --exclude=.git --exclude=.task -cf - . | tar -xf - -C {{.PREVIEW_DIR}}
+        chmod -R a+rwX {{.PREVIEW_DIR}}
+
+        # A token only widens lookups to GitHub-hosted datasources; helm/docker work without.
+        token="${GITHUB_TOKEN:-$(gh auth token 2>/dev/null || true)}"
+
+        echo "Running {{.RENOVATE_IMAGE}} against the working tree (this takes a minute)..."
+        docker run --rm -u 0 \
+          -v {{.PREVIEW_DIR}}:/work -w /work \
+          -e RENOVATE_CONFIG_FILE=/work/renovate.json \
+          -e LOG_LEVEL=debug \
+          -e GITHUB_COM_TOKEN="${token}" \
+          {{.RENOVATE_IMAGE}} \
+          --platform=local --dry-run=full > {{.PREVIEW_DIR}}/renovate.log 2>&1 || true
+
+        echo
+        echo "Updates Renovate would propose:"
+        grep -oE '"branchName": "renovate/[^"]*"' {{.PREVIEW_DIR}}/renovate.log \
+          | sed 's|.*renovate/|  |; s|"$||' | sort -u
+        echo
+        echo "  total: $(grep -oE '"branchName": "renovate/[^"]*"' {{.PREVIEW_DIR}}/renovate.log | sort -u | wc -l)"
+
+        if grep -qiE 'failed to look up' {{.PREVIEW_DIR}}/renovate.log; then
+          echo
+          echo "Lookup failures (wrong depName or registryUrl in an annotation):"
+          grep -iE 'failed to look up' {{.PREVIEW_DIR}}/renovate.log | sed 's/^/  /' | sort -u
+        fi
+
+        echo
+        echo "Full log: {{.PREVIEW_DIR}}/renovate.log"
