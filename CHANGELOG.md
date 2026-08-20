@@ -1,3 +1,10 @@
+## [1.23.2](https://github.com/stuttgart-things/flux/compare/v1.23.1...v1.23.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **homerun2,clusterscope:** point image tags at artifacts that exist ([#209](https://github.com/stuttgart-things/flux/issues/209)) ([30a56e6](https://github.com/stuttgart-things/flux/commit/30a56e6a908759bd37ae5f2a643d119753de21b7)), closes [#207](https://github.com/stuttgart-things/flux/issues/207) [#206](https://github.com/stuttgart-things/flux/issues/206) [#208](https://github.com/stuttgart-things/flux/issues/208)
+
 ## [1.23.1](https://github.com/stuttgart-things/flux/compare/v1.23.0...v1.23.1) (2026-08-20)
 
 
