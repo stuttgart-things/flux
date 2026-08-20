@@ -140,6 +140,18 @@ Flux decryption is wired via the `sops-age` secret in `flux-system` and a kustom
 
 Run `pre-commit run --all-files` to validate before pushing. Active checks: trailing whitespace, end-of-file-fixer, large files, merge conflicts, symlinks, private key detection, shellcheck, hadolint, GitHub Actions schema validation, and high-entropy secret detection.
 
+## CI Gate
+
+`.github/workflows/validate.yaml` runs on every pull request and blocks the merge on three jobs:
+
+| Job | Runs |
+|---|---|
+| Chart version annotations | `hack/check-chart-annotations.sh` |
+| Image tags resolve | `hack/verify-image-tags.py` |
+| Renovate config | `renovate-config-validator` on Node 24 |
+
+The workflow calls the scripts directly rather than going through `task`. The Taskfile includes a remote Taskfile, which `task` refuses to load unattended (`not trusted by user`, exit 104) unless given `--yes` — and that would mean trusting a network-fetched Taskfile on every CI run. The `task` targets call the same scripts, so local and CI run identical code.
+
 ## Dependency Management
 
 Renovate is configured (`renovate.json`) with Flux-specific YAML file matching to automatically propose version updates for Helm charts and OCI artifacts.

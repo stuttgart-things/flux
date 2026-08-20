@@ -140,33 +140,7 @@ tasks:
     desc: Fail if a substituted HelmRelease chart version lacks its "# renovate:" annotation
     silent: true
     cmds:
-      - |
-        # Renovate's flux manager cannot parse ${VAR:-1.2.3} in chart.spec.version;
-        # it drops the dep as "contains-variable" without warning. The annotation on
-        # the preceding line is what feeds the custom manager instead — so a missing
-        # one means that chart silently never gets an update PR.
-        missing=$(find apps infra cicd -name '*.yaml' -print0 \
-          | xargs -0 awk '
-              FNR == 1 { prev = "" }
-              /^[[:space:]]*version:[[:space:]]*\$\{[A-Z0-9_]+:-/ {
-                if (prev !~ /#[[:space:]]*renovate:/) printf "  %s:%d\n", FILENAME, FNR
-              }
-              { prev = $0 }
-            ')
-
-        if [ -n "${missing}" ]; then
-          echo "Chart versions with no '# renovate:' annotation:"
-          echo "${missing}"
-          echo
-          echo "Renovate will never propose an update for these."
-          echo "Derive the annotation from the HelmRepository the sourceRef points at:"
-          echo "  type: oci   -> # renovate: datasource=docker depName=<host>/<path>/<chart>"
-          echo "  plain HTTPS -> # renovate: datasource=helm depName=<chart> registryUrl=<url>"
-          echo "See CLAUDE.md -> Dependency Management."
-          exit 1
-        fi
-
-        echo "OK: every substituted chart version is annotated."
+      - ./hack/check-chart-annotations.sh {{.CLI_ARGS}}
 
   verify-image-tags:
     desc: Check that every substituted image tag / OCIRepository ref exists in its registry
