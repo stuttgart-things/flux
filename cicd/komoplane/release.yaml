@@ -10,7 +10,7 @@ spec:
     spec:
       chart: komoplane
       # renovate: datasource=helm depName=komoplane registryUrl=https://helm-charts.komodor.io
-      version: ${KOMOPLANE_VERSION:-0.1.6}
+      version: ${KOMOPLANE_VERSION:-0.1.8}
       sourceRef:
         kind: HelmRepository
         name: komodorio
