@@ -18,6 +18,7 @@ task do              # Interactive task picker (requires gum)
 task check-renovate    # Fail if a substituted chart version lacks its "# renovate:" annotation
 task lint-renovate     # Validate renovate.json against the current Renovate schema
 task preview-renovate  # Dry-run Renovate locally and list the updates it would propose
+task verify-image-tags # Check every substituted image tag actually exists in its registry
 task pr              # Create a pull request (via included git tasks)
 ```
 
@@ -179,3 +180,18 @@ nothing) to list the updates it would propose plus any lookup failures.
 Note the substitution variable may contain digits (`${HOMERUN2_REDIS_VERSION:-17.1.4}`),
 so every `matchStrings` regex in `renovate.json` uses `[A-Z0-9_]+` — a narrower
 `[A-Z_]+` silently skips those components.
+
+### Never set `extractVersionTemplate` on these managers
+
+`extractVersion` does not only normalise the version for comparison — Renovate
+writes the **extracted** value back. With `^v?(?<version>.*)$` a registry tag of
+`v0.8.2` is written as `0.8.2`, and since most `ghcr.io/stuttgart-things/*`
+artifacts are tagged **with** the `v`, the result is a default that resolves to
+no tag at all. That failure only surfaces at deploy time.
+
+Leave the field off and each datasource's own versioning applies, so the tag is
+written back exactly as the registry publishes it — `v0.5.0` stays `v0.5.0`,
+`1.25.9` stays `1.25.9`.
+
+`task verify-image-tags` resolves every substituted default against the real
+registry and is the check that catches this class of breakage.
