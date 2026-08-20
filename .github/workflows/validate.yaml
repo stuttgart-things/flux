@@ -1,0 +1,69 @@
+---
+# Pre-merge gate for the Renovate wiring.
+#
+# Both failure modes this guards against are silent: a HelmRelease whose chart
+# version carries no "# renovate:" annotation is skipped by Renovate without a
+# warning and simply never updates, and a substituted image tag that does not
+# exist in its registry only fails once a cluster tries to pull it.
+#
+# The checks are invoked as scripts rather than through `task`, on purpose: the
+# Taskfile includes a remote Taskfile, which task refuses to load unattended
+# ("not trusted by user") unless passed --yes — and --yes would mean trusting a
+# Taskfile fetched over the network on every CI run. The scripts under hack/ are
+# what the task targets call anyway, so both paths run identical code.
+#
+# Deliberately not run here: `task preview-renovate`, a full Renovate run taking
+# minutes. Use it locally when changing renovate.json.
+name: Validate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  annotations:
+    name: Chart version annotations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Every substituted chart version is annotated
+        run: ./hack/check-chart-annotations.sh
+
+  image-tags:
+    name: Image tags resolve
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Queries ghcr.io and docker.io tag listings. Repositories that cannot be
+      # read are reported separately and do not fail the job, so a private or
+      # renamed package is never mistaken for a broken tag.
+      - name: Every substituted image tag exists
+        run: python3 hack/verify-image-tags.py
+
+  renovate-config:
+    name: Renovate config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # renovate declares engines.node ^24.11.0; an older runtime happens to work
+      # for the validator today but is not something to rely on.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # npx rather than the renovate/renovate image the lint-renovate task uses:
+      # several GB of pull for a single validation is not worth it in CI.
+      # Validating against @latest is intentional — that is what Mend Cloud runs.
+      - name: Validate renovate.json
+        run: npx --yes --package renovate@latest renovate-config-validator renovate.json
