@@ -21,8 +21,7 @@
         "url:\\s*oci://(?<depName>[^\\s]+)\\s*\\n\\s*ref:\\s*\\n\\s*tag:\\s*\\$\\{[A-Z0-9_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
       ],
       "datasourceTemplate": "docker",
-      "versioningTemplate": "semver",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+      "versioningTemplate": "semver"
     },
     {
       "customType": "regex",
@@ -34,8 +33,7 @@
         "image:\\s*(?<depName>[^:$\\s]+):\\$\\{[A-Z0-9_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
       ],
       "datasourceTemplate": "docker",
-      "versioningTemplate": "semver",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+      "versioningTemplate": "semver"
     },
     {
       "customType": "regex",

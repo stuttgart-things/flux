@@ -168,6 +168,12 @@ tasks:
 
         echo "OK: every substituted chart version is annotated."
 
+  verify-image-tags:
+    desc: Check that every substituted image tag / OCIRepository ref exists in its registry
+    silent: true
+    cmds:
+      - python3 hack/verify-image-tags.py {{.CLI_ARGS}}
+
   preview-renovate:
     desc: Dry-run Renovate over a copy of the working tree and list the updates it would propose
     silent: true
