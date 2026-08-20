@@ -58,6 +58,16 @@
       "groupName": "stuttgart-things images"
     },
     {
+      "description": "Group each homerun2 component on its own, so a component's image and its -kustomize artifact are always bumped in the same PR and cannot drift apart (see #208). Overrides the broad stuttgart-things grouping above.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/homerun2-**"
+      ],
+      "groupName": "homerun2 {{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/homerun2-' '' depName)}}}"
+    },
+    {
       "description": "Auto-merge patch and digest updates once CI passes \u2014 keeps low-risk bumps from piling up",
       "matchUpdateTypes": [
         "patch",

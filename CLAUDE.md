@@ -195,3 +195,21 @@ written back exactly as the registry publishes it — `v0.5.0` stays `v0.5.0`,
 
 `task verify-image-tags` resolves every substituted default against the real
 registry and is the check that catches this class of breakage.
+
+### homerun2 components group per component
+
+Each homerun2 component ships two artifacts — the image and its `-kustomize` OCI
+artifact — driven by one substitution variable. If Renovate bumped them in
+separate PRs they could be merged apart, and a variable pointing at a tag only
+one of them has resolves to nothing (this is what broke `demo-pitcher`, #208).
+
+A `packageRule` therefore groups them by component, so both always move in the
+same PR:
+
+```json
+"groupName": "homerun2 {{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/homerun2-' '' depName)}}}"
+```
+
+It sits after the broad `stuttgart-things images` rule and overrides it for
+`homerun2-**`; everything else stays in the combined group. Verify group names
+with `task preview-renovate` — they appear as branch names before any PR exists.
