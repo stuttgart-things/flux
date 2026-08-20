@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: openebs
+      # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
       version: ${OPENEBS_VERSION:-4.2.0}
       sourceRef:
         kind: HelmRepository

@@ -17,6 +17,7 @@ spec:
   chart:
     spec:
       chart: backstage
+      # renovate: datasource=docker depName=ghcr.io/backstage/charts/backstage
       version: ${BACKSTAGE_VERSION:-2.6.3}
       sourceRef:
         kind: HelmRepository

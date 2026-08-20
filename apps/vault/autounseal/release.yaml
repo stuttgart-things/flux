@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: vault-autounseal
+      # renovate: datasource=helm depName=vault-autounseal registryUrl=https://pytoshka.github.io/vault-autounseal
       version: ${VAULT_AUTOUNSEAL_VERSION:-0.5.3}
       sourceRef:
         kind: HelmRepository

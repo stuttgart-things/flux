@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: cert-manager
+      # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
       version: ${CERT_MANAGER_VERSION:-v1.18.2}
       sourceRef:
         kind: HelmRepository

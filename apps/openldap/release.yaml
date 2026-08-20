@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: openldap-stack-ha
+      # renovate: datasource=helm depName=openldap-stack-ha registryUrl=https://jp-gouin.github.io/helm-openldap
       version: ${OPENLDAP_VERSION:-v4.3.2}
       sourceRef:
         kind: HelmRepository

@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: uptime-kuma
+      # renovate: datasource=helm depName=uptime-kuma registryUrl=https://dirsigler.github.io/uptime-kuma-helm
       version: ${UPTIME_KUMA_VERSION:-4.0.0}
       sourceRef:
         kind: HelmRepository

@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: kro
+      # renovate: datasource=docker depName=registry.k8s.io/kro/charts/kro
       version: ${KRO_VERSION:-0.9.1}
       sourceRef:
         kind: HelmRepository

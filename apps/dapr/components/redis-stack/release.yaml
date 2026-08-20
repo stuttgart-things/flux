@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: redis
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/redis/redis
       version: ${DAPR_REDIS_VERSION:-17.1.4}
       sourceRef:
         kind: HelmRepository

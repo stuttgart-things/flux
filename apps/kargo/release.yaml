@@ -13,6 +13,7 @@ spec:
   chart:
     spec:
       chart: kargo
+      # renovate: datasource=docker depName=ghcr.io/akuity/kargo-charts/kargo
       version: ${KARGO_VERSION:-1.9.6}
       sourceRef:
         kind: HelmRepository

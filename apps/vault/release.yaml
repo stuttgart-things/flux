@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: charts/vault/vault
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vault/vault
       version: ${VAULT_VERSION:-1.9.0}
       sourceRef:
         kind: HelmRepository

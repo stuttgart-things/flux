@@ -12,6 +12,7 @@ spec:
   chart:
     spec:
       chart: keycloak
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/keycloak
       version: ${KEYCLOAK_VERSION:-24.4.9}
       sourceRef:
         kind: HelmRepository

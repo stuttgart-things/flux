@@ -10,6 +10,7 @@ spec:
   chart:
     spec:
       chart: argo-rollouts
+      # renovate: datasource=helm depName=argo-rollouts registryUrl=https://argoproj.github.io/argo-helm
       version: ${ARGO_ROLLOUTS_VERSION:-2.40.9}
       sourceRef:
         kind: HelmRepository
