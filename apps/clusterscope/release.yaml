@@ -132,7 +132,10 @@ spec:
   url: oci://ghcr.io/stuttgart-things/clusterscope-kustomize-multi-repo
   ref:
     tag: ${CLUSTERSCOPE_VERSION:-v0.20.2}
-  # suspend: true  # remove to activate
+  # Suspended: oci://ghcr.io/stuttgart-things/clusterscope-kustomize-multi-repo
+  # returns 403 -- the package is private, renamed or was never published, so
+  # every reconcile fails. Remove both suspends once it resolves. See #208.
+  suspend: true
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -150,7 +153,8 @@ spec:
   prune: true
   wait: true
   targetNamespace: ${CLUSTERSCOPE_NAMESPACE:-clusterscope}
-  # suspend: true  # remove to activate
+  # Suspended alongside its OCIRepository above. See #208.
+  suspend: true
   patches:
     # Remove the KCL-generated HTTPRoute (managed via httproute.yaml)
     - target:
