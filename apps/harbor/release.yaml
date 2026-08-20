@@ -13,6 +13,7 @@ spec:
   chart:
     spec:
       chart: harbor
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/harbor
       version: ${HARBOR_VERSION:-27.0.3}
       sourceRef:
         kind: HelmRepository

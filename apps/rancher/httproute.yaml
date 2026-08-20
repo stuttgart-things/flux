@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: sthings-cluster
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/sthings-cluster
       version: ${STHINGS_CLUSTER_VERSION:-0.3.20}
       sourceRef:
         kind: HelmRepository

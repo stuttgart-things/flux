@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: homerun
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun
       version: ${HOMERUN_VERSION:-v0.2.0}
       sourceRef:
         kind: HelmRepository

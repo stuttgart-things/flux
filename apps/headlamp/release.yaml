@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: headlamp
+      # renovate: datasource=helm depName=headlamp registryUrl=https://kubernetes-sigs.github.io/headlamp
       version: ${HEADLAMP_VERSION:-0.40.0}
       sourceRef:
         kind: HelmRepository

@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: homepage
+      # renovate: datasource=docker depName=ghcr.io/m0nsterrr/helm-charts/homepage
       version: ${HOMEPAGE_VERSION:-4.8.0}
       sourceRef:
         kind: HelmRepository

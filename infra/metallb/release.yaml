@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: metallb
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/metallb
       version: ${METALLB_CHART_VERSION:-6.4.2}
       sourceRef:
         kind: HelmRepository

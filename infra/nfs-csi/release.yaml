@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: csi-driver-nfs
+      # renovate: datasource=helm depName=csi-driver-nfs registryUrl=https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
       version: ${NFS_CSI_VERSION:-v4.13.1}
       sourceRef:
         kind: HelmRepository

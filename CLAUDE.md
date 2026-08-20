@@ -138,3 +138,42 @@ Run `pre-commit run --all-files` to validate before pushing. Active checks: trai
 ## Dependency Management
 
 Renovate is configured (`renovate.json`) with Flux-specific YAML file matching to automatically propose version updates for Helm charts and OCI artifacts.
+
+### Chart versions need a `# renovate:` annotation
+
+Renovate's `flux` manager reads `chart.spec.version`, but it cannot parse Flux
+variable substitution — `version: ${VAULT_VERSION:-1.9.0}` is skipped with
+`skipReason: contains-variable` and produces **no PR, no warning, no log entry**.
+
+Every HelmRelease whose chart version uses `${VAR:-default}` therefore carries a
+comment naming the datasource and where to look it up. A `customManager` in
+`renovate.json` matches the comment plus the following `version:` line and
+updates the default in place:
+
+```yaml
+  chart:
+    spec:
+      chart: cert-manager
+      # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
+      version: ${CERT_MANAGER_VERSION:-v1.19.2}
+```
+
+Derive the annotation from the `HelmRepository` the `sourceRef` points at:
+
+| HelmRepository | Annotation |
+|---|---|
+| `type: oci`, `url: oci://<host>/<path>` | `datasource=docker depName=<host>/<path>/<chart>` |
+| plain HTTPS repo | `datasource=helm depName=<chart> registryUrl=<url>` |
+
+**When adding a HelmRelease, add the annotation too** — without it the chart is
+silently invisible to Renovate and will never be updated.
+
+Verify locally against the real Renovate (`--dry-run` writes nothing):
+
+```bash
+docker run --rm -v "$PWD":/work -w /work \
+  -e RENOVATE_CONFIG_FILE=/work/renovate.json \
+  renovate/renovate:latest --platform=local --dry-run=extract
+```
+
+`skipReason: contains-variable` on a `chart.spec.version` means an annotation is missing.

@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: crossplane
+      # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
       version: ${CROSSPLANE_VERSION:-2.2.0}
       sourceRef:
         kind: HelmRepository

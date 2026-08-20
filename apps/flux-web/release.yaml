@@ -9,6 +9,7 @@ spec:
   chart:
     spec:
       chart: flux-operator
+      # renovate: datasource=docker depName=ghcr.io/controlplaneio-fluxcd/charts/flux-operator
       version: ${FLUX_WEB_VERSION:-0.43.0}
       sourceRef:
         kind: HelmRepository

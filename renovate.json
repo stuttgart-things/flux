@@ -36,6 +36,16 @@
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update HelmRelease chart.spec.version defaults behind Flux variable substitution. The flux manager skips these as contains-variable, so the datasource/registry is supplied by a preceding renovate comment.",
+      "fileMatch": [
+        "\\.yaml$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\\$\\{[A-Z_]+:-(?<currentValue>[^}]+)\\}"
+      ]
     }
   ],
   "packageRules": [
@@ -50,7 +60,7 @@
       "groupName": "stuttgart-things images"
     },
     {
-      "description": "Auto-merge patch and digest updates once CI passes — keeps low-risk bumps from piling up",
+      "description": "Auto-merge patch and digest updates once CI passes \u2014 keeps low-risk bumps from piling up",
       "matchUpdateTypes": [
         "patch",
         "digest"

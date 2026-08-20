@@ -13,6 +13,7 @@ spec:
   chart:
     spec:
       chart: harbor-project-proxy
+      # renovate: datasource=docker depName=ghcr.io/hiddenmarten/harbor-project-proxy
       version: ${HARBOR_PROJECT_PROXY_VERSION:-0.0.1}
       sourceRef:
         kind: HelmRepository
