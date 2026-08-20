@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/stuttgart-things/flux/compare/v1.22.2...v1.23.0) (2026-08-20)
+
+
+### Features
+
+* **taskfile:** add renovate check/lint/preview tasks, fix numeric substitution vars ([#206](https://github.com/stuttgart-things/flux/issues/206)) ([8116d2a](https://github.com/stuttgart-things/flux/commit/8116d2ae725b92b77900511ccccc482637fb5450))
+
 ## [1.22.2](https://github.com/stuttgart-things/flux/compare/v1.22.1...v1.22.2) (2026-08-20)
 
 
