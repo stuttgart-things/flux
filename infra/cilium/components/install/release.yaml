@@ -10,7 +10,7 @@ spec:
     spec:
       chart: cilium
       # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io
-      version: ${CILIUM_CHART_VERSION:-1.18.5}
+      version: ${CILIUM_CHART_VERSION:-1.20.1}
       sourceRef:
         kind: HelmRepository
         name: cilium
