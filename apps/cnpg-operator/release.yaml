@@ -11,7 +11,7 @@ spec:
     spec:
       chart: cloudnative-pg
       # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
-      version: ${CNPG_VERSION:-0.28.2}
+      version: ${CNPG_VERSION:-0.29.0}
       sourceRef:
         kind: HelmRepository
         name: cloudnative-pg
