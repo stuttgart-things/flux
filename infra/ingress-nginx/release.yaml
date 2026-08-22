@@ -10,7 +10,7 @@ spec:
     spec:
       chart: ingress-nginx
       # renovate: datasource=helm depName=ingress-nginx registryUrl=https://kubernetes.github.io/ingress-nginx
-      version: ${INGRESS_NGINX_CHART_VERSION:-4.12.0}
+      version: ${INGRESS_NGINX_CHART_VERSION:-4.15.1}
       sourceRef:
         kind: HelmRepository
         name: ingress-nginx
