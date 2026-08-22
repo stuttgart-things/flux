@@ -1,3 +1,10 @@
+## [1.24.1](https://github.com/stuttgart-things/flux/compare/v1.24.0...v1.24.1) (2026-08-22)
+
+
+### Bug Fixes
+
+* **renovate:** unfreeze ghcr chart updates stuck on a missing releaseTimestamp ([#235](https://github.com/stuttgart-things/flux/issues/235)) ([17016f9](https://github.com/stuttgart-things/flux/commit/17016f92469818c78918dd19ee6388ce82fdeaf3))
+
 # [1.24.0](https://github.com/stuttgart-things/flux/compare/v1.23.2...v1.24.0) (2026-08-20)
 
 
