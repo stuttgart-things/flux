@@ -193,6 +193,37 @@ Note the substitution variable may contain digits (`${HOMERUN2_REDIS_VERSION:-17
 so every `matchStrings` regex in `renovate.json` uses `[A-Z0-9_]+` — a narrower
 `[A-Z_]+` silently skips those components.
 
+### `minimumReleaseAge` needs `minimumReleaseAgeBehaviour: timestamp-optional`
+
+`minimumReleaseAge: "3 days"` only holds a release back if Renovate knows *when*
+it was published. Renovate's default is `minimumReleaseAgeBehaviour:
+"timestamp-required"`: a release with **no** `releaseTimestamp` counts as
+not-yet-old-enough — forever.
+
+The `docker` datasource gets that timestamp from the image config blob, and
+ghcr.io / registry.k8s.io do not serve one for Helm-chart OCI artifacts (Docker
+Hub does, which is why the `registry-1.docker.io/bitnamicharts/*` charts kept
+updating). So every `datasource=docker` chart and image on those registries was
+frozen — no PR, only a line under **Pending Status Checks** on the Dependency
+Dashboard. `argo-cd` sat on `9.4.15` while the chart was at `10.4.0` that way,
+along with kargo, backstage, flux-operator, homepage, minio, redis and every
+homerun2 component.
+
+`minimumReleaseAgeBehaviour: "timestamp-optional"` lets a release through when
+its timestamp is missing, and changes nothing where a timestamp exists — the
+3-day soak still applies to the `helm` datasource and to Docker Hub. The
+trade-off is that ghcr.io releases get no soak at all, so a patch published
+minutes ago can hit the auto-merge rule.
+
+The tell in the logs (`task preview-renovate`, `LOG_LEVEL=debug`) is:
+
+```
+Marking 29 release(s) as pending, as they do not have a releaseTimestamp
+and we're running with minimumReleaseAgeBehaviour=timestamp-required
+```
+
+and, in the branch summary, `"result": "pending"` instead of a created branch.
+
 ### Never set `extractVersionTemplate` on these managers
 
 `extractVersion` does not only normalise the version for comparison — Renovate
