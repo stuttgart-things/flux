@@ -39,7 +39,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-omni-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v1.2.0}
+                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v1.12.3}
     # Override the auth token secret
     - target:
         kind: Secret
