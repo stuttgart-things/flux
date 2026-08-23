@@ -7,4 +7,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-scout-kustomize
   ref:
-    tag: ${HOMERUN2_SCOUT_VERSION:-v0.8.2}
+    tag: ${HOMERUN2_SCOUT_VERSION:-v1.0.0}
