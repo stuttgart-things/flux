@@ -1,0 +1,6 @@
+---
+# cilium-lb
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cilium-lb.yaml

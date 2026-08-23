@@ -1,5 +1,5 @@
 ---
-# trust-manager
+# cert-manager-selfsigned
 #
 # REQUIRES ../cert-manager-install in the same spec.components list. Its child has a
 # dependsOn on that Kustomization, and Flux has no optional dependency: if
@@ -8,4 +8,4 @@
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
-  - ks-trust-manager.yaml
+  - ks-cert-manager-selfsigned.yaml
