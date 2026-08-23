@@ -36,16 +36,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  # On/off switch. Set OPENEBS_ENABLED: "false" in the consumer's substitute block.
-  #
-  # A substituted variable cannot remove a resource from a build — kustomize
-  # builds first, substitution runs after on the output — so the toggle moves
-  # this child's PATH instead: switch/true includes ./infra/openebs unchanged,
-  # switch/false is a kustomization with `resources: []`. Disabled, the child
-  # still reconciles but applies nothing, and its own prune removes every
-  # object it owned. That is a real uninstall, unlike OPENEBS_SUSPEND
-  # (which freezes and leaves objects running).
-  path: ./infra/platform/components/openebs/switch/${OPENEBS_ENABLED:-true}
+  path: ./infra/openebs
   postBuild:
     # NOT threaded: every *_ENABLED toggle, OPENEBS_HOSTPATH_DEFAULT_CLASS
     # (bool), and the OPENEBS_PREUPGRADE_HOOK_IMAGE_* coordinates (their base

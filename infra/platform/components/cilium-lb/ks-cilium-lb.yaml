@@ -39,15 +39,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  # On/off switch. Set CILIUM_LB_ENABLED: "false" in the consumer's substitute block.
-  #
-  # A substituted variable cannot remove a resource from a build — kustomize
-  # builds first, substitution runs after on the output — so the toggle moves
-  # this child's PATH: switch/cilium-lb/true includes ./infra/cilium/components/lb
-  # unchanged, switch/cilium-lb/false builds nothing. Disabled, the child still
-  # reconciles and still reports Ready (so dependents are NOT blocked, unlike
-  # CILIUM_LB_SUSPEND), and its own prune removes what it owned.
-  path: ./infra/platform/base/switch/cilium-lb/${CILIUM_LB_ENABLED:-true}
+  path: ./infra/cilium/components/lb
   postBuild:
     substitute:
       CILIUM_NAMESPACE: "${CILIUM_NAMESPACE:-kube-system}"

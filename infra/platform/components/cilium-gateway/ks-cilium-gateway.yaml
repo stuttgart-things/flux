@@ -38,15 +38,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  # On/off switch. Set CILIUM_GATEWAY_ENABLED: "false" in the consumer's substitute block.
-  #
-  # A substituted variable cannot remove a resource from a build — kustomize
-  # builds first, substitution runs after on the output — so the toggle moves
-  # this child's PATH: switch/cilium-gateway/true includes ./infra/cilium/components/gateway
-  # unchanged, switch/cilium-gateway/false builds nothing. Disabled, the child still
-  # reconciles and still reports Ready (so dependents are NOT blocked, unlike
-  # CILIUM_GATEWAY_SUSPEND), and its own prune removes what it owned.
-  path: ./infra/platform/base/switch/cilium-gateway/${CILIUM_GATEWAY_ENABLED:-true}
+  path: ./infra/cilium/components/gateway
   postBuild:
     substitute:
       CILIUM_GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"

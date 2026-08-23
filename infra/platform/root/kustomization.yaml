@@ -1,0 +1,20 @@
+---
+# The bundle's path target.
+#
+# Deliberately empty: every component is opt-in, and the consumer selects them
+# with `spec.components` on its own Flux Kustomization:
+#
+#   spec:
+#     path: ./infra/platform/root
+#     components:
+#       - ../components/cilium-lb
+#       - ../components/cert-manager-install
+#       - ../components/openebs
+#
+# Adding a line deploys that component; removing one prunes it, along with its
+# child Kustomization. There is no <APP>_ENABLED variable and no switch
+# directory — a kustomize build is decided at build time, and this is the
+# build-time mechanism for it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

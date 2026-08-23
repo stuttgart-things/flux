@@ -37,15 +37,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  # On/off switch. Set CERT_MANAGER_INSTALL_ENABLED: "false" in the consumer's substitute block.
-  #
-  # A substituted variable cannot remove a resource from a build — kustomize
-  # builds first, substitution runs after on the output — so the toggle moves
-  # this child's PATH: switch/cert-manager-install/true includes ./infra/cert-manager/components/install
-  # unchanged, switch/cert-manager-install/false builds nothing. Disabled, the child still
-  # reconciles and still reports Ready (so dependents are NOT blocked, unlike
-  # CERT_MANAGER_INSTALL_SUSPEND), and its own prune removes what it owned.
-  path: ./infra/platform/base/switch/cert-manager-install/${CERT_MANAGER_INSTALL_ENABLED:-true}
+  path: ./infra/cert-manager/components/install
   postBuild:
     # NOT threaded: CERT_MANAGER_INSTALL_CRDS (bool)
     # A bare true/false cannot survive a nested substitute map — kustomize

@@ -20,16 +20,14 @@ spec:
   force: false
   prune: true
   # Off switch. Set RELOADER_SUSPEND: "true" in the consumer's substitute
-  # block. Freezes reconciliation; deployed objects stay running. Use
-  # RELOADER_ENABLED: "false" to actually uninstall.
+  # block. Freezes reconciliation; deployed objects stay running. To uninstall, remove this
+  # component from the consumer's spec.components list.
   suspend: ${RELOADER_SUSPEND:-false}
   wait: true
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  # On/off switch. Set RELOADER_ENABLED: "false" to uninstall — the path flips
-  # to a zero-resource directory and this child's prune removes what it owned.
-  path: ./infra/platform/components/reloader/switch/${RELOADER_ENABLED:-true}
+  path: ./infra/reloader
   postBuild:
     # NOT threaded: RELOADER_REPLICAS (int). A bare number is not a string, and
     # postBuild.substitute is map[string]string — same rule as the bools.

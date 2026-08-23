@@ -1,11 +1,11 @@
 ---
-# prometheus
+# cilium-gateway
 #
-# REQUIRES ../cilium-gateway in the same spec.components list. Its child has a
+# REQUIRES ../cilium-lb in the same spec.components list. Its child has a
 # dependsOn on that Kustomization, and Flux has no optional dependency: if
-# cilium-gateway is not selected, this one waits on "dependency not ready"
+# cilium-lb is not selected, this one waits on "dependency not ready"
 # forever rather than deploying something half-wired.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
-  - ks-prometheus.yaml
+  - ks-cilium-gateway.yaml
