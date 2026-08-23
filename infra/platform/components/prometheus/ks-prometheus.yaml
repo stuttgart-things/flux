@@ -1,0 +1,54 @@
+---
+# prometheus server + HTTPRoute → ./infra/prometheus
+#
+# dependsOn cilium-gateway (base): the base renders an HTTPRoute whose
+# parentRef is that Gateway, so the Gateway API CRDs and the Gateway object
+# both have to exist first. The pre-bundle CR had no dependsOn and relied on
+# retry to converge — this is the one behavioural improvement in the bundle.
+#
+# The base uses the bare names GATEWAY_NAME / DOMAIN / HOSTNAME. They are
+# mapped here to bundle-level names so a consumer never has to set a variable
+# as collision-prone as HOSTNAME at the top level.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set PROMETHEUS_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. On a cluster that never had this component it
+  # means "never installed"; on one that has it, the objects STAY (frozen at
+  # their current state, drift no longer corrected). To actually uninstall,
+  # delete the component from the overlay — see this bundle's README.
+  suspend: ${PROMETHEUS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/prometheus
+  postBuild:
+    substitute:
+      PROMETHEUS_NAMESPACE: "${PROMETHEUS_NAMESPACE:-monitoring}"
+      # renovate: datasource=helm depName=prometheus registryUrl=https://prometheus-community.github.io/helm-charts
+      PROMETHEUS_VERSION: "${PROMETHEUS_VERSION:-28.16.0}"
+      PROMETHEUS_STORAGE_CLASS: "${PROMETHEUS_STORAGE_CLASS:-nfs4-csi}"
+      PROMETHEUS_STORAGE_SIZE: "${PROMETHEUS_STORAGE_SIZE:-10Gi}"
+      PROMETHEUS_RETENTION: "${PROMETHEUS_RETENTION:-15d}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${PROMETHEUS_HOSTNAME:-prometheus}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

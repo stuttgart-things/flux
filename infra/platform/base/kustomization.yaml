@@ -1,0 +1,27 @@
+---
+# infra-platform bundle — base
+#
+# The always-on core for a stuttgart-things cluster: cilium LB + Gateway, and
+# the cert-manager PKI chain that issues the Gateway's wildcard TLS cert.
+#
+#   cilium-lb ──> cilium-gateway
+#   cert-manager-install ──> cert-manager-selfsigned
+#                       └──> (components/trust-manager)
+#
+# Nothing here is a raw manifest — every ks-*.yaml is a Flux Kustomization CR
+# pointing back at a path in THIS repo. That is deliberate: the storage/PKI/
+# network bases apply CRs (ClusterIssuer, Certificate, Bundle, Gateway,
+# CiliumLoadBalancerIPPool) whose CRDs are installed by the very same bundle.
+# Flattening them into one build would race on those CRDs every reconcile;
+# child Kustomizations keep dependsOn, per-component health and per-component
+# retry instead.
+#
+# Consumers point ONE Flux Kustomization at ./infra/platform/overlays/<cluster>
+# (or at this base for the component-free core).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ks-cilium-lb.yaml
+  - ks-cilium-gateway.yaml
+  - ks-cert-manager-install.yaml
+  - ks-cert-manager-selfsigned.yaml

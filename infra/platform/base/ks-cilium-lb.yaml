@@ -1,0 +1,52 @@
+---
+# cilium LB IP pool + L2 announcement policy → ./infra/cilium/components/lb
+#
+# Every value threaded into a child Kustomization needs a non-empty default.
+# kustomize normalises away every quoting style (plain, "", '', !!str, |-), so
+# `KEY: "${VAR}"` reaches Flux as `KEY:` — a YAML null — and the CRD declares
+# postBuild.substitute as map[string]string with no `nullable`, which makes the
+# API server reject the whole CR. Defaults here therefore mirror the target
+# base's own ${VAR:-default}. Chart versions carry the base's "# renovate:"
+# annotation so both copies move in one PR.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium-lb
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 5m
+  retryInterval: 2m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set CILIUM_LB_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. Objects already applied STAY (frozen); to
+  # actually uninstall, delete the component from the overlay (README).
+  #
+  # CAUTION — this one has dependents: cilium-gateway (and prometheus behind it).
+  # A suspended Kustomization never reports Ready, so on a fresh cluster every
+  # dependent stalls on "dependency not ready" indefinitely. Suspend this only
+  # for maintenance on a cluster where it already reconciled once.
+  suspend: ${CILIUM_LB_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cilium/components/lb
+  postBuild:
+    substitute:
+      CILIUM_NAMESPACE: "${CILIUM_NAMESPACE:-kube-system}"
+      CILIUM_LB_POOL_NAME: "${CILIUM_LB_POOL_NAME:-default-pool}"
+      CILIUM_L2_POLICY_NAME: "${CILIUM_L2_POLICY_NAME:-default-l2-announcement-policy}"
+      # REQUIRED. The sentinel is a deliberately unusable address: an unset
+      # required variable must not take the whole bundle down (a null would),
+      # but it must be obvious in `kubectl get ciliumloadbalancerippool`.
+      CILIUM_LB_IP_START: "${CILIUM_LB_IP_START:-0.0.0.0}"
+      CILIUM_LB_IP_STOP: "${CILIUM_LB_IP_STOP:-0.0.0.0}"

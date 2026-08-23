@@ -1,0 +1,47 @@
+---
+# NFS CSI driver + nfs3-csi / nfs4-csi StorageClasses → ./infra/nfs-csi
+#
+# Standalone: no dependsOn, nothing here needs cert-manager or the Gateway, so
+# this component works with or without the base.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: nfs-csi
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set NFS_CSI_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. On a cluster that never had this component it
+  # means "never installed"; on one that has it, the objects STAY (frozen at
+  # their current state, drift no longer corrected). To actually uninstall,
+  # delete the component from the overlay — see this bundle's README.
+  suspend: ${NFS_CSI_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/nfs-csi
+  postBuild:
+    # NOT threaded: NFS_CSI_ENABLE_SNAPSHOTTER, NFS_CSI_ENABLE_CRDS (bool).
+    # See ks-cert-manager-install.yaml for why a bool cannot cross a nested
+    # substitute map; both base defaults already match this fleet.
+    substitute:
+      NFS_CSI_NAMESPACE: "${NFS_CSI_NAMESPACE:-kube-system}"
+      # renovate: datasource=helm depName=csi-driver-nfs registryUrl=https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+      NFS_CSI_VERSION: "${NFS_CSI_VERSION:-4.13.4}"
+      # REQUIRED — sentinels are unresolvable on purpose: a wrong mount target
+      # is visible in the StorageClass, an unset one would null the whole CR.
+      NFS_SERVER_FQDN: "${NFS_SERVER_FQDN:-set-NFS_SERVER_FQDN.invalid}"
+      NFS_SHARE_PATH: "${NFS_SHARE_PATH:-/set-NFS_SHARE_PATH}"
+      CLUSTER_NAME: "${CLUSTER_NAME:-DOWNSTREAM}"
