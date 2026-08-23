@@ -1,0 +1,9 @@
+---
+# cert-manager-selfsigned: ENABLED. Includes the real base, unchanged.
+#
+# `components:` and not `resources:` — the target is a kind: Component, which
+# kustomize refuses to accumulate as a resource.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../../../../cert-manager/components/selfsigned

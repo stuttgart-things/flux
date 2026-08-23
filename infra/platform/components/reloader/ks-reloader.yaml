@@ -1,0 +1,40 @@
+---
+# reloader (stakater) → ./infra/reloader
+#
+# Standalone: rolls workloads annotated reloader.stakater.com/auto when their
+# ConfigMap/Secret changes. Nothing in the bundle depends on it and it depends
+# on nothing.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: reloader
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set RELOADER_SUSPEND: "true" in the consumer's substitute
+  # block. Freezes reconciliation; deployed objects stay running. Use
+  # RELOADER_ENABLED: "false" to actually uninstall.
+  suspend: ${RELOADER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  # On/off switch. Set RELOADER_ENABLED: "false" to uninstall — the path flips
+  # to a zero-resource directory and this child's prune removes what it owned.
+  path: ./infra/platform/components/reloader/switch/${RELOADER_ENABLED:-true}
+  postBuild:
+    # NOT threaded: RELOADER_REPLICAS (int). A bare number is not a string, and
+    # postBuild.substitute is map[string]string — same rule as the bools.
+    substitute:
+      RELOADER_NAMESPACE: "${RELOADER_NAMESPACE:-reloader}"
+      # renovate: datasource=helm depName=reloader registryUrl=https://stakater.github.io/stakater-charts
+      RELOADER_VERSION: "${RELOADER_VERSION:-2.2.16}"
+      RELOADER_RELOAD_STRATEGY: "${RELOADER_RELOAD_STRATEGY:-annotations}"

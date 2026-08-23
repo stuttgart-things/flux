@@ -1,0 +1,9 @@
+---
+# cilium-lb: DISABLED. Builds to zero resources on purpose.
+#
+# The child Kustomization still exists, still reconciles, and still reports
+# Ready — it just applies nothing, so its prune removes every object it
+# previously owned, and anything with a dependsOn on it is NOT blocked.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

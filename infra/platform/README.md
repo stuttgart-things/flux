@@ -11,7 +11,7 @@ child then renders its own base.
 
 ```
 infra/platform/
-├── base/                      always-on core
+├── base/                      the core (each child individually toggleable)
 │   ├── ks-cilium-lb.yaml               → ./infra/cilium/components/lb
 │   ├── ks-cilium-gateway.yaml          → ./infra/cilium/components/gateway   (dependsOn cilium-lb)
 │   ├── ks-cert-manager-install.yaml    → ./infra/cert-manager/components/install
@@ -20,10 +20,12 @@ infra/platform/
 │   ├── trust-manager/    → ./infra/trust-manager   (dependsOn cert-manager-install — needs base)
 │   │   └── switch/{true,false}/   path target of <APP>_ENABLED
 │   ├── nfs-csi/          → ./infra/nfs-csi         (standalone)
+│   ├── reloader/         → ./infra/reloader        (standalone)
 │   ├── openebs/          → ./infra/openebs         (standalone)
 │   └── prometheus/       → ./infra/prometheus      (dependsOn cilium-gateway — needs base)
 └── overlays/
-    └── infra-sthings/    base + all four components
+    ├── infra-sthings/    base + trust-manager, nfs-csi, openebs, prometheus
+    └── test-infra1/      base + every component (selection made by <APP>_ENABLED)
 ```
 
 ## Why child Kustomizations and not one merged build
@@ -102,7 +104,7 @@ deployed**, which is the only question that matters when choosing.
 | Deployed objects | **pruned** | **stay**, frozen | **pruned** |
 | Child Kustomization CR | stays, Ready, owns nothing | stays, suspended | deleted |
 | Blocks dependents | no | **yes** | no |
-| Scope | the four opt-in components | all eight children | the four opt-in components |
+| Scope | **all nine children** | all nine children | the opt-in components |
 
 ### `<APP>_ENABLED` — the on/off boolean
 
@@ -113,8 +115,20 @@ postBuild:
     OPENEBS_ENABLED: "false"
 ```
 
-`TRUST_MANAGER_ENABLED`, `NFS_CSI_ENABLED`, `OPENEBS_ENABLED`,
-`PROMETHEUS_ENABLED`. All default `true`.
+One per child, all default `true`:
+
+| base | components |
+|---|---|
+| `CILIUM_LB_ENABLED` | `TRUST_MANAGER_ENABLED` |
+| `CILIUM_GATEWAY_ENABLED` | `NFS_CSI_ENABLED` |
+| `CERT_MANAGER_INSTALL_ENABLED` | `OPENEBS_ENABLED` |
+| `CERT_MANAGER_SELFSIGNED_ENABLED` | `PROMETHEUS_ENABLED` |
+| | `RELOADER_ENABLED` |
+
+Base children are toggleable too: the first cluster pointed at this bundle
+wanted `cilium-lb` + `cert-manager-install` and *not* the Gateway or the PKI
+chain, so an always-on base would not have fit. A cluster's whole shape now
+lives in its substitute block, and the overlay just lists what is available.
 
 A substituted variable cannot remove a resource from a build — kustomize builds
 the resource set first, substitution runs afterwards on its output. So the
@@ -126,6 +140,10 @@ components/prometheus/switch/
 └── false/   resources: []                              → nothing
 ```
 
+Base children switch the same way under `base/switch/<name>/`, except their
+`true/` uses `components:` rather than `resources:` — those targets are
+`kind: Component`, which kustomize refuses to accumulate as a resource.
+
 ```yaml
 path: ./infra/platform/components/prometheus/switch/${PROMETHEUS_ENABLED:-true}
 ```
@@ -133,6 +151,11 @@ path: ./infra/platform/components/prometheus/switch/${PROMETHEUS_ENABLED:-true}
 Disabled, the child Kustomization still exists and still reconciles — it just
 applies nothing, and its own `prune: true` removes every object it previously
 owned. That is a real uninstall.
+
+It also still reports **Ready**, which is why `_ENABLED` and `_SUSPEND` differ
+for dependents: disabling `cilium-gateway` leaves `prometheus` free to
+reconcile (against nothing), whereas suspending it strands `prometheus` on
+"dependency not ready" forever.
 
 Verified locally: `switch/true` builds byte-identical output to building
 `./infra/<app>` directly, `switch/false` builds zero objects, and

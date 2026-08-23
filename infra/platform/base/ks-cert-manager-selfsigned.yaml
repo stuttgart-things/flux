@@ -37,7 +37,15 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  path: ./infra/cert-manager/components/selfsigned
+  # On/off switch. Set CERT_MANAGER_SELFSIGNED_ENABLED: "false" in the consumer's substitute block.
+  #
+  # A substituted variable cannot remove a resource from a build — kustomize
+  # builds first, substitution runs after on the output — so the toggle moves
+  # this child's PATH: switch/cert-manager-selfsigned/true includes ./infra/cert-manager/components/selfsigned
+  # unchanged, switch/cert-manager-selfsigned/false builds nothing. Disabled, the child still
+  # reconciles and still reports Ready (so dependents are NOT blocked, unlike
+  # CERT_MANAGER_SELFSIGNED_SUSPEND), and its own prune removes what it owned.
+  path: ./infra/platform/base/switch/cert-manager-selfsigned/${CERT_MANAGER_SELFSIGNED_ENABLED:-true}
   postBuild:
     substitute:
       CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
