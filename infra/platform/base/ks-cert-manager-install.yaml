@@ -1,0 +1,52 @@
+---
+# cert-manager controller + CRDs → ./infra/cert-manager/components/install
+#
+# Everything that applies a cert-manager CR (ClusterIssuer, Certificate) or a
+# trust-manager Bundle dependsOn this Kustomization, so the CRDs are registered
+# and the webhook is serving before those CRs are applied. wait: true makes
+# that guarantee real — this is the whole reason the bundle emits child
+# Kustomizations instead of merging the bases into one build.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-install
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set CERT_MANAGER_INSTALL_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. Objects already applied STAY (frozen); to
+  # actually uninstall, delete the component from the overlay (README).
+  #
+  # CAUTION — this one has dependents: cert-manager-selfsigned, trust-manager.
+  # A suspended Kustomization never reports Ready, so on a fresh cluster every
+  # dependent stalls on "dependency not ready" indefinitely. Suspend this only
+  # for maintenance on a cluster where it already reconciled once.
+  suspend: ${CERT_MANAGER_INSTALL_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cert-manager/components/install
+  postBuild:
+    # NOT threaded: CERT_MANAGER_INSTALL_CRDS (bool)
+    # A bare true/false cannot survive a nested substitute map — kustomize
+    # strips the quotes around "${VAR}", envsubst then yields a YAML bool, and
+    # postBuild.substitute is map[string]string, so the API server rejects the
+    # CR. The base default (true) is what this fleet uses everywhere. To flip
+    # it, patch this child from the overlay with a literal quoted value — a
+    # literal (no ${}) keeps its quotes through kustomize build.
+    substitute:
+      CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
+      # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
+      CERT_MANAGER_VERSION: "${CERT_MANAGER_VERSION:-v1.21.1}"

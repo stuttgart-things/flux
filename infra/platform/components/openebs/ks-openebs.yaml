@@ -1,0 +1,57 @@
+---
+# openebs (localpv-provisioner / openebs-hostpath) → ./infra/openebs
+#
+# Standalone, no base dependency.
+#
+# Deliberately thin: infra/openebs/release.yaml disarms chart dependencies that
+# default to ON upstream (loki, alloy, mayastor) and turns openebs-hostpath
+# into the cluster default StorageClass. Re-declaring any of that here would
+# put a second copy of a safety-critical default in the tree — and every one of
+# those knobs is a bool, which cannot cross a nested substitute map anyway.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openebs
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set OPENEBS_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. On a cluster that never had this component it
+  # means "never installed"; on one that has it, the objects STAY (frozen at
+  # their current state, drift no longer corrected). To actually uninstall,
+  # delete the component from the overlay — see this bundle's README.
+  suspend: ${OPENEBS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  # On/off switch. Set OPENEBS_ENABLED: "false" in the consumer's substitute block.
+  #
+  # A substituted variable cannot remove a resource from a build — kustomize
+  # builds first, substitution runs after on the output — so the toggle moves
+  # this child's PATH instead: switch/true includes ./infra/openebs unchanged,
+  # switch/false is a kustomization with `resources: []`. Disabled, the child
+  # still reconciles but applies nothing, and its own prune removes every
+  # object it owned. That is a real uninstall, unlike OPENEBS_SUSPEND
+  # (which freezes and leaves objects running).
+  path: ./infra/platform/components/openebs/switch/${OPENEBS_ENABLED:-true}
+  postBuild:
+    # NOT threaded: every *_ENABLED toggle, OPENEBS_HOSTPATH_DEFAULT_CLASS
+    # (bool), and the OPENEBS_PREUPGRADE_HOOK_IMAGE_* coordinates (their base
+    # default is a workaround for a removed upstream image and should not be
+    # overridable per cluster by accident).
+    substitute:
+      OPENEBS_NAMESPACE: "${OPENEBS_NAMESPACE:-openebs}"
+      # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
+      OPENEBS_VERSION: "${OPENEBS_VERSION:-4.5.1}"

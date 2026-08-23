@@ -45,6 +45,16 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update chart-version defaults threaded into a bundle's child Kustomization, e.g. infra/platform's `CERT_MANAGER_VERSION: \"${CERT_MANAGER_VERSION:-v1.21.1}\"` inside postBuild.substitute. These are a second copy of the base's default (a child CR cannot inherit it \u2014 an empty substitute value renders as YAML null and the API server rejects the CR), so they must be bumped in the same PR as the base or the bundle silently pins the old version.",
+      "fileMatch": [
+        "\\.yaml$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+[A-Z0-9_]+:\\s*\"\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}\""
+      ]
     }
   ],
   "packageRules": [

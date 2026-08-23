@@ -1,0 +1,53 @@
+---
+# SelfSigned → cluster CA → wildcard cert chain
+#   → ./infra/cert-manager/components/selfsigned
+#
+# Produces the Secret that ks-cilium-gateway terminates TLS with, hence the
+# shared INFRA_TLS_SECRET / INFRA_DOMAIN names. The Gateway does not dependOn
+# this one: it may exist before the cert does (the listener just stays
+# not-ready until the Secret lands), and ordering it the other way would make
+# the whole network path wait on PKI.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-selfsigned
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set CERT_MANAGER_SELFSIGNED_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. On a cluster that never had this component it
+  # means "never installed"; on one that has it, the objects STAY (frozen at
+  # their current state, drift no longer corrected). To actually uninstall,
+  # delete the component from the overlay — see this bundle's README.
+  suspend: ${CERT_MANAGER_SELFSIGNED_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cert-manager/components/selfsigned
+  postBuild:
+    substitute:
+      CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
+      CERT_MANAGER_CA_NAME: "${CERT_MANAGER_CA_NAME:-cluster-ca}"
+      CERT_MANAGER_CA_SECRET: "${CERT_MANAGER_CA_SECRET:-cluster-ca-secret}" # pragma: allowlist secret
+      CERT_MANAGER_SELFSIGNED_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      CERT_MANAGER_SELFSIGNED_CERT_NAME: "${INFRA_TLS_SECRET:-wildcard-tls}"
+      CERT_MANAGER_SELFSIGNED_SECRET_NAME: "${INFRA_TLS_SECRET:-wildcard-tls}" # pragma: allowlist secret
+      CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # cluster-ca = the CA ClusterIssuer this same base creates. Point it at
+      # vault-pki-k8s (or another external issuer) to have the wildcard signed
+      # outside the cluster; the selfsigned → cluster-ca chain is still created.
+      CERT_MANAGER_SELFSIGNED_ISSUER: "${CERT_MANAGER_SELFSIGNED_ISSUER:-cluster-ca}"

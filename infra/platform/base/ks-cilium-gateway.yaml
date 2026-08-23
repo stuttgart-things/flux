@@ -1,0 +1,47 @@
+---
+# Shared cluster Gateway (Gateway API) → ./infra/cilium/components/gateway
+#
+# INFRA_GATEWAY_NAME / INFRA_DOMAIN / INFRA_TLS_SECRET are bundle-level names:
+# the same three values are consumed by ks-cert-manager-selfsigned (which
+# issues the wildcard cert into INFRA_TLS_SECRET) and by every HTTPRoute-
+# carrying component. Set them once in the consumer's substitute block.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium-gateway
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cilium-lb
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set CILIUM_GATEWAY_SUSPEND: "true" in the consumer's substitute block.
+  # This works where a substitute-map bool cannot: spec.suspend IS a boolean
+  # field, so a bare `true`/`false` is exactly the right type — the opposite of
+  # postBuild.substitute, which is map[string]string and rejects one.
+  # Semantics: STOPS RECONCILING. Objects already applied STAY (frozen); to
+  # actually uninstall, delete the component from the overlay (README).
+  #
+  # CAUTION — this one has dependents: prometheus.
+  # A suspended Kustomization never reports Ready, so on a fresh cluster every
+  # dependent stalls on "dependency not ready" indefinitely. Suspend this only
+  # for maintenance on a cluster where it already reconciled once.
+  suspend: ${CILIUM_GATEWAY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cilium/components/gateway
+  postBuild:
+    substitute:
+      CILIUM_GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      CILIUM_GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      CILIUM_GATEWAY_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      CILIUM_GATEWAY_TLS_SECRET: "${INFRA_TLS_SECRET:-wildcard-tls}" # pragma: allowlist secret

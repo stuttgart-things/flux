@@ -1,0 +1,34 @@
+---
+# Per-cluster overlay: infra-sthings (labul / vsphere)
+#
+# This file is the PRUNING on/off switch for that cluster's infra. Deleting a
+# component line removes its Flux Kustomization from the build, and the bundle's
+# own prune deletes the child CR — which in turn prunes everything that child
+# deployed. Adding one back is a single line.
+#
+# Two switches in the CONSUMER's substitute block do most of this without
+# touching this file:
+#   <APP>_ENABLED: "false"   uninstalls the component (its child flips to a
+#                            zero-resource path and prunes what it owned)
+#   <APP>_SUSPEND: "true"    freezes it, leaving deployed objects running
+# Removing the line here additionally deletes the child Kustomization CR, and
+# applies to every cluster using this overlay. See the bundle README.
+#
+# Reproduces the eight hand-written Kustomization CRs previously kept in
+# clusters/labul/vsphere/infra-sthings/infra/:
+#
+#   base        cilium-lb, cilium-gateway,
+#               cert-manager-install, cert-manager-selfsigned
+#   components  trust-manager, nfs-csi, openebs, prometheus
+#
+# Consume with ONE Flux Kustomization:
+#   path: ./infra/platform/overlays/infra-sthings
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/trust-manager   # cluster trust bundle (needs cert-manager)
+  - ../../components/nfs-csi         # nfs3-csi / nfs4-csi StorageClasses
+  - ../../components/openebs         # openebs-hostpath (default StorageClass)
+  - ../../components/prometheus      # prometheus + HTTPRoute (needs the Gateway)
