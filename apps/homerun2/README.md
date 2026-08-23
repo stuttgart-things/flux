@@ -16,16 +16,26 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `demo-pitcher` | OCIRepository + Flux Kustomization | Web UI for manually pitching demo messages to Redis Streams |
 | `led-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer for LED display output |
 | `git-pitcher` | OCIRepository + Flux Kustomization | Watches Git repositories and pitches events to Redis Streams |
+| `notification-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer that forwards messages as notifications |
 
 ## Profiles
 
-Profiles provide pre-composed subsets of components for different deployment scenarios. Use `path: ./apps/homerun2/profiles/<name>` in the Flux Kustomization instead of `path: ./apps/homerun2` (which deploys all 10 components).
+Profiles provide pre-composed subsets of components for different deployment scenarios. Use `path: ./apps/homerun2/profiles/<name>` in the Flux Kustomization instead of `path: ./apps/homerun2`.
 
 | Profile | Components | Use case |
 |---------|------------|----------|
-| `profiles/core` | redis-stack, omni-pitcher, core-catcher, scout | Minimal deployment: message ingestion + web dashboard + monitoring |
-| `profiles/cicd` | core + git-pitcher | CI/CD-focused: core stack + Git event watching |
-| *(root)* | all 10 components | Full stack deployment |
+| `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
+| `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
+| *(root)* | 10 of the 11 components — everything except `notification-catcher` | Full stack deployment |
+
+`profiles/cicd` composes only `git-pitcher`, and that is deliberate. It is
+consumed as its own Flux Kustomization next to a `profiles/base` one (see
+`clusters/labul/vsphere/platform-sthings/apps/homerun2-cicd-stack.yaml`), so it
+needs neither the redis/gateway variables nor a second copy of the core stack —
+which would fight the base profile over the same objects.
+
+Note the root `kustomization.yaml` does **not** include `notification-catcher`;
+that component ships only via `profiles/base`.
 
 ## SUBSTITUTION VARIABLES
 
@@ -381,7 +391,7 @@ data:
 
 Uses the Kustomize Components pattern:
 
-1. **Root kustomization.yaml** composes the components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher` + `scout` + `light-catcher` + `wled-mock` + `demo-pitcher`)
+1. **Root kustomization.yaml** composes ten components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher` + `scout` + `light-catcher` + `wled-mock` + `demo-pitcher` + `led-catcher` + `git-pitcher`); `notification-catcher` is reachable only through `profiles/base`
 2. **Outer Flux Kustomization** (consumer) reads `./apps/homerun2` from GitRepository, substitutes variables
 3. **Redis Stack component** deploys Redis via HelmRelease into the shared namespace
 4. **Omni Pitcher component** creates an OCIRepository + inner Flux Kustomization that reconciles the kustomize base from OCI, patches secrets, overrides image tag, and wires Redis connection
@@ -393,9 +403,9 @@ Uses the Kustomize Components pattern:
 
 Adding more homerun2 services is done by adding new component folders under `components/`. New profiles can be created under `profiles/` by composing the desired components.
 
-## COMPLETE EXAMPLE: STHINGS-PLATFORM CLUSTER (CORE PROFILE)
+## COMPLETE EXAMPLE: STHINGS-PLATFORM CLUSTER (BASE PROFILE)
 
-Minimal deployment using the `profiles/core` profile (redis-stack + omni-pitcher + core-catcher only):
+Minimal deployment using the `profiles/base` profile (redis-stack, omni-pitcher, core-catcher, notification-catcher, scout):
 
 **Cluster config** (`clusters/labul/vsphere/sthings-platform/apps/homerun2.yaml`):
 
@@ -413,7 +423,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-apps
-  path: ./apps/homerun2/profiles/core
+  path: ./apps/homerun2/profiles/base
   prune: true
   wait: true
   postBuild:
