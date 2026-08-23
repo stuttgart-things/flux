@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/stuttgart-things/flux/compare/v1.24.1...v1.25.0) (2026-08-23)
+
+
+### Features
+
+* add infra/platform bundle for single-Kustomization infra deployment ([#258](https://github.com/stuttgart-things/flux/issues/258)) ([6fff4f8](https://github.com/stuttgart-things/flux/commit/6fff4f8806a92b3656b9f87172ce2fa276f679c9))
+
 ## [1.24.1](https://github.com/stuttgart-things/flux/compare/v1.24.0...v1.24.1) (2026-08-22)
 
 
