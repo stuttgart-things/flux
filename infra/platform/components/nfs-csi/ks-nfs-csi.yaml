@@ -31,7 +31,16 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  path: ./infra/nfs-csi
+  # On/off switch. Set NFS_CSI_ENABLED: "false" in the consumer's substitute block.
+  #
+  # A substituted variable cannot remove a resource from a build — kustomize
+  # builds first, substitution runs after on the output — so the toggle moves
+  # this child's PATH instead: switch/true includes ./infra/nfs-csi unchanged,
+  # switch/false is a kustomization with `resources: []`. Disabled, the child
+  # still reconciles but applies nothing, and its own prune removes every
+  # object it owned. That is a real uninstall, unlike NFS_CSI_SUSPEND
+  # (which freezes and leaves objects running).
+  path: ./infra/platform/components/nfs-csi/switch/${NFS_CSI_ENABLED:-true}
   postBuild:
     # NOT threaded: NFS_CSI_ENABLE_SNAPSHOTTER, NFS_CSI_ENABLE_CRDS (bool).
     # See ks-cert-manager-install.yaml for why a bool cannot cross a nested

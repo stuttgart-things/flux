@@ -1,0 +1,6 @@
+---
+# nfs-csi: ENABLED. Includes the real base, unchanged.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../../nfs-csi

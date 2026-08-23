@@ -18,6 +18,7 @@ infra/platform/
 │   └── ks-cert-manager-selfsigned.yaml → ./infra/cert-manager/components/selfsigned (dependsOn cert-manager-install)
 ├── components/                opt-in, one kustomize Component each
 │   ├── trust-manager/    → ./infra/trust-manager   (dependsOn cert-manager-install — needs base)
+│   │   └── switch/{true,false}/   path target of <APP>_ENABLED
 │   ├── nfs-csi/          → ./infra/nfs-csi         (standalone)
 │   ├── openebs/          → ./infra/openebs         (standalone)
 │   └── prometheus/       → ./infra/prometheus      (dependsOn cilium-gateway — needs base)
@@ -92,59 +93,88 @@ replaces.
 
 ## Turning components off
 
-Two switches, with different semantics. Pick by whether you want the objects
-**gone** or merely **frozen**.
+Three switches. They differ in what happens to objects that are **already
+deployed**, which is the only question that matters when choosing.
 
-| | `*_SUSPEND: "true"` | remove the component line from the overlay |
-|---|---|---|
-| Where | consumer's `substitute` block (cluster repo) | `overlays/<cluster>/kustomization.yaml` (this repo) |
-| Already-deployed objects | **stay**, frozen — drift no longer corrected | **deleted** (pruned) |
-| Never-deployed (fresh cluster) | never installed | never installed |
-| Reversible by | flipping the value back | re-adding the line |
-| Blocks dependents | yes — a suspended child never reports Ready | no |
+| | `<APP>_ENABLED: "false"` | `<APP>_SUSPEND: "true"` | remove the line from the overlay |
+|---|---|---|---|
+| Where | consumer's `substitute` (cluster repo) | consumer's `substitute` (cluster repo) | `overlays/<cluster>/` (this repo) |
+| Deployed objects | **pruned** | **stay**, frozen | **pruned** |
+| Child Kustomization CR | stays, Ready, owns nothing | stays, suspended | deleted |
+| Blocks dependents | no | **yes** | no |
+| Scope | the four opt-in components | all eight children | the four opt-in components |
 
-### `*_SUSPEND` — the boolean
+### `<APP>_ENABLED` — the on/off boolean
 
 ```yaml
 postBuild:
   substitute:
-    PROMETHEUS_SUSPEND: "true"     # note the quotes: substitute is map[string]string
-    OPENEBS_SUSPEND: "true"
+    PROMETHEUS_ENABLED: "false"    # note the quotes: substitute is map[string]string
+    OPENEBS_ENABLED: "false"
 ```
 
-One per child: `CILIUM_LB_SUSPEND`, `CILIUM_GATEWAY_SUSPEND`,
-`CERT_MANAGER_INSTALL_SUSPEND`, `CERT_MANAGER_SELFSIGNED_SUSPEND`,
-`TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`, `OPENEBS_SUSPEND`,
-`PROMETHEUS_SUSPEND`. All default `false`.
+`TRUST_MANAGER_ENABLED`, `NFS_CSI_ENABLED`, `OPENEBS_ENABLED`,
+`PROMETHEUS_ENABLED`. All default `true`.
 
-This is the one place a bool *does* work, and it is worth understanding why,
-because it is the exact inverse of the rule in the section below: `spec.suspend`
-is a **boolean field**, so the bare `false` that `${VAR:-false}` renders is
-precisely the right type. `postBuild.substitute` is `map[string]string`, so the
-same bare `false` is rejected there. The field's type decides, not the syntax.
+A substituted variable cannot remove a resource from a build — kustomize builds
+the resource set first, substitution runs afterwards on its output. So the
+toggle moves the child's **path** instead:
 
-**It suspends, it does not uninstall.** On a cluster that never ran the
-component that is indistinguishable from "off" — which is the common fleet case
-("this cluster has no NFS server"). On a cluster where it already reconciled,
-the workloads keep running, unmanaged.
+```
+components/prometheus/switch/
+├── true/    resources: [ ../../../../../prometheus ]   → the real base, unchanged
+└── false/   resources: []                              → nothing
+```
 
-**Do not suspend a child that has dependents** — `cilium-lb`,
-`cilium-gateway`, `cert-manager-install`. A suspended Kustomization never
-reports Ready, so on a fresh cluster everything behind it stalls on "dependency
-not ready" indefinitely. Each of those files carries the warning inline.
+```yaml
+path: ./infra/platform/components/prometheus/switch/${PROMETHEUS_ENABLED:-true}
+```
 
-### The component list — the switch that prunes
+Disabled, the child Kustomization still exists and still reconciles — it just
+applies nothing, and its own `prune: true` removes every object it previously
+owned. That is a real uninstall.
 
-Delete a line from `overlays/<cluster>/kustomization.yaml` and the child
-Kustomization leaves the build; the bundle's own `prune` deletes the child CR,
-which in turn prunes everything it deployed. Add it back with one line.
+Verified locally: `switch/true` builds byte-identical output to building
+`./infra/<app>` directly, `switch/false` builds zero objects, and
+`flux build kustomization --dry-run` (the controller's own build path) exits 0
+on the disabled directory. The pruning half is Flux's ordinary garbage
+collection for an emptied Kustomization; it could not be exercised here without
+a cluster, so watch the first flip.
 
-### Why a substituted boolean cannot do the pruning one
+### `<APP>_SUSPEND` — the freeze boolean
 
-`kustomize build` runs first and produces the full resource set; Flux's
-variable substitution runs **after**, on that output. A variable can therefore
-change what a resource *says*, never whether it *exists*. Conditional inclusion
-has to happen at build time — which is what the component list is.
+One per child, all eight, default `false`: `CILIUM_LB_SUSPEND`,
+`CILIUM_GATEWAY_SUSPEND`, `CERT_MANAGER_INSTALL_SUSPEND`,
+`CERT_MANAGER_SELFSIGNED_SUSPEND`, `TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`,
+`OPENEBS_SUSPEND`, `PROMETHEUS_SUSPEND`.
+
+This is the one place a bool works *directly*, and it is worth understanding
+why: `spec.suspend` is a **boolean field**, so the bare `false` that
+`${VAR:-false}` renders is exactly the right type. `postBuild.substitute` is
+`map[string]string`, so the same bare `false` is rejected there. The field's
+type decides, not the syntax.
+
+Suspend **stops reconciliation and leaves deployed objects running**,
+unmanaged. Use it for maintenance, not for "this cluster doesn't need X" —
+`_ENABLED` is that switch. And **do not suspend a child that has dependents**
+(`cilium-lb`, `cilium-gateway`, `cert-manager-install`): a suspended
+Kustomization never reports Ready, so on a fresh cluster everything behind it
+stalls on "dependency not ready" indefinitely. Those three carry the warning
+inline.
+
+### The component list — removes the child CR too
+
+Delete a line from `overlays/<cluster>/kustomization.yaml` and the child leaves
+the build; the bundle's own prune deletes the child CR, which in turn prunes
+what it deployed. Same end state as `_ENABLED: "false"`, but it also removes
+the Kustomization object, and it is an edit to *this* repo rather than the
+cluster's. Prefer `_ENABLED` for per-cluster choices; prefer the list when a
+component should not exist for any cluster using that overlay.
+
+> A fourth option needs nothing from this bundle: point the consumer at
+> `./infra/platform/base` and list `spec.components` on the consumer's own
+> Kustomization. Flux supports it, and it puts the selection in the cluster
+> repo as a list rather than a set of booleans.
 
 ## Variables
 
@@ -162,7 +192,8 @@ Bundle-level names (map onto differently-named base variables):
 | `INFRA_GATEWAY_NAMESPACE` | `default` | both of the above + `CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE` |
 | `INFRA_TLS_SECRET` | `wildcard-tls` | `CILIUM_GATEWAY_TLS_SECRET`, `CERT_MANAGER_SELFSIGNED_{CERT,SECRET}_NAME` |
 | `PROMETHEUS_HOSTNAME` | `prometheus` | prometheus `HOSTNAME` (the base's name is too generic to expose) |
-| `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` — see [Turning components off](#turning-components-off) |
+| `<APP>_ENABLED` | `true` | that component's path switch — `false` uninstalls it |
+| `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` — freezes, does not uninstall |
 
 Required variables have no upstream default, so they fall back to an
 unmistakable sentinel (`set-INFRA_DOMAIN.invalid`, `0.0.0.0`,

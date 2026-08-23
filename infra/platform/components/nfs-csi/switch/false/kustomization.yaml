@@ -1,0 +1,9 @@
+---
+# nfs-csi: DISABLED. Builds to zero resources on purpose.
+#
+# The child Kustomization still exists and still reconciles — it just applies
+# nothing, so its prune removes every object it previously owned. That is what
+# makes <APP>_ENABLED a real uninstall switch rather than a freeze.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

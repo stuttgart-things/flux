@@ -39,7 +39,16 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  path: ./infra/prometheus
+  # On/off switch. Set PROMETHEUS_ENABLED: "false" in the consumer's substitute block.
+  #
+  # A substituted variable cannot remove a resource from a build — kustomize
+  # builds first, substitution runs after on the output — so the toggle moves
+  # this child's PATH instead: switch/true includes ./infra/prometheus unchanged,
+  # switch/false is a kustomization with `resources: []`. Disabled, the child
+  # still reconciles but applies nothing, and its own prune removes every
+  # object it owned. That is a real uninstall, unlike PROMETHEUS_SUSPEND
+  # (which freezes and leaves objects running).
+  path: ./infra/platform/components/prometheus/switch/${PROMETHEUS_ENABLED:-true}
   postBuild:
     substitute:
       PROMETHEUS_NAMESPACE: "${PROMETHEUS_NAMESPACE:-monitoring}"

@@ -6,11 +6,13 @@
 # own prune deletes the child CR — which in turn prunes everything that child
 # deployed. Adding one back is a single line.
 #
-# For a non-destructive off switch, set <COMPONENT>_SUSPEND: "true" in the
-# consumer's substitute block instead: that freezes reconciliation and leaves
-# deployed objects in place. A substituted variable cannot do what this list
-# does — kustomize builds the resource set before substitution runs, so a
-# variable can change what a resource says, never whether it exists.
+# Two switches in the CONSUMER's substitute block do most of this without
+# touching this file:
+#   <APP>_ENABLED: "false"   uninstalls the component (its child flips to a
+#                            zero-resource path and prunes what it owned)
+#   <APP>_SUSPEND: "true"    freezes it, leaving deployed objects running
+# Removing the line here additionally deletes the child Kustomization CR, and
+# applies to every cluster using this overlay. See the bundle README.
 #
 # Reproduces the eight hand-written Kustomization CRs previously kept in
 # clusters/labul/vsphere/infra-sthings/infra/:

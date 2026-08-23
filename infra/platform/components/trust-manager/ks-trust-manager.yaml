@@ -41,7 +41,16 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
-  path: ./infra/trust-manager
+  # On/off switch. Set TRUST_MANAGER_ENABLED: "false" in the consumer's substitute block.
+  #
+  # A substituted variable cannot remove a resource from a build — kustomize
+  # builds first, substitution runs after on the output — so the toggle moves
+  # this child's PATH instead: switch/true includes ./infra/trust-manager unchanged,
+  # switch/false is a kustomization with `resources: []`. Disabled, the child
+  # still reconciles but applies nothing, and its own prune removes every
+  # object it owned. That is a real uninstall, unlike TRUST_MANAGER_SUSPEND
+  # (which freezes and leaves objects running).
+  path: ./infra/platform/components/trust-manager/switch/${TRUST_MANAGER_ENABLED:-true}
   postBuild:
     substitute:
       TRUST_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
