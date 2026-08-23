@@ -53,7 +53,7 @@ spec:
     substitute:
       PROMETHEUS_NAMESPACE: "${PROMETHEUS_NAMESPACE:-monitoring}"
       # renovate: datasource=helm depName=prometheus registryUrl=https://prometheus-community.github.io/helm-charts
-      PROMETHEUS_VERSION: "${PROMETHEUS_VERSION:-28.16.0}"
+      PROMETHEUS_VERSION: "${PROMETHEUS_VERSION:-29.27.0}"
       PROMETHEUS_STORAGE_CLASS: "${PROMETHEUS_STORAGE_CLASS:-nfs4-csi}"
       PROMETHEUS_STORAGE_SIZE: "${PROMETHEUS_STORAGE_SIZE:-10Gi}"
       PROMETHEUS_RETENTION: "${PROMETHEUS_RETENTION:-15d}"
