@@ -1,3 +1,10 @@
+# [1.26.0](https://github.com/stuttgart-things/flux/compare/v1.25.0...v1.26.0) (2026-08-23)
+
+
+### Features
+
+* select infra/platform components via spec.components, add reloader ([#259](https://github.com/stuttgart-things/flux/issues/259)) ([938c0dc](https://github.com/stuttgart-things/flux/commit/938c0dcaaed45d0116f2982b4e4f173376bc2c9c))
+
 # [1.25.0](https://github.com/stuttgart-things/flux/compare/v1.24.1...v1.25.0) (2026-08-23)
 
 
