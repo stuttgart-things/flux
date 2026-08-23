@@ -1,6 +1,7 @@
-# homerun2 / profiles / core
+# homerun2 / profiles / base
 
-Minimal homerun2 deployment: message ingestion, Redis persistence, and web dashboard.
+Minimal homerun2 deployment: message ingestion, Redis persistence, notification
+fan-out, and the web dashboard.
 
 ## Components
 
@@ -9,13 +10,18 @@ Minimal homerun2 deployment: message ingestion, Redis persistence, and web dashb
 | `redis-stack` | Redis Stack with Sentinel |
 | `omni-pitcher` | HTTP gateway for Redis Stream ingestion |
 | `core-catcher` | Redis Streams consumer with web dashboard |
+| `notification-catcher` | Redis Streams consumer that forwards messages as notifications |
 | `scout` | Service discovery and monitoring agent |
 
 ## Usage
 
 ```yaml
-path: ./apps/homerun2/profiles/core
+path: ./apps/homerun2/profiles/base
 ```
+
+To add Git event watching, deploy [`profiles/cicd`](../cicd/README.md) as a
+**second** Flux Kustomization alongside this one — it is an add-on that carries
+only `git-pitcher`, not a superset of this profile.
 
 ## Required Variables
 
