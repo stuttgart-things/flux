@@ -1,0 +1,52 @@
+---
+# Headlamp cluster UI → ./apps/headlamp
+#
+# Token login, no OIDC: a visitor pastes a ServiceAccount token and Headlamp
+# acts as whoever that token belongs to.
+#
+# WORTH KNOWING BEFORE PUTTING THIS ON A GATEWAY: the base binds Headlamp's own
+# ServiceAccount to cluster-admin (apps/headlamp/rbac.yaml). That is how it has
+# run on platform-sthings since 2026-04, so this component does not change it --
+# but the Gateway makes the login page reachable lab-wide, which the in-cluster
+# service was not. Reach for OIDC before this carries anything that matters.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headlamp
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  # Same reason as flux-web: the HelmRelease renders an HTTPRoute
+  # unconditionally, and one whose parentRef does not resolve fails quietly.
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set HEADLAMP_SUSPEND: "true" in the consumer's substitute block.
+  # STOPS RECONCILING; objects stay. To uninstall, drop the component.
+  suspend: ${HEADLAMP_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/headlamp
+  postBuild:
+    # NOT threaded: the plugin list. It lives in the base as a multi-line
+    # configContent block, which cannot cross a string-typed substitute map.
+    # The base ships the prometheus plugin; a flux plugin exists upstream but is
+    # deliberately not enabled -- the flux-web component covers that ground, and
+    # two Flux UIs is one too many.
+    substitute:
+      HEADLAMP_NAMESPACE: "${HEADLAMP_NAMESPACE:-headlamp}"
+      # renovate: datasource=helm depName=headlamp registryUrl=https://kubernetes-sigs.github.io/headlamp
+      HEADLAMP_VERSION: "${HEADLAMP_VERSION:-0.44.0}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${HEADLAMP_HOSTNAME:-headlamp}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
