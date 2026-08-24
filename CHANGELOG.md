@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/stuttgart-things/flux/compare/v1.26.0...v1.27.0) (2026-08-24)
+
+
+### Features
+
+* **platform:** add flux-web and headlamp components ([f252b41](https://github.com/stuttgart-things/flux/commit/f252b412cbaf6a884af97e694f11273c2445a187))
+
 # [1.26.0](https://github.com/stuttgart-things/flux/compare/v1.25.0...v1.26.0) (2026-08-23)
 
 
