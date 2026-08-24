@@ -21,6 +21,8 @@ infra/platform/
     ├── nfs-csi/                  → ./infra/nfs-csi
     ├── openebs/                  → ./infra/openebs
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
+    ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
+    ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     └── reloader/                 → ./infra/reloader
 ```
 
@@ -78,7 +80,7 @@ manifests as the eight hand-written CRs it replaces.
 
 ## Prerequisites between components
 
-Four components carry a `dependsOn` and therefore need their prerequisite in
+Six components carry a `dependsOn` and therefore need their prerequisite in
 the same list:
 
 | Component | Requires |
@@ -87,6 +89,12 @@ the same list:
 | `cert-manager-selfsigned` | `cert-manager-install` |
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
+| `flux-web` | `cilium-gateway` |
+| `headlamp` | `cilium-gateway` |
+
+The three behind `cilium-gateway` render an `HTTPRoute` unconditionally, and an
+`HTTPRoute` whose `parentRef` does not resolve sits at `Accepted=False` without
+explaining itself. The dependency turns that into a loud stall instead.
 
 Flux has no optional dependency, so selecting one without its prerequisite
 parks it on "dependency not ready" instead of deploying something half-wired.
@@ -119,7 +127,8 @@ postBuild:
 
 `CILIUM_LB_SUSPEND`, `CILIUM_GATEWAY_SUSPEND`, `CERT_MANAGER_INSTALL_SUSPEND`,
 `CERT_MANAGER_SELFSIGNED_SUSPEND`, `TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`,
-`OPENEBS_SUSPEND`, `PROMETHEUS_SUSPEND`, `RELOADER_SUSPEND`.
+`OPENEBS_SUSPEND`, `PROMETHEUS_SUSPEND`, `FLUX_WEB_SUSPEND`,
+`HEADLAMP_SUSPEND`, `RELOADER_SUSPEND`.
 
 This **stops reconciliation and leaves deployed objects running**, unmanaged —
 it is for maintenance, not for "this cluster doesn't need X" (that is a line in
@@ -179,11 +188,13 @@ Bundle-level names (they map onto differently-named base variables):
 | Variable | Default | Feeds |
 |---|---|---|
 | `FLUX_SOURCE` | `flux-infra` | `sourceRef.name` of every child |
-| `INFRA_DOMAIN` | *(required)* | `CILIUM_GATEWAY_DOMAIN`, `CERT_MANAGER_SELFSIGNED_DOMAIN`, prometheus `DOMAIN` |
-| `INFRA_GATEWAY_NAME` | `cilium-gateway` | `CILIUM_GATEWAY_NAME`, prometheus `GATEWAY_NAME` |
+| `INFRA_DOMAIN` | *(required)* | `CILIUM_GATEWAY_DOMAIN`, `CERT_MANAGER_SELFSIGNED_DOMAIN`, prometheus/flux-web/headlamp `DOMAIN` |
+| `INFRA_GATEWAY_NAME` | `cilium-gateway` | `CILIUM_GATEWAY_NAME`, prometheus/flux-web/headlamp `GATEWAY_NAME` |
 | `INFRA_GATEWAY_NAMESPACE` | `default` | both of the above + `CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE` |
 | `INFRA_TLS_SECRET` | `wildcard-tls` | `CILIUM_GATEWAY_TLS_SECRET`, `CERT_MANAGER_SELFSIGNED_{CERT,SECRET}_NAME` |
 | `PROMETHEUS_HOSTNAME` | `prometheus` | prometheus `HOSTNAME` (the base's name is too generic to expose) |
+| `FLUX_WEB_HOSTNAME` | `flux` | flux-web `HOSTNAME` (same reason) |
+| `HEADLAMP_HOSTNAME` | `headlamp` | headlamp `HOSTNAME` (same reason) |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 
 Required variables have no upstream default, so they fall back to an

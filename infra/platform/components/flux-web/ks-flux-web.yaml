@@ -1,0 +1,52 @@
+---
+# Flux web UI → ./apps/flux-web
+#
+# NOT a second product. This is the SAME flux-operator chart the cluster
+# already runs, deployed a second time with `web.serverOnly: true` -- so it
+# serves the UI and reconciles nothing. `installCRDs: false` keeps it off the
+# CRDs the real operator owns. Same shape platform-sthings has run since
+# 2026-04.
+#
+# That is why Capacitor is not used here despite doing the same job: it would
+# be another operator to run and upgrade, where this is a values flag on
+# something already installed.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-web
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  # The HelmRelease renders an HTTPRoute unconditionally, and an HTTPRoute
+  # whose parentRef does not resolve stays Accepted=False forever without
+  # saying much. Gate on the Gateway instead.
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set FLUX_WEB_SUSPEND: "true" in the consumer's substitute block.
+  # STOPS RECONCILING; objects stay. To uninstall, drop the component.
+  suspend: ${FLUX_WEB_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/flux-web
+  postBuild:
+    substitute:
+      FLUX_WEB_NAMESPACE: "${FLUX_WEB_NAMESPACE:-flux-system}"
+      # renovate: datasource=docker depName=ghcr.io/controlplaneio-fluxcd/charts/flux-operator
+      FLUX_WEB_VERSION: "${FLUX_WEB_VERSION:-0.58.1}"
+      # The base names these bare, without defaults of their own, so every one
+      # has to carry a default here -- an unset value reaches Flux as a YAML
+      # null and the API server rejects the whole CR.
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${FLUX_WEB_HOSTNAME:-flux}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

@@ -1,0 +1,10 @@
+---
+# flux-web
+#
+# REQUIRES ../cilium-gateway in the same spec.components list, which in turn
+# requires ../cilium-lb. Flux has no optional dependency: without it this parks
+# on "dependency not ready" rather than publishing a route to nowhere.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-flux-web.yaml
