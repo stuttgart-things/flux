@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/stuttgart-things/flux/compare/v1.27.0...v1.28.0) (2026-08-25)
+
+
+### Features
+
+* **cert-manager:** add the vault-issuer component and its bundle wrapper ([#262](https://github.com/stuttgart-things/flux/issues/262)) ([4a71528](https://github.com/stuttgart-things/flux/commit/4a715287cdcd5e94055c998e395dca75e0157f6a))
+
 # [1.27.0](https://github.com/stuttgart-things/flux/compare/v1.26.0...v1.27.0) (2026-08-24)
 
 
