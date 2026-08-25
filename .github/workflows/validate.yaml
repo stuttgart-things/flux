@@ -50,7 +50,19 @@ jobs:
       - name: Every substituted image tag exists
         run: python3 hack/verify-image-tags.py
 
-  renovate-config:
+  bundle-components:
+    name: Bundle components
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install kustomize
+        run: |
+          curl -sS "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+      - name: Every component is buildable and the bundle composes
+        run: ./hack/check-bundle-components.sh
+
+  renovate:
     name: Renovate config
     runs-on: ubuntu-latest
     steps:
