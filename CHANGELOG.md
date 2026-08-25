@@ -1,3 +1,10 @@
+## [1.28.1](https://github.com/stuttgart-things/flux/compare/v1.28.0...v1.28.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **platform:** the vault-issuer component had no kustomization.yaml ([#263](https://github.com/stuttgart-things/flux/issues/263)) ([90288d3](https://github.com/stuttgart-things/flux/commit/90288d3ec76109209aa99c1758b535e89bc76f00))
+
 # [1.28.0](https://github.com/stuttgart-things/flux/compare/v1.27.0...v1.28.0) (2026-08-25)
 
 
