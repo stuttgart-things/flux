@@ -1,0 +1,76 @@
+---
+# Tokenless Vault ClusterIssuer: cert-manager authenticates to Vault with a
+# Kubernetes ServiceAccount token it mints per request, so nothing long-lived is
+# stored in the cluster.
+#
+# It does NOT create the Vault side. The kubernetes auth backend, its role and
+# the CA Secret referenced below come from the VM pipeline's vault-auth step
+# (blueprints CreateVaultKubernetesAuth), which is the only place holding Vault
+# credentials. This component is the half that belongs in Git.
+#
+# Until that step has run, the issuer sits not-Ready and any Certificate naming
+# it waits. That is the correct behaviour, and it is loud.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ${VAULT_ISSUER_NAME:-vault-pki}
+spec:
+  vault:
+    server: ${VAULT_ISSUER_SERVER:-set-VAULT_ISSUER_SERVER.invalid}
+    # sign, not issue: cert-manager only ever calls the sign endpoint, while
+    # issue would additionally let Vault generate the private key.
+    path: ${VAULT_ISSUER_PKI_PATH:-set-VAULT_ISSUER_PKI_PATH.invalid}
+    # The CA that signed the Vault PKI, so cert-manager can verify the chain it
+    # gets back. Placed by the pipeline; a missing Secret keeps the issuer
+    # not-Ready rather than silently trusting nothing.
+    caBundleSecretRef:
+      name: ${VAULT_ISSUER_CA_SECRET:-vault-pki-ca}
+      key: ${VAULT_ISSUER_CA_KEY:-ca.crt}
+    auth:
+      kubernetes:
+        # Per-cluster: the pipeline creates the backend as
+        # <cluster>-<authName>, so this is /v1/auth/<cluster>-certmanager.
+        mountPath: ${VAULT_ISSUER_AUTH_MOUNT_PATH:-set-VAULT_ISSUER_AUTH_MOUNT_PATH.invalid}
+        role: ${VAULT_ISSUER_AUTH_ROLE:-certmanager}
+        serviceAccountRef:
+          name: ${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}
+---
+# cert-manager mints the token above through the TokenRequest API, which needs
+# `create` on serviceaccounts/token.
+#
+# THE CHART USED TO SHIP THIS AND NO LONGER DOES. v1.18.x rendered
+# Role/cert-manager-tokenrequest; v1.21.1 renders no serviceaccounts/token rule
+# at all, and there is no values flag to bring it back. Without it cert-manager
+# cannot mint the token -- and the failure is invisible in the obvious place,
+# because the ClusterIssuer still reports Ready: cert-manager verifies only the
+# Vault LOGIN, never the ability to sign. Certificates simply never get issued.
+#
+# So it ships here, next to the issuer that needs it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-manager-tokenrequest
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+  labels:
+    app.kubernetes.io/managed-by: flux
+rules:
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    resourceNames: ["${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-manager-tokenrequest
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+  labels:
+    app.kubernetes.io/managed-by: flux
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-manager-tokenrequest
+subjects:
+  - kind: ServiceAccount
+    name: ${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}
+    namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}

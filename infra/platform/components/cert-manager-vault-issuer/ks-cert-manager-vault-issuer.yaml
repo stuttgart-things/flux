@@ -1,0 +1,47 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-vault-issuer
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${CERT_MANAGER_VAULT_ISSUER_SUSPEND:-false}
+  # wait on the ClusterIssuer's own Ready condition. Note what that does and
+  # does not prove: cert-manager sets it once the Vault LOGIN succeeds, which
+  # means the auth mount, the role and the CA bundle are all in place. It says
+  # nothing about permission to sign -- only an issued Certificate does.
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cert-manager/components/vault-issuer
+  postBuild:
+    substitute:
+      CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
+      VAULT_ISSUER_NAME: "${VAULT_ISSUER_NAME:-vault-pki}"
+      # REQUIRED -- all three fall back to a sentinel rather than a null,
+      # because postBuild.substitute is map[string]string and an empty value is
+      # a YAML null the API server rejects outright.
+      VAULT_ISSUER_SERVER: "${VAULT_ISSUER_SERVER:-set-VAULT_ISSUER_SERVER.invalid}"
+      VAULT_ISSUER_PKI_PATH: "${VAULT_ISSUER_PKI_PATH:-set-VAULT_ISSUER_PKI_PATH.invalid}"
+      VAULT_ISSUER_AUTH_MOUNT_PATH: "${VAULT_ISSUER_AUTH_MOUNT_PATH:-set-VAULT_ISSUER_AUTH_MOUNT_PATH.invalid}"
+      VAULT_ISSUER_AUTH_ROLE: "${VAULT_ISSUER_AUTH_ROLE:-certmanager}"
+      VAULT_ISSUER_SERVICE_ACCOUNT: "${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}"
+      VAULT_ISSUER_CA_SECRET: "${VAULT_ISSUER_CA_SECRET:-vault-pki-ca}" # pragma: allowlist secret
+      VAULT_ISSUER_CA_KEY: "${VAULT_ISSUER_CA_KEY:-ca.crt}"
+---
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cert-manager-vault-issuer.yaml
