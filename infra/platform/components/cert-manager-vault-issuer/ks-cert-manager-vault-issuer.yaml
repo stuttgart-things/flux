@@ -40,8 +40,3 @@ spec:
       VAULT_ISSUER_SERVICE_ACCOUNT: "${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}"
       VAULT_ISSUER_CA_SECRET: "${VAULT_ISSUER_CA_SECRET:-vault-pki-ca}" # pragma: allowlist secret
       VAULT_ISSUER_CA_KEY: "${VAULT_ISSUER_CA_KEY:-ca.crt}"
----
-apiVersion: kustomize.config.k8s.io/v1alpha1
-kind: Component
-resources:
-  - ks-cert-manager-vault-issuer.yaml
