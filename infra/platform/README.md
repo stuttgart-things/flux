@@ -17,6 +17,7 @@ infra/platform/
     ├── cilium-gateway/           → ./infra/cilium/components/gateway        (requires cilium-lb)
     ├── cert-manager-install/     → ./infra/cert-manager/components/install
     ├── cert-manager-selfsigned/  → ./infra/cert-manager/components/selfsigned (requires cert-manager-install)
+    ├── cert-manager-vault-issuer/→ ./infra/cert-manager/components/vault-issuer  (requires cert-manager-install)
     ├── trust-manager/            → ./infra/trust-manager                    (requires cert-manager-install)
     ├── nfs-csi/                  → ./infra/nfs-csi
     ├── openebs/                  → ./infra/openebs
@@ -87,6 +88,7 @@ the same list:
 |---|---|
 | `cilium-gateway` | `cilium-lb` |
 | `cert-manager-selfsigned` | `cert-manager-install` |
+| `cert-manager-vault-issuer` | `cert-manager-install` |
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
 | `flux-web` | `cilium-gateway` |
@@ -126,7 +128,8 @@ postBuild:
 ```
 
 `CILIUM_LB_SUSPEND`, `CILIUM_GATEWAY_SUSPEND`, `CERT_MANAGER_INSTALL_SUSPEND`,
-`CERT_MANAGER_SELFSIGNED_SUSPEND`, `TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`,
+`CERT_MANAGER_SELFSIGNED_SUSPEND`, `CERT_MANAGER_VAULT_ISSUER_SUSPEND`,
+`TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`,
 `OPENEBS_SUSPEND`, `PROMETHEUS_SUSPEND`, `FLUX_WEB_SUSPEND`,
 `HEADLAMP_SUSPEND`, `RELOADER_SUSPEND`.
 
@@ -218,3 +221,40 @@ deleting it.
 If you are rebuilding rather than adopting, delete the old files in their own
 commit and let the prune finish **before** the bundle lands, so the teardown
 does not race the bundle's create — the two use the same child names.
+
+## The Vault ClusterIssuer, and the half that is not here
+
+`cert-manager-vault-issuer` deploys a `ClusterIssuer` that authenticates to
+Vault with a Kubernetes ServiceAccount token minted per request — no static
+token anywhere in the cluster.
+
+It carries only the half that belongs in Git. The Vault kubernetes auth backend,
+its role, and the CA `Secret` the issuer trusts are created by the VM pipeline's
+vault-auth step (`blueprints CreateVaultKubernetesAuth`), which is the only
+thing holding Vault credentials. Until that has run, the issuer sits not-Ready
+and any `Certificate` naming it waits — correct, and loud.
+
+Three variables are REQUIRED and fall back to sentinels:
+
+```yaml
+VAULT_ISSUER_SERVER: https://vault-vsphere.tiab.labda.sva.de:8200
+VAULT_ISSUER_PKI_PATH: pki/sign/4sthings.tiab.ssc.sva.de
+VAULT_ISSUER_AUTH_MOUNT_PATH: /v1/auth/<cluster>-certmanager
+```
+
+The mount path is per-cluster: the pipeline creates the backend as
+`<cluster>-<authName>`, so a cluster named `foo` gives `/v1/auth/foo-certmanager`.
+
+To have this issuer sign the wildcard, point `cert-manager-selfsigned` at it:
+
+```yaml
+CERT_MANAGER_SELFSIGNED_ISSUER: ${VAULT_ISSUER_NAME}
+```
+
+**It also ships `Role`/`RoleBinding` `cert-manager-tokenrequest`, and that is not
+optional.** The cert-manager chart rendered it up to v1.18.x and renders no
+`serviceaccounts/token` rule at all from v1.21.1, with no values flag to bring it
+back. Without it cert-manager cannot mint the token — and the ClusterIssuer
+still reports `Ready`, because cert-manager verifies only the Vault *login*,
+never the ability to sign. Certificates simply never get issued. Never accept
+`Ready=True` as proof here; the only proof is an issued `Certificate`.
