@@ -24,6 +24,7 @@ infra/platform/
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
     ├── external-secrets/         → ./infra/external-secrets/components/install
+    ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     └── reloader/                 → ./infra/reloader
@@ -94,6 +95,7 @@ the same list:
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
+| `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
 
@@ -106,6 +108,14 @@ Two constraints this table cannot express:
 - **`prometheus` and `kube-prometheus-stack` are alternatives.** Both deploy a
   Prometheus, into `monitoring` by default. Selecting both is not an error
   anywhere — it just scrapes the cluster twice.
+- **`external-secrets-vault-store` needs a Vault auth backend the bundle
+  cannot create.** The store is Flux's half; the Kubernetes auth mount, its
+  role and the bound ServiceAccount come from the VM pipeline
+  (`CreateVaultKubernetesAuth --auth-name eso`), because configuring a mount
+  needs a Vault token and the cluster's API address. Without it the store sits
+  at `Ready=False / InvalidProviderConfig`. And `Ready=True` only proves the
+  *login* — a store pointed at a KV mount outside the bound policy validates
+  identically and fails at the first ExternalSecret.
 - **`kube-prometheus-stack` needs a StorageClass that exists here.** Its
   default, `nfs4-csi`, is real only on clusters that also selected `nfs-csi`.
   Get it wrong and the Kustomization goes Ready — the Helm release installs
