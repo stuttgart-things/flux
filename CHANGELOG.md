@@ -1,3 +1,10 @@
+## [1.35.1](https://github.com/stuttgart-things/flux/compare/v1.35.0...v1.35.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **clusterbook:** PDNS_ENABLED needs a component, not a consumer variable ([#284](https://github.com/stuttgart-things/flux/issues/284)) ([dc39db1](https://github.com/stuttgart-things/flux/commit/dc39db145d0131f5300e6f172bc5a77bf75fcefa))
+
 # [1.35.0](https://github.com/stuttgart-things/flux/compare/v1.34.0...v1.35.0) (2026-08-26)
 
 
