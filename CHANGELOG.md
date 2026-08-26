@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/stuttgart-things/flux/compare/v1.33.1...v1.34.0) (2026-08-26)
+
+
+### Features
+
+* **openbao:** three selectable seal modes ([#282](https://github.com/stuttgart-things/flux/issues/282)) ([16a6b3e](https://github.com/stuttgart-things/flux/commit/16a6b3e696d111f07a8c472ea3d84393220b9809)), closes [#279](https://github.com/stuttgart-things/flux/issues/279) [#280](https://github.com/stuttgart-things/flux/issues/280)
+
 ## [1.33.1](https://github.com/stuttgart-things/flux/compare/v1.33.0...v1.33.1) (2026-08-26)
 
 
