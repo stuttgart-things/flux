@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/stuttgart-things/flux/compare/v1.34.0...v1.35.0) (2026-08-26)
+
+
+### Features
+
+* **clusterbook:** make the NetworkConfig name configurable ([#283](https://github.com/stuttgart-things/flux/issues/283)) ([8572d30](https://github.com/stuttgart-things/flux/commit/8572d30ced887f2b47ee9956b6ec7d65c03f94c3)), closes [clusterbook#182](https://github.com/clusterbook/issues/182)
+
 # [1.34.0](https://github.com/stuttgart-things/flux/compare/v1.33.1...v1.34.0) (2026-08-26)
 
 
