@@ -61,6 +61,10 @@ jobs:
           sudo mv kustomize /usr/local/bin/
       - name: Every component is buildable and the bundle composes
         run: ./hack/check-bundle-components.sh
+      - name: Every postBuild.substitute value is a string
+        run: |
+          pip install --quiet pyyaml
+          python3 ./hack/check-substitute-strings.py
 
   renovate:
     name: Renovate config
