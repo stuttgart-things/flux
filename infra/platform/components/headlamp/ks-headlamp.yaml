@@ -45,7 +45,7 @@ spec:
     substitute:
       HEADLAMP_NAMESPACE: "${HEADLAMP_NAMESPACE:-headlamp}"
       # renovate: datasource=helm depName=headlamp registryUrl=https://kubernetes-sigs.github.io/headlamp
-      HEADLAMP_VERSION: "${HEADLAMP_VERSION:-0.44.0}"
+      HEADLAMP_VERSION: "${HEADLAMP_VERSION:-0.45.0}"
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
       HOSTNAME: "${HEADLAMP_HOSTNAME:-headlamp}"
