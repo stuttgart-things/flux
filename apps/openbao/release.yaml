@@ -6,17 +6,20 @@
 # Vault 1.15.0 up, so an existing 1.20.x cannot take that path at all. Standing
 # a fresh one up and moving workloads over is the path that exists.
 #
-# AUTO-UNSEAL IS THE POINT. This uses a real `seal "transit"` stanza -- the
-# instance asks another Vault/OpenBao to unwrap its master key on every start.
-# It replaces the third-party operator pattern (pytoshka/vault-autounseal), which
-# keeps the shamir keys in a Secret in the same namespace as the server they
-# unseal: anyone who can read that namespace can both unseal it and hold its
-# root token.
+# THE SEAL IS NOT HERE. This base deploys a shamir OpenBao, which starts SEALED
+# and stays that way until a human unseals it. Pick one of the components:
 #
-# The seal token is periodic AND renewable, and OpenBao renews it itself
-# (`disable_renewal` defaults to false). That is what keeps this from becoming
-# the usual dead-static-token failure, where everything is green for a month and
-# then nothing can start.
+#   components/seal-transit   another Vault/OpenBao unwraps the master key.
+#                             Best, but needs a peer that already exists.
+#   components/seal-static    a 32-byte key from a Secret. For the FIRST
+#                             instance in an environment, where there is no
+#                             peer to chain to.
+#   components/seal-none      explicitly nothing: shamir, unsealed by hand.
+#
+# The seal lives in components rather than in a variable because it is a block
+# in an HCL document -- there is no substitution that can conditionally omit a
+# stanza, and a half-written seal stanza does not fail, it starts an instance
+# that cannot be unsealed by the mechanism anyone expects.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -64,27 +67,6 @@ spec:
         # the HelmRelease reports installed.
         storageClass: ${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}
 
-      # The transit seal talks TLS to another Vault whose certificate is signed
-      # by an internal CA. trust-manager publishes that bundle into every
-      # namespace; without it the seal fails with x509 and the pod never
-      # becomes ready.
-      volumes:
-        - name: trust-bundle
-          configMap:
-            name: ${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
-      volumeMounts:
-        - name: trust-bundle
-          mountPath: /etc/ssl/custom
-          readOnly: true
-
-      # BAO_TOKEN for the transit seal. Kept out of the config file on purpose:
-      # the config is rendered into a ConfigMap, and a token in a ConfigMap is a
-      # token in plaintext for anyone with get on the namespace.
-      extraSecretEnvironmentVars:
-        - envName: BAO_TOKEN
-          secretName: ${OPENBAO_SEAL_SECRET:-openbao-transit-seal}
-          secretKey: ${OPENBAO_SEAL_SECRET_KEY:-token}
-
       standalone:
         enabled: true
         config: |
@@ -102,9 +84,3 @@ spec:
 
           service_registration "kubernetes" {}
 
-          seal "transit" {
-            address     = "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}"
-            key_name    = "${OPENBAO_SEAL_KEY_NAME:-openbao-unseal}"
-            mount_path  = "${OPENBAO_SEAL_MOUNT_PATH:-transit/}"
-            tls_ca_cert = "/etc/ssl/custom/${OPENBAO_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
-          }

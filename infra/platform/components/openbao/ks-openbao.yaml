@@ -39,6 +39,20 @@ spec:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
   path: ./apps/openbao
+  # WHICH SEAL. Substituted by the parent before this is applied, so one
+  # component covers all three modes:
+  #
+  #   transit  another Vault/OpenBao unwraps the key -- nothing that can unseal
+  #            this instance is stored near it. Needs a peer to already exist.
+  #   static   a 32-byte key from a Secret. For the FIRST instance in an
+  #            environment, where there is no peer to chain to.
+  #   none     shamir. Starts SEALED after every restart until a human unseals
+  #            it. Legitimate, but not something to discover during an incident.
+  #
+  # Named on the components line rather than hidden in a variable default, so a
+  # cluster's seal choice is visible where its apps are listed.
+  components:
+    - ./components/seal-${OPENBAO_SEAL_MODE:-transit}
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
@@ -51,10 +65,19 @@ spec:
       OPENBAO_STORAGE_CLASS: "${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}" # REQUIRED
       OPENBAO_STORAGE_SIZE: "${OPENBAO_STORAGE_SIZE:-8Gi}"
 
-      # ---- transit auto-unseal ------------------------------------------
-      OPENBAO_SEAL_ADDRESS: "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}" # REQUIRED
+      # ---- seal: transit ------------------------------------------------
+      OPENBAO_SEAL_ADDRESS: "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}"
       OPENBAO_SEAL_KEY_NAME: "${OPENBAO_SEAL_KEY_NAME:-openbao-unseal}"
       OPENBAO_SEAL_MOUNT_PATH: "${OPENBAO_SEAL_MOUNT_PATH:-transit/}"
+
+      # ---- seal: static -------------------------------------------------
+      # An OPAQUE LABEL, not a version to be clever with -- but it MUST change
+      # whenever the key does, or OpenBao cannot tell them apart and whatever
+      # was sealed with the old key is unreadable.
+      OPENBAO_SEAL_KEY_ID: "${OPENBAO_SEAL_KEY_ID:-set-OPENBAO_SEAL_KEY_ID}"
+
+      # ---- the Secret either seal reads ---------------------------------
+      # transit: a periodic renewable token. static: a 32-byte key.
       OPENBAO_SEAL_SECRET: "${OPENBAO_SEAL_SECRET:-openbao-transit-seal}"
       OPENBAO_SEAL_SECRET_KEY: "${OPENBAO_SEAL_SECRET_KEY:-token}"
       OPENBAO_TRUST_BUNDLE_CONFIGMAP: "${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"

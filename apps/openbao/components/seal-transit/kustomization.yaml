@@ -1,0 +1,65 @@
+---
+# seal "transit" -- another Vault or OpenBao unwraps the master key on start.
+#
+# The strongest of the three: nothing that can unseal this instance is stored
+# anywhere near it. It is also the only one that needs something to already
+# exist, which is why it cannot be the base.
+#
+# Requires, none of which this component can check:
+#   * OPENBAO_SEAL_ADDRESS reachable, holding the transit mount and key
+#   * a Secret with a token allowed to encrypt/decrypt with that key.
+#     Make it PERIODIC and RENEWABLE -- OpenBao renews it itself
+#     (disable_renewal defaults false), and that is the whole reason this does
+#     not become a static token that dies a month later with everything green.
+#   * the CA that signed the peer's certificate, or the seal fails on x509 and
+#     the pod never becomes ready while the HelmRelease reports installed.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HelmRelease
+      name: openbao
+    patch: |
+      - op: add
+        path: /spec/values/server/volumes
+        value:
+          - name: trust-bundle
+            configMap:
+              name: ${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+      - op: add
+        path: /spec/values/server/volumeMounts
+        value:
+          - name: trust-bundle
+            mountPath: /etc/ssl/custom
+            readOnly: true
+      # BAO_TOKEN via env, never in the config: the chart renders that config
+      # into a ConfigMap, and a token there is plaintext to anyone with get.
+      - op: add
+        path: /spec/values/server/extraSecretEnvironmentVars
+        value:
+          - envName: BAO_TOKEN
+            secretName: ${OPENBAO_SEAL_SECRET:-openbao-transit-seal}
+            secretKey: ${OPENBAO_SEAL_SECRET_KEY:-token}
+      - op: replace
+        path: /spec/values/server/standalone/config
+        value: |
+          ui = true
+
+          listener "tcp" {
+            tls_disable     = 1
+            address         = "[::]:8200"
+            cluster_address = "[::]:8201"
+          }
+
+          storage "raft" {
+            path = "/openbao/data"
+          }
+
+          service_registration "kubernetes" {}
+
+          seal "transit" {
+            address     = "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}"
+            key_name    = "${OPENBAO_SEAL_KEY_NAME:-openbao-unseal}"
+            mount_path  = "${OPENBAO_SEAL_MOUNT_PATH:-transit/}"
+            tls_ca_cert = "/etc/ssl/custom/${OPENBAO_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+          }

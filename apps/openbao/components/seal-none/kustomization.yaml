@@ -1,0 +1,14 @@
+---
+# No seal: plain shamir.
+#
+# Deliberately an EMPTY component rather than "just leave it out", so that the
+# consumer's `components:` line always names the seal. A cluster whose seal
+# choice is invisible is a cluster where nobody remembers what unseals it --
+# and this is the one option where the answer is "a human, every restart".
+#
+# The instance starts SEALED after every pod restart and stays down until
+# somebody runs `bao operator unseal`. That is a legitimate choice for a
+# short-lived or hand-held instance; it is not one to discover during an
+# incident.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
