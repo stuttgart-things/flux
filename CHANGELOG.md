@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/stuttgart-things/flux/compare/v1.31.1...v1.32.0) (2026-08-26)
+
+
+### Features
+
+* **apps:** OpenBao with a real transit auto-unseal ([#275](https://github.com/stuttgart-things/flux/issues/275)) ([cc5e405](https://github.com/stuttgart-things/flux/commit/cc5e405c2e769dc058f3bfaef519dcc5b45129ed))
+
 ## [1.31.1](https://github.com/stuttgart-things/flux/compare/v1.31.0...v1.31.1) (2026-08-26)
 
 
