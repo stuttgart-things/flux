@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/stuttgart-things/flux/compare/v1.28.1...v1.29.0) (2026-08-26)
+
+
+### Features
+
+* **platform:** add external-secrets and kube-prometheus-stack components ([#264](https://github.com/stuttgart-things/flux/issues/264)) ([1647498](https://github.com/stuttgart-things/flux/commit/16474985e2b4323b77efbba7396e8c94834ce79a))
+
 ## [1.28.1](https://github.com/stuttgart-things/flux/compare/v1.28.0...v1.28.1) (2026-08-25)
 
 
