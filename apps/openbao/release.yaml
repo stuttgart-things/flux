@@ -37,10 +37,19 @@ spec:
       interval: 12h
   values:
     server:
+      # NO image.tag, deliberately. The chart renders
+      #   {{ .Values.server.image.tag | default (trimPrefix "v" .Chart.AppVersion) }}
+      # so an unset tag follows the chart AND gets the leading "v" stripped,
+      # while an explicit one does not. The image tags are 2.6.2; the GitHub
+      # release and the chart's appVersion are v2.6.2. Setting the obvious
+      # value yields quay.io/openbao/openbao:v2.6.2, which does not exist:
+      #   failed to resolve reference ...: not found
+      #
+      # Nor is it a substitute variable: an empty default renders YAML null, and
+      # postBuild.substitute is map[string]string. hack/check-substitute-strings.py
+      # rejects it -- correctly.
       image:
         repository: openbao/openbao
-        # renovate: datasource=docker depName=openbao/openbao
-        tag: "${OPENBAO_VERSION:-v2.6.2}"
 
       # The chart's Ingress stays off -- published through the shared Gateway
       # by httproute.yaml, like everything else in this bundle.
