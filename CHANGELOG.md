@@ -1,3 +1,10 @@
+## [1.29.1](https://github.com/stuttgart-things/flux/compare/v1.29.0...v1.29.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **platform:** external-secrets passed a bool into postBuild.substitute ([#266](https://github.com/stuttgart-things/flux/issues/266)) ([68cb314](https://github.com/stuttgart-things/flux/commit/68cb314eda8c48d3f2e5ea87b7196d5c3c72c515))
+
 # [1.29.0](https://github.com/stuttgart-things/flux/compare/v1.28.1...v1.29.0) (2026-08-26)
 
 
