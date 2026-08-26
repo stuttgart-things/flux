@@ -36,15 +36,19 @@ spec:
     substitute:
       MINIO_NAMESPACE: "${MINIO_NAMESPACE:-minio}"
       # CHART, REGISTRY, REPOSITORY and IMAGE_TAG are deliberately NOT set here.
-      # The base already defaults to chart 16.0.10 with
-      # ghcr.io/stuttgart-things/minio:2025.4.22-debian-12-r1 -- exactly what
-      # platform-sthings runs.
+      # The base defaults to chart 16.0.10 with
+      # ghcr.io/stuttgart-things/minio:2025.4.22-debian-12-r1, which is what
+      # platform-sthings runs -- and that is a CHOICE, not lag: it predates
+      # MinIO's licence change. Newer is not better here. Do not "update" this
+      # because a higher number exists.
       #
-      # I overrode them with chart 17.0.21 and the pull failed. Chart 17 splits
-      # the console into its OWN deployment with its OWN image,
-      # ghcr.io/bitnami/minio-object-browser, which is not mirrored -- so the
-      # server came up and the console sat in ErrImagePull. Bumping the chart
-      # here would mean mirroring a second image first.
+      # I overrode it with chart 17.0.21 and the console failed to pull. Chart
+      # 17 splits the console into its own deployment with its own image, and
+      # the base parameterises the registry globally but not that repository,
+      # so it resolved to ghcr.io/bitnami/minio-object-browser. The mirror does
+      # carry ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3,
+      # so chart 17 is reachable -- it needs the console repository set too.
+      # That is a licence decision first and a config change second.
       MINIO_INGRESS_ENABLED: "false"
       MINIO_INGRESS_CLASS: "${MINIO_INGRESS_CLASS:-nginx}"
       # REQUIRED. A PVC that never binds leaves the pod Pending while the
