@@ -1,3 +1,10 @@
+## [1.32.2](https://github.com/stuttgart-things/flux/compare/v1.32.1...v1.32.2) (2026-08-26)
+
+
+### Bug Fixes
+
+* **openbao:** do not set image.tag ([#277](https://github.com/stuttgart-things/flux/issues/277)) ([aaa878b](https://github.com/stuttgart-things/flux/commit/aaa878bd2d3cd633c2b783903c4824205efede2b))
+
 ## [1.32.1](https://github.com/stuttgart-things/flux/compare/v1.32.0...v1.32.1) (2026-08-26)
 
 
