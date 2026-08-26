@@ -256,3 +256,15 @@ same PR:
 It sits after the broad `stuttgart-things images` rule and overrides it for
 `homerun2-**`; everything else stays in the combined group. Verify group names
 with `task preview-renovate` — they appear as branch names before any PR exists.
+
+`clusterbook` gets the same treatment for a second reason: in the combined
+`stuttgart-things images` group a patch-only bump inherits the group's update
+type, so `clusterbook v1.25.9 → v1.25.14` (patch, auto-mergeable on its own) sat
+open for days behind an unrelated `clusterbook-operator` minor in #238. Its rule
+strips only the org prefix, so `clusterbook*` splits into two groups —
+`clusterbook` and `clusterbook-operator` — each still carrying its image and
+`-kustomize` artifact together:
+
+```json
+"groupName": "{{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/' '' depName)}}}"
+```

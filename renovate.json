@@ -79,6 +79,16 @@
       "groupName": "homerun2 {{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/homerun2-' '' depName)}}}"
     },
     {
+      "description": "Group clusterbook and clusterbook-operator each on their own, so a component's image and its -kustomize artifact always move in the same PR (same reason as homerun2, see #208) and a patch-only bump is not held back by an unrelated minor in the combined stuttgart-things group. Overrides the broad stuttgart-things grouping above.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/clusterbook**"
+      ],
+      "groupName": "{{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/' '' depName)}}}"
+    },
+    {
       "description": "Auto-merge patch and digest updates once CI passes \u2014 keeps low-risk bumps from piling up",
       "matchUpdateTypes": [
         "patch",
