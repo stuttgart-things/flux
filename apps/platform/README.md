@@ -36,6 +36,23 @@ That is on purpose: left optional, Flux proceeds with the variables unset and
 installs an ArgoCD nobody can log into, or a MinIO with an empty admin
 password, and reports success either way.
 
+## `vault` never becomes Ready on its own
+
+Its component is the only one here with `wait: false`, and that is not a
+workaround. A fresh Vault starts `Initialized=false, Sealed=true`; its
+readiness probe fails while sealed; so a waiting Kustomization can never
+succeed on first install. It times out and retries forever against a Vault
+behaving exactly as designed, until a human runs `vault operator init` and
+unseals it.
+
+Measured on cluster-test4, deploying all five components at once:
+
+```
+vault    False  timeout waiting for: [StatefulSet/vault/vault-server InProgress]
+         pod Running 0/1, Sealed=true
+openbao  True   unsealed by its transit seal, no human involved
+```
+
 ## vault vs openbao
 
 `vault` is here for the instances that already exist. **Prefer `openbao` for

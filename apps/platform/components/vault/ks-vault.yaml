@@ -29,7 +29,22 @@ spec:
   force: false
   prune: true
   suspend: ${VAULT_SUSPEND:-false}
-  wait: true
+  # wait: false, unlike every other component here, and this is the whole
+  # vault-versus-openbao argument made concrete.
+  #
+  # A fresh Vault comes up Initialized=false, Sealed=true. Its readiness probe
+  # fails while sealed, so the pod is never Ready, so a waiting Kustomization
+  # can NEVER succeed on first install -- it times out, reports failure, and
+  # keeps retrying against a Vault that is behaving exactly as designed.
+  # Somebody has to run `vault operator init` and unseal it by hand.
+  #
+  # Measured on cluster-test4: 'timeout waiting for: [StatefulSet/vault/
+  # vault-server status: InProgress]', with the pod Running 0/1 and
+  # Sealed=true.
+  #
+  # The openbao component beside this one waits, and can, because a transit or
+  # static seal unseals it on every start without a human.
+  wait: ${VAULT_WAIT:-false}
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
