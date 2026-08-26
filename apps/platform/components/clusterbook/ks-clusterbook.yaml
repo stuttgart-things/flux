@@ -43,6 +43,14 @@ spec:
       CLUSTERBOOK_VERSION: "${CLUSTERBOOK_VERSION:-v1.25.14}"
       FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
 
+      # ---- the address pool ---------------------------------------------
+      # A NetworkConfig CR, which is NOT shipped by this app -- it is the
+      # allocation ledger and belongs to whoever owns the addresses. The chart
+      # defaults the name to networks-labul, so a second lab must set this or
+      # it reads a pool that is not its own.
+      CLUSTERBOOK_CONFIG_NAME: "${CLUSTERBOOK_CONFIG_NAME:-networks-labul}"
+      CLUSTERBOOK_CONFIG_LOCATION: "${CLUSTERBOOK_CONFIG_LOCATION:-clusterbook}"
+
       # ---- PowerDNS -----------------------------------------------------
       # PDNS_ENABLED and DDWRT_ENABLED are NOT here, and cannot be: they are
       # bools, and postBuild.substitute is map[string]string -- a bool fails the

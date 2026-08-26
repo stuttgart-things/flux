@@ -51,6 +51,12 @@ spec:
           DDWRT_HOST: "${DDWRT_HOST:-}"
           DDWRT_USER: "${DDWRT_USER:-}"
           DDWRT_ZONE: "${DDWRT_ZONE:-}"
+          # Which NetworkConfig CR holds the address pool. The chart bakes in
+          # CONFIG_NAME: networks-labul -- a lab-specific name inside a shared
+          # artifact, so a second lab silently reads a pool that is not its own.
+          LOAD_CONFIG_FROM: "${CLUSTERBOOK_LOAD_CONFIG_FROM:-cr}"
+          CONFIG_LOCATION: "${CLUSTERBOOK_CONFIG_LOCATION:-clusterbook}"
+          CONFIG_NAME: "${CLUSTERBOOK_CONFIG_NAME:-networks-labul}"
     # Add secretRefs for PDNS token + DD-WRT password to Deployment
     - target:
         kind: Deployment
