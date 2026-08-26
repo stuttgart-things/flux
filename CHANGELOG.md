@@ -1,3 +1,10 @@
+## [1.32.3](https://github.com/stuttgart-things/flux/compare/v1.32.2...v1.32.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* **prometheus-msteams:** remove the legacy Teams proxy component ([#278](https://github.com/stuttgart-things/flux/issues/278)) ([810276b](https://github.com/stuttgart-things/flux/commit/810276b4b9940e5eb8c39afb6224cc6fd3aca3ba)), closes [#147](https://github.com/stuttgart-things/flux/issues/147)
+
 ## [1.32.2](https://github.com/stuttgart-things/flux/compare/v1.32.1...v1.32.2) (2026-08-26)
 
 
