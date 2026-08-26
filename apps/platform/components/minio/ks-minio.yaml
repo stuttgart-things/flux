@@ -1,0 +1,57 @@
+---
+# MinIO → ./apps/minio
+#
+# dependsOn cilium-gateway: the httproute component renders two routes, API and
+# console, which are separate hostnames on purpose -- the console redirects to
+# the API and a single host breaks uploads in ways that look like a client bug.
+#
+# REQUIRES a StorageClass that exists here, and a Secret with
+# MINIO_ADMIN_USER / MINIO_ADMIN_PASSWORD.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${MINIO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/minio
+  components:
+    - ./components/httproute
+  postBuild:
+    substitute:
+      MINIO_NAMESPACE: "${MINIO_NAMESPACE:-minio}"
+      MINIO_VERSION: "${MINIO_VERSION:-17.0.21}"
+      MINIO_REGISTRY: "${MINIO_REGISTRY:-ghcr.io}"
+      MINIO_REPOSITORY: "${MINIO_REPOSITORY:-stuttgart-things/minio}"
+      MINIO_IMAGE_TAG: "${MINIO_IMAGE_TAG:-2026.4.22-debian-12-r1}"
+      MINIO_INGRESS_ENABLED: "false"
+      MINIO_INGRESS_CLASS: "${MINIO_INGRESS_CLASS:-nginx}"
+      # REQUIRED. A PVC that never binds leaves the pod Pending while the
+      # HelmRelease reports installed.
+      STORAGE_CLASS: "${MINIO_STORAGE_CLASS:-set-MINIO_STORAGE_CLASS}"
+      MINIO_STORAGE_SIZE: "${MINIO_STORAGE_SIZE:-20Gi}"
+      CLUSTER_ISSUER: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
+      INGRESS_HOSTNAME_API: "${MINIO_HOSTNAME_API:-minio}"
+      INGRESS_HOSTNAME_CONSOLE: "${MINIO_HOSTNAME_CONSOLE:-minio-console}"
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+    substituteFrom:
+      - kind: Secret
+        name: ${MINIO_SECRET:-minio-secrets}
+        optional: false

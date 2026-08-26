@@ -7,6 +7,10 @@ pointing back at an existing base in this repo. The consumer's
 `postBuild.substitute` fills their `${VAR:-default}` values one hop, and each
 child then renders its own base.
 
+The APP layer lives in a second bundle, [`apps/platform`](../../apps/platform)
+— argo-cd, openbao, vault, rancher, minio — selected the same way and reading
+the same `INFRA_*` names.
+
 ## Layout
 
 ```
@@ -25,7 +29,6 @@ infra/platform/
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
     ├── external-secrets/         → ./infra/external-secrets/components/install
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
-    ├── openbao/                  → ./apps/openbao                           (requires cilium-gateway)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     └── reloader/                 → ./infra/reloader
@@ -97,7 +100,6 @@ the same list:
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
 | `external-secrets-vault-store` | `external-secrets` |
-| `openbao` | `cilium-gateway` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
 
@@ -118,12 +120,6 @@ Two constraints this table cannot express:
   at `Ready=False / InvalidProviderConfig`. And `Ready=True` only proves the
   *login* — a store pointed at a KV mount outside the bound policy validates
   identically and fails at the first ExternalSecret.
-- **`openbao` needs a transit key somewhere else.** `OPENBAO_SEAL_ADDRESS` must
-  point at a Vault or OpenBao holding it, and the Secret it names must carry a
-  token allowed to use it — created outside this bundle, because it needs
-  credentials for that other instance. Wrong address or wrong token: the pod
-  stays not-ready on a seal error while the HelmRelease reports installed. It
-  also needs a real `OPENBAO_STORAGE_CLASS`.
 - **`kube-prometheus-stack` needs a StorageClass that exists here.** Its
   default, `nfs4-csi`, is real only on clusters that also selected `nfs-csi`.
   Get it wrong and the Kustomization goes Ready — the Helm release installs
@@ -229,7 +225,6 @@ Bundle-level names (they map onto differently-named base variables):
 | `INFRA_TLS_SECRET` | `wildcard-tls` | `CILIUM_GATEWAY_TLS_SECRET`, `CERT_MANAGER_SELFSIGNED_{CERT,SECRET}_NAME` |
 | `PROMETHEUS_HOSTNAME` | `prometheus` | prometheus `HOSTNAME` (the base's name is too generic to expose) |
 | `KPS_HOSTNAME` | `grafana` | kube-prometheus-stack `HOSTNAME` (same reason) |
-| `OPENBAO_HOSTNAME` | `openbao` | openbao `HOSTNAME` (same reason) |
 | `FLUX_WEB_HOSTNAME` | `flux` | flux-web `HOSTNAME` (same reason) |
 | `HEADLAMP_HOSTNAME` | `headlamp` | headlamp `HOSTNAME` (same reason) |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |

@@ -23,8 +23,8 @@ metadata:
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
-    kustomization.stuttgart-things.com/type: infrastructure
-    kustomization.stuttgart-things.com/bundle: infra-platform
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
 spec:
   dependsOn:
     - name: cilium-gateway
@@ -37,7 +37,7 @@ spec:
   wait: true
   sourceRef:
     kind: GitRepository
-    name: ${FLUX_SOURCE:-flux-infra}
+    name: ${APPS_SOURCE:-flux-apps}
   path: ./apps/openbao
   postBuild:
     substitute:

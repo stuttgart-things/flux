@@ -1,0 +1,62 @@
+---
+# HashiCorp Vault → ./apps/vault
+#
+# Kept for the instances that already exist. For anything NEW prefer the
+# `openbao` component beside this one: Vault is BUSL-licensed from 1.15.0 up,
+# and its auto-unseal here is an external operator that stores the shamir keys
+# and the root token in a Secret next to the server they unseal, whereas
+# OpenBao carries a real seal stanza. The two are not migratable in either
+# direction beyond Vault 1.14.1 -- see apps/platform/README.md.
+#
+# dependsOn cilium-gateway for the HTTPRoute and cert-manager-install for the
+# Certificate the chart's pre-release renders.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${VAULT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/vault
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: "${VAULT_NAMESPACE:-vault}"
+      # The Bitnami chart. Note the version here is the CHART, not Vault --
+      # the server version is TAG below, and the two look nothing alike.
+      VAULT_VERSION: "${VAULT_CHART_VERSION:-1.9.0}"
+      REGISTRY: "${VAULT_REGISTRY:-ghcr.io}"
+      REPOSITORY: "${VAULT_REPOSITORY:-stuttgart-things/vault}"
+      TAG: "${VAULT_IMAGE_TAG:-1.20.2-debian-12-r2}"
+      PULL_POLICY: "${VAULT_PULL_POLICY:-IfNotPresent}"
+      INJECTOR_ENABLED: "true"
+      INJECTOR_REPOSITORY: "${VAULT_INJECTOR_REPOSITORY:-stuttgart-things/vault-k8s}"
+      INJECTOR_TAG: "${VAULT_INJECTOR_TAG:-1.7.0-debian-12-r4}"
+      INJECTOR_PULL_POLICY: "${VAULT_PULL_POLICY:-IfNotPresent}"
+      OS_SHELL_REPOSITORY: "${VAULT_OS_SHELL_REPOSITORY:-stuttgart-things/os-shell}"
+      OS_SHELL_TAG: "${VAULT_OS_SHELL_TAG:-12-debian-12-r50}"
+      OS_SHELL_PULL_POLICY: "${VAULT_PULL_POLICY:-IfNotPresent}"
+      ENABLE_VOLUME_PERMISSIONS: "true"
+      INGRESS_ENABLED: "false"
+      INGRESS_CLASS_NAME: "${VAULT_INGRESS_CLASS:-nginx}"
+      # REQUIRED: a PVC that never binds leaves the pod Pending silently.
+      STORAGE_CLASS: "${VAULT_STORAGE_CLASS:-set-VAULT_STORAGE_CLASS}"
+      ISSUER_NAME: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
+      ISSUER_KIND: "${APPS_CLUSTER_ISSUER_KIND:-ClusterIssuer}"
+      VAULT_INGRESS_HOSTNAME: "${VAULT_HOSTNAME:-vault}"
+      VAULT_INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

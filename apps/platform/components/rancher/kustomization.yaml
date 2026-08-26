@@ -1,0 +1,9 @@
+---
+# rancher
+#
+# REQUIRES cilium-gateway and cert-manager-install from the infra bundle, and a
+# Secret with BOOTSTRAP_PASSWORD (first install only).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-rancher.yaml

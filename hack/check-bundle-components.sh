@@ -16,9 +16,14 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
-components_dir="infra/platform/components"
+# Both bundles. apps/platform mirrors infra/platform for the app layer, and a
+# check that silently covers only one of them is worse than none: it reports OK
+# while half the components are unverified.
+bundles="infra/platform apps/platform"
 fail=0
 
+for components_dir in $bundles; do
+components_dir="$components_dir/components"
 for dir in "$components_dir"/*/; do
   name=$(basename "$dir")
   if [ ! -f "$dir/kustomization.yaml" ] && [ ! -f "$dir/kustomization.yml" ] && [ ! -f "$dir/Kustomization" ]; then
@@ -31,6 +36,7 @@ for dir in "$components_dir"/*/; do
     fail=1
   fi
 done
+done
 
 [ "$fail" -eq 0 ] || exit 1
 
@@ -41,23 +47,28 @@ done
 tmp=".bundle-check"
 rm -rf "$tmp"; mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT
-{
-  echo "---"
-  echo "apiVersion: kustomize.config.k8s.io/v1beta1"
-  echo "kind: Kustomization"
-  echo "resources:"
-  echo "  - ../infra/platform/root"
-  echo "components:"
-  for dir in "$components_dir"/*/; do echo "  - ../$dir"; done
-} > "$tmp/kustomization.yaml"
 
-if ! out=$(kustomize build "$tmp" 2>&1); then
-  echo "FAIL: the bundle does not build with every component selected" >&2
-  echo "$out" >&2
-  exit 1
-fi
+total=0
+for bundle in $bundles; do
+  {
+    echo "---"
+    echo "apiVersion: kustomize.config.k8s.io/v1beta1"
+    echo "kind: Kustomization"
+    echo "resources:"
+    echo "  - ../$bundle/root"
+    echo "components:"
+    for dir in "$bundle"/components/*/; do echo "  - ../$dir"; done
+  } > "$tmp/kustomization.yaml"
 
-count=$(grep -c '^kind: Kustomization' <<<"$out" || true)
-# Count via the glob rather than `ls | wc -l` (SC2012).
-component_dirs=("$components_dir"/*/)
-echo "OK: ${#component_dirs[@]} components, bundle builds, $count child Kustomizations"
+  if ! out=$(kustomize build "$tmp" 2>&1); then
+    echo "FAIL: $bundle does not build with every component selected" >&2
+    echo "$out" >&2
+    exit 1
+  fi
+
+  n=$(ls -d "$bundle"/components/*/ | wc -l)
+  count=$(grep -c '^kind: Kustomization' <<<"$out" || true)
+  echo "OK: $bundle -- $n components, builds, $count child Kustomizations"
+  total=$((total + n))
+done
+echo "OK: $total components across $(echo $bundles | wc -w) bundles"

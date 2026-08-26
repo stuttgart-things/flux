@@ -1,0 +1,8 @@
+---
+# The apps bundle's path target.
+#
+# Deliberately empty, exactly like infra/platform/root: every app is opt-in and
+# the consumer selects them with `spec.components` on its own Flux Kustomization.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

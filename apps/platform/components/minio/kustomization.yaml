@@ -1,0 +1,9 @@
+---
+# minio
+#
+# REQUIRES cilium-gateway from the infra bundle, a real MINIO_STORAGE_CLASS,
+# and a Secret with the admin credentials.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-minio.yaml
