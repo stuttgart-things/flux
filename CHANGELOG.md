@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/stuttgart-things/flux/compare/v1.31.0...v1.31.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **argo-cd:** stop forcing INGRESS_* on Gateway consumers ([#274](https://github.com/stuttgart-things/flux/issues/274)) ([1a61d43](https://github.com/stuttgart-things/flux/commit/1a61d43b10e1b4eb7a0f9e8bce5c13d4de0e309e))
+
 # [1.31.0](https://github.com/stuttgart-things/flux/compare/v1.30.0...v1.31.0) (2026-08-26)
 
 
