@@ -1,3 +1,10 @@
+## [1.32.1](https://github.com/stuttgart-things/flux/compare/v1.32.0...v1.32.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **clusterscope:** drop the multi-repo OCIRepository and Kustomization ([#276](https://github.com/stuttgart-things/flux/issues/276)) ([8eb6b9c](https://github.com/stuttgart-things/flux/commit/8eb6b9cd3d920df9c8daa00f5a5ec69b225c2e4f))
+
 # [1.32.0](https://github.com/stuttgart-things/flux/compare/v1.31.1...v1.32.0) (2026-08-26)
 
 
