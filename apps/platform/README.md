@@ -36,6 +36,18 @@ That is on purpose: left optional, Flux proceeds with the variables unset and
 installs an ArgoCD nobody can log into, or a MinIO with an empty admin
 password, and reports success either way.
 
+## minio stays on chart 16
+
+Not lag — it predates MinIO's licence change, and the pin is the point. A
+higher number is not an improvement here, so the component sets no chart or
+image values at all and lets the base decide.
+
+Chart 17 does work if it is ever wanted: it splits the console into its own
+deployment, and the mirror carries
+`ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3` for it. The
+base parameterises the registry globally but not that repository, so it must be
+set as well. That is a licence decision first and a config change second.
+
 ## `vault` never becomes Ready on its own
 
 Its component is the only one here with `wait: false`, and that is not a

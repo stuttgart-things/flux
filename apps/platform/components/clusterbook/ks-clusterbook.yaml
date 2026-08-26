@@ -1,0 +1,79 @@
+---
+# clusterbook -- IP allocation and the matching DNS record, in one call → ./apps/clusterbook
+#
+# dependsOn cilium-gateway (infra bundle) for its HTTPRoute.
+#
+# THIS IS LAB-BOUND, and selecting it elsewhere gives a service that answers and
+# can do nothing. It writes into ONE PowerDNS zone with ONE token: point
+# CLUSTERBOOK_PDNS_ZONE at a zone this token may change, or every reservation
+# fails at the DNS half after allocating an address. There is exactly one
+# instance today (infra-sthings, zone sthings-vsphere.labul.sva.de).
+#
+# Its /reserve endpoint is NOT idempotent -- it hands out a NEW address on every
+# call, so a retried pipeline leaks an address and a second DNS record while
+# every step still reports success. Callers should go through
+# `dagger -m clusterbook reserve-ip`, which asks /clusters/{name} first.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: clusterbook
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${CLUSTERBOOK_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/clusterbook
+  postBuild:
+    substitute:
+      CLUSTERBOOK_NAMESPACE: "${CLUSTERBOOK_NAMESPACE:-clusterbook}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook
+      CLUSTERBOOK_VERSION: "${CLUSTERBOOK_VERSION:-v1.25.14}"
+      FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
+
+      # ---- PowerDNS -----------------------------------------------------
+      # PDNS_ENABLED and DDWRT_ENABLED are NOT here, and cannot be: they are
+      # bools, and postBuild.substitute is map[string]string -- a bool fails the
+      # whole parent Kustomization, siblings included.
+      #
+      # THE CONSUMER SETS THEM DIRECTLY, and that works where this cannot,
+      # because kustomize keeps quotes exactly when dropping them would change
+      # the type:
+      #
+      #     PDNS_ENABLED: "true"        -> "true"        quotes kept
+      #     PDNS_ENABLED: "${VAR:-true}" -> ${VAR:-true}  quotes dropped
+      #
+      # So write PDNS_ENABLED: "true" in the cluster's own substitute map, the
+      # way infra-sthings already does. The base defaults it to "false", which
+      # yields a clusterbook that allocates addresses and writes no DNS.
+      PDNS_URL: "${CLUSTERBOOK_PDNS_URL:-set-CLUSTERBOOK_PDNS_URL}"
+      # The TRAILING DOT belongs here -- PowerDNS wants an absolute zone name,
+      # and appending another one later yields "zone..", which it rejects as
+      # unparsable. That has bitten the teardown path twice.
+      PDNS_ZONE: "${CLUSTERBOOK_PDNS_ZONE:-set-CLUSTERBOOK_PDNS_ZONE.}"
+
+      # ---- HTTPRoute ----------------------------------------------------
+      CLUSTERBOOK_HOSTNAME: "${CLUSTERBOOK_HOSTNAME:-clusterbook}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+    # PDNS_TOKEN, and DDWRT_PASSWORD when that backend is on. optional: false --
+    # left optional, clusterbook comes up with an empty token and every
+    # reservation allocates an address and then fails to write DNS, which looks
+    # like a PowerDNS problem rather than a missing secret.
+    substituteFrom:
+      - kind: Secret
+        name: ${CLUSTERBOOK_SECRET:-clusterbook-pdns-vars}
+        optional: false

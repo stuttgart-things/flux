@@ -1,0 +1,62 @@
+---
+# seal "static" -- a 32-byte key from a Secret, read as an environment variable.
+#
+# For the FIRST OpenBao in an environment, where there is no peer to chain the
+# transit seal to. Chicken-and-egg has to break somewhere, and this is OpenBao's
+# own answer to it.
+#
+# WHY THIS AND NOT AN UNSEAL OPERATOR. The alternative in circulation is
+# pytoshka/vault-autounseal, an operator that watches for a sealed pod and
+# submits the shamir keys. Compared with this:
+#
+#   * it is third-party code in the path to unsealing, with NO LICENSE and no
+#     push since 2025-06-10;
+#   * the Secret it needs holds the shamir keys AND the root token, beside the
+#     server they unseal -- read access to that namespace is full control;
+#   * it cannot rotate.
+#
+# This is honestly the same CLASS of trade-off -- a key that can unseal the
+# instance is stored in the cluster -- but it is smaller, native, and rotatable
+# via current_key/previous_key. Upstream says as much: use it when an existing
+# source of trust already holds the key material. Prefer seal-transit wherever
+# a peer exists.
+#
+# Generate the key:
+#   openssl rand -base64 32
+# and put it in a SOPS Secret. current_key_id is an OPAQUE LABEL, not a version
+# to be clever with -- but it MUST change whenever the key does, or OpenBao
+# cannot tell the two apart and the data sealed with the old one is lost.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HelmRelease
+      name: openbao
+    patch: |
+      - op: add
+        path: /spec/values/server/extraSecretEnvironmentVars
+        value:
+          - envName: OPENBAO_SEAL_STATIC_KEY
+            secretName: ${OPENBAO_SEAL_SECRET:-openbao-static-seal}
+            secretKey: ${OPENBAO_SEAL_SECRET_KEY:-key}
+      - op: replace
+        path: /spec/values/server/standalone/config
+        value: |
+          ui = true
+
+          listener "tcp" {
+            tls_disable     = 1
+            address         = "[::]:8200"
+            cluster_address = "[::]:8201"
+          }
+
+          storage "raft" {
+            path = "/openbao/data"
+          }
+
+          service_registration "kubernetes" {}
+
+          seal "static" {
+            current_key_id = "${OPENBAO_SEAL_KEY_ID:-set-OPENBAO_SEAL_KEY_ID}"
+            current_key    = "env://OPENBAO_SEAL_STATIC_KEY"
+          }

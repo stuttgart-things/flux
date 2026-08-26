@@ -40,13 +40,17 @@ spec:
         metadata:
           name: clusterbook-config
         data:
-          PDNS_ENABLED: ${PDNS_ENABLED:-false}
-          PDNS_URL: ${PDNS_URL:-}
-          PDNS_ZONE: ${PDNS_ZONE:-}
-          DDWRT_ENABLED: ${DDWRT_ENABLED:-false}
-          DDWRT_HOST: ${DDWRT_HOST:-}
-          DDWRT_USER: ${DDWRT_USER:-}
-          DDWRT_ZONE: ${DDWRT_ZONE:-}
+          # QUOTED: this is ConfigMap data, where every value must be a string.
+          # A bare `false` is a YAML bool and the apply is rejected. It only ever
+          # worked because both existing consumers passed 'true' quoted in their
+          # own substitute map -- these defaults would not have.
+          PDNS_ENABLED: "${PDNS_ENABLED:-false}"
+          PDNS_URL: "${PDNS_URL:-}"
+          PDNS_ZONE: "${PDNS_ZONE:-}"
+          DDWRT_ENABLED: "${DDWRT_ENABLED:-false}"
+          DDWRT_HOST: "${DDWRT_HOST:-}"
+          DDWRT_USER: "${DDWRT_USER:-}"
+          DDWRT_ZONE: "${DDWRT_ZONE:-}"
     # Add secretRefs for PDNS token + DD-WRT password to Deployment
     - target:
         kind: Deployment

@@ -35,14 +35,20 @@ spec:
   postBuild:
     substitute:
       MINIO_NAMESPACE: "${MINIO_NAMESPACE:-minio}"
-      MINIO_VERSION: "${MINIO_VERSION:-17.0.21}"
-      MINIO_REGISTRY: "${MINIO_REGISTRY:-ghcr.io}"
-      MINIO_REPOSITORY: "${MINIO_REPOSITORY:-stuttgart-things/minio}"
-      # 2025, not 2026. I typed the wrong year and the pull failed with
-      # "not found" -- a tag that looks entirely plausible and does not
-      # exist. This is what platform-sthings runs; the mirror also carries
-      # 2025.7.23-debian-12-r3, which is newer but unproven here.
-      MINIO_IMAGE_TAG: "${MINIO_IMAGE_TAG:-2025.4.22-debian-12-r1}"
+      # CHART, REGISTRY, REPOSITORY and IMAGE_TAG are deliberately NOT set here.
+      # The base defaults to chart 16.0.10 with
+      # ghcr.io/stuttgart-things/minio:2025.4.22-debian-12-r1, which is what
+      # platform-sthings runs -- and that is a CHOICE, not lag: it predates
+      # MinIO's licence change. Newer is not better here. Do not "update" this
+      # because a higher number exists.
+      #
+      # I overrode it with chart 17.0.21 and the console failed to pull. Chart
+      # 17 splits the console into its own deployment with its own image, and
+      # the base parameterises the registry globally but not that repository,
+      # so it resolved to ghcr.io/bitnami/minio-object-browser. The mirror does
+      # carry ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3,
+      # so chart 17 is reachable -- it needs the console repository set too.
+      # That is a licence decision first and a config change second.
       MINIO_INGRESS_ENABLED: "false"
       MINIO_INGRESS_CLASS: "${MINIO_INGRESS_CLASS:-nginx}"
       # REQUIRED. A PVC that never binds leaves the pod Pending while the
