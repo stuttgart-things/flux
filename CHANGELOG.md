@@ -1,3 +1,10 @@
+# [1.31.0](https://github.com/stuttgart-things/flux/compare/v1.30.0...v1.31.0) (2026-08-26)
+
+
+### Features
+
+* **renovate:** split clusterbook out of the combined images group ([#269](https://github.com/stuttgart-things/flux/issues/269)) ([cb39865](https://github.com/stuttgart-things/flux/commit/cb39865d24055d41b936b83ff849bd5ec266032a)), closes [#208](https://github.com/stuttgart-things/flux/issues/208) [#238](https://github.com/stuttgart-things/flux/issues/238) [pre-#238](https://github.com/pre-/issues/238)
+
 # [1.30.0](https://github.com/stuttgart-things/flux/compare/v1.29.1...v1.30.0) (2026-08-26)
 
 
