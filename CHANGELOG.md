@@ -1,3 +1,10 @@
+## [1.33.1](https://github.com/stuttgart-things/flux/compare/v1.33.0...v1.33.1) (2026-08-26)
+
+
+### Bug Fixes
+
+* **apps/platform:** minio image tag, and vault cannot wait ([#281](https://github.com/stuttgart-things/flux/issues/281)) ([5dad58b](https://github.com/stuttgart-things/flux/commit/5dad58b79dedb9b784e69c9c0c8e132aa6d0460b))
+
 # [1.33.0](https://github.com/stuttgart-things/flux/compare/v1.32.3...v1.33.0) (2026-08-26)
 
 
