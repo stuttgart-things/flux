@@ -112,11 +112,25 @@ Alertmanager routes `warning|critical` alerts to **Microsoft Teams**;
 `info` alerts and the always-on `Watchdog` fall through to the `null`
 receiver and are dropped.
 
-Delivery goes through the **`prometheus-msteams`** proxy (separate
-component) via a generic `webhook_configs` pointing at
-`http://prometheus-msteams.<ns>.svc.cluster.local:2000/alertmanager`. The
-proxy formats the Teams Adaptive Card, so the Teams webhook URL lives
-with that component, not here. See `infra/prometheus-msteams`.
+Delivery goes through the homerun2 notification pipeline:
+
+```
+AM ─▶ omni-pitcher /pitch/grafana ─▶ Redis stream "alerts"
+                                       └▶ notification-catcher ─▶ Teams
+```
+
+The `msteams` receiver posts to
+`http://homerun2-omni-pitcher.<ns>.svc.cluster.local/pitch/grafana` with
+a Bearer token (`${HOMERUN2_OMNI_PITCHER_AUTH_TOKEN}`). The catcher does
+the Adaptive Card formatting in version-controlled Go and applies its own
+`severity_min: warning` filter as a second-layer gate, so the Teams
+webhook URL lives with that component, not here. See
+`apps/homerun2/components/omni-pitcher` and
+`apps/homerun2/components/notification-catcher`.
+
+The receiver keeps the name `msteams` for continuity with existing
+routes. The `prometheus-msteams` proxy it used to point at was removed in
+#147.
 
 To add Slack/email, extend `alertmanager.config.receivers` in
 `release.yaml`.
