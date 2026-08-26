@@ -1,0 +1,41 @@
+---
+# Turns the PowerDNS backend on.
+#
+# A COMPONENT AND NOT A VARIABLE, for a reason that is easy to get wrong -- I
+# did. PDNS_ENABLED is a bool, and postBuild.substitute is map[string]string, so
+# a bundle component cannot carry it.
+#
+# The tempting conclusion is "then the consumer sets it, like infra-sthings
+# does". That works there because its Kustomization points DIRECTLY at
+# ./apps/clusterbook -- its substitute map IS the base's. Through a bundle
+# component there is a hop in between, and a variable the component does not
+# list never reaches the base. Measured: the consumer set PDNS_ENABLED: "true"
+# and the ConfigMap on the cluster still read 'false', with PDNS_URL and
+# PDNS_ZONE arriving correctly beside it because those ARE listed.
+#
+# Appends to spec.patches rather than replacing the existing ConfigMap patch:
+# later entries win, and nothing else has to be kept in sync.
+#
+# Selecting this without PDNS_URL, PDNS_ZONE and a Secret with PDNS_TOKEN gives
+# a clusterbook that allocates addresses and then fails to write DNS -- which
+# reads like a PowerDNS outage rather than missing config.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: Kustomization
+      name: clusterbook
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: clusterbook-config
+          patch: |
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: clusterbook-config
+            data:
+              PDNS_ENABLED: "true"

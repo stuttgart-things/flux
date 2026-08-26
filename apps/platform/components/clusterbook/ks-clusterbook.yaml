@@ -36,6 +36,12 @@ spec:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
   path: ./apps/clusterbook
+  # PowerDNS on. A component because PDNS_ENABLED is a bool and
+  # postBuild.substitute is map[string]string -- and because a consumer cannot
+  # set it either: through a bundle component there is a hop, and a variable
+  # this component does not list never reaches the base.
+  components:
+    - ./components/pdns
   postBuild:
     substitute:
       CLUSTERBOOK_NAMESPACE: "${CLUSTERBOOK_NAMESPACE:-clusterbook}"
@@ -52,20 +58,6 @@ spec:
       CLUSTERBOOK_CONFIG_LOCATION: "${CLUSTERBOOK_CONFIG_LOCATION:-clusterbook}"
 
       # ---- PowerDNS -----------------------------------------------------
-      # PDNS_ENABLED and DDWRT_ENABLED are NOT here, and cannot be: they are
-      # bools, and postBuild.substitute is map[string]string -- a bool fails the
-      # whole parent Kustomization, siblings included.
-      #
-      # THE CONSUMER SETS THEM DIRECTLY, and that works where this cannot,
-      # because kustomize keeps quotes exactly when dropping them would change
-      # the type:
-      #
-      #     PDNS_ENABLED: "true"        -> "true"        quotes kept
-      #     PDNS_ENABLED: "${VAR:-true}" -> ${VAR:-true}  quotes dropped
-      #
-      # So write PDNS_ENABLED: "true" in the cluster's own substitute map, the
-      # way infra-sthings already does. The base defaults it to "false", which
-      # yields a clusterbook that allocates addresses and writes no DNS.
       PDNS_URL: "${CLUSTERBOOK_PDNS_URL:-set-CLUSTERBOOK_PDNS_URL}"
       # The TRAILING DOT belongs here -- PowerDNS wants an absolute zone name,
       # and appending another one later yields "zone..", which it rejects as
