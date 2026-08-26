@@ -1,3 +1,10 @@
+# [1.30.0](https://github.com/stuttgart-things/flux/compare/v1.29.1...v1.30.0) (2026-08-26)
+
+
+### Features
+
+* **platform:** add external-secrets-vault-store component ([#268](https://github.com/stuttgart-things/flux/issues/268)) ([1524396](https://github.com/stuttgart-things/flux/commit/1524396fb3bc82300ccd48e2a5247528fb350d59))
+
 ## [1.29.1](https://github.com/stuttgart-things/flux/compare/v1.29.0...v1.29.1) (2026-08-26)
 
 
