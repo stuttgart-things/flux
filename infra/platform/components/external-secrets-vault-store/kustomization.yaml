@@ -1,0 +1,9 @@
+---
+# external-secrets-vault-store — a Vault ClusterSecretStore for ESO.
+#
+# REQUIRES ../external-secrets in the same spec.components list (the CRD), and
+# a Vault kubernetes auth backend that only the VM pipeline can create.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-external-secrets-vault-store.yaml
