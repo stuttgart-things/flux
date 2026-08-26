@@ -1,0 +1,26 @@
+---
+# Drops the argocd-ingress Certificate.
+#
+# The base creates it UNCONDITIONALLY, even though the chart's Ingress is off by
+# default -- so a consumer publishing through a Gateway is forced to supply
+# INGRESS_HOSTNAME, INGRESS_DOMAIN, ISSUER_NAME and ISSUER_KIND for an object it
+# does not want, and gets a certificate nothing consumes.
+#
+# Measured on platform-sthings, which has published through a Gateway for
+# months: the argocd-ingress Certificate is Ready, and NOTHING mounts the
+# argocd-server-tls Secret it produces -- there is no Ingress in the namespace,
+# and the server runs with --insecure. The chart makes its own
+# argocd-repo-server-tls and argocd-dex-server-tls.
+#
+# Written as a removal rather than making the Certificate opt-IN because that
+# would silently prune it from every existing consumer on the next reconcile.
+# Whoever wants it gone chooses to select this.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HelmRelease
+      name: argocd-configuration
+    patch: |
+      - op: remove
+        path: /spec/values/customresources/argocd-certificate

@@ -37,7 +37,13 @@ spec:
           nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
           nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingressClassName: ${ARGO_CD_INGRESS_CLASS:-nginx}
-        hostname: ${INGRESS_HOSTNAME}.${INGRESS_DOMAIN}
+        # Defaulted because the Ingress above is OFF by default, and an unset
+        # variable is not empty -- Flux leaves it as the literal
+        # ${INGRESS_HOSTNAME}, which then sits in the HelmRelease values of
+        # every consumer that publishes through a Gateway instead. Inert, but
+        # it reads like a bug and invites someone to "fix" it by inventing a
+        # value. Consumers that DO enable the Ingress must still set both.
+        hostname: ${INGRESS_HOSTNAME:-argocd}.${INGRESS_DOMAIN:-set-INGRESS_DOMAIN.invalid}
         tls: true
     configs:
       secret:
