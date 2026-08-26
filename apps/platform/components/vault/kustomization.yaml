@@ -1,0 +1,9 @@
+---
+# vault — HashiCorp Vault (Bitnami chart).
+#
+# For EXISTING instances. New ones should take ../openbao instead; see the
+# child and the bundle README.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-vault.yaml

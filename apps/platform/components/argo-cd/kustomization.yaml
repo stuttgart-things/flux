@@ -1,0 +1,9 @@
+---
+# argo-cd — ArgoCD with the AVP and SOPS CMP sidecars.
+#
+# REQUIRES cilium-gateway (from the infra bundle) and a Secret with the admin
+# hash plus the Vault AppRole. See the child for the bcrypt prefix trap.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-argo-cd.yaml

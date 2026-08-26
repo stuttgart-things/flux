@@ -27,7 +27,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-COMPONENTS = ROOT / "infra/platform/components"
+BUNDLES = ["infra/platform", "apps/platform"]
 # ${NAME:-default} / ${NAME} -- the whole value must be one reference for the
 # default to be what lands. A value mixing text and references is a string.
 REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-(.*))?\}$")
@@ -52,25 +52,29 @@ def resolved(value):
 def main():
     with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
         tmp = Path(tmp)
-        lines = [
-            "apiVersion: kustomize.config.k8s.io/v1beta1",
-            "kind: Kustomization",
-            "resources:",
-            f"  - ../{ROOT.name and 'infra/platform/root'}",
-            "components:",
-        ]
-        lines += [f"  - ../infra/platform/components/{d.name}"
-                  for d in sorted(COMPONENTS.iterdir()) if d.is_dir()]
-        (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
-        out = subprocess.run(["kustomize", "build", str(tmp)],
-                             capture_output=True, text=True)
-    if out.returncode != 0:
-        print(out.stderr, file=sys.stderr)
-        return 1
+        docs = ""
+        for bundle in BUNDLES:
+            comps = ROOT / bundle / "components"
+            lines = [
+                "apiVersion: kustomize.config.k8s.io/v1beta1",
+                "kind: Kustomization",
+                "resources:",
+                f"  - ../{bundle}/root",
+                "components:",
+            ]
+            lines += [f"  - ../{bundle}/components/{d.name}"
+                      for d in sorted(comps.iterdir()) if d.is_dir()]
+            (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
+            out = subprocess.run(["kustomize", "build", str(tmp)],
+                                 capture_output=True, text=True)
+            if out.returncode != 0:
+                print(out.stderr, file=sys.stderr)
+                return 1
+            docs += out.stdout + "\n---\n"
 
     bad = []
     checked = 0
-    for doc in yaml.safe_load_all(out.stdout):
+    for doc in yaml.safe_load_all(docs):
         if not doc or doc.get("kind") != "Kustomization":
             continue
         name = doc.get("metadata", {}).get("name", "?")

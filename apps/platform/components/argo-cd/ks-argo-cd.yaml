@@ -1,0 +1,65 @@
+---
+# ArgoCD → ./cicd/argo-cd
+#
+# dependsOn cilium-gateway: the httproute component below renders an HTTPRoute
+# against that Gateway. That dependency crosses bundles -- the Gateway comes
+# from infra-platform -- and Flux does not care which Kustomization provides a
+# name, only that it exists and is ready.
+#
+# REQUIRES a Secret (default argocd-secrets, in flux-system) with
+# ARGO_CD_SERVER_ADMIN_PASSWORD as a BCRYPT HASH -- not a plaintext password,
+# and starting $2a$ not $2y$: ArgoCD's Go bcrypt rejects the $2y$ prefix that
+# htpasswd emits by default. Plus VAULT_* for the argocd-vault-plugin sidecar.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: argo-cd
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # 15m: this installs ArgoCD plus six CMP sidecars and `wait: true` holds for
+  # all of them.
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${ARGO_CD_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/argo-cd
+  components:
+    # The base creates an argocd-ingress Certificate unconditionally; a Gateway
+    # consumer neither wants it nor has anything that mounts the Secret.
+    - ./components/no-ingress-cert
+    - ./components/httproute
+  postBuild:
+    substitute:
+      # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.0}"
+      ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
+      ARGO_CD_INGRESS_ENABLED: "false"
+      ARGO_CD_PASSWORD_MTIME: "${ARGO_CD_PASSWORD_MTIME:-2026-01-01T00:00:00UTC}"
+
+      # The AVP sidecar reaches Vault over TLS signed by an internal CA.
+      AVP_TRUST_BUNDLE_CONFIGMAP: "${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
+      AVP_TRUST_BUNDLE_KEY: "${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+      AVP_SSL_CERT_DIR: "${AVP_SSL_CERT_DIR:-/etc/ssl/custom}"
+
+      ARGO_CD_HOSTNAME: "${ARGO_CD_HOSTNAME:-argocd}"
+      ARGO_CD_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+    # optional: false on purpose -- without it Flux would proceed with an empty
+    # admin hash and an ArgoCD nobody can log into, reporting success.
+    substituteFrom:
+      - kind: Secret
+        name: ${ARGO_CD_SECRET:-argocd-secrets}
+        optional: false

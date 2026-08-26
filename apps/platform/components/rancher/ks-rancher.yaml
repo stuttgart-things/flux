@@ -1,0 +1,63 @@
+---
+# Rancher → ./apps/rancher
+#
+# dependsOn cilium-gateway (from the infra bundle) for its HTTPRoute, and
+# cert-manager-install: Rancher's chart creates cert-manager objects, and a
+# chart that renders a Certificate before the CRD exists fails on apply, not on
+# a health check.
+#
+# REQUIRES a Secret with BOOTSTRAP_PASSWORD. It is only consumed on FIRST
+# install -- changing it later does not reset an existing admin, which is the
+# usual surprise.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: rancher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${RANCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/rancher
+  postBuild:
+    substitute:
+      RANCHER_NAMESPACE: "${RANCHER_NAMESPACE:-cattle-system}"
+      # 2.14.3, not 2.15.0. v2.15.0 is released, but the HelmRepository points at
+      # the STABLE channel and stable stops at 2.14.3 -- 2.15.0 exists only in
+      # the `latest` channel. Pinning it here would fail the chart pull, not
+      # deploy an older Rancher. Moving to `latest` is a deliberate decision
+      # about release channels, not a version bump.
+      #
+      # No renovate annotation: the base already carries one against the stable
+      # channel, and a second one here would either duplicate it or quietly
+      # disagree with it.
+      RANCHER_VERSION: "${RANCHER_VERSION:-2.14.3}"
+      STHINGS_CLUSTER_VERSION: "${STHINGS_CLUSTER_VERSION:-0.3.20}"
+      # RANCHER_REPLICAS is NOT passed through: its value is a number, and
+      # postBuild.substitute is map[string]string -- a bare 1 is an int and
+      # fails the whole parent Kustomization, siblings included. Quoting it
+      # here does not help; kustomize strips the quotes. The base defaults to
+      # 3; a single-node cluster should patch the HelmRelease instead.
+      CLUSTER_ISSUER: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
+      INGRESS_HOSTNAME: "${RANCHER_HOSTNAME:-rancher}"
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+    substituteFrom:
+      - kind: Secret
+        name: ${RANCHER_SECRET:-rancher-secrets}
+        optional: false
