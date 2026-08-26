@@ -1,0 +1,9 @@
+---
+# clusterbook — IP allocation + the matching DNS record.
+#
+# REQUIRES cilium-gateway from the infra bundle and a Secret with PDNS_TOKEN.
+# Lab-bound: it writes into one PowerDNS zone with one token.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-clusterbook.yaml
