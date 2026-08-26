@@ -125,11 +125,18 @@ jobs:
             if [ "$base" = "0000000000000000000000000000000000000000" ] || [ -z "$base" ]; then
               base=$(git hash-object -t tree /dev/null)
             fi
+            # `git diff --name-only` lists deleted files too, so removing a
+            # component would otherwise put it on the push matrix and fail the
+            # job on `flux push artifact --path=./<gone>`. Keep only the
+            # directories that still exist at HEAD.
             components=$(
               git diff --name-only "$base" "$head" \
                 | grep -E '^(apps|infra|cicd)/[^/]+/' \
                 | sed -E 's#^((apps|infra|cicd)/[^/]+)/.*#\1#' \
                 | sort -u \
+                | while read -r dir; do
+                    if [ -d "$dir" ]; then printf '%s\n' "$dir"; fi
+                  done \
                 | jq -R -s -c 'split("\n") | map(select(length>0))'
             )
             echo "Mode: changed-only"

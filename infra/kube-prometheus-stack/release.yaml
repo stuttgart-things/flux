@@ -95,8 +95,8 @@ spec:
     # controlled) and applies its own filter (severity_min: warning) as a
     # second-layer gate. info-level alerts and the always-on Watchdog still
     # fall through to the null receiver and are dropped here.
-    # Replaces the previous prometheus-msteams proxy hop (kept deployed for
-    # now until the new path is verified; remove the proxy in a follow-up).
+    # The receiver is still named `msteams` for continuity with existing
+    # routes; it no longer goes near the removed prometheus-msteams proxy.
     alertmanager:
       enabled: true
       alertmanagerSpec:
