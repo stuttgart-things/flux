@@ -58,4 +58,6 @@ if ! out=$(kustomize build "$tmp" 2>&1); then
 fi
 
 count=$(grep -c '^kind: Kustomization' <<<"$out" || true)
-echo "OK: $(ls -d "$components_dir"/*/ | wc -l) components, bundle builds, $count child Kustomizations"
+# Count via the glob rather than `ls | wc -l` (SC2012).
+component_dirs=("$components_dir"/*/)
+echo "OK: ${#component_dirs[@]} components, bundle builds, $count child Kustomizations"

@@ -31,6 +31,13 @@ repos:
           - DL4006
           - --ignore
           - DL3015
+          # DL3018 (pin versions in apk add): alpine's package index only serves
+          # the current revision, so a pinned apk version stops resolving within
+          # weeks and breaks the build. The versions that matter for
+          # reproducibility -- sops, age, kustomize, helm -- are pinned via ARGs
+          # and carried in the image tag instead.
+          - --ignore
+          - DL3018
   - repo: https://github.com/sirosen/check-jsonschema
     rev: 0.30.0
     hooks:
@@ -46,3 +53,12 @@ repos:
         language: python
         # for backward compatibility
         files: .*  # all files
+        # Without a baseline every run re-reports the same known false positives
+        # and the hook can never be green, which trains us to skip it. The
+        # baseline records the audited ones (Secret *names*, env var names, doc
+        # placeholders, an age public key) so only genuinely new findings fail.
+        # Re-audit and refresh with:
+        #   detect-secrets scan --baseline .secrets.baseline
+        args:
+          - --baseline
+          - .secrets.baseline
