@@ -1,3 +1,10 @@
+# [1.33.0](https://github.com/stuttgart-things/flux/compare/v1.32.3...v1.33.0) (2026-08-26)
+
+
+### Features
+
+* **apps:** an apps/platform bundle beside infra/platform ([#280](https://github.com/stuttgart-things/flux/issues/280)) ([5835c74](https://github.com/stuttgart-things/flux/commit/5835c745504ddb6f6ff1568fdadd89738ef83618))
+
 ## [1.32.3](https://github.com/stuttgart-things/flux/compare/v1.32.2...v1.32.3) (2026-08-26)
 
 
