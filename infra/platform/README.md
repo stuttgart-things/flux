@@ -22,6 +22,8 @@ infra/platform/
     ├── nfs-csi/                  → ./infra/nfs-csi
     ├── openebs/                  → ./infra/openebs
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
+    ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
+    ├── external-secrets/         → ./infra/external-secrets/components/install
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     └── reloader/                 → ./infra/reloader
@@ -91,12 +93,24 @@ the same list:
 | `cert-manager-vault-issuer` | `cert-manager-install` |
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
+| `kube-prometheus-stack` | `cilium-gateway` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
 
-The three behind `cilium-gateway` render an `HTTPRoute` unconditionally, and an
+The four behind `cilium-gateway` render an `HTTPRoute` unconditionally, and an
 `HTTPRoute` whose `parentRef` does not resolve sits at `Accepted=False` without
 explaining itself. The dependency turns that into a loud stall instead.
+
+Two constraints this table cannot express:
+
+- **`prometheus` and `kube-prometheus-stack` are alternatives.** Both deploy a
+  Prometheus, into `monitoring` by default. Selecting both is not an error
+  anywhere — it just scrapes the cluster twice.
+- **`kube-prometheus-stack` needs a StorageClass that exists here.** Its
+  default, `nfs4-csi`, is real only on clusters that also selected `nfs-csi`.
+  Get it wrong and the Kustomization goes Ready — the Helm release installs
+  fine — while the Prometheus pod sits Pending forever on an unbound PVC. Set
+  `KPS_PROMETHEUS_STORAGE_CLASS` to whatever `kubectl get sc` reports.
 
 Flux has no optional dependency, so selecting one without its prerequisite
 parks it on "dependency not ready" instead of deploying something half-wired.
@@ -196,6 +210,7 @@ Bundle-level names (they map onto differently-named base variables):
 | `INFRA_GATEWAY_NAMESPACE` | `default` | both of the above + `CERT_MANAGER_SELFSIGNED_CERT_NAMESPACE` |
 | `INFRA_TLS_SECRET` | `wildcard-tls` | `CILIUM_GATEWAY_TLS_SECRET`, `CERT_MANAGER_SELFSIGNED_{CERT,SECRET}_NAME` |
 | `PROMETHEUS_HOSTNAME` | `prometheus` | prometheus `HOSTNAME` (the base's name is too generic to expose) |
+| `KPS_HOSTNAME` | `grafana` | kube-prometheus-stack `HOSTNAME` (same reason) |
 | `FLUX_WEB_HOSTNAME` | `flux` | flux-web `HOSTNAME` (same reason) |
 | `HEADLAMP_HOSTNAME` | `headlamp` | headlamp `HOSTNAME` (same reason) |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |

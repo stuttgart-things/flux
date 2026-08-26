@@ -1,0 +1,12 @@
+---
+# kube-prometheus-stack
+#
+# REQUIRES ../cilium-gateway in the same spec.components list (Grafana's
+# HTTPRoute), and a KPS_PROMETHEUS_STORAGE_CLASS that exists on the cluster.
+#
+# Do not select ../prometheus as well — both deploy a Prometheus into the same
+# default namespace.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-kube-prometheus-stack.yaml

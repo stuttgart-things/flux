@@ -1,0 +1,84 @@
+---
+# Prometheus + Alertmanager + Grafana + node-exporter + kube-state-metrics,
+# as one chart → ./infra/kube-prometheus-stack
+#
+# dependsOn cilium-gateway: the base renders Grafana's HTTPRoute against that
+# Gateway, so the Gateway API CRDs and the Gateway object must exist first.
+# Flux has no optional dependency — select cilium-gateway alongside this, or
+# this Kustomization waits on "dependency not ready" forever.
+#
+# NOT expressible as a dependsOn: Prometheus asks for a PVC. The chart's own
+# default StorageClass name is nfs4-csi, which exists only on clusters that
+# selected the nfs-csi component; everywhere else the default below has to be
+# corrected or the Prometheus StatefulSet sits Pending on an unbound claim
+# while this Kustomization reports its Helm release installed.
+#
+# This is the heavier sibling of `prometheus` (server + HTTPRoute only).
+# Selecting BOTH gives two Prometheis scraping the same cluster into the same
+# namespace by default — pick one, or give them separate namespaces.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kube-prometheus-stack
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # 15m, not the bundle's usual 5m: this chart installs the prometheus-operator
+  # CRDs and five workloads, and `wait: true` holds until they are all healthy.
+  timeout: 15m
+  force: false
+  prune: true
+  # Off switch. See the note in components/prometheus: suspend STOPS
+  # RECONCILING, it does not uninstall.
+  suspend: ${KPS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/kube-prometheus-stack
+  postBuild:
+    substitute:
+      KPS_NAMESPACE: "${KPS_NAMESPACE:-monitoring}"
+      # renovate: datasource=helm depName=kube-prometheus-stack registryUrl=https://prometheus-community.github.io/helm-charts
+      KPS_VERSION: "${KPS_VERSION:-88.5.2}"
+
+      # ---- Prometheus storage ----
+      # REQUIRED in practice: see the note above. The bundle cannot default
+      # this correctly because the right answer is whichever StorageClass the
+      # cluster actually has (openebs-hostpath, nfs4-csi, ...).
+      KPS_PROMETHEUS_STORAGE_CLASS: "${KPS_PROMETHEUS_STORAGE_CLASS:-nfs4-csi}"
+      KPS_PROMETHEUS_STORAGE_SIZE: "${KPS_PROMETHEUS_STORAGE_SIZE:-10Gi}"
+      KPS_PROMETHEUS_RETENTION: "${KPS_PROMETHEUS_RETENTION:-15d}"
+      # Applies to both scrapeInterval and evaluationInterval; 60s roughly
+      # halves scrape CPU and TSDB write volume against the chart's 30s.
+      KPS_SCRAPE_INTERVAL: "${KPS_SCRAPE_INTERVAL:-60s}"
+
+      # ---- Grafana ----
+      # Cleartext, and it lands in the HelmRelease values on the cluster. Left
+      # as a plain substitute because that is what every consumer does today;
+      # a cluster that cares should drop this line and add a
+      # postBuild.substituteFrom pointing at a SOPS-decrypted Secret.
+      KPS_GRAFANA_ADMIN_PASSWORD: "${KPS_GRAFANA_ADMIN_PASSWORD:-prom-operator}"
+
+      # ---- Grafana HTTPRoute ----
+      # The base uses the bare names GATEWAY_NAME / HOSTNAME / DOMAIN. They are
+      # mapped here to bundle-level names so a consumer never sets a variable
+      # as collision-prone as HOSTNAME at the top level.
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${KPS_HOSTNAME:-grafana}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+
+      # ---- Alertmanager → MS Teams ----
+      # The base routes warning|critical at a homerun2-omni-pitcher Service.
+      # Where that does not exist the alerts simply fail to deliver — nothing
+      # here breaks, and the null receiver still swallows everything else.
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: "${HOMERUN2_OMNI_PITCHER_AUTH_TOKEN:-changeme}"

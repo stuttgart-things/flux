@@ -1,0 +1,8 @@
+---
+# external-secrets — the ESO controller and its CRDs.
+#
+# Standalone: depends on no other component in this bundle.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-external-secrets.yaml
