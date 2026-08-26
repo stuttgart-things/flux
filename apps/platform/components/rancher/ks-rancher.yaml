@@ -36,8 +36,16 @@ spec:
   postBuild:
     substitute:
       RANCHER_NAMESPACE: "${RANCHER_NAMESPACE:-cattle-system}"
-      # renovate: datasource=github-releases depName=rancher/rancher
-      RANCHER_VERSION: "${RANCHER_VERSION:-2.15.0}"
+      # 2.14.3, not 2.15.0. v2.15.0 is released, but the HelmRepository points at
+      # the STABLE channel and stable stops at 2.14.3 -- 2.15.0 exists only in
+      # the `latest` channel. Pinning it here would fail the chart pull, not
+      # deploy an older Rancher. Moving to `latest` is a deliberate decision
+      # about release channels, not a version bump.
+      #
+      # No renovate annotation: the base already carries one against the stable
+      # channel, and a second one here would either duplicate it or quietly
+      # disagree with it.
+      RANCHER_VERSION: "${RANCHER_VERSION:-2.14.3}"
       STHINGS_CLUSTER_VERSION: "${STHINGS_CLUSTER_VERSION:-0.3.20}"
       # RANCHER_REPLICAS is NOT passed through: its value is a number, and
       # postBuild.substitute is map[string]string -- a bare 1 is an int and
