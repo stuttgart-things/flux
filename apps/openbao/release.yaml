@@ -1,0 +1,101 @@
+---
+# OpenBao -- the MPL-2.0 fork of Vault, forked at Vault 1.14.
+#
+# Deployed as a NEW instance, not migrated. The documented in-place migration
+# only covers Vault 1.14.1 with raft + shamir and is explicitly unsupported from
+# Vault 1.15.0 up, so an existing 1.20.x cannot take that path at all. Standing
+# a fresh one up and moving workloads over is the path that exists.
+#
+# AUTO-UNSEAL IS THE POINT. This uses a real `seal "transit"` stanza -- the
+# instance asks another Vault/OpenBao to unwrap its master key on every start.
+# It replaces the third-party operator pattern (pytoshka/vault-autounseal), which
+# keeps the shamir keys in a Secret in the same namespace as the server they
+# unseal: anyone who can read that namespace can both unseal it and hold its
+# root token.
+#
+# The seal token is periodic AND renewable, and OpenBao renews it itself
+# (`disable_renewal` defaults to false). That is what keeps this from becoming
+# the usual dead-static-token failure, where everything is green for a month and
+# then nothing can start.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: openbao
+  namespace: ${OPENBAO_NAMESPACE:-openbao}
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: openbao
+      # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
+      version: "${OPENBAO_CHART_VERSION:-0.29.2}"
+      sourceRef:
+        kind: HelmRepository
+        name: openbao
+        namespace: ${OPENBAO_NAMESPACE:-openbao}
+      interval: 12h
+  values:
+    server:
+      image:
+        repository: openbao/openbao
+        # renovate: datasource=docker depName=openbao/openbao
+        tag: "${OPENBAO_VERSION:-v2.6.2}"
+
+      # The chart's Ingress stays off -- published through the shared Gateway
+      # by httproute.yaml, like everything else in this bundle.
+      ingress:
+        enabled: false
+
+      dataStorage:
+        enabled: true
+        size: ${OPENBAO_STORAGE_SIZE:-8Gi}
+        # REQUIRED in practice: the chart default is the cluster's default
+        # StorageClass, and a PVC that never binds leaves the pod Pending while
+        # the HelmRelease reports installed.
+        storageClass: ${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}
+
+      # The transit seal talks TLS to another Vault whose certificate is signed
+      # by an internal CA. trust-manager publishes that bundle into every
+      # namespace; without it the seal fails with x509 and the pod never
+      # becomes ready.
+      volumes:
+        - name: trust-bundle
+          configMap:
+            name: ${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+      volumeMounts:
+        - name: trust-bundle
+          mountPath: /etc/ssl/custom
+          readOnly: true
+
+      # BAO_TOKEN for the transit seal. Kept out of the config file on purpose:
+      # the config is rendered into a ConfigMap, and a token in a ConfigMap is a
+      # token in plaintext for anyone with get on the namespace.
+      extraSecretEnvironmentVars:
+        - envName: BAO_TOKEN
+          secretName: ${OPENBAO_SEAL_SECRET:-openbao-transit-seal}
+          secretKey: ${OPENBAO_SEAL_SECRET_KEY:-token}
+
+      standalone:
+        enabled: true
+        config: |
+          ui = true
+
+          listener "tcp" {
+            tls_disable     = 1
+            address         = "[::]:8200"
+            cluster_address = "[::]:8201"
+          }
+
+          storage "raft" {
+            path = "/openbao/data"
+          }
+
+          service_registration "kubernetes" {}
+
+          seal "transit" {
+            address     = "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}"
+            key_name    = "${OPENBAO_SEAL_KEY_NAME:-openbao-unseal}"
+            mount_path  = "${OPENBAO_SEAL_MOUNT_PATH:-transit/}"
+            tls_ca_cert = "/etc/ssl/custom/${OPENBAO_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+          }

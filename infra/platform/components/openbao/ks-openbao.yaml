@@ -1,0 +1,66 @@
+---
+# OpenBao with a real transit auto-unseal → ./apps/openbao
+#
+# dependsOn cilium-gateway: the base renders an HTTPRoute against that Gateway.
+#
+# TWO THINGS THIS COMPONENT CANNOT CHECK FOR YOU, both of which go green while
+# being wrong:
+#
+#   * OPENBAO_SEAL_ADDRESS must point at a Vault/OpenBao that holds the transit
+#     key, and the Secret named below must carry a token allowed to use it. Get
+#     either wrong and the pod stays not-ready with a seal error while the
+#     HelmRelease reports installed.
+#   * OPENBAO_STORAGE_CLASS must exist here. A PVC that never binds leaves the
+#     pod Pending, and nothing above it says so.
+#
+# The Vault-side half -- transit mount, key, policy and a PERIODIC RENEWABLE
+# token -- is not created here and cannot be: it needs credentials for the other
+# Vault. Same split as cert-manager-vault-issuer.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openbao
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${OPENBAO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/openbao
+  postBuild:
+    substitute:
+      OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
+      # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
+      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.29.2}"
+      # renovate: datasource=docker depName=openbao/openbao
+      OPENBAO_VERSION: "${OPENBAO_VERSION:-v2.6.2}"
+
+      OPENBAO_STORAGE_CLASS: "${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}" # REQUIRED
+      OPENBAO_STORAGE_SIZE: "${OPENBAO_STORAGE_SIZE:-8Gi}"
+
+      # ---- transit auto-unseal ------------------------------------------
+      OPENBAO_SEAL_ADDRESS: "${OPENBAO_SEAL_ADDRESS:-set-OPENBAO_SEAL_ADDRESS}" # REQUIRED
+      OPENBAO_SEAL_KEY_NAME: "${OPENBAO_SEAL_KEY_NAME:-openbao-unseal}"
+      OPENBAO_SEAL_MOUNT_PATH: "${OPENBAO_SEAL_MOUNT_PATH:-transit/}"
+      OPENBAO_SEAL_SECRET: "${OPENBAO_SEAL_SECRET:-openbao-transit-seal}"
+      OPENBAO_SEAL_SECRET_KEY: "${OPENBAO_SEAL_SECRET_KEY:-token}"
+      OPENBAO_TRUST_BUNDLE_CONFIGMAP: "${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
+      OPENBAO_TRUST_BUNDLE_KEY: "${OPENBAO_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+
+      # ---- HTTPRoute ----------------------------------------------------
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${OPENBAO_HOSTNAME:-openbao}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
