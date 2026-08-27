@@ -1,3 +1,10 @@
+# [1.36.0](https://github.com/stuttgart-things/flux/compare/v1.35.2...v1.36.0) (2026-08-27)
+
+
+### Features
+
+* **infra:** coredns-lab-zone component ([#286](https://github.com/stuttgart-things/flux/issues/286)) ([57c465f](https://github.com/stuttgart-things/flux/commit/57c465f78fd11a8304d9af4bb23f16599c8085a1))
+
 ## [1.35.2](https://github.com/stuttgart-things/flux/compare/v1.35.1...v1.35.2) (2026-08-27)
 
 
