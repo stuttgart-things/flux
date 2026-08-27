@@ -1,0 +1,57 @@
+---
+# CoreDNS forwards a lab zone to its authoritative nameserver → ./infra/coredns/components/lab-zone
+#
+# Standalone: nothing in the bundle depends on it and it depends on nothing.
+# Ship it WITH a cluster rather than adding it later -- rolling CoreDNS on a
+# single-node cluster costs a DNS gap of about a minute, because the replacement
+# pod cannot be co-scheduled with the one it replaces.
+#
+# Every value threaded into a child Kustomization needs a non-empty default:
+# kustomize normalises away every quoting style, so `KEY: "${VAR}"` reaches Flux
+# as a YAML null, and postBuild.substitute is map[string]string with no
+# `nullable` -- the API server then rejects the whole CR.
+#
+# The defaults here are deliberately unusable rather than plausible. Unset,
+# this creates a forwarder for `unset.invalid.` pointing at 0.0.0.0: visible in
+# the Corefile, queried by nobody, and incapable of affecting cluster.local or
+# upstream DNS, which live in a separate server block.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: coredns-lab-zone
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set COREDNS_LAB_ZONE_SUSPEND: "true" in the consumer's
+  # substitute block. Freezes reconciliation; the HelmChartConfig stays applied
+  # and CoreDNS keeps forwarding. To actually remove the forwarder, drop this
+  # component from the consumer's spec.components -- prune then deletes the
+  # HelmChartConfig and the helm-controller restores the stock Corefile.
+  suspend: ${COREDNS_LAB_ZONE_SUSPEND:-false}
+  # wait: false -- a HelmChartConfig has no readiness of its own. It is consumed
+  # by RKE2's helm-controller, which re-renders the CoreDNS chart out of band;
+  # `wait: true` would only assert that the ConfigMap-shaped CR exists, which
+  # says nothing about whether CoreDNS picked it up. Check the Corefile.
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/coredns/components/lab-zone
+  postBuild:
+    substitute:
+      COREDNS_NAMESPACE: "${COREDNS_NAMESPACE:-kube-system}"
+      # The HelmChart this configures. RKE2 names it rke2-coredns; k3s names it
+      # coredns. Wrong name and nothing happens at all -- the CR is created,
+      # reports nothing, and no controller ever reads it.
+      COREDNS_CHART_NAME: "${COREDNS_CHART_NAME:-rke2-coredns}"
+      # REQUIRED, both of them. Written WITHOUT a trailing dot; the base adds it.
+      COREDNS_ZONE: "${COREDNS_ZONE:-unset.invalid}"
+      COREDNS_ZONE_SERVER: "${COREDNS_ZONE_SERVER:-0.0.0.0}"

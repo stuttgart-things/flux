@@ -1,0 +1,6 @@
+---
+# Deliberately empty, like the other infra bases here: the component
+# directories under ./components are the build targets.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

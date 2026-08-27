@@ -1,0 +1,79 @@
+---
+# CoreDNS forwards one zone straight to its authoritative nameserver.
+#
+# WHY A CLUSTER NEEDS THIS AT ALL. Our lab zones carry no NS records and their
+# PowerDNS is not a recursor, so a name in them resolves only where something
+# was explicitly told to ask that server. Configuring the NODE is not enough:
+# kubelet points CoreDNS at /run/systemd/resolve/resolv.conf, the FLAT file that
+# lists every known server and cannot express per-domain routing at all. So the
+# node resolves the zone and every pod on it still gets SERVFAIL -- measured, on
+# a node that had the systemd-resolved drop-in applied.
+#
+# `servers` IS A LIST, AND A LIST REPLACES ON MERGE. The second entry below is
+# the chart's own default, copied verbatim. Omit any part of it and the cluster
+# loses cluster.local, service discovery and upstream DNS in one go -- and not
+# now, but at the next CoreDNS restart, which may be days later.
+#
+# RKE2 AND K3S ONLY. HelmChartConfig is helm.cattle.io/v1, served by their
+# embedded helm-controller. On any other distribution this Kustomization fails
+# with "no matches for kind" and CoreDNS is untouched -- loud, and harmless.
+#
+# ROLLING THIS OUT IS NOT FREE ON A SINGLE-NODE CLUSTER. The replacement CoreDNS
+# pod cannot be co-scheduled (pod anti-affinity), so there is a DNS gap of
+# roughly a minute while it rolls. Ship it with the cluster rather than adding
+# it to a running one.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: ${COREDNS_CHART_NAME:-rke2-coredns}
+  namespace: ${COREDNS_NAMESPACE:-kube-system}
+spec:
+  valuesContent: |-
+    servers:
+      # ---- the forwarded zone -------------------------------------------
+      # No `kubernetes` plugin here on purpose: this block answers for this
+      # zone only, and cluster.local stays with the default block below.
+      #
+      # The trailing dot is required -- CoreDNS treats the zone as a FQDN.
+      - zones:
+          - zone: ${COREDNS_ZONE:-unset.invalid}.
+        port: 53
+        plugins:
+          - name: errors
+          # Hardcoded, not a variable: postBuild.substitute is map[string]string
+          # and a bare number resolves to an int, which fails the PARENT
+          # Kustomization -- no quoting form survives kustomize. Caught by
+          # hack/check-substitute-strings.py before this ever shipped.
+          - name: cache
+            parameters: 30
+          - name: forward
+            parameters: . ${COREDNS_ZONE_SERVER:-0.0.0.0}
+      # ---- the chart default, verbatim ----------------------------------
+      # Do not "tidy" this. It is a copy of rke2-coredns's values.yaml and its
+      # only job is to survive the list replacement above. clusterDomain is not
+      # here because the chart template injects it into the kubernetes plugin.
+      - zones:
+          - zone: .
+            use_tcp: true
+        port: 53
+        plugins:
+          - name: errors
+          - name: health
+            configBlock: |-
+              lameduck 10s
+          - name: ready
+          - name: kubernetes
+            parameters: in-addr.arpa ip6.arpa
+            configBlock: |-
+              pods insecure
+              fallthrough in-addr.arpa ip6.arpa
+              ttl 30
+          - name: prometheus
+            parameters: 0.0.0.0:9153
+          - name: forward
+            parameters: . /etc/resolv.conf
+          - name: cache
+            parameters: 30
+          - name: loop
+          - name: reload
+          - name: loadbalance
