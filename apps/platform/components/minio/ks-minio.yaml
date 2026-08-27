@@ -19,6 +19,18 @@ metadata:
 spec:
   dependsOn:
     - name: cilium-gateway
+    # AND cert-manager-install, like rancher and vault beside it: the base
+    # renders a Certificate through the sthings-cluster chart, and a Certificate
+    # applied before cert-manager's webhook is serving fails the Helm install
+    # outright:
+    #
+    #   Internal error occurred: failed calling webhook "webhook.cert-manager.io"
+    #
+    # A failed HelmRelease then goes Stalled and does NOT retry on its own, so
+    # what looks like a startup race becomes a permanent failure that needs
+    # `flux reconcile helmrelease --force`. minio was the only one of the three
+    # missing this.
+    - name: cert-manager-install
   interval: 1h
   retryInterval: 1m
   timeout: 10m
