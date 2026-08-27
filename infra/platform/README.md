@@ -31,12 +31,40 @@ infra/platform/
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
-    └── reloader/                 → ./infra/reloader
+    ├── reloader/                 → ./infra/reloader
+    └── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
 ```
 
 There is no always-on base. The first cluster pointed at this bundle wanted
 `cilium-lb` + `cert-manager-install` and neither the Gateway nor the PKI chain,
 so everything is opt-in.
+
+### coredns-lab-zone
+
+Makes CoreDNS forward one zone straight to its authoritative nameserver, for
+lab zones that carry no NS records and are served by something that is not a
+recursor.
+
+```yaml
+COREDNS_ZONE: "4sthings.tiab.ssc.sva.de"     # no trailing dot, the base adds it
+COREDNS_ZONE_SERVER: "10.100.136.115"
+```
+
+Three things worth knowing before selecting it:
+
+- **Fixing the node is not enough.** kubelet points CoreDNS at
+  `/run/systemd/resolve/resolv.conf`, the flat file that lists every server and
+  cannot express per-domain routing. A node with a systemd-resolved drop-in
+  resolves the zone while every pod on it still gets SERVFAIL.
+- **RKE2 and k3s only.** It writes a `HelmChartConfig`; elsewhere the
+  Kustomization fails with `no matches for kind` and CoreDNS is untouched.
+- **Ship it with the cluster.** Adding it to a running single-node cluster rolls
+  CoreDNS, and the replacement pod cannot be co-scheduled with the one it
+  replaces -- about a minute without cluster DNS.
+
+Unset, it forwards `unset.invalid.` to `0.0.0.0`: visible in the Corefile and
+verified not to touch `cluster.local`, service discovery or upstream DNS, which
+live in a separate server block.
 
 ## Consumer usage
 
@@ -227,6 +255,9 @@ Bundle-level names (they map onto differently-named base variables):
 | `KPS_HOSTNAME` | `grafana` | kube-prometheus-stack `HOSTNAME` (same reason) |
 | `FLUX_WEB_HOSTNAME` | `flux` | flux-web `HOSTNAME` (same reason) |
 | `HEADLAMP_HOSTNAME` | `headlamp` | headlamp `HOSTNAME` (same reason) |
+| `COREDNS_ZONE` | `unset.invalid` | coredns-lab-zone `zones[0].zone` |
+| `COREDNS_ZONE_SERVER` | `0.0.0.0` | coredns-lab-zone `forward` target |
+| `COREDNS_CHART_NAME` | `rke2-coredns` | the HelmChart it configures (`coredns` on k3s) |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 
 Required variables have no upstream default, so they fall back to an

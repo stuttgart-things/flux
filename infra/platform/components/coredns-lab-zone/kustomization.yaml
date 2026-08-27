@@ -1,0 +1,6 @@
+---
+# Opt-in: coredns-lab-zone (standalone, no base dependency)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-coredns-lab-zone.yaml
