@@ -1,3 +1,10 @@
+## [1.35.2](https://github.com/stuttgart-things/flux/compare/v1.35.1...v1.35.2) (2026-08-27)
+
+
+### Bug Fixes
+
+* **minio:** it needs cert-manager-install too ([#285](https://github.com/stuttgart-things/flux/issues/285)) ([85ba105](https://github.com/stuttgart-things/flux/commit/85ba105487ab90c61190aa51f1bc7f45de3bc5b9))
+
 ## [1.35.1](https://github.com/stuttgart-things/flux/compare/v1.35.0...v1.35.1) (2026-08-26)
 
 
