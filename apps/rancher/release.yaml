@@ -9,6 +9,19 @@ spec:
     - name: rancher-certificate-configuration
       namespace: ${RANCHER_NAMESPACE:-cattle-system}
   interval: 30m
+  # Rancher brings up three replicas that wait on each other's leader election,
+  # and on a single node that took ~8 minutes -- past Flux's 5m default. The
+  # install then reports failure while the Deployment goes on to become
+  # healthy, and a FAILED INSTALL GOES Stalled: Flux does not retry it, so the
+  # release sits broken and green pods look like a broken release until
+  # somebody sets reconcile.fluxcd.io/forceAt by hand. Witnessed on
+  # sthings-platform 2026-08-28, where exactly that was the fix.
+  #
+  # A longer timeout, and deliberately NOT install.remediation.retries: a retry
+  # uninstalls before retrying, which would tear down a Rancher that was merely
+  # slow. The consumer's Kustomization needs `timeout` above this one, or it
+  # gives up while the release is still legitimately installing.
+  timeout: ${RANCHER_TIMEOUT:-12m}
   chart:
     spec:
       chart: rancher
