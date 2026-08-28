@@ -19,7 +19,12 @@ cd "$(dirname "$0")/.."
 # Both bundles. apps/platform mirrors infra/platform for the app layer, and a
 # check that silently covers only one of them is worse than none: it reports OK
 # while half the components are unverified.
-bundles="infra/platform apps/platform"
+#
+# cicd/platform is the third: the delivery layer -- argo-cd, tekton, dapr,
+# crossplane. It was added to this list in the same commit that created it,
+# because a bundle outside the list is exactly the "reports OK while
+# unverified" case the paragraph above describes.
+bundles="infra/platform apps/platform cicd/platform"
 fail=0
 
 for components_dir in $bundles; do

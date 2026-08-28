@@ -1,0 +1,49 @@
+---
+# Crossplane → ./cicd/crossplane
+#
+# Installs the controller, the composition functions and the Configurations.
+#
+# 20m and wait: true: a Configuration is not installed when its package
+# resource exists -- the package manager pulls each image, resolves its
+# dependencies and only then marks it Healthy. Six Configurations on a cold
+# cluster take minutes, and a shorter timeout marks the Kustomization failed
+# while the packages are still arriving correctly.
+#
+# UPGRADING A CONFIGURATION IS NOT A VERSION BUMP HERE. A short-named
+# Configuration that is also a dependsOn target of another package spawns a
+# long-named duplicate on upgrade and takes every package to Healthy=False.
+# Change one version at a time and watch `kubectl get pkg` before the next.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 20m
+  force: false
+  prune: true
+  suspend: ${CROSSPLANE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/crossplane
+  postBuild:
+    substitute:
+      CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
+      # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
+      CROSSPLANE_VERSION: "${CROSSPLANE_VERSION:-2.4.0}"
+      CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.2.0}"
+      CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.0}"
+      CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION: "${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}"
+      CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION: "${CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION:-v0.5.1}"
+      CROSSPLANE_CONFIG_HARVESTER_VM_VERSION: "${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}"
+      CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION: "${CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION:-v0.1.2}"
+      CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION: "${CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION:-v0.6.0}"
+      CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION: "${CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION:-v0.1.1}"

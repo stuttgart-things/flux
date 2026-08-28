@@ -1,0 +1,10 @@
+---
+# crossplane — the controller, its functions and the stuttgart-things
+# Configurations.
+#
+# Standalone: no Gateway, no Secret, no StorageClass. What it composes needs
+# credentials; Crossplane itself does not.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-crossplane.yaml

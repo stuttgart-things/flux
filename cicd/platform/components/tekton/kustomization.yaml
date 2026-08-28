@@ -1,0 +1,8 @@
+---
+# tekton — the operator, its TektonConfig, the CI namespace and the dashboard.
+#
+# REQUIRES cilium-gateway: the dashboard is exposed through an HTTPRoute.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-tekton.yaml
