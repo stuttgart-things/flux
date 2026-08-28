@@ -1,3 +1,10 @@
+## [1.37.3](https://github.com/stuttgart-things/flux/compare/v1.37.2...v1.37.3) (2026-08-28)
+
+
+### Bug Fixes
+
+* **cicd:** tekton and crossplane deadlock on a resource their own install creates ([#290](https://github.com/stuttgart-things/flux/issues/290)) ([4fe852f](https://github.com/stuttgart-things/flux/commit/4fe852f63766b618314aaaf86fa5923fbd60e8cd))
+
 ## [1.37.2](https://github.com/stuttgart-things/flux/compare/v1.37.1...v1.37.2) (2026-08-28)
 
 
