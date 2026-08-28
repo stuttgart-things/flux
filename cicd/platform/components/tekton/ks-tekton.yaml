@@ -53,13 +53,20 @@ spec:
       # narrowing it.
       TEKTON_PROFILE: "${TEKTON_PROFILE:-all}"
       TEKTON_ENABLE_API_FIELDS: "${TEKTON_ENABLE_API_FIELDS:-beta}"
-      # Results needs its own database and object storage; off until a cluster
-      # actually provides them, because a half-configured Results makes every
-      # TaskRun log through a watcher that cannot store anything.
-      TEKTON_RESULT_DISABLED: "${TEKTON_RESULT_DISABLED:-true}"
-      TEKTON_PRUNER_DISABLED: "${TEKTON_PRUNER_DISABLED:-false}"
       TEKTON_PRUNER_SCHEDULE: "${TEKTON_PRUNER_SCHEDULE:-0 8 * * *}"
-      TEKTON_PRUNER_KEEP_SINCE: "${TEKTON_PRUNER_KEEP_SINCE:-1440}"
+      # NOT passed through: TEKTON_RESULT_DISABLED, TEKTON_PRUNER_DISABLED,
+      # TEKTON_PRUNER_KEEP_SINCE. They resolve to a bool / a bool / an int, and
+      # postBuild.substitute is map[string]string -- the API server rejects the
+      # whole typed patch, which fails cicd-platform and every sibling with it.
+      # Quoting them here does not help: kustomize re-emits this bundle and
+      # drops "x", 'x' and !!str alike, so the quotes are gone before envsubst
+      # runs. See hack/check-substitute-strings.py.
+      #
+      # Nothing is lost. ./cicd/tekton carries the SAME ${VAR:-default} with
+      # the SAME defaults, and this Kustomization's own envsubst applies them
+      # where they are real bool/int fields on the TektonConfig. To change one,
+      # set it in the base -- it cannot be reached from a consumer's substitute
+      # map, and that is a property of the field's type, not an oversight.
 
       TEKTON_DASHBOARD_NAMESPACE: "${TEKTON_NAMESPACE:-tekton-pipelines}"
       TEKTON_DASHBOARD_HOSTNAME: "${TEKTON_DASHBOARD_HOSTNAME:-tekton}"

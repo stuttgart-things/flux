@@ -36,4 +36,9 @@ spec:
       # A single-node cluster cannot satisfy the HA replica counts, and the
       # placement StatefulSet would sit Pending while everything above it
       # reports Progressing.
-      DAPR_HA_ENABLED: "${DAPR_HA_ENABLED:-false}"
+      # DAPR_HA_ENABLED is NOT passed through: it resolves to a bool, and
+      # postBuild.substitute is map[string]string -- the API server rejects the
+      # whole typed patch, failing cicd-platform and every sibling with it.
+      # Quoting does not survive kustomize. ./apps/dapr carries the same
+      # ${DAPR_HA_ENABLED:-false} where it is a real bool in the Helm values,
+      # and this Kustomization's own envsubst applies it there.
