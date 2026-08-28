@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/stuttgart-things/flux/compare/v1.36.0...v1.37.0) (2026-08-28)
+
+
+### Features
+
+* **cicd:** a cicd/platform bundle -- argo-cd, tekton, dapr, crossplane ([#287](https://github.com/stuttgart-things/flux/issues/287)) ([8a335f2](https://github.com/stuttgart-things/flux/commit/8a335f2906001cc562f4d97d9e879b86ecf664bd))
+
 # [1.36.0](https://github.com/stuttgart-things/flux/compare/v1.35.2...v1.36.0) (2026-08-27)
 
 
