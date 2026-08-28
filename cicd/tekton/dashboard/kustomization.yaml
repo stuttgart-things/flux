@@ -1,0 +1,24 @@
+---
+# The dashboard HTTPRoute, as a build root of its OWN.
+#
+# Split off from the operator because of a Cilium behaviour that is easy to
+# mistake for a slow install: its gateway controller resolves an HTTPRoute's
+# backendRefs ONCE, and does not re-resolve when a Service that was missing
+# later appears. A route applied before its backend keeps
+#
+#   ResolvedRefs=False  Service "tekton-dashboard" not found
+#
+# forever, serving HTTP 500, while every Flux Kustomization is green and the
+# dashboard pod is Running. Measured on cicd-test1 2026-08-28: still 500 six
+# minutes after the Service existed; a no-op annotation on the route fixed it
+# instantly, which is what proves it is a stale status and not a data path.
+#
+# That is exactly the shape here -- the Service is created by the operator
+# minutes after the manifests are applied -- so the route has to wait for it.
+# The consumer wires this with dependsOn on the operator Kustomization, whose
+# health check covers the dashboard Deployment; see
+# ../../platform/components/tekton/ks-tekton.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../components/dashboard-httproute

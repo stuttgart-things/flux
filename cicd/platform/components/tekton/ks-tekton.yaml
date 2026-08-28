@@ -2,18 +2,24 @@
 # Tekton → ./cicd/tekton
 #
 # The base installs the operator and a TektonConfig; `spec.components` adds the
-# CI namespace and the dashboard HTTPRoute, which are opt-in in that base.
+# CI namespace, which is opt-in in that base. The dashboard HTTPRoute is a
+# SECOND Kustomization at the bottom of this file -- see the note there.
 #
 # dependsOn cilium-gateway, and that dependency crosses bundles -- the Gateway
-# comes from infra-platform. Flux does not care which Kustomization provides a
-# name, only that it exists and is ready. Selecting tekton on a cluster whose
-# infra bundle has no cilium-gateway does not error: it waits on "dependency
-# not ready" forever, which reads like slowness.
+# comes from infra-platform. It is kept here rather than on the route so that
+# both Kustomizations inherit it, and so a cluster with no Gateway does not
+# install an operator whose dashboard can never be reached. Flux does not care
+# which Kustomization provides a name, only that it exists and is ready.
+# Selecting tekton on a cluster whose infra bundle has no cilium-gateway does
+# not error: it waits on "dependency not ready" forever, which reads like
+# slowness.
 #
 # TEKTON_PROFILE defaults to `all` in the base, which is pipelines + triggers +
-# dashboard. A cluster that wants no dashboard sets TEKTON_PROFILE=basic AND
-# drops this component for one without the HTTPRoute -- setting only the
-# profile leaves a route pointing at a Service that is never created.
+# dashboard. THIS COMPONENT REQUIRES THE DASHBOARD: it health-checks the
+# dashboard Deployment and ships a route to it. Setting TEKTON_PROFILE=basic
+# here does not produce a leaner Tekton, it produces a Kustomization that never
+# goes Ready. A cluster that wants Tekton without a dashboard does not select
+# this component -- it wires ./cicd/tekton itself.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -37,14 +43,34 @@ spec:
   # Off switch. suspend STOPS RECONCILING, it does not uninstall. To remove
   # Tekton, delete this line from the consumer's `components:` list.
   suspend: ${TEKTON_SUSPEND:-false}
-  wait: true
+  # NAMED health checks rather than wait: true, and the two are mutually
+  # exclusive -- wait makes Flux check everything it applied, which here is the
+  # operator and a TektonConfig, and says nothing about what the operator then
+  # installs. This Kustomization is Ready only once the DASHBOARD is up, which
+  # is what tekton-dashboard below has to wait for.
+  #
+  # Measured on cicd-test1: with wait: true this went Ready ~2 minutes before
+  # the tekton-dashboard Service existed.
+  #
+  # The dashboard Deployment is a legitimate requirement of this component --
+  # see the TEKTON_PROFILE note above: a cluster that does not want a dashboard
+  # drops the component, it does not narrow the profile.
+  wait: false
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: tekton-operator
+      namespace: tekton-operator
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: tekton-dashboard
+      namespace: ${TEKTON_NAMESPACE:-tekton-pipelines}
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
   path: ./cicd/tekton
   components:
     - ./components/ci-namespace
-    - ./components/dashboard-httproute
   postBuild:
     substitute:
       TEKTON_TARGET_NAMESPACE: "${TEKTON_NAMESPACE:-tekton-pipelines}"
@@ -67,7 +93,49 @@ spec:
       # where they are real bool/int fields on the TektonConfig. To change one,
       # set it in the base -- it cannot be reached from a consumer's substitute
       # map, and that is a property of the field's type, not an oversight.
-
+---
+# The dashboard HTTPRoute, as a SECOND Kustomization that waits for the first.
+#
+# Cilium's gateway controller resolves backendRefs once and does not re-resolve
+# when a missing Service later appears. The tekton-dashboard Service is created
+# by the OPERATOR, minutes after these manifests are applied -- so a route
+# shipped alongside them stays
+#
+#   ResolvedRefs=False  Service "tekton-dashboard" not found
+#
+# and serves HTTP 500 indefinitely, with every Kustomization green and the
+# dashboard pod Running. Witnessed on cicd-test1, 2026-08-28.
+#
+# dependsOn plus the operator Kustomization's health check on the dashboard
+# Deployment is what orders it: the route is created after the Service exists,
+# so the one resolution Cilium performs is the correct one.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tekton-dashboard
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: tekton
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Follows the operator's switch: a route to a dashboard that is not running
+  # is worse than no route, so one line turns both off.
+  suspend: ${TEKTON_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/tekton/dashboard
+  postBuild:
+    substitute:
       TEKTON_DASHBOARD_NAMESPACE: "${TEKTON_NAMESPACE:-tekton-pipelines}"
       TEKTON_DASHBOARD_HOSTNAME: "${TEKTON_DASHBOARD_HOSTNAME:-tekton}"
       # Same variable names the infra and apps bundles read, so a cluster
