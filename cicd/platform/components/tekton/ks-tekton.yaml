@@ -1,0 +1,70 @@
+---
+# Tekton → ./cicd/tekton
+#
+# The base installs the operator and a TektonConfig; `spec.components` adds the
+# CI namespace and the dashboard HTTPRoute, which are opt-in in that base.
+#
+# dependsOn cilium-gateway, and that dependency crosses bundles -- the Gateway
+# comes from infra-platform. Flux does not care which Kustomization provides a
+# name, only that it exists and is ready. Selecting tekton on a cluster whose
+# infra bundle has no cilium-gateway does not error: it waits on "dependency
+# not ready" forever, which reads like slowness.
+#
+# TEKTON_PROFILE defaults to `all` in the base, which is pipelines + triggers +
+# dashboard. A cluster that wants no dashboard sets TEKTON_PROFILE=basic AND
+# drops this component for one without the HTTPRoute -- setting only the
+# profile leaves a route pointing at a Service that is never created.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tekton
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # 10m: the operator reconciles the whole TektonConfig -- pipelines, triggers
+  # and dashboard -- after its own Deployment is up, and `wait: true` holds for
+  # the operator only. The timeout covers the operator, not what it installs.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall. To remove
+  # Tekton, delete this line from the consumer's `components:` list.
+  suspend: ${TEKTON_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/tekton
+  components:
+    - ./components/ci-namespace
+    - ./components/dashboard-httproute
+  postBuild:
+    substitute:
+      TEKTON_TARGET_NAMESPACE: "${TEKTON_NAMESPACE:-tekton-pipelines}"
+      TEKTON_CI_NAMESPACE: "${TEKTON_CI_NAMESPACE:-tekton-ci}"
+      # `all` = pipelines + triggers + dashboard. See the note above before
+      # narrowing it.
+      TEKTON_PROFILE: "${TEKTON_PROFILE:-all}"
+      TEKTON_ENABLE_API_FIELDS: "${TEKTON_ENABLE_API_FIELDS:-beta}"
+      # Results needs its own database and object storage; off until a cluster
+      # actually provides them, because a half-configured Results makes every
+      # TaskRun log through a watcher that cannot store anything.
+      TEKTON_RESULT_DISABLED: "${TEKTON_RESULT_DISABLED:-true}"
+      TEKTON_PRUNER_DISABLED: "${TEKTON_PRUNER_DISABLED:-false}"
+      TEKTON_PRUNER_SCHEDULE: "${TEKTON_PRUNER_SCHEDULE:-0 8 * * *}"
+      TEKTON_PRUNER_KEEP_SINCE: "${TEKTON_PRUNER_KEEP_SINCE:-1440}"
+
+      TEKTON_DASHBOARD_NAMESPACE: "${TEKTON_NAMESPACE:-tekton-pipelines}"
+      TEKTON_DASHBOARD_HOSTNAME: "${TEKTON_DASHBOARD_HOSTNAME:-tekton}"
+      # Same variable names the infra and apps bundles read, so a cluster
+      # writes its domain once.
+      TEKTON_DASHBOARD_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

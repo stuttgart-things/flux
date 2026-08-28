@@ -1,0 +1,14 @@
+---
+# An empty build root, so a consumer can select PART of this app.
+#
+# kustomization.yaml one level up lists control-plane and template-execution
+# together, and a kustomize Component cannot be a build root -- so pointing a
+# Flux Kustomization at ./apps/dapr is all-or-nothing, and pointing it at a
+# components/ directory fails the build outright.
+#
+# With this, `spec.path: ./apps/dapr/root` plus `spec.components` picks
+# exactly what a cluster wants. The file above is untouched: every existing
+# consumer of ./apps/dapr keeps getting both.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

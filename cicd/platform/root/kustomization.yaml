@@ -1,0 +1,18 @@
+---
+# The bundle's path target.
+#
+# Deliberately empty, like infra/platform/root and apps/platform/root: every
+# component is opt-in and the consumer selects them with `spec.components` on
+# its own Flux Kustomization:
+#
+#   spec:
+#     path: ./cicd/platform/root
+#     components:
+#       - ../components/argo-cd
+#       - ../components/tekton
+#
+# Adding a line deploys that component; removing one prunes it, along with its
+# child Kustomization.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

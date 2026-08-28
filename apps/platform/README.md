@@ -8,7 +8,6 @@ the consumer's own Flux Kustomization.
 apps/platform/
 ├── root/          empty kustomization — the consumer's spec.path
 └── components/
-    ├── argo-cd/    → ./cicd/argo-cd    (requires cilium-gateway + a Secret)
     ├── openbao/    → ./apps/openbao    (requires cilium-gateway, a seal)
     ├── vault/      → ./apps/vault      (existing instances only — see below)
     ├── rancher/    → ./apps/rancher    (requires cilium-gateway, cert-manager-install)
@@ -29,12 +28,19 @@ name, only that it exists and is ready. Selecting an app whose dependency is
 not selected anywhere gives no error — it waits on "dependency not ready"
 forever, which reads like slowness.
 
+## argo-cd moved
+
+It lives in [`cicd/platform`](../../cicd/platform) now, with tekton, dapr and
+crossplane. Its child Kustomization always pointed at `./cicd/argo-cd`; only
+the wrapper was here, and ArgoCD is not an app a platform happens to run, it is
+how a platform delivers things. A consumer that selected
+`../components/argo-cd` has to repoint that line.
+
 ## Every app here needs a Secret you must supply
 
-`argo-cd`, `rancher` and `minio` use `substituteFrom` with `optional: false`.
-That is on purpose: left optional, Flux proceeds with the variables unset and
-installs an ArgoCD nobody can log into, or a MinIO with an empty admin
-password, and reports success either way.
+`rancher` and `minio` use `substituteFrom` with `optional: false`. That is on
+purpose: left optional, Flux proceeds with the variables unset and installs a
+MinIO with an empty admin password, and reports success.
 
 ## minio stays on chart 16
 

@@ -1,0 +1,10 @@
+---
+# dapr — the control plane only.
+#
+# Standalone: no Gateway (it publishes no UI), no StorageClass, no Secret.
+# The workflow runtime that USES it is the separate dapr-workflows component,
+# because that one needs both.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-dapr.yaml

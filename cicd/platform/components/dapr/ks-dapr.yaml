@@ -1,0 +1,39 @@
+---
+# Dapr control plane → ./apps/dapr/root + components/control-plane
+#
+# Deliberately NOT ./apps/dapr: that path carries template-execution as well,
+# which needs a Redis and two API tokens this component has no business
+# requiring. A cluster that wants both selects dapr-workflows beside this one.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall.
+  suspend: ${DAPR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/control-plane
+  postBuild:
+    substitute:
+      DAPR_NAMESPACE: "${DAPR_NAMESPACE:-dapr-system}"
+      # renovate: datasource=helm depName=dapr registryUrl=https://dapr.github.io/helm-charts
+      DAPR_VERSION: "${DAPR_VERSION:-1.17.4}"
+      # A single-node cluster cannot satisfy the HA replica counts, and the
+      # placement StatefulSet would sit Pending while everything above it
+      # reports Progressing.
+      DAPR_HA_ENABLED: "${DAPR_HA_ENABLED:-false}"

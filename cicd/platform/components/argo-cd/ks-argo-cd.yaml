@@ -1,6 +1,11 @@
 ---
 # ArgoCD → ./cicd/argo-cd
 #
+# Moved here from apps/platform in the same change that created this bundle.
+# It always pointed at ./cicd/argo-cd -- only the wrapper sat in the app layer,
+# and ArgoCD is not an app a platform happens to run, it is the delivery tool.
+# No cluster had selected it, so the move cost nothing.
+#
 # dependsOn cilium-gateway: the httproute component below renders an HTTPRoute
 # against that Gateway. That dependency crosses bundles -- the Gateway comes
 # from infra-platform -- and Flux does not care which Kustomization provides a
@@ -17,8 +22,8 @@ metadata:
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
-    kustomization.stuttgart-things.com/type: apps
-    kustomization.stuttgart-things.com/bundle: apps-platform
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
 spec:
   dependsOn:
     - name: cilium-gateway

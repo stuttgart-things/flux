@@ -1,0 +1,52 @@
+---
+# Dapr workflows → ./apps/dapr/root + components/template-execution
+#
+# NEEDS A REDIS, and this component does not deploy one. apps/dapr has a
+# redis-stack component, and it is deliberately not wired here: its container
+# scripts escape most shell variables as $${VAR} but leave $HOSTNAME and
+# $REDISPORT bare, and Flux's substitution expands a bare $VAR too -- so the
+# sentinel would come up with an empty replica-announce-ip and an empty port,
+# and report Ready. Point DAPR_WORKFLOWS_REDIS_HOST at a Redis that exists, or
+# fix that escaping first.
+#
+# The Secret is `optional: false` on purpose. Its two values are rendered
+# straight into Secrets, and left optional Flux substitutes empty strings --
+# giving a GitHub token that is present, empty, and silently unauthorized.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-workflows
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: dapr
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${DAPR_WORKFLOWS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/template-execution
+  postBuild:
+    substitute:
+      DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
+      DAPR_BACKSTAGE_TPL_VERSION: "${DAPR_WORKFLOWS_VERSION:-49b147e70413}"
+      DAPR_BACKSTAGE_TPL_IMAGE_TAG: "${DAPR_WORKFLOWS_IMAGE_TAG:-49b147e70413}"
+      # No default that points at another cluster's Redis: the base's default
+      # names homerun2-flux, which on any other cluster resolves to nothing and
+      # fails at the first workflow rather than at deploy time.
+      DAPR_BACKSTAGE_TPL_REDIS_HOST: "${DAPR_WORKFLOWS_REDIS_HOST:-set-DAPR_WORKFLOWS_REDIS_HOST.invalid:6379}"
+    substituteFrom:
+      - kind: Secret
+        name: ${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}
+        optional: false
