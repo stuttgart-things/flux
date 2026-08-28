@@ -1,3 +1,10 @@
+## [1.37.1](https://github.com/stuttgart-things/flux/compare/v1.37.0...v1.37.1) (2026-08-28)
+
+
+### Bug Fixes
+
+* **rancher:** give the install longer than Flux's 5m default ([#288](https://github.com/stuttgart-things/flux/issues/288)) ([26bbfb6](https://github.com/stuttgart-things/flux/commit/26bbfb6a815f69c39da2c34e9141e0ffb2786947))
+
 # [1.37.0](https://github.com/stuttgart-things/flux/compare/v1.36.0...v1.37.0) (2026-08-28)
 
 
