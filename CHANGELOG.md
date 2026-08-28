@@ -1,3 +1,10 @@
+## [1.37.2](https://github.com/stuttgart-things/flux/compare/v1.37.1...v1.37.2) (2026-08-28)
+
+
+### Bug Fixes
+
+* **cicd:** postBuild.substitute values that are not strings fail the whole bundle ([#289](https://github.com/stuttgart-things/flux/issues/289)) ([ce8c783](https://github.com/stuttgart-things/flux/commit/ce8c783e219e4f89a137e4bcfacd612798b0dc1c))
+
 ## [1.37.1](https://github.com/stuttgart-things/flux/compare/v1.37.0...v1.37.1) (2026-08-28)
 
 
