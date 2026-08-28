@@ -27,7 +27,14 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-BUNDLES = ["infra/platform", "apps/platform"]
+# Discovered, not listed: a new bundle (cicd/platform was the third) is covered
+# the day it exists. Hardcoding the list is how TEKTON_RESULT_DISABLED reached a
+# cluster with this check passing.
+BUNDLES = sorted(
+    str(d.relative_to(ROOT))
+    for d in ROOT.glob("*/platform")
+    if (d / "root").is_dir() and (d / "components").is_dir()
+)
 # ${NAME:-default} / ${NAME} -- the whole value must be one reference for the
 # default to be what lands. A value mixing text and references is a string.
 REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-(.*))?\}$")
