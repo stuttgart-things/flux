@@ -24,7 +24,10 @@ spec:
     - name: cert-manager-install
   interval: 1h
   retryInterval: 1m
-  timeout: 15m
+  # 20m, above the HelmRelease's own 12m. wait: true holds for that release, so
+  # a Kustomization timeout at or below it gives up while the install is still
+  # running and reports a failure that is only impatience.
+  timeout: 20m
   force: false
   prune: true
   suspend: ${RANCHER_SUSPEND:-false}
