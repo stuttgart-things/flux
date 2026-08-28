@@ -1,7 +1,9 @@
 ---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# components/configs is NOT here: `Configuration` is a CRD this chart installs,
+# so applying the CRs in the same pass deadlocks (see configs/kustomization.yaml).
+# They are a separate build root at ./configs, wired with dependsOn.
 components:
   - components/install
   - components/functions
-  - components/configs

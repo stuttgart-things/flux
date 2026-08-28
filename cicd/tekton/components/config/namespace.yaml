@@ -1,0 +1,26 @@
+---
+# The target namespace, declared HERE rather than left to the operator.
+#
+# The operator creates spec.targetNamespace itself when it reconciles the
+# TektonConfig -- so on a cold cluster it does not exist at apply time, and
+# anything else in this bundle that lives in it (the dashboard HTTPRoute) fails
+# its dry-run with
+#
+#   HTTPRoute/tekton-pipelines/tekton-dashboard: namespaces "tekton-pipelines"
+#   not found
+#
+# which aborts the WHOLE Kustomization -- the operator Deployment included. The
+# result looks like Tekton simply never installed, and it never recovers,
+# because the namespace can only appear after the operator runs.
+#
+# Flux applies namespaces in an earlier stage than the objects inside them, so
+# declaring it once here is enough to break the deadlock. The operator adopts an
+# existing namespace, it does not object to one.
+#
+# It belongs to `config` and not to `dashboard-httproute` on purpose: this is
+# where targetNamespace is declared, and pruning it must mean "Tekton is gone",
+# not "the dashboard route was deselected".
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${TEKTON_TARGET_NAMESPACE:-tekton-pipelines}

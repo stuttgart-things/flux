@@ -1,0 +1,23 @@
+---
+# The Configurations, as a build root of their OWN.
+#
+# Split off from ../kustomization.yaml because `Configuration` is a CRD that the
+# crossplane chart installs. Applied together with the chart, the CRs dry-run
+# against an API that does not know them yet:
+#
+#   Configuration/cloud-config dry-run failed: no matches for kind
+#   "Configuration" in version "pkg.crossplane.io/v1"
+#
+# and that aborts the whole Kustomization -- the HelmRelease included -- so
+# crossplane is never installed and the CRD never appears. It does not recover
+# on retry: the two halves deadlock.
+#
+# The consumer wires this as a second Flux Kustomization with dependsOn on the
+# install one; see ../../platform/components/crossplane/ks-crossplane.yaml.
+#
+# The Functions do NOT need this treatment: components/functions ships them as
+# `customresources` inside a HelmRelease, so nothing types them at apply time.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../components/configs
