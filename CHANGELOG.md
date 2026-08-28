@@ -1,3 +1,10 @@
+## [1.37.4](https://github.com/stuttgart-things/flux/compare/v1.37.3...v1.37.4) (2026-08-28)
+
+
+### Bug Fixes
+
+* **cicd:** the tekton dashboard route is dead on every fresh install ([#291](https://github.com/stuttgart-things/flux/issues/291)) ([3df2c2d](https://github.com/stuttgart-things/flux/commit/3df2c2d02b2eb2f3a563b8b0248158d1a56fbd1f))
+
 ## [1.37.3](https://github.com/stuttgart-things/flux/compare/v1.37.2...v1.37.3) (2026-08-28)
 
 
