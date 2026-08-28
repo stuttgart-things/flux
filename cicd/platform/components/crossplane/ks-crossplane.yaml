@@ -41,6 +41,52 @@ spec:
       CROSSPLANE_VERSION: "${CROSSPLANE_VERSION:-2.4.0}"
       CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.2.0}"
       CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.0}"
+---
+# The Configurations, as a SECOND Kustomization that waits for the first.
+#
+# `Configuration` is a CRD the crossplane chart installs. In one Kustomization
+# with the chart the CRs dry-run against an API that does not know them yet:
+#
+#   Configuration/cloud-config dry-run failed: no matches for kind
+#   "Configuration" in version "pkg.crossplane.io/v1"
+#
+# and Flux aborts the ENTIRE apply on that -- so the HelmRelease is never
+# created either, the CRD never appears, and the retry fails identically
+# forever. Witnessed on cicd-test1, 2026-08-28: crossplane-system existed and
+# nothing else did.
+#
+# dependsOn + the install Kustomization's `wait: true` is what breaks it: that
+# one is Ready only once the chart is installed, which is when the CRDs exist.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane-configs
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane
+  interval: 1h
+  retryInterval: 1m
+  # 20m: a Configuration is not installed when its resource exists -- the
+  # package manager pulls each image, resolves its dependencies and only then
+  # marks it Healthy. Six of them on a cold cluster take minutes.
+  timeout: 20m
+  force: false
+  prune: true
+  # Follows the install component's switch: configs without crossplane are
+  # meaningless, so one line turns both off.
+  suspend: ${CROSSPLANE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/crossplane/configs
+  postBuild:
+    substitute:
       CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION: "${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}"
       CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION: "${CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION:-v0.5.1}"
       CROSSPLANE_CONFIG_HARVESTER_VM_VERSION: "${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}"

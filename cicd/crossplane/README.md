@@ -58,3 +58,26 @@ spec:
       namespace: crossplane-system
 EOF
 ```
+
+## The Configurations need a SECOND Kustomization
+
+`./cicd/crossplane` installs the controller and the Functions. The
+`Configuration` CRs live at `./cicd/crossplane/configs` and must be wired
+separately, with `dependsOn` on the one above:
+
+```yaml
+spec:
+  dependsOn:
+    - name: crossplane
+  path: ./cicd/crossplane/configs
+  wait: true
+```
+
+`Configuration` is a CRD the chart installs, so applying the CRs in the same
+pass dry-runs them against an API that does not know the kind yet. Flux aborts
+the whole apply on that -- the HelmRelease included -- so crossplane is never
+installed, the CRD never appears, and every retry fails identically. The
+deadlock is silent: the namespace exists and nothing else does.
+
+The Functions do NOT need this, because `components/functions` ships them as
+`customresources` inside a HelmRelease -- nothing types them at apply time.
