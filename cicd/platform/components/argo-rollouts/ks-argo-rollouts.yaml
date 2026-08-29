@@ -1,0 +1,74 @@
+---
+# Argo Rollouts -> ./cicd/argo-rollouts, with the dashboard route SPLIT OFF.
+#
+# The route's backend is the argo-rollouts-dashboard Service, which this
+# release creates. Cilium's gateway controller resolves backendRefs ONCE, so a
+# route applied in the same pass answers HTTP 500 forever -- Gateway still
+# Programmed, route still Accepted, nothing re-resolves when the Service
+# appears. Two Kustomizations, the second waiting on the first, is the fix that
+# worked for the tekton dashboard.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: argo-rollouts
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${ARGO_ROLLOUTS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/argo-rollouts
+  postBuild:
+    substitute:
+      ARGO_ROLLOUTS_NAMESPACE: "${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}"
+      # renovate: datasource=helm depName=argo-rollouts registryUrl=https://argoproj.github.io/argo-helm
+      ARGO_ROLLOUTS_VERSION: "${ARGO_ROLLOUTS_VERSION:-2.41.1}"
+      # The dashboard toggle is NOT threaded here, and cannot be: a
+      # bool-valued substitute fails the PARENT Kustomization and every sibling
+      # with it, and no quoting form survives kustomize -- "x", 'x' and !!str
+      # are all stripped. Its default lives in cicd/argo-rollouts/release.yaml
+      # and that is the only place to change it.
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: argo-rollouts-dashboard
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: argo-rollouts
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${ARGO_ROLLOUTS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/argo-rollouts/dashboard
+  postBuild:
+    substitute:
+      ARGO_ROLLOUTS_NAMESPACE: "${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}"
+      ARGO_ROLLOUTS_HOSTNAME: "${ARGO_ROLLOUTS_HOSTNAME:-argo-rollouts}"
+      # Shared with every other route in the bundle -- the Gateway reads its
+      # certificateRef from its OWN namespace, so these must match the gateway
+      # the infra layer created.
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"

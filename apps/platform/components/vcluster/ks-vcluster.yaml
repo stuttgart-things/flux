@@ -1,0 +1,45 @@
+---
+# vcluster -> ./apps/vcluster
+#
+# In the APPS layer, not cicd: this deploys a virtual cluster, it is not part
+# of how a platform delivers things.
+#
+# NOT the same vcluster as the one platform-sthings runs. There the
+# clusterbook-operator owns a `vclusters.clusterbook.stuttgart-things.com` CR
+# and creates the instance plus its ArgoCD registration; this component is the
+# plain chart with nothing registering it anywhere. Selecting both on one
+# cluster gives two unrelated virtual clusters, which is legal and almost
+# certainly not what was meant.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vcluster
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${VCLUSTER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/vcluster
+  postBuild:
+    substitute:
+      VCLUSTER_NAMESPACE: "${VCLUSTER_NAMESPACE:-vcluster}"
+      # renovate: datasource=helm depName=vcluster registryUrl=https://charts.loft.sh
+      VCLUSTER_VERSION: "${VCLUSTER_VERSION:-0.36.1}"
+      # Not threaded, and cannot be: a bool-valued substitute fails the
+      # PARENT Kustomization and every sibling, and no quoting survives
+      # kustomize. Change it in apps/vcluster/release.yaml.
+      # A class that does not exist leaves the PVC Pending while the
+      # HelmRelease reports only its own timeout.
+      VCLUSTER_STORAGE_CLASS: "${VCLUSTER_STORAGE_CLASS:-set-VCLUSTER_STORAGE_CLASS}"
+      VCLUSTER_STORAGE_SIZE: "${VCLUSTER_STORAGE_SIZE:-10Gi}"
