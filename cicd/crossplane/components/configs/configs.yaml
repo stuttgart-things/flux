@@ -40,3 +40,30 @@ metadata:
   name: harvester-vm
 spec:
   package: ghcr.io/stuttgart-things/crossplane/harvester-vm:${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}
+  # The ONLY package here that depends on other packages in this same file --
+  # volume-claim and cloud-config, plus provider-kubernetes and
+  # function-patch-and-transform from the lists beside it. All four are already
+  # installed above, so resolving them again gains nothing and costs the
+  # cluster its entire Crossplane:
+  #
+  # Crossplane materialises an unresolved dependency as a Configuration of its
+  # own, named after the OCI path -- stuttgart-things-crossplane-volume-claim
+  # for the same image our `volume-claim` above installs. Two lock nodes then
+  # carry one source, and the resolver gives up on the WHOLE graph:
+  #
+  #   cannot initialize dependency graph from the packages in the lock:
+  #   node ghcr.io/stuttgart-things/crossplane/volume-claim already exists
+  #
+  # Every Configuration, Function and Provider goes Healthy=False with that
+  # message, including the ones that have nothing to do with harvester-vm.
+  # Installed stays True and the pods keep running, so nothing crashes and
+  # nothing restarts -- Crossplane simply reconciles no claim at all.
+  #
+  # It is a RACE, which is why it does not always happen: if our explicit
+  # volume-claim reaches the lock first, the dependency resolves onto it and no
+  # duplicate appears. cicd-test1 came up clean, cicd-test2 did not, from the
+  # same manifests.
+  #
+  # If a dependency of harvester-vm is ever REMOVED from this file, add it back
+  # or drop this line -- with it set, nothing will install that dependency.
+  skipDependencyResolution: true
