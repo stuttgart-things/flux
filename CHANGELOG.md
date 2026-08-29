@@ -1,3 +1,10 @@
+# [1.44.0](https://github.com/stuttgart-things/flux/compare/v1.43.0...v1.44.0) (2026-08-29)
+
+
+### Features
+
+* **ci:** catch the crossplane lock collision before it reaches a cluster ([#309](https://github.com/stuttgart-things/flux/issues/309)) ([5d77328](https://github.com/stuttgart-things/flux/commit/5d77328f8152026aa7ddcd6ce58bdb17effef4a5))
+
 # [1.43.0](https://github.com/stuttgart-things/flux/compare/v1.42.0...v1.43.0) (2026-08-29)
 
 
