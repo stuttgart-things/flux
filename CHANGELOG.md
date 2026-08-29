@@ -1,3 +1,10 @@
+# [1.43.0](https://github.com/stuttgart-things/flux/compare/v1.42.0...v1.43.0) (2026-08-29)
+
+
+### Features
+
+* **cicd:** move machinery out of apps -- it is a Crossplane dashboard ([#306](https://github.com/stuttgart-things/flux/issues/306)) ([797d409](https://github.com/stuttgart-things/flux/commit/797d409d5ea1f73fe378f99a0cb82f1152684c63))
+
 # [1.42.0](https://github.com/stuttgart-things/flux/compare/v1.41.1...v1.42.0) (2026-08-29)
 
 
