@@ -73,7 +73,7 @@ spec:
         metadata:
           name: function-kcl
         spec:
-          package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.2
+          package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.3
       functionPatchAndTransform:
         apiVersion: pkg.crossplane.io/v1beta1
         kind: Function
