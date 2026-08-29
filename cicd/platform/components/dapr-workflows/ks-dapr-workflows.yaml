@@ -1,17 +1,65 @@
 ---
-# Dapr workflows → ./apps/dapr/root + components/template-execution
+# Dapr workflows → ./apps/dapr/root + template-execution + its own Redis.
 #
-# NEEDS A REDIS, and this component does not deploy one. apps/dapr has a
-# redis-stack component, and it is deliberately not wired here: its container
-# scripts escape most shell variables as $${VAR} but leave $HOSTNAME and
-# $REDISPORT bare, and Flux's substitution expands a bare $VAR too -- so the
-# sentinel would come up with an empty replica-announce-ip and an empty port,
-# and report Ready. Point DAPR_WORKFLOWS_REDIS_HOST at a Redis that exists, or
-# fix that escaping first.
+# TWO Kustomizations, and they cannot be one. dapr-workflows substitutes FROM a
+# Secret, which postBuild reads while BUILDING -- so a Secret created by the
+# same apply does not exist yet and never will: Flux applies nothing at all and
+# retries forever on "secret not found". The Secret gets its own Kustomization,
+# ordered ahead of the one that consumes it.
 #
-# The Secret is `optional: false` on purpose. Its two values are rendered
-# straight into Secrets, and left optional Flux substitutes empty strings --
-# giving a GitHub token that is present, empty, and silently unauthorized.
+# THIS NEEDS EXTERNAL-SECRETS. Both Secrets come out of the cluster's Vault
+# through its ClusterSecretStore; select external-secrets and
+# external-secrets-vault-store in the infra layer, and put the three fields in
+# the KV mount that store reads:
+#
+#   <mount>/dapr-workflows  github_token, backstage_token, redis_password
+#
+# The Redis is deployed here now. The old comment claimed Flux substitution
+# would eat the bare $HOSTNAME and $REDISPORT in the chart's start scripts --
+# it does not: Flux only substitutes ${VAR} forms, never a bare $VAR. Checked
+# with `flux envsubst` over the built manifest, before and after: byte for byte
+# identical, and both scripts pass `bash -n`. The braced references in those
+# scripts were already escaped as $${...} by whoever wrote them.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-workflows-secrets
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  # Crosses bundles on purpose: the store lives in infra-platform, and an
+  # ExternalSecret applied before its store exists sits in SecretSyncedError
+  # while looking, from the Kustomization, entirely healthy.
+  dependsOn:
+    - name: external-secrets-vault-store
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${DAPR_WORKFLOWS_SUSPEND:-false}
+  # wait for the ExternalSecret to actually SYNC, not just to be applied.
+  # Applied-but-unsynced is the state that makes the next Kustomization fail on
+  # a missing Secret, which is the failure this split exists to prevent.
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/workflow-secrets
+  postBuild:
+    substitute:
+      DAPR_WORKFLOWS_SECRET: "${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}"
+      DAPR_ESO_STORE_NAME: "${DAPR_WORKFLOWS_ESO_STORE:-set-DAPR_WORKFLOWS_ESO_STORE}"
+      DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
+      DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
+      DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
+      DAPR_ESO_GITHUB_TOKEN_PROPERTY: "${DAPR_WORKFLOWS_ESO_GITHUB_TOKEN_PROPERTY:-github_token}"
+      DAPR_ESO_BACKSTAGE_TOKEN_PROPERTY: "${DAPR_WORKFLOWS_ESO_BACKSTAGE_TOKEN_PROPERTY:-backstage_token}"
+      DAPR_ESO_REDIS_PASSWORD_PROPERTY: "${DAPR_WORKFLOWS_ESO_REDIS_PASSWORD_PROPERTY:-redis_password}"
+---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -24,6 +72,7 @@ metadata:
 spec:
   dependsOn:
     - name: dapr
+    - name: dapr-workflows-secrets
   interval: 1h
   retryInterval: 1m
   timeout: 10m
@@ -37,16 +86,40 @@ spec:
   path: ./apps/dapr/root
   components:
     - ../components/template-execution
+    - ../components/redis-stack
+    # In the SAME Kustomization as redis-stack, which owns the namespace it
+    # writes into. Split out, the ExternalSecret would land in a namespace that
+    # does not exist yet.
+    - ../components/redis-auth
   postBuild:
     substitute:
       DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
       DAPR_BACKSTAGE_TPL_VERSION: "${DAPR_WORKFLOWS_VERSION:-49b147e70413}"
       DAPR_BACKSTAGE_TPL_IMAGE_TAG: "${DAPR_WORKFLOWS_IMAGE_TAG:-49b147e70413}"
-      # No default that points at another cluster's Redis: the base's default
-      # names homerun2-flux, which on any other cluster resolves to nothing and
-      # fails at the first workflow rather than at deploy time.
-      DAPR_BACKSTAGE_TPL_REDIS_HOST: "${DAPR_WORKFLOWS_REDIS_HOST:-set-DAPR_WORKFLOWS_REDIS_HOST.invalid:6379}"
+      # The Redis this Kustomization now deploys, not another cluster's. The
+      # base default names homerun2-flux, which anywhere else resolves to
+      # nothing and fails at the first workflow rather than at deploy time.
+      DAPR_BACKSTAGE_TPL_REDIS_HOST: "${DAPR_WORKFLOWS_REDIS_HOST:-redis-stack.dapr-redis:6379}"
+
+      DAPR_REDIS_NAMESPACE: "${DAPR_WORKFLOWS_REDIS_NAMESPACE:-dapr-redis}"
+      DAPR_REDIS_VERSION: "${DAPR_WORKFLOWS_REDIS_CHART_VERSION:-17.1.4}"
+      DAPR_REDIS_STORAGE_CLASS: "${DAPR_WORKFLOWS_REDIS_STORAGE_CLASS:-openebs-hostpath}"
+      DAPR_REDIS_STORAGE_SIZE: "${DAPR_WORKFLOWS_REDIS_STORAGE_SIZE:-8Gi}"
+      DAPR_REDIS_AUTH_SECRET: "${DAPR_WORKFLOWS_REDIS_AUTH_SECRET:-redis-auth}"
+      DAPR_REDIS_AUTH_KEY: "${DAPR_WORKFLOWS_REDIS_AUTH_KEY:-password}"
+
+      # Same store and same field as the Secret above -- one Vault entry holds
+      # the redis password, so the chart's copy and the Dapr component's copy
+      # cannot drift apart.
+      DAPR_ESO_STORE_NAME: "${DAPR_WORKFLOWS_ESO_STORE:-set-DAPR_WORKFLOWS_ESO_STORE}"
+      DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
+      DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
+      DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
+      DAPR_ESO_REDIS_PASSWORD_PROPERTY: "${DAPR_WORKFLOWS_ESO_REDIS_PASSWORD_PROPERTY:-redis_password}"
     substituteFrom:
+      # optional: false on purpose. Its values are rendered straight into
+      # Secrets; left optional, Flux substitutes empty strings and hands out a
+      # GitHub token that is present, empty, and silently unauthorized.
       - kind: Secret
         name: ${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}
         optional: false
