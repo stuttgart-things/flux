@@ -66,6 +66,8 @@ spec:
       # REQUIRED. A PVC that never binds leaves the pod Pending while the
       # HelmRelease reports installed.
       STORAGE_CLASS: "${MINIO_STORAGE_CLASS:-set-MINIO_STORAGE_CLASS}"
+      # passthrough-override: the platform bundle sizes minio for a cluster, the
+      # app's own default is the single-app minimum.
       MINIO_STORAGE_SIZE: "${MINIO_STORAGE_SIZE:-20Gi}"
       CLUSTER_ISSUER: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
       INGRESS_HOSTNAME_API: "${MINIO_HOSTNAME_API:-minio}"

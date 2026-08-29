@@ -49,7 +49,9 @@ spec:
       # these did not, so cicd-test2 kept provider-helm v1.2.0 and opentofu
       # v1.1.0 while provider-kubernetes -- which has no copy here -- did move.
       # A mixed set nothing reported, because every object was Ready.
+      # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-helm
       CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.4.0}"
+      # renovate: datasource=docker depName=xpkg.upbound.io/upbound/provider-opentofu
       CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.7}"
 ---
 # The Configurations, as a SECOND Kustomization that waits for the first.
@@ -97,9 +99,15 @@ spec:
   path: ./cicd/crossplane/configs
   postBuild:
     substitute:
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/ansible-run
       CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION: "${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/cloud-config
       CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION: "${CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION:-v0.5.1}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/harvester-vm
       CROSSPLANE_CONFIG_HARVESTER_VM_VERSION: "${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/pipeline-integration
       CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION: "${CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION:-v0.1.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/storage-platform
       CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION: "${CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION:-v0.6.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/volume-claim
       CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION: "${CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION:-v0.1.1}"
