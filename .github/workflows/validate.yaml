@@ -69,6 +69,14 @@ jobs:
       # target so a default reached through a component or a base counts.
       - name: Every pass-through default matches the path it threads into
         run: python3 ./hack/check-passthrough-defaults.py
+      # skopeo, because the crossplane packages' dependsOn lives inside the OCI
+      # artifact and the xpkg registries do not answer the anonymous manifest
+      # request verify-image-tags.py knows how to make. Without it the check
+      # reports itself unverifiable rather than failing.
+      - name: Install skopeo
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+      - name: No duplicate or cross-registry crossplane package node
+        run: python3 ./hack/check-crossplane-deps.py
 
   renovate:
     name: Renovate config
