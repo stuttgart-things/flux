@@ -93,7 +93,7 @@
       "allowedVersions": "<v0.7.0"
     },
     {
-      "description": "Never let a bot move a crossplane-contrib package to the xpkg.upbound.io mirror, or take one there past the crossplane.io copy. Crossplane locks on the source string: the two spellings are two nodes for one package, and a duplicate node aborts resolution for the entire graph (#292). Keeping them in one group means a registry split shows up as a single reviewable PR.",
+      "description": "Group the crossplane-contrib packages so a registry change arrives as one reviewable PR. THE REGISTRY IS NOT INTERCHANGEABLE: each package here is on the registry the installed Configurations declare for it, and Crossplane keys its lock on the source string -- the other spelling of the same image reads as a missing dependency. Do not 'tidy' these onto one registry; that has to start in the packages' own dependsOn.",
       "matchDatasources": [
         "docker"
       ],
