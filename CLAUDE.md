@@ -152,6 +152,28 @@ Run `pre-commit run --all-files` to validate before pushing. Active checks: trai
 
 The workflow calls the scripts directly rather than going through `task`. The Taskfile includes a remote Taskfile, which `task` refuses to load unattended (`not trusted by user`, exit 104) unless given `--yes` — and that would mean trusting a network-fetched Taskfile on every CI run. The `task` targets call the same scripts, so local and CI run identical code.
 
+### Why the release needs `RELEASE_TOKEN`
+
+A ruleset on `main` makes those three checks required. `@semantic-release/git`
+pushes the CHANGELOG commit straight to `main`, and a required-status-check rule
+blocks any push whose commit has no passing checks — verified: the push is
+rejected with `GH013: Repository rule violations found`.
+
+`GITHUB_TOKEN` cannot be exempted. A ruleset's `bypass_actors` only accepts an
+Integration belonging to the owner organization, and org-level rulesets (where
+GitHub Actions could be listed) require GitHub Team.
+
+A PAT belonging to a repository admin does bypass it, because the admin role is
+in the bypass list. Hence `secrets.RELEASE_TOKEN` — a fine-grained PAT on this
+repo with **Contents: read and write** (plus Issues and Pull requests: read and
+write for semantic-release's comments). The checkout in that job sets
+`persist-credentials: false` so the push uses that token rather than the job's
+`GITHUB_TOKEN`.
+
+The workflow falls back to `GITHUB_TOKEN` when `RELEASE_TOKEN` is absent, so it
+still runs — but that combination cannot push once the ruleset is enforcing.
+Remember the PAT expires; the release job fails at the push step when it does.
+
 ## Dependency Management
 
 Renovate is configured (`renovate.json`) with Flux-specific YAML file matching to automatically propose version updates for Helm charts and OCI artifacts.
