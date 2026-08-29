@@ -1,0 +1,23 @@
+---
+# The platform set a ClusterbookCluster control plane actually needs.
+#
+# overlays/full exists and also works, but it carries the homerun2 and
+# machinery PR-preview stacks, which are LabUL-specific and have nothing to do
+# with realising a cluster. Enabling them is harmless -- every AppSet is
+# label-gated, so an enabled-but-unlabeled platform matches zero clusters --
+# but "harmless" is not the same as "explicable", and a person reading a new
+# cluster's Applications should not have to work out why machinery is there.
+#
+# These five are the ones a ClusterbookCluster's labels select on:
+# network-platform/*, security-platform/*, cicd-platform/*, storage-platform/*
+# and the kind variants.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+components:
+  - ../../components/network
+  - ../../components/security
+  - ../../components/cicd
+  - ../../components/storage
+  - ../../components/kind

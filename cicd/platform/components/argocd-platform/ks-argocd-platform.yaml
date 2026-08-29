@@ -1,0 +1,85 @@
+---
+# ArgoCD as a CLUSTER CONTROL PLANE, not just ArgoCD.
+#
+# This is what turns a cicd cluster into one that can realise a
+# ClusterbookCluster: the clusterbook-operator and its CRDs, the
+# ClusterbookProviderConfig that tells it which clusterbook API to allocate
+# from, the reusable ArgoCD config (AppProject + the cluster-projects AppSet),
+# and the platform ApplicationSets the CR's labels select on.
+#
+# MUTUALLY EXCLUSIVE WITH THE argo-cd COMPONENT. The bundle behind this
+# installs ArgoCD itself -- that is the point of it -- so selecting both puts
+# two Flux Kustomizations on the same HelmRelease in the same namespace and
+# they fight over it. Pick this one OR argo-cd, never both.
+#
+# Nothing checks that today: check-cluster-components.py reads only the infra
+# layer, so it sees neither of these. Until it does, this comment is the check.
+#
+# WHAT A CLUSTER STILL HAS TO SUPPLY, because none of it can come from here:
+#
+#   * a kubeconfig Secret per managed cluster in the argocd namespace, named by
+#     each ClusterbookCluster's kubeconfigSecretRef. On platform-sthings those
+#     arrive via External Secrets out of Vault.
+#   * cert-manager plus the Vault token Secret the CR's wildcard-issuer
+#     annotations point at, if the managed clusters are to get certificates.
+#   * the ClusterbookCluster CRs themselves.
+#
+# The operator without those produces an allocation and an ArgoCD cluster
+# secret and stops there -- which looks like it worked.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: ${ARGOCD_CATALOG_SOURCE:-argocd-catalog}
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: ${ARGOCD_CATALOG_INTERVAL:-5m}
+  url: ${ARGOCD_CATALOG_URL:-https://github.com/stuttgart-things/argocd.git}
+  ref:
+    branch: ${ARGOCD_CATALOG_BRANCH:-main}
+---
+# Shipped here rather than left to the cluster's sources/ directory on purpose.
+# The platform Kustomizations inside the bundle reference this source by name;
+# a cluster that enabled the component and forgot the source would get
+# Kustomizations stuck on "source not found" -- reported against the child, not
+# against the thing that is actually missing.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: argocd-platform
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 20m
+  force: false
+  prune: true
+  suspend: ${ARGOCD_PLATFORM_SUSPEND:-false}
+  # The bundle orders itself with dependsOn -- ArgoCD healthy before the
+  # operator or any AppProject/ApplicationSet applies, so no CRD races. Waiting
+  # here as well would only add a second timeout on top of the same wait.
+  wait: false
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  # ./cicd/argocd-platform/base for ArgoCD + operator + config and NO platform
+  # AppSets; the overlay adds the five a ClusterbookCluster's labels select on.
+  path: ${ARGOCD_PLATFORM_PATH:-./cicd/argocd-platform/overlays/clusterbook}
+  postBuild:
+    substitute:
+      BUNDLE_NAME: "${ARGOCD_PLATFORM_BUNDLE_NAME:-argocd-platform}"
+      FLUX_SOURCE: "${APPS_SOURCE:-flux-apps}"
+      ARGOCD_CATALOG_SOURCE: "${ARGOCD_CATALOG_SOURCE:-argocd-catalog}"
+      # Kept equal to the argo-cd component's default on purpose: both paths
+      # install the same HelmRelease from ./cicd/argo-cd, and two defaults for
+      # one chart is how a cluster ends up with a version nobody chose.
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.0}"
+      ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
+      ARGO_CD_SECRETS_NAME: "${ARGO_CD_SECRETS_NAME:-argocd-secrets}"
+      CLUSTERBOOK_API_URL: "${CLUSTERBOOK_API_URL:-set-CLUSTERBOOK_API_URL.invalid}"
