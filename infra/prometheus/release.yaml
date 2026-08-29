@@ -10,7 +10,7 @@ spec:
     spec:
       chart: prometheus
       # renovate: datasource=helm depName=prometheus registryUrl=https://prometheus-community.github.io/helm-charts
-      version: ${PROMETHEUS_VERSION:-28.16.0}
+      version: ${PROMETHEUS_VERSION:-29.27.0}
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
