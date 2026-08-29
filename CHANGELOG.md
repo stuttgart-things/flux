@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/stuttgart-things/flux/compare/v1.38.0...v1.39.0) (2026-08-29)
+
+
+### Features
+
+* **cicd:** dapr-workflows brings its own Redis and reads its secrets from Vault ([#293](https://github.com/stuttgart-things/flux/issues/293)) ([a8005d3](https://github.com/stuttgart-things/flux/commit/a8005d3bd152724b740501b59693375494e9a3b7))
+
 # [1.38.0](https://github.com/stuttgart-things/flux/compare/v1.37.5...v1.38.0) (2026-08-29)
 
 
