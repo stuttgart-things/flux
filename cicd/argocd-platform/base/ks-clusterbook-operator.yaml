@@ -27,4 +27,5 @@ spec:
       # A SECOND COPY of the default in apps/clusterbook-operator/release.yaml,
       # and it wins over it. It said v0.19.0 while the base said v0.20.0, so
       # this bundle silently installed the older operator. Bump both together.
-      CLUSTERBOOK_OPERATOR_VERSION: ${CLUSTERBOOK_OPERATOR_VERSION:-v0.20.0}
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook-operator
+      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.20.0}"
