@@ -19,7 +19,12 @@ spec:
   wait: true
   postBuild:
     substitute:
-      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-9.4.15}"
+      # Equal to cicd/platform/components/argo-cd's default on purpose. Both
+      # paths install the same HelmRelease from ./cicd/argo-cd, and two
+      # defaults for one chart is how a cluster gets a version nobody chose.
+      # (The base in ./cicd/argo-cd still says 9.4.15 and is renovate's to
+      # move; a consumer that passes neither gets that one.)
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.0}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       # ARGO_CD_INGRESS_ENABLED is intentionally NOT threaded here. A bare
       # boolean cannot survive a nested Kustomization substitute: kustomize
