@@ -1,0 +1,8 @@
+---
+# A build root for workflow-secrets alone, because a kustomize Component cannot
+# be one and a Flux Kustomization pointed straight at components/ fails the
+# build. Same shape as ./apps/dapr/root, for the same reason.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../components/workflow-secrets
