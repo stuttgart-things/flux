@@ -1,3 +1,10 @@
+## [1.39.1](https://github.com/stuttgart-things/flux/compare/v1.39.0...v1.39.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **cicd:** the workflow pod also needs a CA nothing creates ([#295](https://github.com/stuttgart-things/flux/issues/295)) ([5228e3e](https://github.com/stuttgart-things/flux/commit/5228e3e9d055fd40c4b51a6183f95727f4daa7ec))
+
 # [1.39.0](https://github.com/stuttgart-things/flux/compare/v1.38.0...v1.39.0) (2026-08-29)
 
 
