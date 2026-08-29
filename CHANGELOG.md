@@ -1,3 +1,10 @@
+# [1.38.0](https://github.com/stuttgart-things/flux/compare/v1.37.5...v1.38.0) (2026-08-29)
+
+
+### Features
+
+* **cicd:** bring the crossplane packages current, on one registry, and let renovate keep them there ([#294](https://github.com/stuttgart-things/flux/issues/294)) ([76563cf](https://github.com/stuttgart-things/flux/commit/76563cf7bbe203f56f5cb907d7fc6b54343fde94)), closes [#292](https://github.com/stuttgart-things/flux/issues/292)
+
 ## [1.37.5](https://github.com/stuttgart-things/flux/compare/v1.37.4...v1.37.5) (2026-08-29)
 
 
