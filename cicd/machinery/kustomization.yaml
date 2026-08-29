@@ -6,4 +6,3 @@ resources:
   - release.yaml
   - watch-config.yaml
   - rbac.yaml
-  - httproute.yaml

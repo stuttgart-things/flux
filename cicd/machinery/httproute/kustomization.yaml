@@ -1,0 +1,13 @@
+---
+# The route on its own, so it can be applied AFTER the Service exists.
+#
+# machinery's release is a nested Flux Kustomization that pulls the app from an
+# OCIRepository, so the `machinery` Service appears only once that inner
+# Kustomization has reconciled. Cilium's gateway controller resolves an
+# HTTPRoute's backendRefs ONCE: a route applied in the same pass answers HTTP
+# 500 forever, with the Gateway still Programmed and the route still Accepted,
+# and nothing re-resolves when the Service turns up.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - httproute.yaml

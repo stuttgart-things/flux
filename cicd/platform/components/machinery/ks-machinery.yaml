@@ -1,0 +1,78 @@
+---
+# machinery -> ./cicd/machinery
+#
+# IN THE CICD LAYER, and it moved here from apps deliberately: it is a
+# dashboard over Crossplane claims and nothing else. Its ClusterRole grants
+# read on exactly two API groups --
+#
+#   config.stuttgart-things.com
+#   resources.stuttgart-things.com
+#
+# -- which are provided by the stuttgart-things Crossplane Configurations.
+# Without them it installs, runs, serves an empty table, and its RBAC names
+# groups the cluster does not have. Nothing reports that; it just looks like a
+# platform with nothing on it.
+#
+# So it dependsOn crossplane-configs rather than merely documenting the
+# requirement. Flux has no optional dependency, so selecting machinery without
+# crossplane leaves this waiting forever -- but check-cluster-components.py now
+# reads the cicd layer and fails that selection at PR time, naming what to add.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.13.4}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: machinery
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery/httproute
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      MACHINERY_HOSTNAME: "${MACHINERY_HOSTNAME:-machinery}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
