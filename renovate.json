@@ -55,9 +55,54 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+[A-Z0-9_]+:\\s*\"\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}\""
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Crossplane package refs written as a plain image:tag, e.g. `package: xpkg.crossplane.io/crossplane-contrib/function-kcl:v0.12.2`. No manager sees these: they are values inside a HelmRelease, not a container spec, so neither the flux manager nor the docker one picks them up and they simply never got updated.",
+      "fileMatch": [
+        "\\.yaml$"
+      ],
+      "matchStrings": [
+        "package:\\s*(?<depName>(?:xpkg\\.[^:$\\s]+|ghcr\\.io/[^:$\\s]+)):(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^\\s]*)\\s"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Crossplane package refs whose tag is a Flux substitution default, `package: ghcr.io/org/pkg:${VAR:-v1.2.3}` and the provider list entries `- xpkg.../provider-helm:${VAR:-v1.4.0}`. Same blind spot as above, plus the variable, which is why the generic image manager cannot match them either.",
+      "fileMatch": [
+        "\\.yaml$"
+      ],
+      "matchStrings": [
+        "(?:package:|-)\\s*(?<depName>(?:xpkg\\.[^:$\\s]+|ghcr\\.io/[^:$\\s]+)):\\$\\{[A-Z0-9_]+:-(?<currentValue>v?\\d+\\.\\d+\\.\\d+[^}]*)\\}"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
     }
   ],
   "packageRules": [
+    {
+      "description": "Hold function-auto-ready below v0.7.0. crossplane-configurations declares '>=v0.6.5,<v0.7.0' on it; a bump past that bound breaks dependency resolution for every package that depends on it, and the failure is a whole-graph Healthy=False, not a single unhealthy package. Raise this together with the constraint, not before it.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "xpkg.crossplane.io/crossplane-contrib/function-auto-ready"
+      ],
+      "allowedVersions": "<v0.7.0"
+    },
+    {
+      "description": "Never let a bot move a crossplane-contrib package to the xpkg.upbound.io mirror, or take one there past the crossplane.io copy. Crossplane locks on the source string: the two spellings are two nodes for one package, and a duplicate node aborts resolution for the entire graph (#292). Keeping them in one group means a registry split shows up as a single reviewable PR.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "xpkg.crossplane.io/**",
+        "xpkg.upbound.io/**"
+      ],
+      "groupName": "crossplane packages"
+    },
     {
       "description": "Group all stuttgart-things first-party images into a single PR",
       "matchDatasources": [
