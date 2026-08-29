@@ -1,3 +1,10 @@
+# [1.41.0](https://github.com/stuttgart-things/flux/compare/v1.40.0...v1.41.0) (2026-08-29)
+
+
+### Features
+
+* **ci:** catch the pass-through default that silently pins the old version, and let renovate move it ([#299](https://github.com/stuttgart-things/flux/issues/299)) ([4339b1b](https://github.com/stuttgart-things/flux/commit/4339b1b56d46b97c863bd38f0dc6b79790585d95))
+
 # [1.40.0](https://github.com/stuttgart-things/flux/compare/v1.39.2...v1.40.0) (2026-08-29)
 
 
