@@ -1,4 +1,21 @@
 ---
+# ONE REGISTRY, and it is xpkg.crossplane.io.
+#
+# xpkg.upbound.io mirrors the same crossplane-contrib packages, but Crossplane
+# keys its lock on the SOURCE STRING, not on the image. Two spellings of one
+# package are two nodes, and a second node for a source that already has one
+# aborts dependency resolution for the WHOLE graph -- every Configuration,
+# Function and Provider goes Healthy=False at once, while Installed stays True
+# and the pods keep running. That is not theory: it took cicd-test2 down (#292),
+# and crossplane-configurations declares all of these against
+# xpkg.crossplane.io, so a mixed registry here guarantees the collision the
+# moment one of its packages is installed alongside.
+#
+# function-auto-ready is held at v0.6.x DELIBERATELY. v0.7.0 exists, and
+# crossplane-configurations pins ">=v0.6.5,<v0.7.0" -- taking the newer one
+# breaks that constraint for every package that depends on it. v0.6.8 is the
+# newest release inside the range. renovate.json carries the same bound so a
+# bot cannot quietly step over it.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -27,25 +44,25 @@ spec:
         metadata:
           name: function-auto-ready
         spec:
-          package: xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.6.0
+          package: xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.6.8
       functionGoTemplating:
         apiVersion: pkg.crossplane.io/v1beta1
         kind: Function
         metadata:
           name: function-go-templating
         spec:
-          package: xpkg.crossplane.io/crossplane-contrib/function-go-templating:v0.11.3
+          package: xpkg.crossplane.io/crossplane-contrib/function-go-templating:v0.12.4
       functionKCL:
         apiVersion: pkg.crossplane.io/v1
         kind: Function
         metadata:
           name: function-kcl
         spec:
-          package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.0
+          package: xpkg.crossplane.io/crossplane-contrib/function-kcl:v0.12.2
       functionPatchAndTransform:
         apiVersion: pkg.crossplane.io/v1beta1
         kind: Function
         metadata:
           name: function-patch-and-transform
         spec:
-          package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.9.3
+          package: xpkg.crossplane.io/crossplane-contrib/function-patch-and-transform:v0.10.10
