@@ -1,0 +1,127 @@
+---
+# Kargo -> ./apps/kargo, in THREE Kustomizations, each for a different reason.
+#
+# 1. kargo-secrets, first, because postBuild reads its Secret while BUILDING:
+#    a Secret created by the same apply does not exist yet and never will.
+#    NEEDS external-secrets and external-secrets-vault-store in the infra layer.
+# 2. kargo itself.
+# 3. the route last -- Cilium resolves an HTTPRoute's backendRefs ONCE, so a
+#    route applied before the Service exists answers 500 forever while the
+#    Gateway stays Programmed and the route stays Accepted.
+#
+# The KV entry has to exist in the mount the store reads:
+#
+#   <mount>/kargo   admin_password_hash, admin_token_signing_key
+#
+# Both are substituted straight into the release and NEITHER has a default.
+# That is the safe half: unset they render empty, and an admin account with an
+# empty bcrypt hash and a signing key of "" is not a broken install, it is an
+# open one -- and the chart does not complain.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kargo-secrets
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: external-secrets-vault-store
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${KARGO_SUSPEND:-false}
+  # wait for the ExternalSecret to SYNC, not merely to be applied: applied but
+  # unsynced is exactly the state that makes the next one fail on a missing
+  # Secret, which is the failure this split exists to prevent.
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/kargo/secrets
+  postBuild:
+    substitute:
+      KARGO_SECRET: "${KARGO_SECRET:-kargo-secrets}"
+      KARGO_ESO_STORE_NAME: "${KARGO_ESO_STORE:-set-KARGO_ESO_STORE}"
+      KARGO_ESO_STORE_KIND: "${KARGO_ESO_STORE_KIND:-ClusterSecretStore}"
+      KARGO_ESO_SECRET_PATH: "${KARGO_ESO_SECRET_PATH:-kargo}"
+      KARGO_ESO_REFRESH_INTERVAL: "${KARGO_ESO_REFRESH_INTERVAL:-1h}"
+      KARGO_ESO_PASSWORD_HASH_PROPERTY: "${KARGO_ESO_PASSWORD_HASH_PROPERTY:-admin_password_hash}"
+      KARGO_ESO_SIGNING_KEY_PROPERTY: "${KARGO_ESO_SIGNING_KEY_PROPERTY:-admin_token_signing_key}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kargo
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: kargo-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${KARGO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/kargo
+  postBuild:
+    substitute:
+      KARGO_NAMESPACE: "${KARGO_NAMESPACE:-kargo}"
+      # renovate: datasource=docker depName=ghcr.io/akuity/kargo-charts/kargo
+      KARGO_VERSION: "${KARGO_VERSION:-1.11.2}"
+      # The chart's own ingress stays off -- the Gateway serves this, and
+      # both on means two things answering for one hostname. It is not
+      # threaded here because a bool-valued substitute fails the PARENT
+      # Kustomization and every sibling, and no quoting survives kustomize;
+      # apps/kargo/release.yaml already defaults it to false.
+      KARGO_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      KARGO_HOSTNAME: "${KARGO_HOSTNAME:-kargo}"
+    substituteFrom:
+      # optional: false on purpose -- see the note above about what an empty
+      # hash means here.
+      - kind: Secret
+        name: ${KARGO_SECRET:-kargo-secrets}
+        optional: false
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kargo-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: kargo
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${KARGO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/kargo/httproute
+  postBuild:
+    substitute:
+      KARGO_NAMESPACE: "${KARGO_NAMESPACE:-kargo}"
+      KARGO_HOSTNAME: "${KARGO_HOSTNAME:-kargo}"
+      KARGO_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

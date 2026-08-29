@@ -1,0 +1,33 @@
+---
+# kro (Kube Resource Orchestrator) -> ./cicd/kro
+#
+# Self-contained: the build carries its own Namespace and HelmRepository, so
+# there is nothing to select alongside it and no Secret to place. It installs
+# CRDs, which is why nothing here depends on it -- a consumer of a kro
+# ResourceGraphDefinition has to order itself behind this one.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kro
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${KRO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/kro
+  postBuild:
+    substitute:
+      KRO_NAMESPACE: "${KRO_NAMESPACE:-kro-system}"
+      # renovate: datasource=docker depName=registry.k8s.io/kro/charts/kro
+      KRO_VERSION: "${KRO_VERSION:-0.9.3}"

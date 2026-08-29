@@ -1,0 +1,13 @@
+---
+# The dashboard's route, on its own, so a Flux Kustomization can be pointed at
+# it AFTER the release that creates its backend Service.
+#
+# Cilium's gateway controller resolves an HTTPRoute's backendRefs ONCE. A route
+# applied while argo-rollouts-dashboard does not exist yet is answered with
+# HTTP 500 forever -- the Gateway stays Programmed, the route stays Accepted,
+# and nothing re-resolves when the Service appears. Cost a morning on the
+# tekton dashboard; this is the same shape.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - httproute.yaml
