@@ -1,3 +1,10 @@
+# [1.42.0](https://github.com/stuttgart-things/flux/compare/v1.41.1...v1.42.0) (2026-08-29)
+
+
+### Features
+
+* **cicd:** kro, kargo, argo-rollouts and vcluster are selectable from the bundles ([#303](https://github.com/stuttgart-things/flux/issues/303)) ([0176c3e](https://github.com/stuttgart-things/flux/commit/0176c3e41699a9bb1259c29705681c3f4f8dbb4b))
+
 ## [1.41.1](https://github.com/stuttgart-things/flux/compare/v1.41.0...v1.41.1) (2026-08-29)
 
 
