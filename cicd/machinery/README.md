@@ -19,7 +19,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: stuttgart-things-flux
-  path: ./apps/machinery
+  path: ./cicd/machinery
   prune: true
   wait: true
   postBuild:
@@ -27,6 +27,12 @@ spec:
       MACHINERY_NAMESPACE: machinery
       MACHINERY_VERSION: v1.13.4
       MACHINERY_HOSTNAME: machinery
+      # NOTE: this path no longer carries the HTTPRoute -- it lives in
+      # ./cicd/machinery/httproute and needs a SECOND Kustomization that
+      # dependsOn this one. Cilium resolves an HTTPRoute's backendRefs once,
+      # and machinery's Service is created by the nested Kustomization inside
+      # this path, so a route applied together with it answers 500 forever.
+      # The cicd-platform bundle's machinery component does both for you.
       GATEWAY_NAME: movie-scripts2-gateway
       GATEWAY_NAMESPACE: default
       DOMAIN: movie-scripts2.sthings-vsphere.labul.sva.de
