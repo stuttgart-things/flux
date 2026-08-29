@@ -1,3 +1,15 @@
+# [1.40.0](https://github.com/stuttgart-things/flux/compare/v1.39.2...v1.40.0) (2026-08-29)
+
+
+### Bug Fixes
+
+* **cicd:** the provider versions the bundle pins were second copies nobody bumped ([#297](https://github.com/stuttgart-things/flux/issues/297)) ([06c87ad](https://github.com/stuttgart-things/flux/commit/06c87ad1ea77fb8dcf60f5a8a70e8006aa249c5c))
+
+
+### Features
+
+* **cicd:** expose the ArgoCD cluster control plane as a cicd component ([#298](https://github.com/stuttgart-things/flux/issues/298)) ([d4904ed](https://github.com/stuttgart-things/flux/commit/d4904edae32b5e54452fe5a989b3c58e55beabd0))
+
 ## [1.39.2](https://github.com/stuttgart-things/flux/compare/v1.39.1...v1.39.2) (2026-08-29)
 
 
