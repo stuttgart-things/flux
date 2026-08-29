@@ -91,6 +91,10 @@ spec:
     # writes into. Split out, the ExternalSecret would land in a namespace that
     # does not exist yet.
     - ../components/redis-auth
+    # Third and last thing nothing else creates. Without it the workflow pod
+    # never leaves ContainerCreating -- see the component for why that is a
+    # hard failure and not a downgrade.
+    - ../components/backstage-ca
   postBuild:
     substitute:
       DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
@@ -116,6 +120,7 @@ spec:
       DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
       DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
       DAPR_ESO_REDIS_PASSWORD_PROPERTY: "${DAPR_WORKFLOWS_ESO_REDIS_PASSWORD_PROPERTY:-redis_password}"
+      DAPR_ESO_BACKSTAGE_CA_PROPERTY: "${DAPR_WORKFLOWS_ESO_BACKSTAGE_CA_PROPERTY:-backstage_ca}"
     substituteFrom:
       # optional: false on purpose. Its values are rendered straight into
       # Secrets; left optional, Flux substitutes empty strings and hands out a
