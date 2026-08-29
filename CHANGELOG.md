@@ -1,3 +1,10 @@
+## [1.37.5](https://github.com/stuttgart-things/flux/compare/v1.37.4...v1.37.5) (2026-08-29)
+
+
+### Bug Fixes
+
+* **cicd:** one duplicate package takes every Crossplane package down with it ([#292](https://github.com/stuttgart-things/flux/issues/292)) ([ba9c615](https://github.com/stuttgart-things/flux/commit/ba9c615bcfdb726eafc6537e15082c592b534274))
+
 ## [1.37.4](https://github.com/stuttgart-things/flux/compare/v1.37.3...v1.37.4) (2026-08-28)
 
 
