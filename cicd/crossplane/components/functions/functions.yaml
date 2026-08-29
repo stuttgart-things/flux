@@ -1,15 +1,30 @@
 ---
-# ONE REGISTRY, and it is xpkg.crossplane.io.
+# THE REGISTRY PER PACKAGE IS NOT A STYLE CHOICE. Each one here matches the
+# registry the installed Configurations DECLARE for it, read from the live
+# lock:
 #
-# xpkg.upbound.io mirrors the same crossplane-contrib packages, but Crossplane
-# keys its lock on the SOURCE STRING, not on the image. Two spellings of one
-# package are two nodes, and a second node for a source that already has one
-# aborts dependency resolution for the WHOLE graph -- every Configuration,
-# Function and Provider goes Healthy=False at once, while Installed stays True
-# and the pods keep running. That is not theory: it took cicd-test2 down (#292),
-# and crossplane-configurations declares all of these against
-# xpkg.crossplane.io, so a mixed registry here guarantees the collision the
-# moment one of its packages is installed alongside.
+#   function-auto-ready       xpkg.crossplane.io   <- ansible-run, cloud-config, volume-claim
+#   function-go-templating    xpkg.crossplane.io   <- cloud-config, storage-platform, volume-claim
+#   function-kcl              xpkg.upbound.io      <- ansible-run
+#   patch-and-transform       xpkg.upbound.io      <- harvester-vm
+#   provider-helm             xpkg.upbound.io      <- pipeline-integration, storage-platform
+#   provider-kubernetes       xpkg.upbound.io      <- ansible-run, cloud-config, storage-platform, volume-claim
+#
+# Crossplane keys its lock on the SOURCE STRING, not on the image, so the two
+# mirrors of one package are two different things to it. Install the other
+# spelling and the Configurations report
+#
+#   cannot resolve package dependencies: missing dependencies:
+#   "xpkg.upbound.io/crossplane-contrib/provider-kubernetes" (>=v1.2.0)
+#
+# while the package they are asking for is right there under its other name.
+#
+# I moved these to one registry once, on the reasoning that
+# crossplane-configurations declares against xpkg.crossplane.io. It does -- but
+# crossplane-configurations is not what is installed here, and the family that
+# IS installed declares the mix above. Five Configurations went unhealthy at
+# once. Converging on one registry is a change to those packages' own
+# dependency declarations first; it cannot be done from this file.
 #
 # function-auto-ready is held at v0.6.x DELIBERATELY. v0.7.0 exists, and
 # crossplane-configurations pins ">=v0.6.5,<v0.7.0" -- taking the newer one
@@ -58,11 +73,11 @@ spec:
         metadata:
           name: function-kcl
         spec:
-          package: xpkg.crossplane.io/crossplane-contrib/function-kcl:v0.12.2
+          package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.2
       functionPatchAndTransform:
         apiVersion: pkg.crossplane.io/v1beta1
         kind: Function
         metadata:
           name: function-patch-and-transform
         spec:
-          package: xpkg.crossplane.io/crossplane-contrib/function-patch-and-transform:v0.10.10
+          package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.10.9
