@@ -46,7 +46,7 @@ spec:
     substitute:
       CLUSTERBOOK_NAMESPACE: "${CLUSTERBOOK_NAMESPACE:-clusterbook}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook
-      CLUSTERBOOK_VERSION: "${CLUSTERBOOK_VERSION:-v1.25.14}"
+      CLUSTERBOOK_VERSION: "${CLUSTERBOOK_VERSION:-v1.25.15}"
       FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
 
       # ---- the address pool ---------------------------------------------
