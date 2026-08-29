@@ -10,7 +10,7 @@ spec:
     spec:
       chart: dapr
       # renovate: datasource=helm depName=dapr registryUrl=https://dapr.github.io/helm-charts
-      version: ${DAPR_VERSION:-1.17.4}
+      version: ${DAPR_VERSION:-1.18.3}
       sourceRef:
         kind: HelmRepository
         name: dapr
