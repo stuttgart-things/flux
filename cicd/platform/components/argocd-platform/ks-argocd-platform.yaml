@@ -80,7 +80,7 @@ spec:
       # install the same HelmRelease from ./cicd/argo-cd, and two defaults for
       # one chart is how a cluster ends up with a version nobody chose.
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
-      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.0}"
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.2}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       ARGO_CD_SECRETS_NAME: "${ARGO_CD_SECRETS_NAME:-argocd-secrets}"
       CLUSTERBOOK_API_URL: "${CLUSTERBOOK_API_URL:-set-CLUSTERBOOK_API_URL.invalid}"
