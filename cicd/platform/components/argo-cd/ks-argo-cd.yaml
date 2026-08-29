@@ -51,6 +51,8 @@ spec:
       ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.0}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       ARGO_CD_INGRESS_ENABLED: "false"
+      # passthrough-override: this is a rotate-now stamp. Bundles rotate on their
+      # own schedule, so the values are meant to differ.
       ARGO_CD_PASSWORD_MTIME: "${ARGO_CD_PASSWORD_MTIME:-2026-01-01T00:00:00UTC}"
 
       # The AVP sidecar reaches Vault over TLS signed by an internal CA.

@@ -65,6 +65,10 @@ jobs:
         run: |
           pip install --quiet pyyaml
           python3 ./hack/check-substitute-strings.py
+      # Needs kustomize, installed above: it compares against the RENDERED
+      # target so a default reached through a component or a base counts.
+      - name: Every pass-through default matches the path it threads into
+        run: python3 ./hack/check-passthrough-defaults.py
 
   renovate:
     name: Renovate config

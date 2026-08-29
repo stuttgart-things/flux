@@ -33,10 +33,14 @@ spec:
       # cicd/argo-cd defaults ingress off via ${ARGO_CD_INGRESS_ENABLED:-false}
       # in its HelmRelease values, where a boolean is valid.
       INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
+      # passthrough-override: the app default is a sentinel that forces a consumer
+      # to choose; a bundle aimed at the lab may choose for it.
       INGRESS_DOMAIN: "${INGRESS_DOMAIN:-platform.sthings-vsphere.labul.sva.de}"
       INGRESS_SECRET_NAME: "${INGRESS_SECRET_NAME:-argocd-server-tls}" # pragma: allowlist secret
       ISSUER_NAME: "${ISSUER_NAME:-vault-pki}"
       ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
+      # passthrough-override: this is a rotate-now stamp. Bundles rotate on their
+      # own schedule, so the values are meant to differ.
       ARGO_CD_PASSWORD_MTIME: "${ARGO_CD_PASSWORD_MTIME:-2026-03-23T02:00:00UTC}" # pragma: allowlist secret
       AVP_TRUST_BUNDLE_CONFIGMAP: "${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
       AVP_TRUST_BUNDLE_KEY: "${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
