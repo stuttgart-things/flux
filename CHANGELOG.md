@@ -1,3 +1,10 @@
+## [1.39.2](https://github.com/stuttgart-things/flux/compare/v1.39.1...v1.39.2) (2026-08-29)
+
+
+### Bug Fixes
+
+* **cicd:** put the crossplane packages back on the registries their consumers declare ([#296](https://github.com/stuttgart-things/flux/issues/296)) ([d4fe3a1](https://github.com/stuttgart-things/flux/commit/d4fe3a12480f6c7fbd7cfd8c47077b377c7cbe84)), closes [#294](https://github.com/stuttgart-things/flux/issues/294) [#292](https://github.com/stuttgart-things/flux/issues/292) [#294](https://github.com/stuttgart-things/flux/issues/294)
+
 ## [1.39.1](https://github.com/stuttgart-things/flux/compare/v1.39.0...v1.39.1) (2026-08-29)
 
 
