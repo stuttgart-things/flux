@@ -1,3 +1,10 @@
+## [1.41.1](https://github.com/stuttgart-things/flux/compare/v1.41.0...v1.41.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **deps:** release the dependency updates sitting untagged on main ([c204e68](https://github.com/stuttgart-things/flux/commit/c204e68da85c9d8bf952574458884c5580ec5a80))
+
 # [1.41.0](https://github.com/stuttgart-things/flux/compare/v1.40.0...v1.41.0) (2026-08-29)
 
 
