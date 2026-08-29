@@ -39,8 +39,18 @@ spec:
       CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
       # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
       CROSSPLANE_VERSION: "${CROSSPLANE_VERSION:-2.4.0}"
-      CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.2.0}"
-      CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.0}"
+      # SECOND COPIES of the defaults in cicd/crossplane/components/install/
+      # release.yaml, and they win over them. A child Kustomization cannot
+      # inherit a default -- an empty substitute value renders as YAML null and
+      # the API server rejects the CR -- so these have to be bumped in the SAME
+      # PR as the base or the bundle silently keeps installing the old version.
+      #
+      # Exactly that happened in v1.38.0: the base moved to v1.4.0/v1.1.7 and
+      # these did not, so cicd-test2 kept provider-helm v1.2.0 and opentofu
+      # v1.1.0 while provider-kubernetes -- which has no copy here -- did move.
+      # A mixed set nothing reported, because every object was Ready.
+      CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.4.0}"
+      CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.7}"
 ---
 # The Configurations, as a SECOND Kustomization that waits for the first.
 #
