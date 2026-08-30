@@ -1,3 +1,10 @@
+## [1.44.3](https://github.com/stuttgart-things/flux/compare/v1.44.2...v1.44.3) (2026-08-30)
+
+
+### Bug Fixes
+
+* **cicd:** KARGO_API_PORT cannot be a substitute value ([#318](https://github.com/stuttgart-things/flux/issues/318)) ([7c13d57](https://github.com/stuttgart-things/flux/commit/7c13d5738b36482b3007dd9ad7712f84ee289d32)), closes [#317](https://github.com/stuttgart-things/flux/issues/317) [#317](https://github.com/stuttgart-things/flux/issues/317)
+
 ## [1.44.2](https://github.com/stuttgart-things/flux/compare/v1.44.1...v1.44.2) (2026-08-30)
 
 
