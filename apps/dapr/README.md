@@ -66,7 +66,7 @@ spec:
   postBuild:
     substitute:
       DAPR_NAMESPACE: dapr-system
-      DAPR_VERSION: 1.17.4
+      DAPR_VERSION: 1.18.3
       DAPR_HA_ENABLED: "false"
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1

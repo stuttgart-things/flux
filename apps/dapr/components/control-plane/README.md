@@ -48,7 +48,7 @@ spec:
   wait: true
   postBuild:
     substitute:
-      DAPR_VERSION: 1.17.4
+      DAPR_VERSION: 1.18.3
       DAPR_NAMESPACE: dapr-system
       DAPR_HA_ENABLED: "false"
 EOF
@@ -58,7 +58,7 @@ EOF
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DAPR_VERSION` | `1.17.4` | Dapr helm chart version (matches runtime version) |
+| `DAPR_VERSION` | `1.18.3` | Dapr helm chart version (matches runtime version) |
 | `DAPR_NAMESPACE` | `dapr-system` | Namespace for Dapr control-plane components |
 | `DAPR_HA_ENABLED` | `false` | High-availability mode for control-plane (3 replicas per component) |
 
