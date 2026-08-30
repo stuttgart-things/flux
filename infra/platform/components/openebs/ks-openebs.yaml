@@ -45,4 +45,4 @@ spec:
     substitute:
       OPENEBS_NAMESPACE: "${OPENEBS_NAMESPACE:-openebs}"
       # renovate: datasource=helm depName=openebs registryUrl=https://openebs.github.io/openebs
-      OPENEBS_VERSION: "${OPENEBS_VERSION:-4.5.1}"
+      OPENEBS_VERSION: "${OPENEBS_VERSION:-4.6.0}"
