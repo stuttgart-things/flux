@@ -69,6 +69,11 @@ jobs:
       # target so a default reached through a component or a base counts.
       - name: Every pass-through default matches the path it threads into
         run: python3 ./hack/check-passthrough-defaults.py
+      # Reads no registry and renders nothing -- it only compares two
+      # Kustomizations that already exist, so it is cheap and belongs before
+      # anything that installs a tool.
+      - name: Kustomizations rendering one path are wired the same way
+        run: python3 ./hack/check-shared-path-wiring.py
       # skopeo, because the crossplane packages' dependsOn lives inside the OCI
       # artifact and the xpkg registries do not answer the anonymous manifest
       # request verify-image-tags.py knows how to make. Without it the check
