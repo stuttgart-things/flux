@@ -1,3 +1,10 @@
+# [1.46.0](https://github.com/stuttgart-things/flux/compare/v1.45.0...v1.46.0) (2026-08-30)
+
+
+### Features
+
+* **platform:** komoplane, claim-machinery-api and clusterbook-operator in cicd; velero, sops-secrets-operator, cnpg-operator and pve-exporter in infra ([#328](https://github.com/stuttgart-things/flux/issues/328)) ([5f53d9a](https://github.com/stuttgart-things/flux/commit/5f53d9ac58ba6fb3fa5becbd874cc7097c72786c)), closes [#320](https://github.com/stuttgart-things/flux/issues/320) [#321](https://github.com/stuttgart-things/flux/issues/321) [#322](https://github.com/stuttgart-things/flux/issues/322) [#327](https://github.com/stuttgart-things/flux/issues/327)
+
 # [1.45.0](https://github.com/stuttgart-things/flux/compare/v1.44.3...v1.45.0) (2026-08-30)
 
 
