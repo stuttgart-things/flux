@@ -69,7 +69,7 @@ spec:
       # are simply absent. The .invalid sentinel turns that into a scrape error
       # somebody can see.
       # renovate: datasource=docker depName=prompve/prometheus-pve-exporter
-      PVE_EXPORTER_VERSION: "${PVE_EXPORTER_VERSION:-3.9.0}"
+      PVE_EXPORTER_VERSION: "${PVE_EXPORTER_VERSION:-3.10.0}"
       PVE_EXPORTER_TARGET: "${PVE_EXPORTER_TARGET:-set-PVE_EXPORTER_TARGET.invalid}"
       # DS_PROMETHEUS and `node` are NOT variables of this component. They are
       # Grafana template variables inside dashboard.json, escaped there as
