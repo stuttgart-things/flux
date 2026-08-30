@@ -1,3 +1,10 @@
+# [1.47.0](https://github.com/stuttgart-things/flux/compare/v1.46.2...v1.47.0) (2026-08-30)
+
+
+### Features
+
+* **platform:** declare the keys every substituteFrom Secret must carry ([#334](https://github.com/stuttgart-things/flux/issues/334)) ([b48d3e6](https://github.com/stuttgart-things/flux/commit/b48d3e6f0d46cb298684c304139e478ee262753f)), closes [#331](https://github.com/stuttgart-things/flux/issues/331)
+
 ## [1.46.2](https://github.com/stuttgart-things/flux/compare/v1.46.1...v1.46.2) (2026-08-30)
 
 
