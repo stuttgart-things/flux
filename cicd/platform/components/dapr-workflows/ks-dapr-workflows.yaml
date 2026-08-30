@@ -123,9 +123,9 @@ spec:
       DAPR_ESO_BACKSTAGE_CA_PROPERTY: "${DAPR_WORKFLOWS_ESO_BACKSTAGE_CA_PROPERTY:-backstage_ca}"
     substituteFrom:
       # substituteFrom-keys: GITHUB_TOKEN, BACKSTAGE_AUTH_TOKEN, REDIS_PASSWORD
-      # optional: false on purpose. Its values are rendered straight into
-      # Secrets; left optional, Flux substitutes empty strings and hands out a
+      # Its values are rendered straight into Secrets, so an empty one is a
       # GitHub token that is present, empty, and silently unauthorized.
+      #
       # optional: false guards the SOURCE, not the KEYS. Flux fails this
       # Kustomization when the Secret is absent -- and substitutes an empty
       # string for any key the Secret does not carry, with no error at all. A
