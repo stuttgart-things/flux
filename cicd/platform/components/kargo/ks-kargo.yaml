@@ -134,5 +134,14 @@ spec:
       KARGO_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
-      # Paired with KARGO_API_TLS_ENABLED on the release above; see the route.
-      KARGO_API_PORT: "${KARGO_API_PORT:-80}"
+      # KARGO_API_PORT is deliberately NOT threaded here. postBuild.substitute
+      # is map[string]string, and a value that resolves to a number is rejected
+      # by the typed patch -- failing the PARENT Kustomization and every sibling
+      # with it, not just this one. Quoting does not save it: kustomize re-emits
+      # the bundle and drops "80", '80' and !!str alike. See
+      # hack/check-substitute-strings.py.
+      #
+      # So the route's ${KARGO_API_PORT:-80} always resolves to 80, which is
+      # what the Service listens on while KARGO_API_TLS_ENABLED is false. A
+      # cluster that turns API TLS on needs a patch on the HTTPRoute rather
+      # than a variable.
