@@ -88,6 +88,15 @@ spec:
       # apps/kargo/release.yaml already defaults it to false.
       KARGO_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       KARGO_HOSTNAME: "${KARGO_HOSTNAME:-kargo}"
+      # Threaded, because Flux does NOT inherit postBuild.substitute: a value
+      # set on the parent stops there unless the child names it. Left out,
+      # apps/kargo/pre-release.yaml renders `issuerRef.name:` empty -- it has
+      # no default of its own -- and the API rejects the Certificate for a null
+      # field. What you actually see is a Helm INSTALL failure on
+      # kargo-certificate-configuration, which then goes Stalled and does not
+      # retry, three levels away from the variable nobody passed.
+      ISSUER_NAME: "${ISSUER_NAME:-set-ISSUER_NAME.invalid}"
+      ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
     substituteFrom:
       # optional: false on purpose -- see the note above about what an empty
       # hash means here.

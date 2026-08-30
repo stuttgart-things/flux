@@ -84,3 +84,18 @@ spec:
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       ARGO_CD_SECRETS_NAME: "${ARGO_CD_SECRETS_NAME:-argocd-secrets}"
       CLUSTERBOOK_API_URL: "${CLUSTERBOOK_API_URL:-set-CLUSTERBOOK_API_URL.invalid}"
+      # Threaded for the same reason as kargo's pair above: not named here,
+      # the base's own defaults win and the cluster cannot override them.
+      #
+      # Those defaults are LabUL's -- cicd/argocd-platform/base/ks-argo-cd.yaml
+      # falls back to platform.sthings-vsphere.labul.sva.de and to the issuer
+      # `vault-pki`. On any other cluster that is not a failure you can see: the
+      # Certificate names an issuer that does not exist and parks InProgress,
+      # the HelmRelease waits for it and times out, and every Kustomization that
+      # dependsOn it reports "dependency not ready" instead. Had the issuer
+      # happened to exist, ArgoCD would have come up healthy on another lab's
+      # hostname.
+      ISSUER_NAME: "${ISSUER_NAME:-set-ISSUER_NAME.invalid}"
+      ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
