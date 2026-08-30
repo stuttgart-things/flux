@@ -74,6 +74,12 @@ spec:
     # reservation allocates an address and then fails to write DNS, which looks
     # like a PowerDNS problem rather than a missing secret.
     substituteFrom:
+      # substituteFrom-keys: PDNS_TOKEN, DDWRT_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
       - kind: Secret
         name: ${CLUSTERBOOK_SECRET:-clusterbook-pdns-vars}
         optional: false

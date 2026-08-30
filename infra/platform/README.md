@@ -331,6 +331,40 @@ component by hand gives two writers for `cloud-credentials` — pick one.
 Note also that removing this component **prunes Velero, not the backups**. The
 bucket contents survive, which is the point of them being there.
 
+## Components that need a Secret you must supply
+
+Seven components across the three bundles refuse to install without a Secret
+the cluster provides, via `substituteFrom` with `optional: false`:
+`minio`, `rancher`, `clusterbook` (apps), `argo-cd`, `kargo`, `dapr-workflows`
+(cicd) and `velero` (infra).
+
+Each declares the keys it needs, on the line above its `substituteFrom` entry:
+
+```yaml
+    substituteFrom:
+      # substituteFrom-keys: VELERO_S3_ACCESS_KEY, VELERO_S3_SECRET_KEY
+      - kind: Secret
+        name: ${VELERO_SECRET:-velero-s3-credentials}
+        optional: false
+```
+
+The list is not decoration and not hand-maintained prose: it is every variable
+the component's rendered build references with **no default anywhere** and no
+entry in its own `substitute:` map — derived from `spec.path` **plus**
+`spec.components`, which is what the cluster actually builds.
+
+**`optional: false` guards the source, not the keys.** This is the part that
+reads like a guarantee and is not one. Flux fails the Kustomization when the
+Secret is *absent*. When the Secret *exists* but is missing one of these names,
+envsubst substitutes the empty string and reports success — which is precisely
+the outcome each of those `optional: false` comments says it prevents. A
+`kargo-secrets` without `admin_password_hash` yields an admin account with an
+empty bcrypt hash, and everything goes Ready.
+
+So the declaration is what a cluster-side preflight can check against before
+the component line is added; #331 tracks that check. Nothing in this repo's CI
+can see the cluster's Secret.
+
 ## Migrating a cluster off per-component CRs
 
 The bundle's children are named exactly like the CRs they replace

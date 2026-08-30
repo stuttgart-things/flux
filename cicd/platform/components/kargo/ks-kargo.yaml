@@ -98,8 +98,14 @@ spec:
       ISSUER_NAME: "${ISSUER_NAME:-set-ISSUER_NAME.invalid}"
       ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
     substituteFrom:
+      # substituteFrom-keys: KARGO_ADMIN_PASSWORD_HASH, KARGO_ADMIN_TOKEN_SIGNING_KEY
       # optional: false on purpose -- see the note above about what an empty
       # hash means here.
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
       - kind: Secret
         name: ${KARGO_SECRET:-kargo-secrets}
         optional: false
