@@ -1,3 +1,10 @@
+## [1.46.1](https://github.com/stuttgart-things/flux/compare/v1.46.0...v1.46.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **cicd:** the dapr pass-through pinned 1.17.4 while the base moved to 1.18.3 ([#336](https://github.com/stuttgart-things/flux/issues/336)) ([217458a](https://github.com/stuttgart-things/flux/commit/217458aa4fbc889e2fbfa0b8114f69bc0995ae4a)), closes [#287](https://github.com/stuttgart-things/flux/issues/287) [#256](https://github.com/stuttgart-things/flux/issues/256)
+
 # [1.46.0](https://github.com/stuttgart-things/flux/compare/v1.45.0...v1.46.0) (2026-08-30)
 
 
