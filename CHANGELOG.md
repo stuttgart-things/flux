@@ -1,3 +1,10 @@
+## [1.44.2](https://github.com/stuttgart-things/flux/compare/v1.44.1...v1.44.2) (2026-08-30)
+
+
+### Bug Fixes
+
+* **cicd:** argocd-platform and kargo were Ready but unreachable ([#317](https://github.com/stuttgart-things/flux/issues/317)) ([53b7300](https://github.com/stuttgart-things/flux/commit/53b7300cc7db2f138b855c870ff8013858a2a7c7))
+
 ## [1.44.1](https://github.com/stuttgart-things/flux/compare/v1.44.0...v1.44.1) (2026-08-30)
 
 
