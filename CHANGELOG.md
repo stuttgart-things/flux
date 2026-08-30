@@ -1,3 +1,10 @@
+## [1.46.2](https://github.com/stuttgart-things/flux/compare/v1.46.1...v1.46.2) (2026-08-30)
+
+
+### Bug Fixes
+
+* **ci:** render spec.components, and stop reporting an empty render as clean ([#338](https://github.com/stuttgart-things/flux/issues/338)) ([0ef6c9b](https://github.com/stuttgart-things/flux/commit/0ef6c9b05815c2289b7478a0d32f31251c774997)), closes [#336](https://github.com/stuttgart-things/flux/issues/336)
+
 ## [1.46.1](https://github.com/stuttgart-things/flux/compare/v1.46.0...v1.46.1) (2026-08-30)
 
 
