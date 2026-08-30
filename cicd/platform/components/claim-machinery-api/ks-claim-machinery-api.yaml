@@ -1,0 +1,99 @@
+---
+# claim-machinery-api -- renders Crossplane claims from a profile → ./apps/claim-machinery-api
+#
+# In cicd rather than apps for the same reason machinery moved (#306): it is a
+# front-end onto the Crossplane control plane, not an application a platform
+# happens to run.
+#
+# dependsOn cilium-gateway only. It does NOT depend on crossplane: the API
+# renders and returns claim manifests, and a cluster can legitimately run it as
+# a rendering service against a control plane somewhere else. Selecting it
+# beside crossplane is the usual case, not a requirement this file can state.
+#
+# The dependency crosses bundles -- the Gateway comes from infra-platform.
+# Selecting this on a cluster whose infra bundle has no gateway does not error;
+# it waits on "dependency not ready" forever, which reads like slowness.
+#
+# THE PROFILE IS FETCHED AT RUNTIME, over the network, from a raw
+# githubusercontent URL pinned to a git ref -- not from this repo and not from
+# the OCI artifact. So the deployed behaviour of this component can change
+# without any commit here, whenever that ref moves. CLAIM_MACHINERY_PROFILE_REF
+# defaults to `main`; pin it to a tag on a cluster where that matters.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: claim-machinery-api
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # 10m, not the bundle's usual 5m: this path applies a sthings-cluster
+  # HelmRelease, an OCIRepository and a second Kustomization, and `wait: true`
+  # holds until all three are Ready -- which includes the inner Kustomization
+  # pulling and applying the OCI artifact.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall. To remove it,
+  # delete this component from the consumer's spec.components list.
+  suspend: ${CLAIM_MACHINERY_API_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/claim-machinery-api
+  postBuild:
+    substitute:
+      CLAIM_MACHINERY_API_NAMESPACE: "${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/claim-machinery-api
+      CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.21.1}"
+      FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
+
+      # ---- the claim profile --------------------------------------------
+      # See the note above: this is a URL the pod fetches, not a file in the
+      # artifact. PROFILE_PATH is the full override; leaving it unset composes
+      # the URL from REF and NAME.
+      CLAIM_MACHINERY_PROFILE_REF: "${CLAIM_MACHINERY_PROFILE_REF:-main}"
+      CLAIM_MACHINERY_PROFILE_NAME: "${CLAIM_MACHINERY_PROFILE_NAME:-labul-vsphere}"
+
+      # ---- HTTPRoute ----------------------------------------------------
+      # GATEWAY_NAME, HOSTNAME and DOMAIN have NO default in the base. Unset,
+      # envsubst empties them and the route renders an empty parentRefs[0].name
+      # and a hostname of ".", which the API server rejects -- failing this
+      # Kustomization with a message about the route, three hops from the
+      # variable nobody set.
+      #
+      # HOSTNAME is exposed under a component-scoped name for the same reason
+      # kube-prometheus-stack exposes KPS_HOSTNAME: a consumer should never be
+      # asked to set a variable called HOSTNAME at bundle level.
+      HOSTNAME: "${CLAIM_MACHINERY_API_HOSTNAME:-claim-machinery-api}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+
+      # NOT threaded, and none of it is an oversight:
+      #
+      #   CLAIM_MACHINERY_ENABLE_HOMERUN   resolves to a bool
+      #   CLAIM_MACHINERY_RELOADER_AUTO    resolves to a bool
+      #
+      # postBuild.substitute is map[string]string and the API server rejects a
+      # non-string value -- failing the PARENT Kustomization and every sibling
+      # component with it, not just this one. Quoting does not save them:
+      # kustomize re-emits this bundle and drops "x", 'x' and !!str alike
+      # before envsubst ever runs. See hack/check-substitute-strings.py.
+      # The base carries the same defaults (false / true); to change one, patch
+      # this child from the consumer with a literal value.
+      #
+      #   CLAIM_MACHINERY_HOMERUN_URL              defaults to empty
+      #   CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN       defaults to empty
+      #
+      # An empty substitute value renders as YAML null, which the CRD's
+      # map[string]string rejects outright -- so these cannot be threaded even
+      # as strings. They are only read when ENABLE_HOMERUN is true, and a
+      # cluster that turns it on wires them with a patch plus a Secret.

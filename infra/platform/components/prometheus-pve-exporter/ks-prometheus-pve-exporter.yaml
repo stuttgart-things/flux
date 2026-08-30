@@ -1,0 +1,77 @@
+---
+# prometheus-pve-exporter -- Proxmox VE metrics → ./infra/prometheus-pve-exporter
+#
+# dependsOn kube-prometheus-stack, and it is a hard requirement rather than an
+# ordering preference: this path applies a PodMonitor, whose CRD comes from the
+# prometheus-operator that kps installs. Without it the Kustomization fails on
+#
+#   no matches for kind "PodMonitor" in version "monitoring.coreos.com/v1"
+#
+# THE STANDALONE `prometheus` COMPONENT DOES NOT SATISFY THIS. It deploys the
+# prometheus chart, which ships no operator and no CRDs, and it also has no
+# Grafana -- so the dashboard ConfigMap this path generates would be imported by
+# nobody. The two prometheus components are alternatives (see the README); only
+# one of them makes this component work.
+#
+# The base pins everything to the `monitoring` namespace -- deployment, service,
+# PodMonitor and the dashboard ConfigMap all name it literally, so a cluster
+# that moved kps elsewhere with KPS_NAMESPACE gets an exporter kps does not
+# scrape. Nothing fails; the metrics are simply absent.
+#
+# Discovery is by LABEL, not by this wiring: kps selects PodMonitors carrying
+# app.kubernetes.io/component: monitoring, and Grafana's sidecar imports
+# ConfigMaps labelled grafana_dashboard. Both labels are in the base.
+#
+# THE PROXMOX API TOKEN IS NOT HERE. The exporter reads PVE_USER,
+# PVE_TOKEN_NAME and PVE_TOKEN_VALUE from a Secret/prometheus-pve-exporter in
+# `monitoring` that the cluster repo supplies SOPS-encrypted -- envFrom with no
+# `optional`, so the pod stays in CreateContainerConfigError until it exists.
+# That is the loud failure; the quiet one is a token without PVEAuditor, which
+# starts fine and returns nothing.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: prometheus-pve-exporter
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: kube-prometheus-stack
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set PVE_EXPORTER_SUSPEND: "true" in the consumer's substitute
+  # block. Freezes reconciliation; the exporter keeps running and keeps being
+  # scraped. To uninstall, remove this component from spec.components.
+  suspend: ${PVE_EXPORTER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/prometheus-pve-exporter
+  postBuild:
+    substitute:
+      # BOTH ARE REQUIRED AND NEITHER HAS A DEFAULT IN THE BASE -- the defaults
+      # below exist only here.
+      #
+      # Unset, PVE_EXPORTER_VERSION rendered `image: prompve/prometheus-pve-exporter:`
+      # -- an unparsable reference, so the pod never schedules. That one at
+      # least fails visibly.
+      #
+      # PVE_EXPORTER_TARGET is the dangerous one: unset it renders `?target=`
+      # on the PodMonitor and Prometheus scrapes the exporter for a host it
+      # never named. Every object is healthy, the target is UP, and the series
+      # are simply absent. The .invalid sentinel turns that into a scrape error
+      # somebody can see.
+      # renovate: datasource=docker depName=prompve/prometheus-pve-exporter
+      PVE_EXPORTER_VERSION: "${PVE_EXPORTER_VERSION:-3.9.0}"
+      PVE_EXPORTER_TARGET: "${PVE_EXPORTER_TARGET:-set-PVE_EXPORTER_TARGET.invalid}"
+      # DS_PROMETHEUS and `node` are NOT variables of this component. They are
+      # Grafana template variables inside dashboard.json, escaped there as
+      # $${...} so Flux's envsubst hands them through untouched. Adding either
+      # name to this map would substitute them for real and blank the dashboard.

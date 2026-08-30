@@ -1,0 +1,67 @@
+---
+# clusterbook-operator → ./apps/clusterbook-operator
+#
+# Reconciles ClusterbookCluster / ClusterbookAllocation / ClusterbookLoadBalancer
+# / ClusterbookProviderConfig CRs against a Clusterbook backend. The apps bundle
+# already offers `clusterbook` (the backend itself); this is the operator that
+# drives it, and the two are independent -- the backend is usually somewhere
+# else, reached through a ProviderConfig.
+#
+# NO dependsOn, and that is a deliberate difference from the argocd-platform
+# wiring of the same path. There, clusterbook-operator waits for argo-cd
+# because the operator writes Argo CD cluster-secrets into the argocd
+# namespace, which is what that control plane is for. Here it is a standalone
+# operator: it brings its own CRDs, namespace and RBAC in the OCI artifact and
+# needs nothing else in the cluster.
+#
+# IT NEEDS A ClusterbookProviderConfig, and this component does not ship one.
+# That CR names the kubeconfig Secret of the cluster hosting the backend --
+# environment-specific data that belongs in the cluster repo, seeded with
+# kustomize.toolkit.fluxcd.io/{prune,reconcile}: disabled so Flux plants it once
+# and never fights runtime edits. Without it the operator runs and reconciles
+# nothing, reporting healthy.
+#
+# ./apps/clusterbook-operator IS ALSO RENDERED BY cicd/argocd-platform/base.
+# hack/check-shared-path-wiring.py enforces that the two stay in step, and the
+# path is declared in its MUST_MATCH table. Thread a variable here and you must
+# thread it there too -- Flux does not inherit postBuild.substitute, so a
+# cluster setting a value one of them does not name silently gets the other's
+# default.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: clusterbook-operator
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  # 10m: the path applies an OCIRepository and a second Kustomization, and
+  # `wait: true` holds until the inner one has pulled and applied the artifact.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall -- and a
+  # suspended operator leaves its CRs unreconciled while they still report
+  # whatever status they last had.
+  suspend: ${CLUSTERBOOK_OPERATOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/clusterbook-operator
+  postBuild:
+    substitute:
+      CLUSTERBOOK_OPERATOR_NAMESPACE: "${CLUSTERBOOK_OPERATOR_NAMESPACE:-clusterbook-system}"
+      # A SECOND COPY of the default in apps/clusterbook-operator/release.yaml,
+      # and it wins over it -- bump both together. A third copy lives in
+      # cicd/argocd-platform/base/ks-clusterbook-operator.yaml.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook-operator
+      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.20.0}"
+      # Nothing else is threaded ON PURPOSE: the argocd-platform Kustomization
+      # rendering this same path threads exactly these two, and
+      # check-shared-path-wiring.py fails the build if they diverge. The base's
+      # trust-bundle variables all carry usable defaults.

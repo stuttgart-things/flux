@@ -9,12 +9,27 @@ Kustomization.
 cicd/platform/
 ├── root/          empty kustomization — the consumer's spec.path
 └── components/
-    ├── argo-cd/         → ./cicd/argo-cd     (needs cilium-gateway + a Secret)
-    ├── tekton/          → ./cicd/tekton      (needs cilium-gateway)
-    ├── dapr/            → ./apps/dapr/root   (control plane only)
-    ├── dapr-workflows/  → ./apps/dapr/root   (needs dapr, a Redis + a Secret)
-    └── crossplane/      → ./cicd/crossplane
+    ├── argo-cd/              → ./cicd/argo-cd        (needs cilium-gateway + a Secret)
+    ├── argocd-platform/      → ./cicd/argocd-platform/overlays/…  (an ArgoCD control plane)
+    ├── argo-rollouts/        → ./cicd/argo-rollouts
+    ├── crossplane/           → ./cicd/crossplane
+    ├── kro/                  → ./cicd/kro
+    ├── machinery/            → ./cicd/machinery       (needs crossplane-configs)
+    ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)
+    ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
+    ├── dapr/                 → ./apps/dapr/root       (control plane only)
+    ├── dapr-workflows/       → ./apps/dapr/workflow-secrets  (needs dapr, a Redis + a Secret)
+    ├── komoplane/            → ./cicd/komoplane       (needs crossplane + cilium-gateway)
+    ├── claim-machinery-api/  → ./apps/claim-machinery-api    (needs cilium-gateway)
+    └── clusterbook-operator/ → ./apps/clusterbook-operator
 ```
+
+Three of those paths are under `apps/` and that is not an inconsistency: the
+bundle a component belongs to is decided by the layer it serves, not by the
+directory its base happens to sit in. `kargo`, `claim-machinery-api` and
+`clusterbook-operator` are delivery-layer tools whose bases were written before
+this bundle existed. `infra/platform` does the same with `flux-web` and
+`headlamp`.
 
 ## Why a third bundle rather than more apps
 
@@ -72,6 +87,43 @@ publishes.
 Tekton **Results** is off (`TEKTON_RESULT_DISABLED: true`). It needs its own
 database and object storage, and a half-configured Results routes every TaskRun
 log through a watcher that cannot store anything.
+
+## The three newest components
+
+**`komoplane`** is a read-only browser for Crossplane claims, composites and
+managed resources. It depends on `crossplane` as well as `cilium-gateway`,
+because without Crossplane CRs it starts, serves and shows an empty tree while
+every object reports healthy — "waiting for crossplane" is a question somebody
+can answer, "the dashboard is empty" is not. It ships **no authentication of
+any kind**, so whatever the Gateway exposes is world-readable.
+
+**`claim-machinery-api`** renders Crossplane claims from a profile. It does
+*not* depend on `crossplane`: it returns manifests, and a cluster can run it as
+a rendering service against a control plane somewhere else.
+
+Its profile is **fetched at runtime over the network**, from a raw
+githubusercontent URL pinned to a git ref — not from this repo and not from the
+OCI artifact. The deployed behaviour can therefore change with no commit here,
+whenever that ref moves. `CLAIM_MACHINERY_PROFILE_REF` defaults to `main`; pin
+it to a tag where that matters.
+
+**`clusterbook-operator`** reconciles the Clusterbook CRs. It carries no
+`dependsOn`, unlike the `argocd-platform` wiring of the same path — there it
+waits for `argo-cd` because it writes Argo CD cluster-secrets; here it is a
+standalone operator that brings its own CRDs, namespace and RBAC.
+
+It needs a `ClusterbookProviderConfig`, and this component does not ship one:
+that CR names the kubeconfig Secret of the cluster hosting the backend, which
+is environment data belonging in the cluster repo. Seed it with
+`kustomize.toolkit.fluxcd.io/{prune,reconcile}: disabled`. Without it the
+operator runs, reconciles nothing, and reports healthy.
+
+`./apps/clusterbook-operator` is now rendered by **two** Kustomizations — this
+component and `cicd/argocd-platform/base`. `hack/check-shared-path-wiring.py`
+holds them in step: thread a variable in one and CI fails until it is threaded
+in the other, because Flux does not inherit `postBuild.substitute` and a
+cluster setting a value only one of them names silently gets the other's
+default.
 
 ## Upgrading a Crossplane Configuration is not a version bump
 
