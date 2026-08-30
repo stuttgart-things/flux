@@ -1,3 +1,10 @@
+## [1.44.1](https://github.com/stuttgart-things/flux/compare/v1.44.0...v1.44.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **cicd:** thread ISSUER_NAME through the kargo and argocd-platform components ([#316](https://github.com/stuttgart-things/flux/issues/316)) ([448084b](https://github.com/stuttgart-things/flux/commit/448084b3f2d4ff9149545035f8e29e13fefd38b0))
+
 # [1.44.0](https://github.com/stuttgart-things/flux/compare/v1.43.0...v1.44.0) (2026-08-29)
 
 
