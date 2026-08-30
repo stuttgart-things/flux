@@ -1,3 +1,10 @@
+# [1.45.0](https://github.com/stuttgart-things/flux/compare/v1.44.3...v1.45.0) (2026-08-30)
+
+
+### Features
+
+* **ci:** two Kustomizations rendering one path must be wired the same way ([#319](https://github.com/stuttgart-things/flux/issues/319)) ([02a5f30](https://github.com/stuttgart-things/flux/commit/02a5f306fca0181d2b598f98c0d04775e2f60b70)), closes [#316](https://github.com/stuttgart-things/flux/issues/316) [#317](https://github.com/stuttgart-things/flux/issues/317)
+
 ## [1.44.3](https://github.com/stuttgart-things/flux/compare/v1.44.2...v1.44.3) (2026-08-30)
 
 
