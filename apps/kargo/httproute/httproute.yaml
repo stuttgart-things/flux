@@ -13,4 +13,11 @@ spec:
   rules:
     - backendRefs:
         - name: kargo-api
-          port: 443
+          # MUST track KARGO_API_TLS_ENABLED in ../release.yaml, which defaults
+          # to false -- so the Service listens on 80 and this route pointed at a
+          # port nothing serves. Gateway API does not reject that: the route is
+          # Accepted, the Gateway is Programmed, and every Kustomization is
+          # Ready. It answers 503 and nothing else says why.
+          #
+          # Set both together: KARGO_API_TLS_ENABLED=true needs 443 here.
+          port: ${KARGO_API_PORT:-80}

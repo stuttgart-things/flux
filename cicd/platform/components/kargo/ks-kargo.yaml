@@ -134,3 +134,5 @@ spec:
       KARGO_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # Paired with KARGO_API_TLS_ENABLED on the release above; see the route.
+      KARGO_API_PORT: "${KARGO_API_PORT:-80}"
