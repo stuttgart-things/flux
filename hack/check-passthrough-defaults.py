@@ -28,9 +28,12 @@ component or a base counts too.
 A deliberate override is declared by putting `# passthrough-override: <reason>`
 on the line above.
 """
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -46,12 +49,62 @@ ANY = re.compile(r'\$\{([A-Z0-9_]+):-([^}]*)\}')
 _cache = {}
 
 
-def rendered(path: Path):
-    key = str(path)
-    if key not in _cache:
+SUBST_PATH = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
+
+
+def rendered(path: Path, components=()):
+    """What Flux actually applies for this Kustomization.
+
+    spec.components are applied BY FLUX on top of the built path, so
+    `kustomize build <path>` alone does not see them -- and for some components
+    that is the whole content. `dapr`'s spec.path is ./apps/dapr/root, whose
+    kustomization.yaml is `resources: []`: rendering the path gave zero lines,
+    and this check compared against nothing and reported clean. DAPR_VERSION had
+    drifted 1.17.4 against 1.18.3 for a day, on every cluster that selected it.
+
+    Rendered here the way Flux composes it: a kustomization that takes the path
+    as a resource and the components on top. Paths must be RELATIVE -- kustomize
+    refuses an absolute root -- so the scratch directory lives inside the repo.
+    """
+    key = (str(path), tuple(str(c) for c in components))
+    if key in _cache:
+        return _cache[key]
+
+    if not components:
         out = subprocess.run(["kustomize", "build", str(path)],
                              capture_output=True, text=True)
         _cache[key] = out.stdout if out.returncode == 0 else None
+        return _cache[key]
+
+    def _remember(k, v):
+        _cache[k] = v
+        return v
+
+    scratch = Path(tempfile.mkdtemp(prefix=".render-", dir=ROOT))
+    try:
+        def rel(p):
+            return os.path.relpath(p, scratch)
+        # A component path can itself carry a substitution -- openbao selects
+        # its seal mode with ./components/seal-${OPENBAO_SEAL_MODE:-transit},
+        # one component covering three modes. Resolve to the default, the same
+        # reading this check applies to values. Left literal, kustomize fails on
+        # a directory that does not exist and the whole path went unchecked --
+        # losing the comparisons it USED to make before components were rendered
+        # at all.
+        comps = []
+        for c in components:
+            c = SUBST_PATH.sub(lambda m: m.group(2) or "", str(c))
+            d = (path / c).resolve()
+            if not d.is_dir():
+                return _remember(key, None)
+            comps.append(rel(d))
+        kust = {"resources": [rel(path)], "components": comps}
+        (scratch / "kustomization.yaml").write_text(yaml.safe_dump(kust))
+        out = subprocess.run(["kustomize", "build", str(scratch)],
+                             capture_output=True, text=True)
+        _cache[key] = out.stdout if out.returncode == 0 else None
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
     return _cache[key]
 
 
@@ -82,7 +135,7 @@ def overridden(file: Path, name):
 def main():
     fail = 0
     checked = 0
-    skipped = set()
+    skipped, empty = set(), set()
 
     for f in sorted(ROOT.rglob("*.yaml")):
         if ".git" in f.parts:
@@ -109,9 +162,15 @@ def main():
             if not target.is_dir():
                 skipped.add(str(path))
                 continue
-            text = rendered(target)
+            text = rendered(target, spec.get("components") or [])
             if text is None:
                 skipped.add(str(path))
+                continue
+            # An empty render is not agreement. Before this, a path that built
+            # to nothing produced no comparison and no finding -- indistinguishable
+            # from a clean one.
+            if not text.strip():
+                empty.add(str(path))
                 continue
 
             for name, value in subs.items():
@@ -139,6 +198,11 @@ def main():
 
     if skipped:
         print(f"note: {len(skipped)} path(s) not in this checkout, not checked")
+    if empty:
+        for p in sorted(empty):
+            print(f"UNVERIFIABLE {p}: renders to nothing, so no default there "
+                  f"could be compared. Not a pass.", file=sys.stderr)
+        fail = 1
     if not fail:
         print(f"OK: {checked} pass-through default(s) match the path they thread into")
     return fail
