@@ -67,6 +67,12 @@ spec:
     # optional: false on purpose -- without it Flux would proceed with an empty
     # admin hash and an ArgoCD nobody can log into, reporting success.
     substituteFrom:
+      # substituteFrom-keys: ARGO_CD_SERVER_ADMIN_PASSWORD, VAULT_ADDR, VAULT_NAMESPACE, VAULT_ROLE_ID, VAULT_SECRET_ID
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
       - kind: Secret
         name: ${ARGO_CD_SECRET:-argocd-secrets}
         optional: false

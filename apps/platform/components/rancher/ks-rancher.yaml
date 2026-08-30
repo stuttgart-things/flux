@@ -63,6 +63,12 @@ spec:
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
     substituteFrom:
+      # substituteFrom-keys: BOOTSTRAP_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
       - kind: Secret
         name: ${RANCHER_SECRET:-rancher-secrets}
         optional: false

@@ -112,10 +112,16 @@ spec:
       # literal patch -- the trust-bundle mount is already there, optional and
       # inert until SSL_CERT_DIR points at it.
     substituteFrom:
+      # substituteFrom-keys: VELERO_S3_ACCESS_KEY, VELERO_S3_SECRET_KEY
       # optional: false on purpose -- see the note above about what an empty
       # credential pair means here. The Secret holds VELERO_S3_ACCESS_KEY and
       # VELERO_S3_SECRET_KEY, and should itself be SOPS-encrypted in the
       # cluster repo.
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
       - kind: Secret
         name: ${VELERO_SECRET:-velero-s3-credentials}
         optional: false
