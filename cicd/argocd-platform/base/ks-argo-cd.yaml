@@ -17,6 +17,22 @@ spec:
   path: ./cicd/argo-cd
   prune: true
   wait: true
+  components:
+    # Both of these are what the argo-cd component has always applied, and
+    # leaving them off is why argocd-platform produced an ArgoCD nothing could
+    # reach while every Kustomization reported Ready.
+    #
+    # The base creates an argocd-ingress Certificate unconditionally. A Gateway
+    # consumer neither wants it nor has anything that mounts the Secret -- and
+    # it is not inert: it names ISSUER_NAME, so on a cluster whose issuer is
+    # called something else the Certificate parks InProgress, the HelmRelease
+    # waits for it and times out, and eight Kustomizations report "dependency
+    # not ready" instead.
+    - ./components/no-ingress-cert
+    # Without this there is no HTTPRoute and no Ingress, so the Gateway has no
+    # route for the hostname and answers 404. Nothing reports a problem: ArgoCD
+    # is running and healthy, it is simply not reachable.
+    - ./components/httproute
   postBuild:
     substitute:
       # Equal to cicd/platform/components/argo-cd's default on purpose. Both
@@ -46,6 +62,16 @@ spec:
       AVP_TRUST_BUNDLE_CONFIGMAP: "${AVP_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
       AVP_TRUST_BUNDLE_KEY: "${AVP_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
       AVP_SSL_CERT_DIR: "${AVP_SSL_CERT_DIR:-/etc/ssl/custom}"
+      # The chart's own Ingress stays off: the Gateway serves this, and both on
+      # means two things answering for one hostname.
+      ARGO_CD_INGRESS_ENABLED: "false"
+      # What the httproute component above reads. Named differently from the
+      # INGRESS_* pair, which belongs to the Ingress path -- so setting only
+      # those produced a route for nothing.
+      ARGO_CD_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
+      ARGO_CD_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
     substituteFrom:
       - kind: Secret
         name: ${ARGO_CD_SECRETS_NAME:-argocd-secrets}

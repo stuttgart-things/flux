@@ -99,3 +99,10 @@ spec:
       ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
       INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
+      # Passed through under its own name as well, because the base builds
+      # ARGO_CD_DOMAIN from INFRA_DOMAIN -- and a substitute entry is resolved
+      # against THIS block, not against its own siblings. Threading only
+      # INGRESS_DOMAIN left the route's hostname as set-INFRA_DOMAIN.invalid.
+      INFRA_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      INFRA_GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      INFRA_GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
