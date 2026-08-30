@@ -32,7 +32,7 @@ spec:
     substitute:
       DAPR_NAMESPACE: "${DAPR_NAMESPACE:-dapr-system}"
       # renovate: datasource=helm depName=dapr registryUrl=https://dapr.github.io/helm-charts
-      DAPR_VERSION: "${DAPR_VERSION:-1.17.4}"
+      DAPR_VERSION: "${DAPR_VERSION:-1.18.3}"
       # A single-node cluster cannot satisfy the HA replica counts, and the
       # placement StatefulSet would sit Pending while everything above it
       # reports Progressing.
