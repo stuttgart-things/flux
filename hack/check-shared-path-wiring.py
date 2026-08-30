@@ -56,6 +56,17 @@ MUST_MATCH = {
             "ISSUER_KIND",
         },
     },
+    "./apps/clusterbook-operator": {
+        "why": "the clusterbook-operator component and argocd-platform install "
+               "the same operator from the same path -- argocd-platform orders "
+               "it behind argo-cd because it writes Argo CD cluster-secrets, "
+               "but what it installs has to be identical",
+        # Nothing. Both thread NAMESPACE and VERSION and neither should grow a
+        # key the other lacks: the base's remaining variables (the trust-bundle
+        # mount, FLUX_SOURCE_API_VERSION) all carry usable defaults, so adding
+        # one here means adding it there in the same commit.
+        "extra_allowed": set(),
+    },
 }
 
 # Rendered more than once ON PURPOSE, and not comparable.

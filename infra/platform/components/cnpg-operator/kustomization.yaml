@@ -1,0 +1,6 @@
+---
+# Opt-in: cnpg-operator (standalone, cluster-wide)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cnpg-operator.yaml

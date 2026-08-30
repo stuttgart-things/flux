@@ -8,8 +8,9 @@ pointing back at an existing base in this repo. The consumer's
 child then renders its own base.
 
 The APP layer lives in a second bundle, [`apps/platform`](../../apps/platform)
-— argo-cd, openbao, vault, rancher, minio — selected the same way and reading
-the same `INFRA_*` names.
+— openbao, vault, rancher, minio, clusterbook, vcluster — and the DELIVERY
+layer in a third, [`cicd/platform`](../../cicd/platform). Both are selected the
+same way and read the same `INFRA_*` names.
 
 ## Layout
 
@@ -32,8 +33,18 @@ infra/platform/
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
+    ├── velero/                   → ./infra/velero                          (requires an S3 Secret)
+    ├── sops-secrets-operator/    → ./apps/sops-secrets-operator
+    ├── cnpg-operator/            → ./apps/cnpg-operator
+    ├── prometheus-pve-exporter/  → ./infra/prometheus-pve-exporter          (requires kube-prometheus-stack)
     └── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
 ```
+
+Six of those paths are under `apps/`, and that is deliberate: the bundle a
+component belongs to is decided by the layer it serves, not by the directory
+its base sits in. `flux-web` and `headlamp` are cluster dashboards,
+`sops-secrets-operator` is part of the secrets layer beside `external-secrets`,
+and `cnpg-operator` is one cluster-wide operator watching every namespace.
 
 There is no always-on base. The first cluster pointed at this bundle wanted
 `cilium-lb` + `cert-manager-install` and neither the Gateway nor the PKI chain,
@@ -130,6 +141,7 @@ the same list:
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
+| `prometheus-pve-exporter` | `kube-prometheus-stack` |
 
 The four behind `cilium-gateway` render an `HTTPRoute` unconditionally, and an
 `HTTPRoute` whose `parentRef` does not resolve sits at `Accepted=False` without
@@ -148,6 +160,14 @@ Two constraints this table cannot express:
   at `Ready=False / InvalidProviderConfig`. And `Ready=True` only proves the
   *login* — a store pointed at a KV mount outside the bound policy validates
   identically and fails at the first ExternalSecret.
+- **`prometheus-pve-exporter` is not satisfied by the standalone
+  `prometheus`.** Its dependency names `kube-prometheus-stack` because it
+  applies a `PodMonitor`, whose CRD comes from the prometheus-operator that kps
+  installs — the standalone prometheus chart ships neither, and has no Grafana
+  to import the dashboard ConfigMap either. It is also pinned to the
+  `monitoring` namespace throughout its base, so a cluster that moved kps with
+  `KPS_NAMESPACE` gets an exporter kps never scrapes: nothing fails, the
+  metrics are just absent.
 - **`kube-prometheus-stack` needs a StorageClass that exists here.** Its
   default, `nfs4-csi`, is real only on clusters that also selected `nfs-csi`.
   Get it wrong and the Kustomization goes Ready — the Helm release installs
@@ -185,9 +205,18 @@ postBuild:
 
 `CILIUM_LB_SUSPEND`, `CILIUM_GATEWAY_SUSPEND`, `CERT_MANAGER_INSTALL_SUSPEND`,
 `CERT_MANAGER_SELFSIGNED_SUSPEND`, `CERT_MANAGER_VAULT_ISSUER_SUSPEND`,
-`TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`,
-`OPENEBS_SUSPEND`, `PROMETHEUS_SUSPEND`, `FLUX_WEB_SUSPEND`,
-`HEADLAMP_SUSPEND`, `RELOADER_SUSPEND`.
+`TRUST_MANAGER_SUSPEND`, `NFS_CSI_SUSPEND`, `OPENEBS_SUSPEND`,
+`PROMETHEUS_SUSPEND`, `KPS_SUSPEND`, `EXTERNAL_SECRETS_SUSPEND`,
+`ESO_STORE_SUSPEND`, `FLUX_WEB_SUSPEND`, `HEADLAMP_SUSPEND`,
+`RELOADER_SUSPEND`, `COREDNS_LAB_ZONE_SUSPEND`, `VELERO_SUSPEND`,
+`SOPS_OPERATOR_SUSPEND`, `CNPG_OPERATOR_SUSPEND`, `PVE_EXPORTER_SUSPEND`.
+
+Two of them freeze less than they look like they do. `SOPS_OPERATOR_SUSPEND`
+stops the wrapper Kustomization only — the inner one it applied keeps
+reconciling, because `suspend` does not propagate into an applied
+Kustomization's own spec. And a suspended `cnpg-operator` leaves every Postgres
+`Cluster` running with nobody to fail it over or back it up, still reporting
+the status it last had.
 
 This **stops reconciliation and leaves deployed objects running**, unmanaged —
 it is for maintenance, not for "this cluster doesn't need X" (that is a line in
@@ -258,6 +287,10 @@ Bundle-level names (they map onto differently-named base variables):
 | `COREDNS_ZONE` | `unset.invalid` | coredns-lab-zone `zones[0].zone` |
 | `COREDNS_ZONE_SERVER` | `0.0.0.0` | coredns-lab-zone `forward` target |
 | `COREDNS_CHART_NAME` | `rke2-coredns` | the HelmChart it configures (`coredns` on k3s) |
+| `VELERO_BUCKET` | *(required)* | the S3 bucket backups are written to |
+| `VELERO_S3_ENDPOINT` | *(required)* | S3 / MinIO endpoint URL |
+| `VELERO_SECRET` | `velero-s3-credentials` | Secret holding `VELERO_S3_ACCESS_KEY` / `VELERO_S3_SECRET_KEY` |
+| `PVE_EXPORTER_TARGET` | *(required)* | the Proxmox host scraped via `?target=` |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 
 Required variables have no upstream default, so they fall back to an
@@ -265,6 +298,38 @@ unmistakable sentinel (`set-INFRA_DOMAIN.invalid`, `0.0.0.0`,
 `set-NFS_SERVER_FQDN.invalid`) rather than a null.
 
 Every other variable keeps its base name and its base default.
+
+## velero is wired for one of the base's two credential modes
+
+`./infra/velero` offers two mutually exclusive ways to fill the
+`cloud-credentials` Secret (its README → *Credential modes*). This component
+wires **mode 1**: the base's own `pre-release.yaml` Secret, filled from a
+`substituteFrom` Secret that must carry `VELERO_S3_ACCESS_KEY` and
+`VELERO_S3_SECRET_KEY` — SOPS-encrypted in the cluster repo.
+
+```yaml
+postBuild:
+  substitute:
+    VELERO_BUCKET: velero-cluster-test4
+    VELERO_S3_ENDPOINT: https://minio.4sthings.tiab.ssc.sva.de
+    VELERO_SECRET: velero-s3-credentials     # the Secret this bundle reads
+```
+
+`optional: false`, deliberately. Left optional, Flux substitutes empty strings
+and installs a Velero whose credentials file reads `aws_access_key_id=` — the
+Deployment starts, the Kustomization reports Ready, and every backup fails at
+the first upload. That is the worst moment to find out, because by then
+somebody believes the cluster is backed up.
+
+Mode 2 (ESO pulling from Vault) needs `components/external-secret` **plus** a
+patch deleting the base Secret so the two do not fight over one name. A
+kustomize Component cannot express "and also patch out a resource from the path
+I point at", so mode 2 stays what it is today: a cluster that wants it wires
+`./infra/velero` itself. Selecting this component *and* adding the ESO
+component by hand gives two writers for `cloud-credentials` — pick one.
+
+Note also that removing this component **prunes Velero, not the backups**. The
+bucket contents survive, which is the point of them being there.
 
 ## Migrating a cluster off per-component CRs
 

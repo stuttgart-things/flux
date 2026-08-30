@@ -13,10 +13,17 @@ metadata:
   namespace: ${FLUX_NAMESPACE:-flux-system}
 spec:
   interval: 1h
+  # The repo writes config/manager/kustomization.yaml before it tags, so a
+  # tagged tree pins its own image. Verified by building the bundle:
+  # ref=v0.8.5 gave image v0.8.4 — an off-by-one fixed by
+  # stuttgart-things/sops-secrets-operator#90. v0.9.0 gives v0.9.0.
+  #
+  # The comment sits ABOVE `ref:` rather than above `tag:` on purpose.
+  # renovate.json's OCI customManager matches `url:` / `ref:` / `tag:` as three
+  # adjacent lines, so a comment between the last two took this artifact out of
+  # Renovate's sight entirely — no PR, no warning, no log line. It only became
+  # visible when infra/platform grew a second copy of this default, which
+  # Renovate DOES see: the two would have drifted apart on the next release.
   url: oci://ghcr.io/stuttgart-things/sops-secrets-operator-kustomize
   ref:
-    # The repo writes config/manager/kustomization.yaml before it tags, so a
-    # tagged tree pins its own image. Verified by building the bundle:
-    # ref=v0.8.5 gave image v0.8.4 — an off-by-one fixed by
-    # stuttgart-things/sops-secrets-operator#90. v0.9.0 gives v0.9.0.
     tag: ${SOPS_OPERATOR_VERSION:-v0.9.0}

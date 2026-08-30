@@ -1,0 +1,54 @@
+---
+# CloudNativePG operator → ./apps/cnpg-operator
+#
+# In the INFRA bundle although the base lives under apps/: the layer a
+# component serves decides its bundle, not the directory it sits in. This is
+# one operator in cnpg-system watching Cluster CRs in EVERY namespace -- the
+# same shape as external-secrets or trust-manager, and the same precedent as
+# flux-web and headlamp, which are also apps/ paths in this bundle.
+#
+# Standalone: it depends on nothing and nothing here depends on it. What does
+# depend on it lives in the app layer -- apps/backstage-rag-postgres declares a
+# Cluster CR whose CRD this component installs, and without it that
+# Kustomization fails on `no matches for kind Cluster`.
+#
+# INSTALLING THE OPERATOR IS NOT DEPLOYING A DATABASE. Selecting this gives a
+# cluster that can be asked for Postgres and has none.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg-operator
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  # 10m: the chart installs the CNPG CRDs before the operator Deployment, and
+  # `wait: true` holds for both.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. Set CNPG_OPERATOR_SUSPEND: "true" in the consumer's substitute
+  # block. Freezes reconciliation; deployed objects stay running -- including
+  # every Postgres Cluster, which then has no operator to fail over or back it
+  # up while reporting the status it last had. To uninstall, remove this
+  # component from the consumer's spec.components list.
+  suspend: ${CNPG_OPERATOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/cnpg-operator
+  postBuild:
+    # NOT threaded: CNPG_CPU_REQUEST, CNPG_MEMORY_REQUEST, CNPG_MEMORY_LIMIT.
+    # They are quantities (100m, 200Mi) that YAML reads as strings today, but
+    # they are resource knobs on a single small controller and the base's
+    # defaults hold for every cluster in this fleet. Threading three more names
+    # to change nothing is cost without a reader.
+    substitute:
+      CNPG_NAMESPACE: "${CNPG_NAMESPACE:-cnpg-system}"
+      # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
+      CNPG_VERSION: "${CNPG_VERSION:-0.29.0}"

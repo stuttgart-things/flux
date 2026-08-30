@@ -1,0 +1,71 @@
+---
+# Komoplane -- a read-only browser for Crossplane claims, composites and
+# managed resources → ./cicd/komoplane
+#
+# dependsOn BOTH, and for different reasons:
+#
+#   crossplane      -- komoplane's entire UI is a view onto Crossplane CRs. Without
+#                      them it starts, serves, and shows an empty tree while every
+#                      object reports healthy. The dependency turns "the dashboard
+#                      is broken" into "waiting for crossplane", which is the
+#                      question somebody can answer.
+#   cilium-gateway  -- the base renders an HTTPRoute unconditionally, and a route
+#                      whose parentRef does not resolve sits at Accepted=False
+#                      without explaining itself. This dependency crosses bundles:
+#                      the Gateway comes from infra-platform. Flux does not care
+#                      which Kustomization owns a name, only that it exists and is
+#                      ready -- so selecting komoplane on a cluster whose infra
+#                      bundle has no gateway does not error, it waits on
+#                      "dependency not ready" forever.
+#
+# Read-only is the security model, not a limitation of this wiring: the chart
+# ships no authentication of any kind, so whatever the Gateway exposes is
+# world-readable. Put it behind a hostname you are willing to have read.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: komoplane
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall. To remove
+  # komoplane, delete this component from the consumer's spec.components list.
+  suspend: ${KOMOPLANE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/komoplane
+  postBuild:
+    substitute:
+      KOMOPLANE_NAME: "${KOMOPLANE_NAME:-komoplane}"
+      KOMOPLANE_NAMESPACE: "${KOMOPLANE_NAMESPACE:-komoplane}"
+      # renovate: datasource=helm depName=komoplane registryUrl=https://helm-charts.komodor.io
+      KOMOPLANE_VERSION: "${KOMOPLANE_VERSION:-0.1.8}"
+
+      # ---- HTTPRoute ----------------------------------------------------
+      # All four are REQUIRED in the base -- ./cicd/komoplane defaults
+      # GATEWAY_NAME, KOMOPLANE_HOSTNAME and DOMAIN to nothing at all. Unset,
+      # envsubst renders them empty and the route comes out with an empty
+      # parentRefs[0].name and a hostname of ".", which the API server accepts
+      # for the name and rejects for the hostname -- failing this Kustomization
+      # with a message about the route rather than the variable.
+      #
+      # Mapped onto the bundle-level INFRA_* names the other two bundles read,
+      # so a cluster writes its domain once in a ConfigMap and substituteFroms
+      # it into all three.
+      KOMOPLANE_HOSTNAME: "${KOMOPLANE_HOSTNAME:-komoplane}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

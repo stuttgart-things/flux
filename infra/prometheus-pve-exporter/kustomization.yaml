@@ -9,6 +9,15 @@ resources:
 configMapGenerator:
   # Picked up automatically by the kube-prometheus-stack Grafana sidecar,
   # which imports any ConfigMap labelled grafana_dashboard.
+  #
+  # EVERY GRAFANA VARIABLE IN dashboard.json IS WRITTEN $${...}, and it has to
+  # stay that way. Grafana's own syntax for a template variable is ${DS_PROMETHEUS}
+  # / $node -- which is also Flux's postBuild substitution syntax, and Flux
+  # cannot tell the two apart. Written bare, envsubst replaced all eleven with
+  # the empty string on the way into this ConfigMap: eight panels landed with
+  # "datasource": "" and three queries with id=~"", so the dashboard imported
+  # cleanly and drew nothing. $$ is Flux's escape and renders back to a single
+  # $, so Grafana sees exactly what it expects.
   - name: pve-exporter-dashboard
     files:
       - proxmox-pve.json=dashboard.json

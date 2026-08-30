@@ -1,0 +1,6 @@
+---
+# Opt-in: komoplane -- the Crossplane resource browser.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-komoplane.yaml

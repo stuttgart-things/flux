@@ -1,0 +1,121 @@
+---
+# Velero -- backup and restore of cluster resources and persistent volumes,
+# against S3-compatible storage → ./infra/velero
+#
+# Standalone: nothing here depends on it and it depends on nothing in this
+# bundle. What it needs is OUTSIDE the cluster -- a bucket and a credential
+# pair, on a MinIO or an S3 that already exists.
+#
+# ---------------------------------------------------------------------------
+# THIS COMPONENT WIRES CREDENTIAL MODE 1 OF THE TWO THE BASE OFFERS.
+#
+# Mode 1 (here): ./infra/velero/pre-release.yaml renders a plain
+# `cloud-credentials` Secret from VELERO_S3_ACCESS_KEY / VELERO_S3_SECRET_KEY,
+# which this component supplies from a Secret via substituteFrom.
+#
+# Mode 2: components/external-secret pulls the same credentials from Vault via
+# ESO, and requires a patch DELETING the base Secret so the two do not fight
+# over one name. A kustomize component cannot express "and also patch out a
+# resource from the path I am pointing at", so mode 2 stays what it is today: a
+# cluster that wants it wires ./infra/velero itself, as
+# infra/velero/README.md → Credential modes describes.
+#
+# Mode 1 is the one bundled because it is the base's default and needs nothing
+# else installed. Selecting THIS component and ALSO adding the ESO component by
+# hand gives two writers for `cloud-credentials`; pick one.
+# ---------------------------------------------------------------------------
+#
+# substituteFrom with optional: false, deliberately. Left optional, Flux
+# substitutes empty strings and installs a Velero whose credentials file reads
+#
+#   aws_access_key_id=
+#   aws_secret_access_key=
+#
+# The Deployment starts, the Kustomization reports Ready, and every backup
+# fails at the first upload -- which is the worst possible moment to find out,
+# because by then somebody believes the cluster is backed up.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: velero
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  # 10m: the chart runs an init container that downloads the AWS object-store
+  # plugin before the server starts, and `wait: true` holds for both.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. Set VELERO_SUSPEND: "true" in the consumer's substitute block.
+  # Freezes reconciliation; the deployed Velero keeps running and keeps taking
+  # whatever Schedules it already has. To uninstall, remove this component from
+  # spec.components -- and note that pruning Velero does NOT delete the backups
+  # in the bucket, which is the point of them being there.
+  suspend: ${VELERO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/velero
+  postBuild:
+    substitute:
+      VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
+      # renovate: datasource=helm depName=velero registryUrl=https://vmware-tanzu.github.io/helm-charts
+      VELERO_VERSION: "${VELERO_VERSION:-12.1.0}"
+      # renovate: datasource=docker depName=velero/velero-plugin-for-aws
+      VELERO_PLUGIN_AWS_VERSION: "${VELERO_PLUGIN_AWS_VERSION:-v1.14.2}"
+
+      # ---- the bucket ----------------------------------------------------
+      # REQUIRED, both of them, and neither has a default in the base -- unset
+      # they render empty and the BackupStorageLocation comes up with an empty
+      # bucket name, which Velero reports as `Unavailable` rather than as a
+      # missing setting. The sentinels make it say so at deploy time instead.
+      VELERO_BUCKET: "${VELERO_BUCKET:-set-VELERO_BUCKET}"
+      VELERO_S3_ENDPOINT: "${VELERO_S3_ENDPOINT:-https://set-VELERO_S3_ENDPOINT.invalid}"
+      VELERO_S3_REGION: "${VELERO_S3_REGION:-minio}"
+
+      # NOT threaded: VELERO_S3_FORCE_PATH_STYLE, VELERO_S3_INSECURE_SKIP_TLS_VERIFY,
+      # VELERO_SNAPSHOTS_ENABLED, VELERO_DEPLOY_NODE_AGENT, VELERO_METRICS_ENABLED,
+      # VELERO_SERVICE_MONITOR_ENABLED. Every one resolves to a bool, and
+      # postBuild.substitute is map[string]string -- the API server rejects the
+      # typed patch and fails the PARENT Kustomization, taking every sibling
+      # component in this bundle with it. No quoting survives: kustomize
+      # re-emits the bundle and drops "x", 'x' and !!str alike before envsubst
+      # runs. See hack/check-substitute-strings.py.
+      #
+      # The base's defaults are the ones this fleet wants (path-style on for
+      # MinIO, TLS verified, no CSI snapshots, no node agent). To change one,
+      # patch this child from the consumer with a LITERAL value, which keeps
+      # its quotes:
+      #
+      #   patches:
+      #     - target: {kind: Kustomization, name: velero}
+      #       patch: |
+      #         - op: add
+      #           path: /spec/postBuild/substitute/VELERO_DEPLOY_NODE_AGENT
+      #           value: "true"
+      #
+      # VELERO_SERVICE_MONITOR_ENABLED needs the prometheus-operator CRDs,
+      # which come from kube-prometheus-stack -- not from the standalone
+      # `prometheus` component. Turning it on without kps fails this
+      # Kustomization on `no matches for kind ServiceMonitor`.
+      #
+      # VELERO_SSL_CERT_DIR is also left out, for a different reason: its
+      # default is EMPTY, and an empty substitute value renders as YAML null,
+      # which map[string]string rejects outright. A cluster whose S3 endpoint
+      # is signed by the internal CA sets it to /etc/ssl/custom with the same
+      # literal patch -- the trust-bundle mount is already there, optional and
+      # inert until SSL_CERT_DIR points at it.
+    substituteFrom:
+      # optional: false on purpose -- see the note above about what an empty
+      # credential pair means here. The Secret holds VELERO_S3_ACCESS_KEY and
+      # VELERO_S3_SECRET_KEY, and should itself be SOPS-encrypted in the
+      # cluster repo.
+      - kind: Secret
+        name: ${VELERO_SECRET:-velero-s3-credentials}
+        optional: false

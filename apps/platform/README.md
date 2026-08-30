@@ -8,10 +8,12 @@ the consumer's own Flux Kustomization.
 apps/platform/
 ├── root/          empty kustomization — the consumer's spec.path
 └── components/
-    ├── openbao/    → ./apps/openbao    (requires cilium-gateway, a seal)
-    ├── vault/      → ./apps/vault      (existing instances only — see below)
-    ├── rancher/    → ./apps/rancher    (requires cilium-gateway, cert-manager-install)
-    └── minio/      → ./apps/minio      (requires cilium-gateway + a Secret)
+    ├── openbao/     → ./apps/openbao     (requires cilium-gateway, a seal)
+    ├── vault/       → ./apps/vault       (existing instances only — see below)
+    ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
+    ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret)
+    ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
+    └── vcluster/    → ./apps/vcluster
 ```
 
 ## Two bundles, one cluster
