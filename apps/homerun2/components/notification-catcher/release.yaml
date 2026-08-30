@@ -29,7 +29,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-notification-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v1.4.1}
+                  image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.0.0}
 
     # First-reconciliation guard: every dispatched alert is logged
     # ("dry-run: would send …") instead of POSTing to Teams. Defaults to
