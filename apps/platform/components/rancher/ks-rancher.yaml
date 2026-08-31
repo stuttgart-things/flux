@@ -49,7 +49,7 @@ spec:
       # channel, and a second one here would either duplicate it or quietly
       # disagree with it.
       # renovate: datasource=helm depName=rancher registryUrl=https://releases.rancher.com/server-charts/stable
-      RANCHER_VERSION: "${RANCHER_VERSION:-2.14.3}"
+      RANCHER_VERSION: "${RANCHER_VERSION:-2.15.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/sthings-cluster
       STHINGS_CLUSTER_VERSION: "${STHINGS_CLUSTER_VERSION:-0.3.20}"
       # RANCHER_REPLICAS is NOT passed through: its value is a number, and
