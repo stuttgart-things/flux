@@ -1,12 +1,15 @@
 # cicd/crossplane/profiles
 
 A **profile** is a cluster shape: the set of Crossplane Configurations one kind
-of cluster installs. `components/install` and `components/functions` are shared
-by every profile; only the Configuration set differs.
+of cluster installs — the Configurations it runs AND the crossplane core
+underneath them. Those two are not separable here: the core decides which
+registry a Provider or Function is locked to, and the two Configuration families
+disagree about that (see below), so each profile brings its own core.
 
 | Profile | Path | Cluster |
 |---|---|---|
 | cicd-platform | `../configs` (wraps `../components/configs`) | CI/CD cluster — pipeline-integration, storage-platform |
+| machinery-install | `./machinery-install` | crossplane core for a machinery cluster |
 | machinery | `./machinery` | vSphere / Proxmox / Harvester VM + image builder |
 | machinery-platform | `./machinery-platform` | the fleet-manager half, opt-in on top of `machinery` |
 
@@ -77,33 +80,44 @@ backwards without complaint.
 (default true). Kustomize has no conditional, so the toggle is the directory:
 apply `machinery` alone for a pure VM builder, or both.
 
-## Blocker — a machinery cluster needs its own crossplane core
-
-These profiles ship **Configurations only**, and they cannot yet be paired with
-`components/install` + `components/functions`. CI proved why on the first run:
+## Why machinery has its own crossplane core
 
 `crossplane-configurations` declares its Providers and Functions against
 **`xpkg.crossplane.io`** — `provider-kubernetes` (>=v1.2.0), `provider-helm`
 (>=v1.0.0), `function-kcl` (>=v0.12.0), `function-patch-and-transform`
 (>=v0.10.6). `components/install` and `components/functions` install those same
-packages from **`xpkg.upbound.io`**, because that is what the `crossplane/*`
-family declares. Crossplane keys its lock on the source string, so on a cluster
+packages from **`xpkg.upbound.io`**, which is what the `crossplane/*` family
+declares. Crossplane keys its lock on the source string, so on a cluster
 carrying both, every machinery Configuration reports the package it wants as a
-missing dependency while the other spelling sits there installed. Eight of the
-nine packages here hit it.
+missing dependency while the other spelling sits there installed and no claim
+reconciles. CI caught it on eight of the nine packages the first time these
+profiles ran.
 
 The fix is not to install them at the other spelling — it is to **not install
 them explicitly at all**. Every Provider and Function a machinery Configuration
-needs arrives through its own `dependsOn`, at the registry it names.
-`stuttgart-things/argocd` takes exactly this position for `provider-kubernetes`
-in `cicd/crossplane/providers/values.yaml`.
+needs is already in its `dependsOn`, so Crossplane installs it at the registry
+the package itself names. `stuttgart-things/argocd` takes the same position for
+`provider-kubernetes` in `cicd/crossplane/providers/values.yaml`.
 
-So a machinery cluster needs crossplane core **without** the `provider.packages`
-list, and no functions component. `components/install` hardcodes that list and
-is shared with cicd-platform, so it cannot simply be reused. Until a machinery
-install variant exists, these profiles are **not deployable as they stand** —
-the Configuration set and its pins are correct and verified, the core underneath
-it is not yet there.
+`machinery-install/` is therefore a build root that composes
+`../components/install` — same chart, version, namespace and HelmRepositories —
+and replaces only the provider list, keeping the single entry that never
+conflicted:
+
+| Provider | cicd-platform | machinery |
+|---|---|---|
+| `provider-helm` | `xpkg.upbound.io` | via `dependsOn` (platform declares `xpkg.crossplane.io`) |
+| `provider-kubernetes` | `xpkg.upbound.io` | via `dependsOn` (`xpkg.crossplane.io`) |
+| `provider-opentofu` | `xpkg.upbound.io` | `xpkg.upbound.io` — kept |
+
+`provider-opentofu` stays because it is the one entry CI never flagged: tofu-run
+either declares this exact upbound string or does not declare it at all, and
+installing it here is right either way — in the first case the node is identical,
+in the second nothing else would install it.
+
+It composes `../components/install` rather than `../../crossplane` because that
+root pulls `components/functions` in alongside, and a machinery cluster wants no
+functions component for the same registry reason.
 
 (An earlier version of this file guessed the gap was a missing
 `function-environment-configs`. That was wrong: a Function a Configuration
@@ -117,6 +131,32 @@ machinery packages. Create the Kustomizations directly.
 
 ```yaml
 ---
+# Crossplane core. Replaces the `crossplane` Kustomization on this cluster --
+# do not run both, they manage the same HelmRelease.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane-machinery-install
+  namespace: flux-system
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 20m
+  prune: true
+  # wait: true is what lets the Configuration Kustomizations below rely on
+  # dependsOn: a Configuration CR dry-runs against an API that has to know the
+  # kind already, and this one is Ready only once the chart is installed.
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./cicd/crossplane/profiles/machinery-install
+  postBuild:
+    substitute:
+      CROSSPLANE_NAMESPACE: crossplane-system
+      CROSSPLANE_VERSION: "2.4.0"
+      CROSSPLANE_OPENTOFU_PROVIDER_VERSION: v1.1.7
+---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -124,7 +164,7 @@ metadata:
   namespace: flux-system
 spec:
   dependsOn:
-    - name: crossplane          # its wait: true is what guarantees the CRDs exist
+    - name: crossplane-machinery-install
   interval: 1h
   retryInterval: 1m
   # A Configuration is not installed when its resource exists -- the package

@@ -86,8 +86,10 @@ ROOT = Path(__file__).resolve().parent.parent
 # registry that Configuration names. stuttgart-things/argocd takes the same
 # position for provider-kubernetes in cicd/crossplane/providers/values.yaml.
 #
-# components/install is shared and hardcodes the upbound provider list, so it
-# is NOT usable by a machinery cluster as it stands -- see profiles/README.md.
+# profiles/machinery-install reuses components/install and replaces the provider
+# list with the one entry that did not conflict, so the machinery profile below
+# names IT rather than the shared release.yaml -- that file's provider list is
+# the other family's spellings and is what this profile exists to avoid.
 PROFILES = {
     "cicd-platform": [
         "cicd/crossplane/components/install/release.yaml",
@@ -95,6 +97,7 @@ PROFILES = {
         "cicd/crossplane/components/configs/configs.yaml",
     ],
     "machinery": [
+        "cicd/crossplane/profiles/machinery-install/kustomization.yaml",
         "cicd/crossplane/profiles/machinery/configs.yaml",
         "cicd/crossplane/profiles/machinery-platform/configs.yaml",
     ],
