@@ -1,0 +1,146 @@
+---
+# MACHINERY PROFILE -- the VM + image builder half of a stuttgart-things
+# machinery cluster.
+#
+# Package set mirrors `machinery_packages` in the ansible container collection's
+# `kind_machinery` play (stuttgart-things/ansible, collections/container/
+# kind_machinery.yaml), which is reconciled against the reference machinery
+# cluster kind1. That play is the source of truth for these pins; when it moves,
+# move this with it, and read its comments before changing a version -- several
+# of these pins are floors or deliberate reverts, not preferences.
+#
+# THESE ARE ghcr.io/stuttgart-things/crossplane-configurations/*, NOT the
+# ghcr.io/stuttgart-things/crossplane/* family in ../../components/configs.
+# Those two are different lineages with overlapping names, and the old one is
+# documented as decommissioned in stuttgart-things/argocd
+# (cicd/crossplane/configs/values.yaml). Do NOT apply this profile and
+# components/configs to the SAME cluster: both would create Configurations named
+# harvester-vm and volume-claim from different sources, which is the lock
+# collision described below.
+#
+# WHY SO FEW PACKAGES: everything reachable through another package's dependsOn
+# is deliberately absent. ansible-run, volume-claim and cloud-config all arrive
+# transitively (vspherevm and proxmoxvm pull ansible-run; harvester-vm pulls
+# volume-claim, cloud-config and ansible-run). Listing one here as well puts the
+# same OCI path under both a short CR name and a dependsOn, and Crossplane keys
+# its lock on the source string:
+#
+#   cannot initialize dependency graph from the packages in the lock:
+#   node ghcr.io/stuttgart-things/crossplane-configurations/volume-claim
+#   already exists
+#
+# Every Configuration, Function and Provider then goes Healthy=False at once,
+# including ones unrelated to the offender -- crossplane-configurations#247 took
+# all 20 packages on u26-kind3 down that way on 2026-08-12. Installed stays True
+# and the pods keep running, so nothing crashes; Crossplane simply reconciles no
+# claim at all.
+#
+# This is the OPPOSITE convention from ../../components/configs, which lists
+# every dependency explicitly and sets skipDependencyResolution on the one
+# package that needs it. Both are valid; do not mix them within one file.
+# hack/check-crossplane-deps.py reads the real packages and enforces whichever
+# shape a file uses -- add any new file here to its SOURCES list.
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: vspherevm
+spec:
+  # v0.9.2 deliberately REVERTS the environmentConfig forwarding that v0.9.1
+  # added (crossplane-configurations#320, reverted in #347). spec.environmentConfig
+  # names a HYPERVISOR env (labul, labda) resolved against the vspherevm label;
+  # ansible-run resolves its OWN label, where only `default` exists fleet-wide.
+  # The forward therefore matched nothing and silently dropped every ansible-run
+  # default, ansibleExtraCollections included -- the playbook then ran against
+  # whatever collection happened to be baked into the working image. Found on
+  # kind3, 2026-08-20: sthings.baseos.setup died after ok=70 with "dict object
+  # has no element 26" while the pinned release had the Ubuntu-26 key all along;
+  # the real tell was "No collections directory found" in the step log.
+  # Do NOT "restore" the forward. Per-env selection is spec.ansible.environmentConfig.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/vspherevm:${CROSSPLANE_MACHINERY_VSPHEREVM_VERSION:-v0.9.2}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: proxmoxvm
+spec:
+  # v0.10.0 added spec.vm.cloneDatastore and v0.11.0 its `none` opt-out. NOT
+  # optional for LabUL: both base-OS templates keep their disk on the NFS store
+  # DD-sthings, whose ACL lost Datastore.AllocateSpace in early 2026-08, so a
+  # clone that cannot name a target datastore 403s. Below v0.10.0 the XRD has no
+  # such field at all, and every Configuration still reports Healthy -- the
+  # cluster simply cannot provision a LabUL VM.
+  # v0.12.0 splits the template's node from the VM's (spec.vm.templateNode).
+  # v0.12.2 reverts the environmentConfig forward, same reasoning as vspherevm.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/proxmoxvm:${CROSSPLANE_MACHINERY_PROXMOXVM_VERSION:-v0.13.0}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: packer-build
+spec:
+  # Tekton-backed Packer builder. Only provider-kubernetes, which arrives with
+  # the crossplane install Kustomization.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/packer-build:${CROSSPLANE_MACHINERY_PACKER_BUILD_VERSION:-v0.4.1}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: packer-release
+spec:
+  # Build -> test -> promote. Declares a dependsOn FLOOR of packer-build
+  # >=v0.3.0, which is why the pin above cannot drop below it: against v0.2.0
+  # the promotion gate reads a `template-name` result older packer-build does
+  # not surface, and the XR sits in phase=Building behind a successful build
+  # with no error reported anywhere.
+  #
+  # v0.4.2 dropped the XRD's `default: vault` on promote.vaultSecretName. Below
+  # that tag the default is materialized into every new object and beats the
+  # EnvironmentConfig, so a LabDA promotion has to restate vaultSecretName on
+  # the XR (crossplane-configurations#225).
+  package: ghcr.io/stuttgart-things/crossplane-configurations/packer-release:${CROSSPLANE_MACHINERY_PACKER_RELEASE_VERSION:-v0.4.2}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: cluster-backup
+spec:
+  # Scheduled encrypted state export to an OCI registry. Installing the package
+  # makes the capability available; a RUNNING backup additionally needs its
+  # EnvironmentConfig, the backup-registry push Secret and -- on a scoped
+  # provider SA -- the provider-kubernetes RBAC from the Configuration's README.
+  # None of that is required to install it.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster-backup:${CROSSPLANE_MACHINERY_CLUSTER_BACKUP_VERSION:-v0.2.0}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: scheduled-run
+spec:
+  # Cron-driven re-apply of an arbitrary XR (an AnsibleRun, a PackerBuild).
+  # Its EnvironmentConfig comes from the scheduled-run capability chart in
+  # stuttgart-things/crossplane/platform/capabilities/scheduled-run, not from here.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/scheduled-run:${CROSSPLANE_MACHINERY_SCHEDULED_RUN_VERSION:-v0.1.1}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: tofu-run
+spec:
+  # Runs a tofu module as a Workspace. Pulls provider-opentofu, which the
+  # packer-release test VM also needs at RUN time.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/tofu-run:${CROSSPLANE_MACHINERY_TOFU_RUN_VERSION:-v0.1.0}
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: harvester-vm
+spec:
+  # Harvester / KubeVirt VMs, the third hypervisor next to vSphere and Proxmox.
+  # Renders a KubeVirt VirtualMachine through provider-kubernetes and registers
+  # no provider of its own.
+  #
+  # volume-claim, cloud-config and ansible-run arrive through dependsOn and are
+  # deliberately NOT listed in this file -- see the header. This is why no
+  # skipDependencyResolution is set here, unlike the harvester-vm entry in
+  # ../../components/configs, where the dependencies ARE listed alongside it.
+  package: ghcr.io/stuttgart-things/crossplane-configurations/harvester-vm:${CROSSPLANE_MACHINERY_HARVESTER_VM_VERSION:-v0.1.9}

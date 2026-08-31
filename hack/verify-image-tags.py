@@ -85,6 +85,23 @@ IMAGE_RE = re.compile(r"image:\s*(?P<image>[^:$\s]+):\$\{[A-Z0-9_]+:-(?P<tag>[^}
 OCI_RE = re.compile(
     r"url:\s*oci://(?P<image>\S+)\s*\n\s*ref:\s*\n\s*tag:\s*\$\{[A-Z0-9_]+:-(?P<tag>[^}]+)\}"
 )
+# Crossplane package refs -- `package: ghcr.io/org/pkg:${VAR:-v1.2.3}` and the
+# provider list entries `- xpkg.../provider-helm:${VAR:-v1.4.0}`. Renovate
+# rewrites these defaults through its own customManager, so they are exposed to
+# exactly the extractVersion "v"-stripping this script exists to catch -- but
+# neither pattern above matches a `package:` key, so until now they were the one
+# family of substituted tags nothing verified. xpkg.* is reported as skipped
+# (only ghcr.io and docker.io are queried); the ghcr.io ones are checked.
+# The `-` branch is anchored to a real YAML list marker at start of line: a
+# bare `-` also matches the one inside `${VAR:-default}`, which turns
+# `imageName: ${RAG_PG_IMAGE:-ghcr.io/org/img}:${RAG_PG_IMAGE_TAG:-16}` into a
+# lookup for the repository `ghcr.io/org/img}`. `}` is excluded from the image
+# charset for the same reason.
+PACKAGE_RE = re.compile(
+    r"(?:package:|^\s*-)\s*(?P<image>(?:xpkg\.[^:$\s}]+|ghcr\.io/[^:$\s}]+))"
+    r":\$\{[A-Z0-9_]+:-(?P<tag>[^}]+)\}",
+    re.MULTILINE,
+)
 
 
 def main(roots: list[str]) -> int:
@@ -93,7 +110,7 @@ def main(roots: list[str]) -> int:
     for root in roots:
         for f in sorted(Path(root).rglob("*.yaml")):
             text = f.read_text()
-            for rx in (IMAGE_RE, OCI_RE):
+            for rx in (IMAGE_RE, OCI_RE, PACKAGE_RE):
                 for m in rx.finditer(text):
                     image, tag = m.group("image"), m.group("tag")
                     if "/" not in image:               # bare docker hub name
