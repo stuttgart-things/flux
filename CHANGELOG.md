@@ -1,3 +1,10 @@
+# [1.48.0](https://github.com/stuttgart-things/flux/compare/v1.47.0...v1.48.0) (2026-08-31)
+
+
+### Features
+
+* **crossplane:** add machinery profile on the crossplane-configurations family ([#342](https://github.com/stuttgart-things/flux/issues/342)) ([8dec027](https://github.com/stuttgart-things/flux/commit/8dec027602a271a9021652372c426cd32e19c791))
+
 # [1.47.0](https://github.com/stuttgart-things/flux/compare/v1.46.2...v1.47.0) (2026-08-30)
 
 
