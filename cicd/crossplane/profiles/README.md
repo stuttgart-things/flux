@@ -56,6 +56,14 @@ Both are valid; do not mix them inside one file.
 whichever shape a file uses — it groups files by profile, so add any new profile
 to its `PROFILES` map or it is silently unchecked.
 
+Two packages the ansible play pins are deliberately **not** listed here for the
+same reason: `packer-build` (reached by `packer-release`) and `platform`
+(reached by `cluster`). The play can pin both because it applies packages in a
+waited sequence, where the dependency is already in the lock; a Kustomization
+applies in one pass and has no such ordering, so listing them makes each a
+sibling of its own dependent. They resolve to the newest tag satisfying their
+floor.
+
 ## Source of truth for the pins
 
 `stuttgart-things/ansible`, `collections/container/kind_machinery.yaml` —
@@ -69,26 +77,38 @@ backwards without complaint.
 (default true). Kustomize has no conditional, so the toggle is the directory:
 apply `machinery` alone for a pure VM builder, or both.
 
-## Open item — composition Functions
+## Blocker — a machinery cluster needs its own crossplane core
 
-These profiles ship **Configurations only**. The Functions still come from
-`components/functions`, and that set was assembled for the `crossplane/*`
-family: its own header records that the registry mix matches what the old family
-declares, and that `crossplane-configurations` declares against
-`xpkg.crossplane.io`.
+These profiles ship **Configurations only**, and they cannot yet be paired with
+`components/install` + `components/functions`. CI proved why on the first run:
 
-One concrete gap is known: `components/functions` does not install
-`function-environment-configs`, which `stuttgart-things/argocd` added to its
-functions chart (`xpkg.crossplane.io/crossplane-contrib/function-environment-configs`)
-while migrating to `crossplane-configurations`. Every machinery capability chart
-in `stuttgart-things/crossplane/platform/capabilities/*` ships an
-`EnvironmentConfig`, so the machinery Configurations very likely require it.
+`crossplane-configurations` declares its Providers and Functions against
+**`xpkg.crossplane.io`** — `provider-kubernetes` (>=v1.2.0), `provider-helm`
+(>=v1.0.0), `function-kcl` (>=v0.12.0), `function-patch-and-transform`
+(>=v0.10.6). `components/install` and `components/functions` install those same
+packages from **`xpkg.upbound.io`**, because that is what the `crossplane/*`
+family declares. Crossplane keys its lock on the source string, so on a cluster
+carrying both, every machinery Configuration reports the package it wants as a
+missing dependency while the other spelling sits there installed. Eight of the
+nine packages here hit it.
 
-This is **unverified**: reading a package's `dependsOn` needs the OCI blob, which
-was not reachable from where these files were written. `check-crossplane-deps.py`
-resolves it against the real registry in CI, per profile — so the PR that adds
-this is where the answer lands. Settle it before pointing a cluster at these
-profiles.
+The fix is not to install them at the other spelling — it is to **not install
+them explicitly at all**. Every Provider and Function a machinery Configuration
+needs arrives through its own `dependsOn`, at the registry it names.
+`stuttgart-things/argocd` takes exactly this position for `provider-kubernetes`
+in `cicd/crossplane/providers/values.yaml`.
+
+So a machinery cluster needs crossplane core **without** the `provider.packages`
+list, and no functions component. `components/install` hardcodes that list and
+is shared with cicd-platform, so it cannot simply be reused. Until a machinery
+install variant exists, these profiles are **not deployable as they stand** —
+the Configuration set and its pins are correct and verified, the core underneath
+it is not yet there.
+
+(An earlier version of this file guessed the gap was a missing
+`function-environment-configs`. That was wrong: a Function a Configuration
+declares is pulled automatically, so absence is never the problem — only a
+second, differently-spelled copy is.)
 
 ## Consuming a profile
 
@@ -123,7 +143,6 @@ spec:
     substitute:
       CROSSPLANE_MACHINERY_VSPHEREVM_VERSION: v0.9.2
       CROSSPLANE_MACHINERY_PROXMOXVM_VERSION: v0.13.0
-      CROSSPLANE_MACHINERY_PACKER_BUILD_VERSION: v0.4.1
       CROSSPLANE_MACHINERY_PACKER_RELEASE_VERSION: v0.4.2
       CROSSPLANE_MACHINERY_CLUSTER_BACKUP_VERSION: v0.2.0
       CROSSPLANE_MACHINERY_SCHEDULED_RUN_VERSION: v0.1.1
@@ -150,7 +169,6 @@ spec:
   path: ./cicd/crossplane/profiles/machinery-platform
   postBuild:
     substitute:
-      CROSSPLANE_MACHINERY_PLATFORM_VERSION: v0.6.2
       CROSSPLANE_MACHINERY_CLUSTER_VERSION: v0.6.1
       CROSSPLANE_MACHINERY_PROVIDER_CLUSTERBOOK_VERSION: v0.4.2
 ```

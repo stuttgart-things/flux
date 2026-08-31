@@ -13,29 +13,17 @@
 # through dependsOn from the two packages below and are deliberately absent;
 # they show up as package-manager-named CRs and are EXPECTED to look "extra" in
 # `kubectl get configuration`.
-apiVersion: pkg.crossplane.io/v1
-kind: Configuration
-metadata:
-  name: platform
-spec:
-  # Pulls cni, flux-init, flux-apps and -- from v0.3.3 -- ip-reservation,
-  # vault-auth and vault-pki-secrets via dependsOn.
-  #
-  # v0.3.1 is a FLOOR: `cluster` below declares dependsOn platform >=v0.3.1.
-  # v0.3.8 raises the vault-pki-secrets floor to >=v0.1.5.
-  # v0.4.0 is BREAKING: additionalAuths[].policies no longer takes free-form
-  #        HCL; the body is built from kvMount + read.
-  # v0.6.0-.2 make vaultIssuer WAIT for cert-manager instead of racing it --
-  #        ClusterIssuer, PKI secret and tokenrequest RBAC are held back until
-  #        the cert-manager webhook's Endpoints on the target carry an address.
-  #
-  # Do NOT run v0.3.15 anywhere: it computed two status fields without
-  # declaring them in the XRD, and an undeclared status field is not pruned --
-  # it fails the whole status apply and with it every compose, while Ready
-  # stays True on the last good result. v0.3.16 declares them. v0.6.0 had the
-  # same trap, fixed in v0.6.1.
-  package: ghcr.io/stuttgart-things/crossplane-configurations/platform:${CROSSPLANE_MACHINERY_PLATFORM_VERSION:-v0.6.2}
----
+# `platform` is NOT pinned here even though the ansible play pins it. `cluster`
+# below declares dependsOn platform >=v0.3.1, so listing it as well makes it a
+# sibling of its own dependent in one kustomize apply -- the duplicate-node race
+# above, which CI caught on the first run of this profile. It arrives through
+# that dependsOn and resolves to the newest tag satisfying the floor (v0.6.2 at
+# time of writing). The play pins it because it applies packages in a WAITED
+# sequence, where the dependency is already in the lock; a Kustomization has no
+# such ordering.
+#
+# Everything platform itself pulls -- cni, flux-init, flux-apps, ip-reservation,
+# vault-auth, vault-pki-secrets -- is transitive for the same reason.
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:

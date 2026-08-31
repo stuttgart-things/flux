@@ -68,8 +68,26 @@ ROOT = Path(__file__).resolve().parent.parent
 # crossplane/volume-claim -- a finding about two clusters that never meet.
 # Per profile it stays the real check it was written to be.
 #
-# A profile is a cluster shape, so install + functions appear in both: every
-# cluster gets crossplane core and the composition Functions the same way.
+# The two profiles do NOT share install + functions, and that asymmetry is the
+# whole point of the machinery one.
+#
+# cicd-platform installs three Providers and four Functions explicitly, at the
+# xpkg.upbound.io spellings the crossplane/* family declares for them.
+# crossplane-configurations declares the same packages against
+# xpkg.crossplane.io -- provider-kubernetes (>=v1.2.0), provider-helm
+# (>=v1.0.0), function-kcl (>=v0.12.0), function-patch-and-transform
+# (>=v0.10.6) -- and Crossplane keys its lock on the source string, so a
+# machinery cluster carrying the upbound spellings reports each of those as a
+# missing dependency while the other spelling sits there installed. CI proved
+# this on the first run of these profiles, on eight of the nine packages.
+#
+# A machinery cluster therefore installs NO Provider and NO Function
+# explicitly: every one arrives through some Configuration's dependsOn, at the
+# registry that Configuration names. stuttgart-things/argocd takes the same
+# position for provider-kubernetes in cicd/crossplane/providers/values.yaml.
+#
+# components/install is shared and hardcodes the upbound provider list, so it
+# is NOT usable by a machinery cluster as it stands -- see profiles/README.md.
 PROFILES = {
     "cicd-platform": [
         "cicd/crossplane/components/install/release.yaml",
@@ -77,8 +95,6 @@ PROFILES = {
         "cicd/crossplane/components/configs/configs.yaml",
     ],
     "machinery": [
-        "cicd/crossplane/components/install/release.yaml",
-        "cicd/crossplane/components/functions/functions.yaml",
         "cicd/crossplane/profiles/machinery/configs.yaml",
         "cicd/crossplane/profiles/machinery-platform/configs.yaml",
     ],

@@ -73,14 +73,17 @@ spec:
   # v0.12.2 reverts the environmentConfig forward, same reasoning as vspherevm.
   package: ghcr.io/stuttgart-things/crossplane-configurations/proxmoxvm:${CROSSPLANE_MACHINERY_PROXMOXVM_VERSION:-v0.13.0}
 ---
-apiVersion: pkg.crossplane.io/v1
-kind: Configuration
-metadata:
-  name: packer-build
-spec:
-  # Tekton-backed Packer builder. Only provider-kubernetes, which arrives with
-  # the crossplane install Kustomization.
-  package: ghcr.io/stuttgart-things/crossplane-configurations/packer-build:${CROSSPLANE_MACHINERY_PACKER_BUILD_VERSION:-v0.4.1}
+# packer-build is NOT listed, though the ansible play pins it. packer-release
+# below declares dependsOn packer-build >=v0.3.0, so listing it here too makes
+# it a sibling Configuration of its own dependent inside one kustomize apply --
+# the duplicate-node race in the header, which CI caught on the first run of
+# this profile. It arrives through that dependsOn instead and resolves to the
+# newest tag satisfying the floor (v0.4.1 at time of writing), the same
+# trade-off the play accepts for flux-apps under `platform`.
+#
+# The play can pin both because it applies its packages in a WAITED sequence,
+# so the dependency is already in the lock. A Kustomization applies in one pass
+# and has no such ordering.
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
