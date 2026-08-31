@@ -54,13 +54,54 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Where the bundle declares its packages. Kept explicit: a glob would pick up
-# tests/ and examples/, which are not what a cluster installs.
-SOURCES = [
-    "cicd/crossplane/components/configs/configs.yaml",
-    "cicd/crossplane/components/functions/functions.yaml",
-    "cicd/crossplane/components/install/release.yaml",
-]
+# Where the packages are declared, grouped by PROFILE -- the set of files that
+# can land on ONE cluster together. Kept explicit: a glob would pick up tests/
+# and examples/, which are not what a cluster installs.
+#
+# The grouping is not cosmetic. Rule 2 asks "does this bundle install the same
+# package from a different registry", and the answer is only meaningful within
+# one cluster. cicd-platform installs the crossplane/* family and machinery
+# installs crossplane-configurations/*, and the two share package NAMES
+# (harvester-vm, volume-claim, ansible-run, cloud-config). Compared globally,
+# machinery's harvester-vm needing crossplane-configurations/volume-claim would
+# be reported as a cross-registry node against cicd-platform's
+# crossplane/volume-claim -- a finding about two clusters that never meet.
+# Per profile it stays the real check it was written to be.
+#
+# The two profiles do NOT share install + functions, and that asymmetry is the
+# whole point of the machinery one.
+#
+# cicd-platform installs three Providers and four Functions explicitly, at the
+# xpkg.upbound.io spellings the crossplane/* family declares for them.
+# crossplane-configurations declares the same packages against
+# xpkg.crossplane.io -- provider-kubernetes (>=v1.2.0), provider-helm
+# (>=v1.0.0), function-kcl (>=v0.12.0), function-patch-and-transform
+# (>=v0.10.6) -- and Crossplane keys its lock on the source string, so a
+# machinery cluster carrying the upbound spellings reports each of those as a
+# missing dependency while the other spelling sits there installed. CI proved
+# this on the first run of these profiles, on eight of the nine packages.
+#
+# A machinery cluster therefore installs NO Provider and NO Function
+# explicitly: every one arrives through some Configuration's dependsOn, at the
+# registry that Configuration names. stuttgart-things/argocd takes the same
+# position for provider-kubernetes in cicd/crossplane/providers/values.yaml.
+#
+# profiles/machinery-install reuses components/install and replaces the provider
+# list with the one entry that did not conflict, so the machinery profile below
+# names IT rather than the shared release.yaml -- that file's provider list is
+# the other family's spellings and is what this profile exists to avoid.
+PROFILES = {
+    "cicd-platform": [
+        "cicd/crossplane/components/install/release.yaml",
+        "cicd/crossplane/components/functions/functions.yaml",
+        "cicd/crossplane/components/configs/configs.yaml",
+    ],
+    "machinery": [
+        "cicd/crossplane/profiles/machinery-install/kustomization.yaml",
+        "cicd/crossplane/profiles/machinery/configs.yaml",
+        "cicd/crossplane/profiles/machinery-platform/configs.yaml",
+    ],
+}
 
 REF = re.compile(
     r'(?:package:|-)\s*'
@@ -69,10 +110,10 @@ REF = re.compile(
 )
 
 
-def shipped():
-    """{source: (version, skips_resolution, file)} for everything installed."""
+def shipped(files):
+    """{source: (version, skips_resolution, file)} for one profile."""
     out = {}
-    for rel in SOURCES:
+    for rel in files:
         f = ROOT / rel
         text = f.read_text()
         # skipDependencyResolution is per document, so split on the same
@@ -133,18 +174,26 @@ def main():
               "not checked")
         return 0
 
-    pkgs = shipped()
+    cache, fail = {}, 0
+    for profile, files in PROFILES.items():
+        fail |= check_profile(profile, files, cache)
+    return fail
+
+
+def check_profile(profile, files, cache):
+    pkgs = shipped(files)
     if not pkgs:
-        print("FAIL: no package references found -- did the files move?",
-              file=sys.stderr)
+        print(f"FAIL {profile}: no package references found -- did the files "
+              f"move?", file=sys.stderr)
         return 1
 
     # Same package, different registry: harmless to name, fatal to install.
+    # Scoped to this profile -- see the PROFILES comment.
     by_name = {}
     for src in pkgs:
         by_name.setdefault(src.rsplit("/", 1)[-1], []).append(src)
 
-    cache, fail, checked = {}, 0, 0
+    fail, checked = 0, 0
     for src, (ver, skip, where) in sorted(pkgs.items()):
         deps = dependencies(src, ver, cache)
         if deps is None:
@@ -192,8 +241,8 @@ def main():
                 fail = 1
 
     if not fail:
-        print(f"OK: {checked} crossplane package(s), dependencies read from "
-              f"the registry, no duplicate or cross-registry node")
+        print(f"OK {profile}: {checked} crossplane package(s), dependencies "
+              f"read from the registry, no duplicate or cross-registry node")
     return fail
 
 

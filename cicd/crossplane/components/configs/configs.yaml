@@ -1,4 +1,35 @@
 ---
+# THESE ARE ghcr.io/stuttgart-things/crossplane/*, AND THAT IS NOT THE SAME
+# FAMILY AS ghcr.io/stuttgart-things/crossplane-configurations/*.
+#
+# The org publishes two Configuration families under names that overlap. This
+# file installs the first one. The second is what
+# stuttgart-things/crossplane/platform/capabilities/* (Helm) and the ansible
+# `kind_machinery` play install on the machinery clusters:
+#
+#   package               crossplane/*   crossplane-configurations/*
+#   cloud-config          v0.5.1         v0.5.4
+#   volume-claim          v0.1.1         v0.1.0
+#   ansible-run           v12.0.0        v0.3.2
+#   harvester-vm          v0.3.3         v0.1.9
+#   storage-platform      v0.6.0         -- does not exist --
+#   pipeline-integration  v0.1.2         -- does not exist --
+#
+# The version lines do not line up because these are not the same artifacts:
+# crossplane-configurations/harvester-vm carries a base layer 2.5x the size of
+# ours, and two of ours have no counterpart there at all. Every pin below is
+# already the NEWEST tag published on its own path -- there is nothing to bump
+# here, and a "newer" number on the other path is not an upgrade.
+#
+# So do NOT rewrite these paths to crossplane-configurations to "align" with the
+# machinery clusters. Crossplane keys its lock on the SOURCE STRING, so the two
+# spellings are two different packages to it, and swapping a path is a
+# reinstall of a different lineage under the same CR name -- the failure mode
+# components/functions/functions.yaml records in full, where exactly that
+# reasoning took five Configurations unhealthy at once.
+#
+# Converging the two families is a change to the PACKAGES' own dependsOn
+# declarations first; it cannot be done from this file.
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
