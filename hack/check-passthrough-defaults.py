@@ -108,6 +108,36 @@ def rendered(path: Path, components=()):
     return _cache[key]
 
 
+
+def paths_for(path):
+    """Every directory in this checkout a spec.path can resolve to.
+
+    Usually one. But spec.path is itself substituted by the PARENT, and the
+    crossplane component uses that to select a cluster shape:
+
+        path: ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE:-cicd-platform}/configs
+
+    Resolving only the default would leave every pin of every OTHER profile
+    unchecked -- and those pins are second copies that WIN over the base, which
+    is the failure this whole check exists for. So a variable standing for one
+    path SEGMENT becomes a glob, and each match is compared on its own: a
+    variable a given profile does not use contributes no comparison there
+    (`not there`), and a profile whose copy has drifted fails on its own path.
+
+    A variable whose default carries a `/` is NOT a segment -- it stands for the
+    whole path, as ARGOCD_PLATFORM_PATH does -- and globbing it would match every
+    directory in the repo. Those resolve to their default and nothing else.
+    """
+    p = str(path).lstrip("./")
+    if "${" not in p:
+        d = ROOT / p
+        return [d] if d.is_dir() else []
+    if any("/" in (m.group(2) or "") for m in SUBST_PATH.finditer(p)):
+        d = ROOT / SUBST_PATH.sub(lambda m: m.group(2) or "", p).lstrip("./")
+        return [d] if d.is_dir() else []
+    return sorted(d for d in ROOT.glob(SUBST_PATH.sub("*", p)) if d.is_dir())
+
+
 def defaults_for(text, name):
     return {m.group(2) for m in ANY.finditer(text) if m.group(1) == name}
 
@@ -120,15 +150,22 @@ def norm(v):
 
 
 def overridden(file: Path, name):
-    """A `# passthrough-override:` comment above the line declaring `name`."""
+    """A `# passthrough-override:` comment in the comment block above `name`.
+
+    The WHOLE contiguous block, not a fixed number of lines above it. A reason
+    worth writing down is usually longer than the marker, and a window that cuts
+    it off rejects the declaration while the explanation sits right there --
+    which reads as the check being broken rather than as the comment being in
+    the wrong place.
+    """
     lines = file.read_text().splitlines()
     for i, line in enumerate(lines):
         if re.match(rf'\s*{name}:\s', line):
-            for prev in reversed(lines[max(0, i - 3):i]):
-                if "passthrough-override:" in prev:
-                    return True
+            for prev in reversed(lines[:i]):
                 if not prev.strip().startswith("#"):
                     break
+                if "passthrough-override:" in prev:
+                    return True
     return False
 
 
@@ -158,43 +195,47 @@ def main():
             # The path is resolved inside the SOURCE, which for a foreign
             # source (argocd-catalog, an upstream repo) is not this checkout.
             # Those are unverifiable here rather than wrong.
-            target = ROOT / str(path).lstrip("./")
-            if not target.is_dir():
+            targets = paths_for(str(path))
+            if not targets:
                 skipped.add(str(path))
-                continue
-            text = rendered(target, spec.get("components") or [])
-            if text is None:
-                skipped.add(str(path))
-                continue
-            # An empty render is not agreement. Before this, a path that built
-            # to nothing produced no comparison and no finding -- indistinguishable
-            # from a clean one.
-            if not text.strip():
-                empty.add(str(path))
                 continue
 
-            for name, value in subs.items():
-                m = SELF.match(str(value).strip())
-                if not m or m.group(1) != name:
+            for target in targets:
+                shown = f"./{target.relative_to(ROOT)}"
+                text = rendered(target, spec.get("components") or [])
+                if text is None:
+                    skipped.add(shown)
                     continue
-                here = norm(m.group(2))
-                there = {norm(x) for x in defaults_for(text, name)}
-                if not there:
+                # An empty render is not agreement. Before this, a path that
+                # built to nothing produced no comparison and no finding --
+                # indistinguishable from a clean one.
+                if not text.strip():
+                    empty.add(shown)
                     continue
-                checked += 1
-                if here in there:
-                    continue
-                if overridden(f, name):
-                    continue
-                rel = f.relative_to(ROOT)
-                print(f"FAIL {rel}: {name} defaults to {here!r} here, but "
-                      f"{path} defaults it to {', '.join(sorted(repr(t) for t in there))}",
-                      file=sys.stderr)
-                print(f"     The copy above WINS, so the value in {path} is "
-                      f"never used and that component installs {here!r}. Bump "
-                      f"both, or mark this line with "
-                      f"`# passthrough-override: <reason>`.", file=sys.stderr)
-                fail = 1
+
+                for name, value in subs.items():
+                    m = SELF.match(str(value).strip())
+                    if not m or m.group(1) != name:
+                        continue
+                    here = norm(m.group(2))
+                    there = {norm(x) for x in defaults_for(text, name)}
+                    if not there:
+                        continue
+                    checked += 1
+                    if here in there:
+                        continue
+                    if overridden(f, name):
+                        continue
+                    rel = f.relative_to(ROOT)
+                    print(f"FAIL {rel}: {name} defaults to {here!r} here, but "
+                          f"{shown} defaults it to "
+                          f"{', '.join(sorted(repr(t) for t in there))}",
+                          file=sys.stderr)
+                    print(f"     The copy above WINS, so the value in {shown} "
+                          f"is never used and that component installs {here!r}. "
+                          f"Bump both, or mark this line with "
+                          f"`# passthrough-override: <reason>`.", file=sys.stderr)
+                    fail = 1
 
     if skipped:
         print(f"note: {len(skipped)} path(s) not in this checkout, not checked")

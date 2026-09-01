@@ -95,6 +95,15 @@ spec:
       # dependsOn it reports "dependency not ready" instead. Had the issuer
       # happened to exist, ArgoCD would have come up healthy on another lab's
       # hostname.
+      # passthrough-override: the base defaults this to `vault-pki`, a
+      # PLAUSIBLE name rather than a loud one, and that is what cost
+      # cicd-test3 forty minutes: the issuer did not exist there, the
+      # Certificate parked InProgress, the HelmRelease waited for it and
+      # timed out, and eight Kustomizations reported "dependency not
+      # ready" -- pointing nowhere near the variable. Worse is the case
+      # where it DOES exist and is the wrong CA: ArgoCD then comes up
+      # perfectly healthy behind a certificate nobody questions. This
+      # copy wins on purpose, so an unset ISSUER_NAME fails visibly.
       ISSUER_NAME: "${ISSUER_NAME:-set-ISSUER_NAME.invalid}"
       ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
       INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"

@@ -1,7 +1,0 @@
----
-# A build root of its own, NOT a Component: nothing else composes this profile,
-# and a Flux Kustomization's spec.path points here directly.
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - configs.yaml

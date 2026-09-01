@@ -1,0 +1,21 @@
+---
+# provider-helm, pointed at the cluster Crossplane itself runs in.
+#
+# SEPARATE COMPONENT FROM THE OTHER TWO because provider-helm is not on every
+# profile. A machinery cluster installs no provider explicitly (see
+# ../../../profiles/machinery-install), and of the packages the `machinery`
+# profile carries, NOT ONE declares provider-helm -- it arrives only through
+# the fleet-manager half (cni, flux-init, platform, management-plane all
+# declare it). Shipping this CR to a pure VM builder would name a CRD that
+# never registers, and the Kustomization would retry against a missing kind
+# forever while looking like a slow reconcile.
+#
+# See ./provider-config.yaml in ../kubernetes for why the name is not
+# substituted.
+apiVersion: helm.m.crossplane.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials:
+    source: InjectedIdentity

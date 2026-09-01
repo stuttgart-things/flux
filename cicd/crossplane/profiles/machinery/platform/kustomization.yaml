@@ -1,0 +1,18 @@
+---
+# A build root of its own, NOT a Component: nothing else composes this half, and
+# a Flux Kustomization's spec.path points here directly.
+#
+# All three files apply against CRDs that exist before this Kustomization runs
+# -- `pkg.crossplane.io` and `apiextensions.crossplane.io` from crossplane core,
+# and rbac.authorization.k8s.io from the API server itself -- so they share one
+# pass. The helm ClusterProviderConfig this half also needs does NOT: it is an
+# instance of a CRD that provider-helm registers, and provider-helm arrives
+# through `cluster` -> `platform` in configs.yaml here. In the same Kustomization
+# that is the CRD deadlock, not a wait; it lives at ../platform-provider-configs
+# instead, one Kustomization behind this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - configs.yaml
+  - environmentconfigs.yaml
+  - rbac.yaml

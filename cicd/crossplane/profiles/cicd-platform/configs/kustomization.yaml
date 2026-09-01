@@ -13,11 +13,11 @@
 # on retry: the two halves deadlock.
 #
 # The consumer wires this as a second Flux Kustomization with dependsOn on the
-# install one; see ../../platform/components/crossplane/ks-crossplane.yaml.
+# install one; see cicd/platform/components/crossplane/ks-crossplane.yaml.
 #
 # The Functions do NOT need this treatment: components/functions ships them as
 # `customresources` inside a HelmRelease, so nothing types them at apply time.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
-  - ../components/configs
+  - ../../../components/configs

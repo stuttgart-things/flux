@@ -1,0 +1,26 @@
+---
+# provider-opentofu. NO InjectedIdentity mode exists for this provider -- every
+# config needs a `configuration` block, so the skeleton below is the minimum
+# that reconciles: an empty credentials list and a kubernetes backend keeping
+# state in-cluster. No cloud credentials are wired; a Workspace that needs them
+# adds a provider block of its own.
+#
+# The state Secret lands in ${CROSSPLANE_NAMESPACE}. It has to be a namespace
+# the provider's ServiceAccount can write Secrets in, which is why it follows
+# the install namespace rather than being a constant.
+#
+# See ../kubernetes/provider-config.yaml for why the name is not substituted.
+apiVersion: opentofu.m.upbound.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials: []
+  configuration: |
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "clusterproviderconfig-in-cluster"
+        namespace         = "${CROSSPLANE_NAMESPACE:-crossplane-system}"
+        in_cluster_config = true
+      }
+    }

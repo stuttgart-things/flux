@@ -1,0 +1,20 @@
+---
+# provider-kubernetes, pointed at the cluster Crossplane itself runs in.
+#
+# `in-cluster` is spelled out rather than substituted on purpose. It is the
+# name every stuttgart-things Composition and EnvironmentConfig references
+# (`providerConfigName: in-cluster`), and a variable here would be a second
+# place to get it wrong -- with the failure landing on the XR, not on this
+# file: `cannot get provider config: ClusterProviderConfig "in-cluster" not
+# found`, looping in observe with nothing ever created.
+#
+# ClusterProviderConfig, not ProviderConfig: the v1 non-namespaced kind is read
+# only by the cluster-scoped Object (kubernetes.crossplane.io/v1alpha2), and
+# the namespaced XRs this fleet composes cannot reference it.
+apiVersion: kubernetes.m.crossplane.io/v1alpha1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials:
+    source: InjectedIdentity
