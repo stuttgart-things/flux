@@ -40,6 +40,33 @@
 # package that needs it. Both are valid; do not mix them within one file.
 # hack/check-crossplane-deps.py reads the real packages and enforces whichever
 # shape a file uses -- add any new file here to its SOURCES list.
+# WHY THERE ARE NO EnvironmentConfigs IN THIS DIRECTORY.
+#
+# A profile says what a cluster IS. Where a VM gets placed and what it
+# authenticates to the hypervisor with is not a fleet fact, it is a cluster
+# fact, and it is delivered by a `Capability` XR instead -- see
+# stuttgart-things, crossplane/xrs/capability/labda/seed-labda-1.yaml, which
+# states the rule and the reason.
+#
+# An earlier version of this directory shipped `vsphere-vm-defaults` and
+# `tofu-run-defaults`, vendored from the ansible play's raw examples. That was
+# wrong in the most expensive direction. The vsphere one carries LabUL
+# placement, and LabDA is where new vSphere work goes; the reference machinery
+# cluster in LabDA (seed-labda-1) carries NO such object, so today an XR asking
+# for `spec.environmentConfig: default` matches nothing and fails loudly.
+# Shipping a `default`-labelled config turns that into a match -- against
+# another lab's datacenter. "Fails visibly" would have become "runs and builds
+# in the wrong place", which is the exact trade this bundle argues against
+# everywhere else it chooses a loud placeholder over a plausible value.
+#
+# What seed-labda-1 does carry is three EnvironmentConfigs, all emitted by the
+# CAPABILITY CHARTS and all suffixed for their lab: vspherevm-labda,
+# proxmoxvm-labda, ansible-run-labda. Nothing here should compete with those.
+#
+# The fleet-manager half is different and keeps its two: ../platform/
+# environmentconfigs.yaml holds flux-defaults and flux-apps-defaults, which
+# carry reconcile intervals and a sourceRef and name no place and no secret.
+
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
