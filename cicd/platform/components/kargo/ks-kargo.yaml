@@ -80,7 +80,7 @@ spec:
     substitute:
       KARGO_NAMESPACE: "${KARGO_NAMESPACE:-kargo}"
       # renovate: datasource=docker depName=ghcr.io/akuity/kargo-charts/kargo
-      KARGO_VERSION: "${KARGO_VERSION:-1.11.2}"
+      KARGO_VERSION: "${KARGO_VERSION:-1.11.3}"
       # The chart's own ingress stays off -- the Gateway serves this, and
       # both on means two things answering for one hostname. It is not
       # threaded here because a bool-valued substitute fails the PARENT
