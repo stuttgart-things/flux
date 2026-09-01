@@ -1,7 +1,7 @@
 ---
 # Crossplane core for a MACHINERY cluster.
 #
-# Reuses ../../components/install -- same chart, same version, same namespace and
+# Reuses ../../../components/install -- same chart, same version, same namespace and
 # HelmRepositories -- and replaces only the provider list. A copy of the
 # HelmRelease would drift from the shared one on the next chart bump.
 #
@@ -34,16 +34,16 @@
 # correct -- in the first the node is identical, in the second nothing else
 # would install it. Only the two that conflicted are gone.
 #
-# NO FUNCTIONS COMPONENT EITHER, for the same reason -- ../../components/functions
+# NO FUNCTIONS COMPONENT EITHER, for the same reason -- ../../../components/functions
 # carries function-kcl and function-patch-and-transform at upbound spellings
 # that crossplane-configurations declares against xpkg.crossplane.io. The
 # Functions arrive through dependsOn. That is also why this root composes
-# ../../components/install directly instead of ../../kustomization.yaml, which
+# ../../../components/install directly instead of the cicd-platform install root, which
 # pulls functions in alongside it.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
-  - ../../components/install
+  - ../../../components/install
 patches:
   - target:
       kind: HelmRelease

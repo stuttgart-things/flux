@@ -1,0 +1,15 @@
+---
+# ClusterProviderConfigs for the cicd-platform profile: all three, because
+# ../install installs all three providers from the chart's own provider list.
+#
+# A build root of its own -- these are instances of CRDs the PROVIDERS register,
+# which is a later moment than the chart being installed, so they cannot share a
+# Kustomization with anything that installs a provider. See
+# ../../../components/provider-configs/README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+components:
+  - ../../../components/provider-configs/kubernetes
+  - ../../../components/provider-configs/helm
+  - ../../../components/provider-configs/opentofu

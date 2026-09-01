@@ -4,8 +4,8 @@ Deploys Crossplane `Configuration` packages from the stuttgart-things registry.
 
 ## How this is wired (do NOT add it to the root kustomization)
 
-This component is deliberately absent from `cicd/crossplane/kustomization.yaml`,
-and that is not an oversight to be fixed. `Configuration` is a CRD that the
+This component is deliberately absent from the cicd-platform profile's
+`install/` root, and that is not an oversight to be fixed. `Configuration` is a CRD that the
 crossplane chart in `components/install` installs. Applied in the same pass as
 the chart, the CRs dry-run against an API that does not know them yet:
 
@@ -18,16 +18,19 @@ Flux aborts the **entire** apply on that — so the HelmRelease is never created
 either, the CRD never appears, and every retry fails identically. Witnessed on
 cicd-test1, 2026-08-28: `crossplane-system` existed and nothing else did.
 
-So this component is composed by a build root of its own, `cicd/crossplane/configs/`,
-which a second Flux Kustomization applies with `dependsOn` on the first. Both
-Kustomizations live in `cicd/platform/components/crossplane/ks-crossplane.yaml`:
+So this component is composed by a build root of its own,
+`cicd/crossplane/profiles/cicd-platform/configs/`, which a second Flux
+Kustomization applies with `dependsOn` on the first. All three live in
+`cicd/platform/components/crossplane/ks-crossplane.yaml`, and each follows
+`CROSSPLANE_PROFILE`:
 
-| Kustomization | `spec.path` | Installs |
+| Kustomization | `spec.path` | Installs (on `cicd-platform`) |
 |---|---|---|
-| `crossplane` | `./cicd/crossplane` | controller + functions (`components/install`, `components/functions`) |
-| `crossplane-configs` | `./cicd/crossplane/configs` | this component |
+| `crossplane` | `…/profiles/${CROSSPLANE_PROFILE}/install` | controller + functions |
+| `crossplane-configs` | `…/profiles/${CROSSPLANE_PROFILE}/configs` | this component |
+| `crossplane-provider-configs` | `…/profiles/${CROSSPLANE_PROFILE}/provider-configs` | the `in-cluster` ClusterProviderConfigs |
 
-Point the Kustomization at **`./cicd/crossplane/configs`**, not at this directory.
+Point the Kustomization at the **profile root**, not at this directory.
 `kustomize build` does render `components/configs` directly (v5.5.0 emits all six
 Configurations from it), so this is a convention, not a hard error — but the
 wrapper is the declared entry point, it is what `hack/check-passthrough-defaults.py`

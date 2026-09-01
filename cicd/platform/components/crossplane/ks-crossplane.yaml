@@ -1,13 +1,43 @@
 ---
-# Crossplane → ./cicd/crossplane
+# CROSSPLANE -> ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE}/*
 #
-# Installs the controller, the composition functions and the Configurations.
+# ONE COMPONENT, ONE VARIABLE. `CROSSPLANE_PROFILE` picks a cluster shape --
+# which Configuration family this cluster installs and which crossplane core
+# goes underneath it -- and every Kustomization below follows it:
 #
-# 20m and wait: true: a Configuration is not installed when its package
+#   cicd-platform  (default)  the ghcr.io/stuttgart-things/crossplane/* family:
+#                             storage-platform, pipeline-integration, ansible-run,
+#                             harvester-vm, cloud-config, volume-claim
+#   machinery                 the ghcr.io/stuttgart-things/crossplane-configurations/*
+#                             family: a vSphere / Proxmox / Harvester VM and
+#                             image builder, pinned to the reference cluster kind1
+#
+# WHY THE PROFILE HAS TO REACH THE CORE TOO, not just the Configurations: the two
+# families declare their Providers and Functions against DIFFERENT REGISTRIES --
+# xpkg.upbound.io for crossplane/*, xpkg.crossplane.io for
+# crossplane-configurations/* -- and Crossplane keys its lock on the SOURCE
+# STRING. Install the other spelling and every Configuration reports the package
+# it wants as a missing dependency while that package sits there under its other
+# name; nothing crashes, no Kustomization goes red, and the cluster simply
+# reconciles no claim at all. So each profile brings its own provider list.
+# CI caught this on eight of the nine machinery packages the first time these
+# profiles ran (flux#342).
+#
+# One variable rather than two components is also what keeps the profiles
+# MUTUALLY EXCLUSIVE by construction: a cluster cannot select two, and applying
+# both families would create Configurations of the same NAME (harvester-vm,
+# volume-claim, ansible-run, cloud-config) from different sources -- a duplicate
+# lock node, which takes every package on the cluster to Healthy=False at once.
+#
+# ADDING A PROFILE is adding a directory: cicd/crossplane/profiles/<name>/ with
+# install/, configs/ and provider-configs/ roots. Nothing here changes except the
+# value a cluster passes. See cicd/crossplane/profiles/README.md.
+#
+# 20m and wait: true throughout: a Configuration is not installed when its
 # resource exists -- the package manager pulls each image, resolves its
-# dependencies and only then marks it Healthy. Six Configurations on a cold
-# cluster take minutes, and a shorter timeout marks the Kustomization failed
-# while the packages are still arriving correctly.
+# dependencies and only then marks it Healthy. Six to eight of them on a cold
+# cluster take minutes, and a shorter timeout fails the Kustomization while the
+# packages are still arriving correctly.
 #
 # UPGRADING A CONFIGURATION IS NOT A VERSION BUMP HERE. A short-named
 # Configuration that is also a dependsOn target of another package spawns a
@@ -33,7 +63,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./cicd/crossplane
+  path: ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE:-cicd-platform}/install
   postBuild:
     substitute:
       CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
@@ -49,15 +79,25 @@ spec:
       # these did not, so cicd-test2 kept provider-helm v1.2.0 and opentofu
       # v1.1.0 while provider-kubernetes -- which has no copy here -- did move.
       # A mixed set nothing reported, because every object was Ready.
+      #
+      # helm and kubernetes are read by the cicd-platform profile only. The
+      # machinery install root REPLACES the provider list with opentofu alone,
+      # so on that profile these two are threaded and unused -- harmless, and
+      # cheaper than a second component whose only difference is which three
+      # lines it carries.
       # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-helm
       CROSSPLANE_HELM_PROVIDER_VERSION: "${CROSSPLANE_HELM_PROVIDER_VERSION:-v1.4.0}"
+      # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-kubernetes
+      CROSSPLANE_K8S_PROVIDER_VERSION: "${CROSSPLANE_K8S_PROVIDER_VERSION:-v1.3.1}"
       # renovate: datasource=docker depName=xpkg.upbound.io/upbound/provider-opentofu
       CROSSPLANE_OPENTOFU_PROVIDER_VERSION: "${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.7}"
 ---
-# The Configurations, as a SECOND Kustomization that waits for the first.
+# The Configuration packages, and on the machinery profile the EnvironmentConfigs
+# beside them.
 #
-# `Configuration` is a CRD the crossplane chart installs. In one Kustomization
-# with the chart the CRs dry-run against an API that does not know them yet:
+# A SECOND Kustomization because `Configuration` is a CRD the crossplane chart
+# installs. In one Kustomization with the chart the CRs dry-run against an API
+# that does not know them yet:
 #
 #   Configuration/cloud-config dry-run failed: no matches for kind
 #   "Configuration" in version "pkg.crossplane.io/v1"
@@ -83,9 +123,6 @@ spec:
     - name: crossplane
   interval: 1h
   retryInterval: 1m
-  # 20m: a Configuration is not installed when its resource exists -- the
-  # package manager pulls each image, resolves its dependencies and only then
-  # marks it Healthy. Six of them on a cold cluster take minutes.
   timeout: 20m
   force: false
   prune: true
@@ -96,9 +133,16 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./cicd/crossplane/configs
+  path: ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE:-cicd-platform}/configs
   postBuild:
     substitute:
+      # BOTH FAMILIES ARE THREADED HERE, and only one is read per cluster. The
+      # unread half costs a substitute entry the child never looks up; the
+      # alternative -- a second component -- costs the mutual exclusion this
+      # design gets for free. Neither set has a name in common with the other,
+      # so there is nothing to collide.
+      #
+      # --- cicd-platform: ghcr.io/stuttgart-things/crossplane/* -----------
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/ansible-run
       CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION: "${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/cloud-config
@@ -111,3 +155,92 @@ spec:
       CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION: "${CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION:-v0.6.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane/volume-claim
       CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION: "${CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION:-v0.1.1}"
+      # --- machinery: ghcr.io/stuttgart-things/crossplane-configurations/* -
+      # Source of truth for these pins: stuttgart-things/ansible,
+      # collections/container/kind_machinery.yaml (`machinery_packages`),
+      # reconciled against the reference machinery cluster kind1. Read its
+      # comments before changing one -- several are dependency FLOORS or
+      # deliberate reverts, not preferences.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/vspherevm
+      CROSSPLANE_MACHINERY_VSPHEREVM_VERSION: "${CROSSPLANE_MACHINERY_VSPHEREVM_VERSION:-v0.9.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/proxmoxvm
+      CROSSPLANE_MACHINERY_PROXMOXVM_VERSION: "${CROSSPLANE_MACHINERY_PROXMOXVM_VERSION:-v0.13.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/packer-release
+      CROSSPLANE_MACHINERY_PACKER_RELEASE_VERSION: "${CROSSPLANE_MACHINERY_PACKER_RELEASE_VERSION:-v0.4.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/cluster-backup
+      CROSSPLANE_MACHINERY_CLUSTER_BACKUP_VERSION: "${CROSSPLANE_MACHINERY_CLUSTER_BACKUP_VERSION:-v0.2.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/scheduled-run
+      CROSSPLANE_MACHINERY_SCHEDULED_RUN_VERSION: "${CROSSPLANE_MACHINERY_SCHEDULED_RUN_VERSION:-v0.1.1}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/tofu-run
+      CROSSPLANE_MACHINERY_TOFU_RUN_VERSION: "${CROSSPLANE_MACHINERY_TOFU_RUN_VERSION:-v0.1.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/harvester-vm
+      CROSSPLANE_MACHINERY_HARVESTER_VM_VERSION: "${CROSSPLANE_MACHINERY_HARVESTER_VM_VERSION:-v0.1.9}"
+      # vsphere-vm-defaults. THESE DEFAULTS ARE LabUL PLACEMENT, because that is
+      # what the reference cluster kind1 runs and what the upstream example
+      # ships. LabUL vSphere is being decommissioned and new vSphere work goes
+      # to LabDA: a LabDA machinery cluster must set every one of these, or it
+      # composes VMs against a datacenter it cannot reach and the Workspace
+      # loops in observe with no VM and no error above it.
+      CROSSPLANE_MACHINERY_VSPHERE_FOLDER: "${CROSSPLANE_MACHINERY_VSPHERE_FOLDER:-stuttgart-things/testing}"
+      CROSSPLANE_MACHINERY_VSPHERE_DATACENTER: "${CROSSPLANE_MACHINERY_VSPHERE_DATACENTER:-/LabUL}"
+      CROSSPLANE_MACHINERY_VSPHERE_DATASTORE: "${CROSSPLANE_MACHINERY_VSPHERE_DATASTORE:-/LabUL/datastore/UL-ESX-SAS-02}"
+      CROSSPLANE_MACHINERY_VSPHERE_RESOURCE_POOL: "${CROSSPLANE_MACHINERY_VSPHERE_RESOURCE_POOL:-/LabUL/host/Cluster-V6.7/Resources}"
+      CROSSPLANE_MACHINERY_VSPHERE_NETWORK: "${CROSSPLANE_MACHINERY_VSPHERE_NETWORK:-/LabUL/network/LAB-10.31.102}"
+      CROSSPLANE_MACHINERY_VSPHERE_TEMPLATE: "${CROSSPLANE_MACHINERY_VSPHERE_TEMPLATE:-sthings-u26}"
+      # tofu-run-defaults.
+      CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS: "${CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS:-openebs-hostpath}"
+      # renovate: datasource=docker depName=ghcr.io/opentofu/opentofu
+      CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION: "${CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION:-1.9.0}"
+---
+# The `in-cluster` ClusterProviderConfigs, one per provider this profile
+# installs. Every stuttgart-things Composition and EnvironmentConfig references
+# that name; a missing one is not a startup error, it is the first XR looping in
+# observe with `cannot get provider config: ClusterProviderConfig "in-cluster"
+# not found`.
+#
+# A THIRD Kustomization, and it depends on the CONFIGS one rather than on the
+# install: a ClusterProviderConfig is an instance of a CRD its PROVIDER
+# registers, and on the machinery profile no provider but opentofu is installed
+# explicitly -- provider-kubernetes arrives through the Configurations' own
+# dependsOn, so being behind the chart is not enough.
+#
+# Split out it is not a deadlock, only a wait: this Kustomization fails, retries
+# every retryInterval, and goes green once the CRD appears. In the same
+# Kustomization as the thing that installs the provider it WOULD be a deadlock,
+# which is the same trap the configs one above records.
+#
+# Which configs a profile gets is decided by that profile's provider-configs
+# root, not here -- cicd-platform ships all three, machinery ships kubernetes and
+# opentofu and leaves helm to the fleet-manager half.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane-provider-configs
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane-configs
+  interval: 1h
+  retryInterval: 1m
+  # 10m, not 20: the packages are already Healthy by the time this runs. What is
+  # still outstanding is a provider CONTROLLER starting and registering its CRD,
+  # which is a pod start, not a registry pull. Still failing after ten minutes
+  # means the provider is not coming.
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CROSSPLANE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE:-cicd-platform}/provider-configs
+  postBuild:
+    substitute:
+      # Read only by the opentofu ClusterProviderConfig -- its tofu state Secret
+      # lands there, so it has to be a namespace the provider SA can write in.
+      CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"

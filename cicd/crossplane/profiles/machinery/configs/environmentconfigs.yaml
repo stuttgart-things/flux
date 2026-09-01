@@ -1,0 +1,87 @@
+---
+# THE ENVIRONMENTCONFIGS THE `machinery` PROFILE NEEDS, and only those.
+#
+# Mirrors `environment_config_manifests` in the ansible `kind_machinery` play,
+# which applies these two straight from crossplane-configurations' examples/.
+# Vendored here rather than fetched raw because a Kustomization is the pin: the
+# play reads them from `main`, so an upstream edit reaches every machinery
+# cluster on the next run with nothing recording that it changed.
+#
+# WHAT IS DELIBERATELY ABSENT: the vspherevm, proxmoxvm, ansible-run, packer,
+# scheduled-run and cluster-backup defaults. Those come from the CAPABILITY
+# CHARTS in stuttgart-things/crossplane/platform/capabilities/*, which carry
+# per-lab credentials and placement and are still deployed by the play. Adding
+# a copy here would overwrite the chart's values on the next reconcile --
+# exactly what the play's own comment forbids for the packer ones.
+#
+# Note `vsphere-vm` is NOT `vspherevm`. Different Configurations, different
+# label keys (`vsphere-vm.resources...` vs `vspherevm.resources...`), different
+# object names -- the lower-level one is pulled transitively. They do not
+# collide, and neither replaces the other.
+#
+# An EnvironmentConfig is a plain CR of a CRD CROSSPLANE CORE installs, so these
+# belong in the same Kustomization as the Configuration packages beside them:
+# both need the core and nothing more.
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: vsphere-vm-defaults
+  labels:
+    # Config-scoped, matched against an XR's spec.environmentConfig (default
+    # "default"). function-environment-configs requires EXACTLY ONE selector
+    # match, which is why the key is namespaced to this Configuration.
+    vsphere-vm.resources.stuttgart-things.com/environment: default
+data:
+  # THESE DEFAULTS DESCRIBE LabUL vSPHERE, because that is what the reference
+  # machinery cluster kind1 runs and what the upstream example ships. LabUL
+  # vSphere is being decommissioned and new vSphere work goes to LabDA, so a
+  # LabDA machinery cluster MUST override every value in this block -- it will
+  # otherwise compose VMs against a datacenter it cannot reach, and the failure
+  # surfaces as `error fetching virtual machine: vm '<name>' not found` looping
+  # in the Workspace's observe, with no VM and no error above it.
+  #
+  # `template` must name a template that exists in the datacenter AND that this
+  # vCenter account can see. Check with
+  #   govc find /LabUL -type m -name 'sthings-*'
+  # before trusting it: an invisible template fails exactly like a missing one.
+  folderPath: ${CROSSPLANE_MACHINERY_VSPHERE_FOLDER:-stuttgart-things/testing}
+  datacenter: ${CROSSPLANE_MACHINERY_VSPHERE_DATACENTER:-/LabUL}
+  datastore: ${CROSSPLANE_MACHINERY_VSPHERE_DATASTORE:-/LabUL/datastore/UL-ESX-SAS-02}
+  resourcePool: ${CROSSPLANE_MACHINERY_VSPHERE_RESOURCE_POOL:-/LabUL/host/Cluster-V6.7/Resources}
+  network: ${CROSSPLANE_MACHINERY_VSPHERE_NETWORK:-/LabUL/network/LAB-10.31.102}
+  template: ${CROSSPLANE_MACHINERY_VSPHERE_TEMPLATE:-sthings-u26}
+
+  annotation: VSPHERE-VM BUILD w/ CROSSPLANE FOR STUTTGART-THINGS
+  unverifiedSsl: "true"
+
+  # tfvars Secret holding the vSphere credentials. Pre-created in the XR's
+  # namespace -- nothing here creates it.
+  tfvarsSecretName: vsphere-tfvars # pragma: allowlist secret
+  tfvarsSecretKey: terraform.tfvars # pragma: allowlist secret
+
+  # The OPENTOFU provider config the Workspace runs through, shipped by
+  # ../../components/provider-configs/opentofu. A per-CLUSTER name, not a
+  # per-lab one; a wrong one fails every Workspace with `cannot get provider
+  # config: ClusterProviderConfig … not found`. It happens to share its name
+  # with the provider-KUBERNETES one -- same string, different object.
+  providerConfigName: in-cluster
+  providerConfigKind: ClusterProviderConfig
+---
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: tofu-run-defaults
+  labels:
+    tofu-run.resources.stuttgart-things.com/environment: default
+data:
+  # openebs-hostpath: a machinery cluster gets its default StorageClass from
+  # the openebs helmfile the play applies, which this bundle does not install.
+  # Override on a cluster whose storage is provisioned some other way.
+  storageClass: ${CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS:-openebs-hostpath}
+  # renovate: datasource=docker depName=ghcr.io/opentofu/opentofu
+  tofuWorkingImage: ghcr.io/opentofu/opentofu:${CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION:-1.9.0}
+  # The AppRole a TofuRun authenticates to Vault with, as TF_VAR_* keys. NOT
+  # the same credential as the `vault` Secret -- a different AppRole entirely.
+  # Materialized by the play from secrets/terraform-credentials.enc.yaml;
+  # nothing here creates it.
+  credentialsSecretName: terraform-credentials # pragma: allowlist secret
