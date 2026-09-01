@@ -1,0 +1,24 @@
+---
+# No caBundleSecretRef: there is no certificate to verify.
+#
+# For an issuer that reaches Vault/OpenBao IN-CLUSTER over plain HTTP, e.g.
+#   http://openbao.openbao.svc.cluster.local:8200
+#
+# WHY THIS IS NOT JUST A TIDY-UP. When Vault runs in the same cluster as the
+# issuer, the obvious alternative -- going through the Gateway on
+# https://<vault-host> -- is CIRCULAR: that hostname's certificate is issued by
+# this very ClusterIssuer, so it cannot exist until the issuer works, and the
+# issuer cannot verify it until it exists. In-cluster HTTP has no such loop.
+#
+# It also cannot be expressed with a substitution. caBundleSecretRef is a BLOCK,
+# and postBuild.substitute is map[string]string -- an empty value renders a YAML
+# null the API server rejects, and a Secret name that does not exist keeps the
+# ClusterIssuer not-Ready. The key has to be absent, so it has to be a patch.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: ClusterIssuer
+    patch: |
+      - op: remove
+        path: /spec/vault/caBundleSecretRef

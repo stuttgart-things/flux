@@ -12,3 +12,12 @@
 # incident.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
+# NOT decoration, and this component did not build without it. kustomize rejects
+# a Component whose kustomization.yaml holds nothing but apiVersion and kind --
+# types.Kustomization.CheckEmpty() compares the parsed struct against a zero
+# value and fails with "kustomization.yaml is empty", which the file plainly is
+# not. An empty list is not a nil slice, so this one field makes it valid.
+#
+#   Error: accumulating components: accumulateDirectory: "couldn't make target
+#   for path '.../components/seal-none': kustomization.yaml is empty"
+resources: []

@@ -1,0 +1,20 @@
+---
+# caBundleSecretRef stays -- the default, and what every consumer had before
+# this component existed.
+#
+# Deliberately an EMPTY component rather than "just leave it out", so that the
+# consumer's `components:` line always names the CA mode. Same reasoning as
+# apps/openbao's seal components: a cluster whose choice is invisible is a
+# cluster where nobody remembers what it was.
+#
+# Use this whenever the issuer reaches Vault over HTTPS -- which is every
+# cross-cluster setup, where the peer's certificate has to be verified against
+# a CA the pipeline placed in a Secret.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# NOT decoration. kustomize rejects a Component whose kustomization.yaml holds
+# nothing but apiVersion and kind -- types.Kustomization.CheckEmpty() compares
+# the parsed struct against a zero value and fails with the confusing
+# "kustomization.yaml is empty", even though the file plainly is not. An empty
+# list is not a nil slice, so this one field is enough to make it valid.
+resources: []

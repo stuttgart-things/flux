@@ -404,6 +404,25 @@ VAULT_ISSUER_AUTH_MOUNT_PATH: /v1/auth/<cluster>-certmanager
 The mount path is per-cluster: the pipeline creates the backend as
 `<cluster>-<authName>`, so a cluster named `foo` gives `/v1/auth/foo-certmanager`.
 
+### Whether the issuer verifies a CA — `VAULT_ISSUER_CA_MODE`
+
+| Mode | `caBundleSecretRef` | Use when |
+|---|---|---|
+| `bundle` (default) | kept | Vault is reached over **HTTPS** — every cross-cluster setup. `VAULT_ISSUER_CA_SECRET` must exist, or the issuer stays not-Ready |
+| `none` | removed | Vault/OpenBao is reached **in-cluster over plain HTTP**, e.g. `http://openbao.openbao.svc.cluster.local:8200` |
+
+`none` exists for the case where Vault runs in the *same* cluster as the issuer.
+The obvious alternative — going through the Gateway on `https://<vault-host>` —
+is **circular**: that hostname's certificate is issued by this very
+`ClusterIssuer`, so it cannot exist until the issuer works, and the issuer
+cannot verify it until it exists. In-cluster HTTP has no such loop.
+
+It is a component and not a substitution because `caBundleSecretRef` is a
+**block**, and `postBuild.substitute` is `map[string]string`: an empty value
+renders a YAML null the API server rejects, and a `Secret` name that does not
+exist keeps the issuer not-Ready. The key has to be *absent*, so it has to be a
+patch. Same reasoning as `apps/openbao`'s seal components.
+
 To have this issuer sign the wildcard, point `cert-manager-selfsigned` at it:
 
 ```yaml
