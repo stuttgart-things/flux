@@ -1,45 +1,34 @@
 ---
 # Crossplane core for a MACHINERY cluster.
 #
-# Reuses ../../../components/install -- same chart, same version, same namespace and
-# HelmRepositories -- and replaces only the provider list. A copy of the
-# HelmRelease would drift from the shared one on the next chart bump.
+# Reuses ../../../components/install -- same chart, same HelmRepositories, same
+# namespace -- and replaces exactly the two things the KCL catalog owns for this
+# profile: the chart version, and the chart's provider list.
 #
-# WHY THE PROVIDER LIST IS ALMOST EMPTY
+# THE PROVIDER LIST IS EMPTIED, not narrowed. Under the catalog every Provider is
+# a package CR in ../configs/configs.yaml, carrying the LONG name Crossplane
+# derives from the package path. Letting the chart install any of them as well
+# would put one source under two CRs -- the duplicate lock node that takes every
+# package on the cluster to Healthy=False while Installed stays True and the pods
+# keep running.
 #
-# The shared list installs provider-helm and provider-kubernetes from
-# xpkg.upbound.io, which is the spelling the ghcr.io/stuttgart-things/crossplane/*
-# family declares. crossplane-configurations declares the SAME packages against
-# xpkg.crossplane.io -- provider-kubernetes >=v1.2.0, provider-helm >=v1.0.0 --
-# and Crossplane keys its lock on the source string, so a machinery cluster
-# carrying the upbound spellings reports each of those as a missing dependency
-# while the other spelling sits there installed, and no claim reconciles:
+# That also settles the registry question this file used to spend forty lines on.
+# crossplane-configurations declares provider-kubernetes and provider-helm against
+# xpkg.crossplane.io while the shared list spells them xpkg.upbound.io, and two
+# spellings of one package are two lock nodes. The old answer here was "install
+# none of them and let dependsOn do it". The catalog's answer is better and is
+# what the fleet runs: install them EXPLICITLY at the spelling the packages
+# declare. Two nodes with DIFFERENT sources are healthy -- seed-labda-1 carries
+# function-kcl twice, short-named on upbound and long-named on crossplane.io,
+# both Healthy. Only two nodes with the SAME source freeze the resolver.
 #
-#   cannot resolve package dependencies: missing dependencies:
-#   "xpkg.crossplane.io/crossplane-contrib/provider-kubernetes" (>=v1.2.0)
+# provider-kubernetes is absent from the catalog on purpose: every Configuration
+# pulls it, and with derived names the pulled CR is the one an explicit entry
+# would have created.
 #
-# CI caught this on eight of the nine machinery packages the first time these
-# profiles ran (PR #342).
-#
-# The fix is NOT to install them at the other spelling. Every Provider a
-# machinery Configuration needs is already in that Configuration's dependsOn, so
-# Crossplane installs it at the registry the package itself names. Naming it
-# here as well is the second lock node all over again.
-# stuttgart-things/argocd takes the same position for provider-kubernetes in
-# cicd/crossplane/providers/values.yaml.
-#
-# provider-opentofu STAYS, and that is not an inconsistency. It is the one entry
-# the same CI run never flagged: tofu-run either declares this exact upbound
-# string or does not declare it at all, and in both cases installing it here is
-# correct -- in the first the node is identical, in the second nothing else
-# would install it. Only the two that conflicted are gone.
-#
-# NO FUNCTIONS COMPONENT EITHER, for the same reason -- ../../../components/functions
-# carries function-kcl and function-patch-and-transform at upbound spellings
-# that crossplane-configurations declares against xpkg.crossplane.io. The
-# Functions arrive through dependsOn. That is also why this root composes
-# ../../../components/install directly instead of the cicd-platform install root, which
-# pulls functions in alongside it.
+# The version does NOT read ${CROSSPLANE_VERSION}. That variable is the
+# bundle-wide one the cicd-platform profile uses; here the fleet pins the core
+# per profile, and catalog-patch.yaml carries it.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
@@ -48,8 +37,4 @@ patches:
   - target:
       kind: HelmRelease
       name: crossplane-deployment
-    patch: |
-      - op: replace
-        path: /spec/values/provider/packages
-        value:
-          - xpkg.upbound.io/upbound/provider-opentofu:${CROSSPLANE_OPENTOFU_PROVIDER_VERSION:-v1.1.7}
+    path: catalog-patch.yaml

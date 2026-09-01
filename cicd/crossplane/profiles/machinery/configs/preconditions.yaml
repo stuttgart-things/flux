@@ -1,0 +1,98 @@
+---
+# WHAT THE CATALOG DOES NOT MODEL, and a management cluster still needs.
+#
+# Every object here is documented by some package as a PRECONDITION -- something
+# it requires and cannot ship, because a package installs CRDs and Compositions,
+# never a ClusterRoleBinding or an EnvironmentConfig. The catalog is package
+# identity and version only, so none of this belongs in the generated file
+# beside it. Handwritten, and staying that way.
+#
+# What is NOT here is equally deliberate: no placement, no hypervisor
+# credentials. Those are cluster facts and arrive through a `Capability` XR --
+# see stuttgart-things, crossplane/xrs/capability/labda/seed-labda-1.yaml.
+
+# --- provider RBAC ---------------------------------------------------------
+# One binding, group-scoped, exactly as `ManagementPlane` emits it (see
+# stuttgart-things/kcl, crossplane/xplane-management-plane/main.k, `_rbac`).
+#
+# THE GROUP, NOT THE ServiceAccount. A provider's SA is named
+# `crossplane-contrib-provider-kubernetes-f6665ef36536`, where the suffix comes
+# from the installed package REVISION -- it changes on every provider upgrade,
+# so a name-bound ClusterRoleBinding silently stops granting anything and the
+# next build fails long after anyone would connect it to a provider bump.
+#
+# It is cluster-admin, and that is broad: every controller in crossplane-system
+# gets it. That is what the fleet runs, and it is why the two scoped ClusterRoles
+# the remote-cluster and ip-reservation packages document are NOT reproduced here
+# -- their own README says they do not apply where the provider SA is already
+# cluster-admin, "which is the case on the fleet clusters". Shipping both would
+# be one real grant and two decorative ones.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crossplane-providers-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:${CROSSPLANE_NAMESPACE:-crossplane-system}
+---
+# --- flux defaults ---------------------------------------------------------
+# Consumed by the flux-init Composition's load-environment step. Both are
+# REQUIRED rather than optional: flux-apps' Composition says a missing
+# flux-apps-defaults fails the whole pipeline with
+#
+#   Required environment config "flux-apps-defaults" not found
+#
+# and nothing composes them, so without these two a cluster carrying the
+# `fluxinits` and `fluxapps` XRDs still cannot compose either. The reference
+# machinery cluster seed-labda-1 has neither, which is a gap there rather than
+# an argument against them.
+#
+# They pass the test the vsphere placement failed: reconcile intervals, a chart
+# version and a sourceRef name no place and no secret.
+#
+# No selector label -- these two are looked up by NAME.
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: flux-defaults
+data:
+  operatorChart:
+    # The quotes do NOT survive: kustomize drops them whenever the bare form
+    # round-trips to the same string, so what lands is `version: 0.55.0` -- a
+    # string only because a two-dot version cannot parse as a number. Keep three
+    # components; "0.55" would arrive as a FLOAT.
+    # renovate: datasource=docker depName=ghcr.io/controlplaneio-fluxcd/charts/flux-operator
+    version: "${CROSSPLANE_MACHINERY_FLUX_OPERATOR_VERSION:-0.55.0}"
+    repoURL: "oci://ghcr.io/controlplaneio-fluxcd/charts"
+  instance:
+    distribution: "2.x"
+    components:
+      - source-controller
+      - kustomize-controller
+      - helm-controller
+      - notification-controller
+  namespace: "flux-system"
+  reconcileEvery: "1h"
+  reconcileTimeout: "5m"
+---
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: flux-apps-defaults
+data:
+  namespace: flux-system
+  interval: "1h"
+  retryInterval: "1m"
+  timeout: "10m"
+  # THE EFFECTIVE sourceRef DEFAULT LIVES HERE, not in the XRD. A CRD default
+  # only materialises if the XR actually sets `sourceRef: {}` -- defaulting does
+  # not create an absent object -- so for an XR that omits sourceRef entirely,
+  # this is what every app gets.
+  sourceRef:
+    kind: OCIRepository
+    name: flux-apps

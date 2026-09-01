@@ -74,6 +74,16 @@ jobs:
       # anything that installs a tool.
       - name: Kustomizations rendering one path are wired the same way
         run: python3 ./hack/check-shared-path-wiring.py
+      # kcl, because the machinery profile is GENERATED from a KCL catalog
+      # published as an OCI module -- the same one ManagementPlane reads. The
+      # check re-renders it and compares; without kcl it reports itself
+      # unverified rather than failing, like skopeo below.
+      - name: Install KCL
+        run: |
+          curl -sSL https://kcl-lang.io/script/install-cli.sh | /bin/bash
+          kcl --version
+      - name: The machinery profile matches the catalog it is generated from
+        run: python3 ./hack/gen-crossplane-profile.py --check
       # skopeo, because the crossplane packages' dependsOn lives inside the OCI
       # artifact and the xpkg registries do not answer the anonymous manifest
       # request verify-image-tags.py knows how to make. Without it the check

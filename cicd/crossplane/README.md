@@ -9,8 +9,8 @@ families disagree about that — so each profile brings both.
 
 | `CROSSPLANE_PROFILE` | Cluster | Packages |
 |---|---|---|
-| `cicd-platform` (default) | CI/CD cluster — pipeline-integration, storage-platform | `ghcr.io/stuttgart-things/crossplane/*` |
-| `machinery` | vSphere / Proxmox / Harvester VM + image builder | `ghcr.io/stuttgart-things/crossplane-configurations/*` |
+| `cicd-platform` (default) | CI/CD cluster — pipeline-integration, storage-platform | `ghcr.io/stuttgart-things/crossplane/*`, listed here |
+| `machinery` | a **management** cluster: VM + image builder and fleet manager | `ghcr.io/stuttgart-things/crossplane-configurations/*`, **generated from the KCL catalog** |
 
 ```
 cicd/crossplane/
@@ -21,8 +21,7 @@ cicd/crossplane/
 │   └── provider-configs/  one `in-cluster` ClusterProviderConfig per provider
 └── profiles/
     ├── cicd-platform/     install/  configs/  provider-configs/
-    └── machinery/         install/  configs/  provider-configs/
-                           platform/  platform-provider-configs/
+    └── machinery/         install/  configs/  provider-configs/   (generated)
 ```
 
 Every profile directory has the same three roots, and the bundle's
@@ -33,12 +32,25 @@ Kustomizations point at them by name:
 | `crossplane` | `…/profiles/${CROSSPLANE_PROFILE}/install` | — |
 | `crossplane-configs` | `…/profiles/${CROSSPLANE_PROFILE}/configs` | `crossplane` |
 | `crossplane-provider-configs` | `…/profiles/${CROSSPLANE_PROFILE}/provider-configs` | `crossplane-configs` |
-| `crossplane-platform-configs` | `…/profiles/${CROSSPLANE_PROFILE}/platform` | `crossplane-configs` |
-| `crossplane-platform-provider-configs` | `…/profiles/${CROSSPLANE_PROFILE}/platform-provider-configs` | `crossplane-platform-configs` |
 
-The last two come from a separate, opt-in component
-(`cicd/platform/components/crossplane-platform`) and exist only on the
-`machinery` profile. See [`profiles/README.md`](profiles/README.md).
+Three, on every profile. See [`profiles/README.md`](profiles/README.md).
+
+## The machinery profile is generated
+
+Its package list is **not written here**. `ManagementPlane` builds a management
+cluster from `stuttgart-things/kcl`,
+[`crossplane/xplane-crossplane-catalog`](https://github.com/stuttgart-things/kcl/tree/main/crossplane/xplane-crossplane-catalog),
+and that catalog's own header names this directory as one of the three stale
+copies it replaced. So the list is rendered from it, at a pinned version:
+
+```bash
+python3 hack/gen-crossplane-profile.py           # write
+python3 hack/gen-crossplane-profile.py --check   # CI: verify, fail on drift
+```
+
+A cluster built by Flux and one built by Crossplane then install the same set.
+To move a version, move the catalog — an edit to a generated file is reverted by
+the next run and fails CI in between.
 
 ## Consuming it
 
@@ -49,7 +61,6 @@ spec:
   path: ./cicd/platform/root
   components:
     - ../components/crossplane
-    # - ../components/crossplane-platform   # machinery profile only
   postBuild:
     substitute:
       CROSSPLANE_PROFILE: machinery         # omit for cicd-platform
@@ -140,10 +151,11 @@ The Functions do **not** need this: `components/functions` ships them as
 ## Adding a profile
 
 Create `profiles/<name>/` with `install/`, `configs/` and `provider-configs/`
-roots, thread its pins in `cicd/platform/components/crossplane/ks-crossplane.yaml`
-(both families already live in one substitute block; a third adds no names that
-collide), and add the file list to `PROFILES` in `hack/check-crossplane-deps.py`
-— a profile not in that map is silently unchecked for lock collisions.
+roots, thread any pins it needs in
+`cicd/platform/components/crossplane/ks-crossplane.yaml`, and add the file list
+to `PROFILES` in `hack/check-crossplane-deps.py` plus its CR-naming convention
+to `NAMING` beside it — a profile in neither map is silently unchecked, and one
+checked under the wrong convention is worse than unchecked.
 
 Nothing else changes. `hack/check-passthrough-defaults.py` globs the substituted
 path segment, so a new profile's pins are compared against the bundle's copies

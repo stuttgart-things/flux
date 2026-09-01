@@ -19,16 +19,17 @@ postBuild:
 | `cicd-platform` (default) | CI/CD cluster — pipeline-integration, storage-platform |
 | `machinery` | vSphere / Proxmox / Harvester VM + image builder, plus an optional fleet-manager half |
 
-Every profile has the same three roots, and `machinery` adds two more:
+Every profile has the same three roots:
 
 ```
 <profile>/
-├── install/                    crossplane core + the providers THIS profile installs
-├── configs/                    the Configuration packages (+ their EnvironmentConfigs)
-├── provider-configs/           the `in-cluster` ClusterProviderConfigs
-├── platform/                   optional: the fleet-manager half
-└── platform-provider-configs/  optional: the helm ClusterProviderConfig
+├── install/           crossplane core, at the version and provider list this profile wants
+├── configs/           the package CRs (+ preconditions, on machinery)
+└── provider-configs/  the `in-cluster` ClusterProviderConfigs
 ```
+
+On `machinery` all three are **generated** from the KCL catalog; only
+`configs/preconditions.yaml` beside them is handwritten.
 
 `spec.path` carries the variable, so the whole selection is one string:
 `./cicd/crossplane/profiles/${CROSSPLANE_PROFILE:-cicd-platform}/configs`.
@@ -90,17 +91,29 @@ floor.
 
 ## Source of truth for the pins
 
-`stuttgart-things/ansible`, `collections/container/kind_machinery.yaml` —
-`machinery_packages` and `platform_packages`, reconciled against the reference
-machinery cluster kind1. Read its comments before changing a version: several
-pins are dependency floors or deliberate reverts, and at least one (`cluster`)
-must never be lowered, because `kubectl apply` walks a Configuration backwards
-without complaint.
+`stuttgart-things/kcl`,
+[`crossplane/xplane-crossplane-catalog`](https://github.com/stuttgart-things/kcl/tree/main/crossplane/xplane-crossplane-catalog)
+— the same catalog `ManagementPlane` reads through `spec.profile`. The list here
+is rendered from it by `hack/gen-crossplane-profile.py` at a pinned module
+version, and CI re-renders and compares.
 
-`machinery/platform/` corresponds to that play's `platform_enabled` flag
-(default true). Kustomize has no conditional, so the toggle is the **component**:
-select `crossplane` alone for a pure VM builder, or `crossplane` plus
-`crossplane-platform`.
+It was not always. The catalog's own header names the three places it replaced,
+and one of them is this directory: an older generation of the same list,
+pointing at `ghcr.io/stuttgart-things/crossplane/*`. Maintaining a fourth copy
+by hand is what let this bundle drift to cluster-backup v0.2.0 against the
+fleet's v0.1.0, opentofu v1.1.7 against v1.1.6 and crossplane 2.4.0 against
+2.3.3, while missing two providers, all five functions and three configurations.
+
+To move a version, move the catalog. Read its comments first: several pins are
+dependency floors or deliberate reverts, and at least one (`cluster`) must never
+be lowered, because `kubectl apply` walks a Configuration backwards without
+complaint.
+
+There is no `platform_enabled` split here, and that follows the catalog rather
+than the play: `platform` and `cluster` are both in the one `machinery` list,
+because being a management cluster is what that profile IS. A pure VM builder
+would be a profile of its own — the catalog's `main.k` says as much ("a seed and
+a full machinery cluster will not want the same package set").
 
 ## Why machinery has its own crossplane core
 
@@ -172,10 +185,11 @@ What that cluster does carry is three EnvironmentConfigs, all emitted by the
 capability charts and all suffixed for their lab: `vspherevm-labda`,
 `proxmoxvm-labda`, `ansible-run-labda`. Nothing here competes with those.
 
-The fleet-manager half keeps two, and they pass the same test:
-`machinery/platform/environmentconfigs.yaml` holds `flux-defaults` and
-`flux-apps-defaults`, which carry reconcile intervals, a chart version and a
-`sourceRef`, and name no place and no secret.
+Two EnvironmentConfigs do stay, in `machinery/configs/preconditions.yaml`
+beside the generated list: `flux-defaults` and `flux-apps-defaults` carry
+reconcile intervals, a chart version and a `sourceRef`, and name no place and no
+secret. Both are REQUIRED by their Compositions and composed by nothing, which
+is the same category as the provider RBAC next to them.
 
 The capability charts themselves, the per-lab credentials, the sops-git wiring
 and the provider-kubeconfig-vault releases all still live in
