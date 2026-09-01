@@ -79,6 +79,16 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "The machinery crossplane profile is GENERATED from a KCL catalog pinned as a Python constant in hack/gen-crossplane-profile.py. Nothing else in this repo reads that pin, so without this manager the catalog can move for the whole fleet while this bundle keeps rendering an older package set -- the exact drift the generator was written to end. NOTE: a bump here alone FAILS CI on purpose. The generated files have to be regenerated in the same PR (python3 hack/gen-crossplane-profile.py), which is what makes the package diff visible for review.",
+      "fileMatch": [
+        "^hack/gen-crossplane-profile\\.py$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+CATALOG_VERSION\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ]
     }
   ],
   "packageRules": [

@@ -51,6 +51,12 @@ ROOT = Path(__file__).resolve().parent.parent
 CATALOG = "ghcr.io/stuttgart-things/xplane-crossplane-catalog"
 # Pinned, never floating. Bumping this is the ONLY way the package set moves,
 # and the diff of that bump is the review.
+#
+# Renovate watches it (see renovate.json). A bump on its own FAILS the
+# `--check` job, and that is deliberate: the generated files have to be
+# regenerated in the same PR, which is what turns "the catalog moved" into a
+# reviewable list of package versions instead of a one-line number change.
+# renovate: datasource=docker depName=ghcr.io/stuttgart-things/xplane-crossplane-catalog
 CATALOG_VERSION = "0.4.0"
 PROFILE = "machinery"
 
