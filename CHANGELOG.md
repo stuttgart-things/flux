@@ -1,3 +1,10 @@
+# [1.54.0](https://github.com/stuttgart-things/flux/compare/v1.53.0...v1.54.0) (2026-09-01)
+
+
+### Features
+
+* **crossplane:** capabilities as one directory per environment ([#362](https://github.com/stuttgart-things/flux/issues/362)) ([b156763](https://github.com/stuttgart-things/flux/commit/b156763c383e91de2fdc7c4d73c09b106fe16850)), closes [#353](https://github.com/stuttgart-things/flux/issues/353) [flux#361](https://github.com/flux/issues/361) [crossplane-configurations#347](https://github.com/crossplane-configurations/issues/347)
+
 # [1.53.0](https://github.com/stuttgart-things/flux/compare/v1.52.0...v1.53.0) (2026-09-01)
 
 
