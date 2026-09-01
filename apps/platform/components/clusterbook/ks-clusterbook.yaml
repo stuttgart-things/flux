@@ -58,10 +58,15 @@ spec:
       CLUSTERBOOK_CONFIG_LOCATION: "${CLUSTERBOOK_CONFIG_LOCATION:-clusterbook}"
 
       # ---- PowerDNS -----------------------------------------------------
+      # passthrough-override: the base leaves both EMPTY, which the operator
+      # accepts -- it then writes no DNS record and reports success, so a cluster
+      # gets an address and no name. A loud placeholder fails at deploy time
+      # instead, where it is still cheap to fix.
       PDNS_URL: "${CLUSTERBOOK_PDNS_URL:-set-CLUSTERBOOK_PDNS_URL}"
       # The TRAILING DOT belongs here -- PowerDNS wants an absolute zone name,
       # and appending another one later yields "zone..", which it rejects as
       # unparsable. That has bitten the teardown path twice.
+      # passthrough-override: same as PDNS_URL above -- empty is accepted silently.
       PDNS_ZONE: "${CLUSTERBOOK_PDNS_ZONE:-set-CLUSTERBOOK_PDNS_ZONE.}"
 
       # ---- HTTPRoute ----------------------------------------------------

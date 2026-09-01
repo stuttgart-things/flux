@@ -26,7 +26,14 @@ differ between apps. Rendered with kustomize, so a default reached through a
 component or a base counts too.
 
 A deliberate override is declared by putting `# passthrough-override: <reason>`
-on the line above.
+anywhere in the comment block above the line.
+
+Most of them ARE deliberate, and that is the point rather than an excuse: a
+bundle routinely replaces another lab's plausible default with a loud
+`set-X.invalid` placeholder, or with this cluster's real value. Each of those is
+a decision worth one line of why. What the declarations leave behind is the
+handful that nobody decided -- a version somebody bumped in the base while the
+copy that wins stayed where it was.
 """
 import os
 import re
@@ -41,8 +48,18 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 KS_API = "kustomize.toolkit.fluxcd.io"
 
-# "${NAME:-value}" and nothing else -- the pass-through shape. A value that
+# "${SOMETHING:-value}" and nothing else -- the pass-through shape. A value that
 # merely CONTAINS the variable is a composed string, not a copied default.
+#
+# THE VARIABLE NAME IS NOT REQUIRED TO MATCH THE KEY. This used to skip anything
+# where it did not, on the reading that a rename is a different value rather
+# than a copied default. It is not: what the base reads is the KEY, so
+# `DAPR_REDIS_VERSION: "${DAPR_WORKFLOWS_REDIS_CHART_VERSION:-17.1.4}"` still
+# decides what `${DAPR_REDIS_VERSION:-22.0.7}` renders to, and still wins.
+# Renovate bumped that base to 22.0.7 and nothing landed anywhere -- cicd-test3
+# was still on redis 17.1.4 five releases later, with this check reporting OK
+# (found 2026-09-01, rolling out flux#349). Roughly eighty threads in this repo
+# rename on the way through; they were all invisible.
 SELF = re.compile(r'^\$\{([A-Z0-9_]+):-(.*)\}$', re.S)
 ANY = re.compile(r'\$\{([A-Z0-9_]+):-([^}]*)\}')
 
@@ -215,7 +232,7 @@ def main():
 
                 for name, value in subs.items():
                     m = SELF.match(str(value).strip())
-                    if not m or m.group(1) != name:
+                    if not m:
                         continue
                     here = norm(m.group(2))
                     there = {norm(x) for x in defaults_for(text, name)}

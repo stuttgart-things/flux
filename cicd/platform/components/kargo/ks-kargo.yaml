@@ -46,6 +46,8 @@ spec:
   postBuild:
     substitute:
       KARGO_SECRET: "${KARGO_SECRET:-kargo-secrets}"
+      # passthrough-override: two loud placeholders, differing only in which
+      # VARIABLE a cluster is told to set. The bundle name wins on purpose.
       KARGO_ESO_STORE_NAME: "${KARGO_ESO_STORE:-set-KARGO_ESO_STORE}"
       KARGO_ESO_STORE_KIND: "${KARGO_ESO_STORE_KIND:-ClusterSecretStore}"
       KARGO_ESO_SECRET_PATH: "${KARGO_ESO_SECRET_PATH:-kargo}"
