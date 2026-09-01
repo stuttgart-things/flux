@@ -1,0 +1,63 @@
+---
+# sops-git -> ./infra/sops-git
+#
+# The age key, the git credential and the GitRepository that let this cluster
+# read the encrypted credentials committed to the repository -- the `sops-git`
+# backend the crossplane capability charts use.
+#
+# TWO DEPENDENCIES, both real:
+#
+#   sops-secrets-operator-bootstrap, because a SopsSecretManifest is a CR of a
+#   CRD that operator installs. Applied first, the GitRepository is fine but
+#   anything that reads it is not, and the failure lands on the capability
+#   rather than here.
+#
+#   external-secrets-vault-store, because both Secrets in this directory come
+#   through a ClusterSecretStore. Flux has no optional dependency, so a cluster
+#   that selects this without the store waits forever -- which is the right
+#   outcome: without it there is no age key, and without the age key the
+#   operator decrypts nothing while reporting itself perfectly healthy.
+#
+# THE KV PROPERTIES ARE DISCOVERED, NOT DECLARED. hack/gen-cluster-secrets.py in
+# stuttgart-things walks this bundle's ExternalSecrets at the pinned tag and
+# derives what a cluster's KV mount has to contain, so selecting this component
+# is what makes the pipeline seed `age_key` and `git_token`. Both are READS of
+# shared values, not generated ones: a freshly generated age key decrypts
+# nothing that is already committed.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sops-git
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: sops-secrets-operator-bootstrap
+    - name: external-secrets-vault-store
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${SOPS_GIT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/sops-git
+  postBuild:
+    substitute:
+      SOPS_GIT_NAMESPACE: "${SOPS_GIT_NAMESPACE:-crossplane-system}"
+      # passthrough-override: both defaults are loud placeholders and neither is
+      # a version; they differ only in which VARIABLE a cluster is told to set.
+      # ESO_STORE_NAME is the right one to name, because every cluster already
+      # sets it for external-secrets-vault-store -- this component reads the
+      # store that already exists rather than asking for a second name for it.
+      SOPS_GIT_ESO_STORE: "${ESO_STORE_NAME:-set-ESO_STORE_NAME}"
+      SOPS_GIT_ESO_SECRET_PATH: "${SOPS_GIT_ESO_SECRET_PATH:-sops-git}"
+      SOPS_GIT_USERNAME: "${SOPS_GIT_USERNAME:-stuttgart-things}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/sops-git-secrets
+      SOPS_GIT_SECRETS_CHART_VERSION: "${SOPS_GIT_SECRETS_CHART_VERSION:-0.9.0}"

@@ -1,0 +1,54 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: stuttgart-things-charts
+  namespace: ${SOPS_GIT_NAMESPACE:-crossplane-system}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/charts
+---
+# The GitRepository CR the sops-secrets-operator clones, and nothing else.
+#
+# `secrets: []` IS DELIBERATE. The chart can also emit SopsSecretManifests for
+# standalone blobs -- the ansible play uses that for the tekton-ci Vault creds
+# and a handful of others -- but every CAPABILITY chart emits its own, pointing
+# at secrets/<name>.enc.yaml by itself. Listing one here as well would put two
+# CRs on one file, and the second one to reconcile wins whatever the first
+# wrote. Add an entry here only for a blob no chart owns.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sops-git-secrets
+  namespace: ${SOPS_GIT_NAMESPACE:-crossplane-system}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: sops-git-secrets
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/sops-git-secrets
+      version: ${SOPS_GIT_SECRETS_CHART_VERSION:-0.9.0}
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things-charts
+        namespace: ${SOPS_GIT_NAMESPACE:-crossplane-system}
+      interval: 12h
+  values:
+    namespace: ${SOPS_GIT_NAMESPACE:-crossplane-system}
+    git:
+      name: ${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}
+      url: ${SOPS_GIT_URL:-https://github.com/stuttgart-things/stuttgart-things.git}
+      branch: ${SOPS_GIT_BRANCH:-main}
+      interval: ${SOPS_GIT_INTERVAL:-5m}
+      auth:
+        type: basic
+        secretName: ${SOPS_GIT_CREDENTIALS_SECRET:-sops-git-credentials}
+        # false: the Secret is an ExternalSecret in this same directory. Letting
+        # the chart create it would need the token as a Helm VALUE, which is a
+        # secret in a HelmRelease -- readable by anyone who can read the CR.
+        create: false
+    ageKeySecret:
+      name: ${SOPS_GIT_AGE_SECRET:-sops-age-key}
+      key: age.agekey
+    secrets: []
