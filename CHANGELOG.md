@@ -1,3 +1,10 @@
+# [1.53.0](https://github.com/stuttgart-things/flux/compare/v1.52.0...v1.53.0) (2026-09-01)
+
+
+### Features
+
+* **renovate:** watch the KCL catalog pin the machinery profile is generated from ([#360](https://github.com/stuttgart-things/flux/issues/360)) ([0a76c92](https://github.com/stuttgart-things/flux/commit/0a76c925b37c6745980229016d1ac3d2b11bb60c))
+
 # [1.52.0](https://github.com/stuttgart-things/flux/compare/v1.51.0...v1.52.0) (2026-09-01)
 
 
