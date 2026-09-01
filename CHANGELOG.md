@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/stuttgart-things/flux/compare/v1.48.0...v1.49.0) (2026-09-01)
+
+
+### Features
+
+* **crossplane:** one CROSSPLANE_PROFILE selects the whole crossplane stack ([#349](https://github.com/stuttgart-things/flux/issues/349)) ([67301e5](https://github.com/stuttgart-things/flux/commit/67301e5bbbec184fab2d2d306fe2b1adca3250bb)), closes [#342](https://github.com/stuttgart-things/flux/issues/342)
+
 # [1.48.0](https://github.com/stuttgart-things/flux/compare/v1.47.0...v1.48.0) (2026-08-31)
 
 
