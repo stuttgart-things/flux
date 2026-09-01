@@ -1,0 +1,13 @@
+---
+# Harvester demo lab.
+#
+# The only set whose capability is written out rather than rendered from a
+# chart -- see ../../components/harvester-vm/capability.yaml for why, and for
+# what it still cannot do (reach a SEPARATE Harvester cluster; today it composes
+# onto the cluster itself).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+components:
+  - ../../components/harvester-vm
+  - ../../components/ansible-run

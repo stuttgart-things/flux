@@ -1,0 +1,77 @@
+---
+# WHAT THIS CLUSTER CAN DO -> ./cicd/crossplane/capabilities/sets/${CROSSPLANE_CAPABILITY_SET}
+#
+# The `crossplane` component installs the packages and is a FLEET fact,
+# generated from the KCL catalog and identical everywhere. This one supplies the
+# three things a package needs before it does anything useful -- a
+# ClusterProviderConfig, credentials, and an EnvironmentConfig with the
+# placement -- and those are CLUSTER facts. Which datastore, which template,
+# which network is per datacentre, so it is chosen here and never in the profile.
+#
+# ONE SET PER CLUSTER, named by the variable:
+#
+#   labda-vsphere    vSphere in LabDA        vspherevm  + ansible-run
+#   labul-proxmox    Proxmox in LabUL        proxmoxvm  + ansible-run
+#   harvester-demo   the Harvester demo lab  harvester-vm + ansible-run
+#
+# A cluster CAN carry more than one hypervisor -- seed-labda-1 builds on vSphere
+# in LabDA and Proxmox in LabUL at once -- and that is a set of its own rather
+# than two components, because two Kustomizations rendering two sets would both
+# own `ansible-run` and fight over it every reconcile.
+#
+# THE ENVIRONMENT HAS TO MATCH THE SET. The charts ship their own placement
+# blocks and `CROSSPLANE_CAPABILITY_ENVIRONMENT` selects one; pointing the
+# labda-vsphere set at `labul` deploys LabUL placement under a release named for
+# LabDA, and nothing reports it -- the release installs, the EnvironmentConfig
+# exists, and the first VM is built in the wrong datacentre.
+#
+# CREDENTIALS COME FROM GIT. `secretStore.backend: sops-git` throughout, so this
+# needs the age key and the GitRepository from the infra layer -- hence the
+# dependency. The Vault-backed alternative would need a Kubernetes auth mount on
+# each of the three environments' Vaults, and for a cluster that is nobody's
+# managed cluster nothing creates those.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane-capabilities
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    # The packages, and the in-cluster ClusterProviderConfigs the charts'
+    # own objects are applied through.
+    - name: crossplane-provider-configs
+    # The age key, the git credential and the GitRepository. Also the source of
+    # the `stuttgart-things-charts` HelmRepository these releases pull from --
+    # declaring a second one of that name in that namespace would put two
+    # Kustomizations on one object.
+    - name: sops-git
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${CROSSPLANE_CAPABILITIES_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/crossplane/capabilities/sets/${CROSSPLANE_CAPABILITY_SET:-set-CROSSPLANE_CAPABILITY_SET}
+  postBuild:
+    substitute:
+      CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
+      # Selects the placement block inside each chart. MUST agree with the set.
+      CROSSPLANE_CAPABILITY_ENVIRONMENT: "${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labda}"
+      CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE: "${CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE:-tekton-ci}"
+      CROSSPLANE_CAPABILITY_STORAGE_CLASS: "${CROSSPLANE_CAPABILITY_STORAGE_CLASS:-openebs-hostpath}"
+      SOPS_GIT_REPOSITORY_NAME: "${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}"
+      SOPS_GIT_AGE_SECRET: "${SOPS_GIT_AGE_SECRET:-sops-age-key}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm
+      CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.12.6}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/proxmoxvm
+      CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.12.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/ansible
+      CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION: "${CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION:-0.9.2}"

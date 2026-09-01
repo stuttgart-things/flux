@@ -1,0 +1,14 @@
+---
+# LabUL / Proxmox.
+#
+# NOT vSphere, and that is the point of the pair: LabUL vSphere is being
+# decommissioned -- its vCenter no longer carries the sthings templates and the
+# UUID in the chart's `vspherevm-labul` block does not resolve. The Proxmox
+# cluster there is not going anywhere. New LabUL work is Proxmox; new vSphere
+# work is LabDA.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+components:
+  - ../../components/proxmoxvm
+  - ../../components/ansible-run

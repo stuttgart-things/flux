@@ -1,0 +1,45 @@
+---
+# vSphere VM capability: ClusterProviderConfig, ClusterSecretStore,
+# ExternalSecret/SopsSecretManifest and the EnvironmentConfig the vspherevm
+# Composition resolves its placement from.
+#
+# PLACEMENT IS NOT HERE. The chart ships `environments.labda` and
+# `environments.labul` -- template UUID, datastore, resource pool, network,
+# folder, domain -- and `environment` selects one. Restating any of it here
+# would be a second copy of a vCenter object ID, and the copy that loses is
+# the one nobody edits. Move a datastore in the chart.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vspherevm-${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labda}
+  namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: vspherevm
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm
+      version: ${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.12.6}
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things-charts
+        namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+      interval: 12h
+  values:
+    environment: ${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labda}
+    configuration:
+      # The profile installs the package, under the name Crossplane derives
+      # from its path. A chart-installed second CR on the same OCI path is the
+      # duplicate lock node that takes every package to Healthy=False.
+      install: false
+    secretStore:
+      backend: sops-git
+      sopsGit:
+        # The GitRepository infra/sops-git creates. The chart derives the file
+        # path itself -- secrets/vsphere-creds-<environment>.enc.yaml -- which
+        # is where the blobs already are.
+        repositoryRef:
+          name: ${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}
+        ageKeySecret:
+          name: ${SOPS_GIT_AGE_SECRET:-sops-age-key}
+          key: age.agekey

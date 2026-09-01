@@ -1,0 +1,14 @@
+---
+# LabDA / vSphere. A build root of its own -- a Flux Kustomization's spec.path
+# points here directly, selected by ${CROSSPLANE_CAPABILITY_SET}.
+#
+# The set is the CHOICE OF COMPONENTS; the values that differ between
+# environments are threaded by the consumer. Both halves have to move together:
+# selecting vspherevm with CROSSPLANE_CAPABILITY_ENVIRONMENT=labul would deploy
+# the LabUL placement under a release named for LabDA.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+components:
+  - ../../components/vspherevm
+  - ../../components/ansible-run
