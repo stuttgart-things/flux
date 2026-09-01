@@ -1,3 +1,10 @@
+# [1.50.0](https://github.com/stuttgart-things/flux/compare/v1.49.2...v1.50.0) (2026-09-01)
+
+
+### Features
+
+* **crossplane:** generate the machinery profile from the KCL catalog ([#357](https://github.com/stuttgart-things/flux/issues/357)) ([e612b63](https://github.com/stuttgart-things/flux/commit/e612b63bf43fc86aa342d0c6ecdf9cde32b59e2d)), closes [#349](https://github.com/stuttgart-things/flux/issues/349) [#247](https://github.com/stuttgart-things/flux/issues/247) [#349](https://github.com/stuttgart-things/flux/issues/349)
+
 ## [1.49.2](https://github.com/stuttgart-things/flux/compare/v1.49.1...v1.49.2) (2026-09-01)
 
 
