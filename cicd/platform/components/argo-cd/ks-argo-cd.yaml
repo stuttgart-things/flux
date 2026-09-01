@@ -48,7 +48,7 @@ spec:
   postBuild:
     substitute:
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
-      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.4.3}"
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.5.0}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       ARGO_CD_INGRESS_ENABLED: "false"
       # passthrough-override: this is a rotate-now stamp. Bundles rotate on their
