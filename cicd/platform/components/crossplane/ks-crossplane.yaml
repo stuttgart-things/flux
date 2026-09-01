@@ -190,7 +190,7 @@ spec:
       # tofu-run-defaults.
       CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS: "${CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS:-openebs-hostpath}"
       # renovate: datasource=docker depName=ghcr.io/opentofu/opentofu
-      CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION: "${CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION:-1.9.0}"
+      CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION: "${CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION:-1.12.6}"
 ---
 # The `in-cluster` ClusterProviderConfigs, one per provider this profile
 # installs. Every stuttgart-things Composition and EnvironmentConfig references
