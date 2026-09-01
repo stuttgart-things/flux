@@ -2,13 +2,9 @@
 # A build root of its own, NOT a Component: nothing else composes this profile,
 # and a Flux Kustomization's spec.path points here directly.
 #
-# Both files need the same thing and nothing more -- the CRDs crossplane CORE
-# installs (`pkg.crossplane.io` for the packages, `apiextensions.crossplane.io`
-# for the EnvironmentConfigs) -- so they share one Kustomization. The
-# ClusterProviderConfigs do NOT: those are instances of CRDs the PROVIDERS
-# register, which is a later moment, and they live at ../provider-configs.
+# PACKAGES ONLY. No EnvironmentConfig lives here, and that is a rule rather than
+# an omission -- see the header of configs.yaml.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - configs.yaml
-  - environmentconfigs.yaml

@@ -146,28 +146,41 @@ cluster wants no functions component for the same registry reason.
 declares is pulled automatically, so absence is never the problem — only a
 second, differently-spelled copy is.)
 
-## What the profile does NOT install
+## What a profile is NOT allowed to say
 
-The capability charts, per-lab credentials, sops-git wiring and
-provider-kubeconfig-vault releases that make these Configurations *usable* as
-opposed to *installed* still live in `stuttgart-things/crossplane/platform/*`
-and are applied by the ansible play. Installing a package here provisions
-nothing on its own.
+A profile says what a cluster **is**. Where a VM gets placed, and what it
+authenticates to a hypervisor with, is not a fleet fact — it is a cluster fact,
+and it arrives through a `Capability` XR instead. The rule is stated at its
+source in `stuttgart-things`,
+`crossplane/xrs/capability/labda/seed-labda-1.yaml`:
 
-The EnvironmentConfigs that DO ship here are only the two the play applies raw
-from `crossplane-configurations` examples (`vsphere-vm-defaults`,
-`tofu-run-defaults`) plus the fleet half's `flux-defaults` and
-`flux-apps-defaults`. The `vspherevm`, `proxmoxvm`, `ansible-run`, `packer`,
-`scheduled-run` and `cluster-backup` ones come from the capability CHARTS and are
-deliberately absent — a copy here would overwrite the chart's values on the next
-reconcile.
+> das machinery-Profil enthält genau DREI ProviderConfigs, und alle drei sind
+> `in-cluster` (helm, kubernetes, opentofu) … es enthält keine
+> Hypervisor-Credentials und keine Platzierung.
 
-`vsphere-vm-defaults` defaults to **LabUL** placement, because that is what the
-reference cluster runs and what the upstream example ships. LabUL vSphere is
-being decommissioned; a LabDA machinery cluster must set
-`CROSSPLANE_MACHINERY_VSPHERE_*` or it composes VMs against a datacenter it
-cannot reach, and the Workspace loops in observe with no VM and no error above
-it.
+So `configs/` here holds packages and nothing else. An earlier version of it
+shipped `vsphere-vm-defaults` and `tofu-run-defaults`, vendored from the ansible
+play's raw examples, and that was wrong in the most expensive direction: the
+vsphere one carries **LabUL** placement, while LabDA is where new vSphere work
+goes. The reference machinery cluster in LabDA (`seed-labda-1`) carries no such
+object at all, so today an XR asking for `spec.environmentConfig: default`
+matches nothing and fails loudly. Adding a `default`-labelled config turns that
+into a match — against another lab's datacenter. "Fails visibly" would have
+become "runs and builds in the wrong place".
+
+What that cluster does carry is three EnvironmentConfigs, all emitted by the
+capability charts and all suffixed for their lab: `vspherevm-labda`,
+`proxmoxvm-labda`, `ansible-run-labda`. Nothing here competes with those.
+
+The fleet-manager half keeps two, and they pass the same test:
+`machinery/platform/environmentconfigs.yaml` holds `flux-defaults` and
+`flux-apps-defaults`, which carry reconcile intervals, a chart version and a
+`sourceRef`, and name no place and no secret.
+
+The capability charts themselves, the per-lab credentials, the sops-git wiring
+and the provider-kubeconfig-vault releases all still live in
+`stuttgart-things/crossplane/platform/*` and are applied by the ansible play.
+Installing a package here provisions nothing on its own.
 
 ## Related
 

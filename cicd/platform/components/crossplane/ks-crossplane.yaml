@@ -175,22 +175,6 @@ spec:
       CROSSPLANE_MACHINERY_TOFU_RUN_VERSION: "${CROSSPLANE_MACHINERY_TOFU_RUN_VERSION:-v0.1.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/harvester-vm
       CROSSPLANE_MACHINERY_HARVESTER_VM_VERSION: "${CROSSPLANE_MACHINERY_HARVESTER_VM_VERSION:-v0.1.9}"
-      # vsphere-vm-defaults. THESE DEFAULTS ARE LabUL PLACEMENT, because that is
-      # what the reference cluster kind1 runs and what the upstream example
-      # ships. LabUL vSphere is being decommissioned and new vSphere work goes
-      # to LabDA: a LabDA machinery cluster must set every one of these, or it
-      # composes VMs against a datacenter it cannot reach and the Workspace
-      # loops in observe with no VM and no error above it.
-      CROSSPLANE_MACHINERY_VSPHERE_FOLDER: "${CROSSPLANE_MACHINERY_VSPHERE_FOLDER:-stuttgart-things/testing}"
-      CROSSPLANE_MACHINERY_VSPHERE_DATACENTER: "${CROSSPLANE_MACHINERY_VSPHERE_DATACENTER:-/LabUL}"
-      CROSSPLANE_MACHINERY_VSPHERE_DATASTORE: "${CROSSPLANE_MACHINERY_VSPHERE_DATASTORE:-/LabUL/datastore/UL-ESX-SAS-02}"
-      CROSSPLANE_MACHINERY_VSPHERE_RESOURCE_POOL: "${CROSSPLANE_MACHINERY_VSPHERE_RESOURCE_POOL:-/LabUL/host/Cluster-V6.7/Resources}"
-      CROSSPLANE_MACHINERY_VSPHERE_NETWORK: "${CROSSPLANE_MACHINERY_VSPHERE_NETWORK:-/LabUL/network/LAB-10.31.102}"
-      CROSSPLANE_MACHINERY_VSPHERE_TEMPLATE: "${CROSSPLANE_MACHINERY_VSPHERE_TEMPLATE:-sthings-u26}"
-      # tofu-run-defaults.
-      CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS: "${CROSSPLANE_MACHINERY_TOFU_RUN_STORAGE_CLASS:-openebs-hostpath}"
-      # renovate: datasource=docker depName=ghcr.io/opentofu/opentofu
-      CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION: "${CROSSPLANE_MACHINERY_TOFU_IMAGE_VERSION:-1.9.0}"
 ---
 # The `in-cluster` ClusterProviderConfigs, one per provider this profile
 # installs. Every stuttgart-things Composition and EnvironmentConfig references
