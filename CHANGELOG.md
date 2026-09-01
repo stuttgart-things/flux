@@ -1,3 +1,10 @@
+# [1.51.0](https://github.com/stuttgart-things/flux/compare/v1.50.0...v1.51.0) (2026-09-01)
+
+
+### Features
+
+* **cert-manager:** make the vault-issuer CA bundle optional ([#356](https://github.com/stuttgart-things/flux/issues/356)) ([7808b66](https://github.com/stuttgart-things/flux/commit/7808b663b6dbbf0a1821b47e7f7af7a2e523e888)), closes [check-passthrou#defaults](https://github.com/check-passthrou/issues/defaults)
+
 # [1.50.0](https://github.com/stuttgart-things/flux/compare/v1.49.2...v1.50.0) (2026-09-01)
 
 
