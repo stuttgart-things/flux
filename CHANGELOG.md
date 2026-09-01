@@ -1,3 +1,10 @@
+## [1.49.2](https://github.com/stuttgart-things/flux/compare/v1.49.1...v1.49.2) (2026-09-01)
+
+
+### Bug Fixes
+
+* **crossplane:** a profile may not carry placement, so drop the two vsphere/tofu EnvironmentConfigs ([#353](https://github.com/stuttgart-things/flux/issues/353)) ([88c5c73](https://github.com/stuttgart-things/flux/commit/88c5c73c3d722cc76dd8b67610bec1f45dd4599a)), closes [#349](https://github.com/stuttgart-things/flux/issues/349) [#349](https://github.com/stuttgart-things/flux/issues/349) [#349](https://github.com/stuttgart-things/flux/issues/349)
+
 ## [1.49.1](https://github.com/stuttgart-things/flux/compare/v1.49.0...v1.49.1) (2026-09-01)
 
 
