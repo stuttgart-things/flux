@@ -13,6 +13,7 @@ cicd/platform/
     ├── argocd-platform/      → ./cicd/argocd-platform/overlays/…  (an ArgoCD control plane)
     ├── argo-rollouts/        → ./cicd/argo-rollouts
     ├── crossplane/           → ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE}/…
+    ├── crossplane-capabilities/ → …/capabilities/sets/${CROSSPLANE_CAPABILITY_SET}  (needs crossplane + sops-git)
     ├── kro/                  → ./cicd/kro
     ├── machinery/            → ./cicd/machinery       (needs crossplane-configs)
     ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)

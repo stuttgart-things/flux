@@ -1,0 +1,39 @@
+---
+# Proxmox VM capability. Same shape as vspherevm beside it; the chart ships
+# `environments.labul` only, because LabUL Proxmox is the one Proxmox this
+# fleet builds on.
+#
+# `provider.install: false` as well as `configuration.install: false`: this
+# chart can install provider-proxmox-bpg itself, and the profile's packages
+# already pull it through proxmoxvm's dependsOn.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: proxmoxvm-${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labul}
+  namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: proxmoxvm
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/proxmoxvm
+      version: ${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.12.0}
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things-charts
+        namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+      interval: 12h
+  values:
+    environment: ${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labul}
+    configuration:
+      install: false
+    provider:
+      install: false
+    secretStore:
+      backend: sops-git
+      sopsGit:
+        repositoryRef:
+          name: ${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}
+        ageKeySecret:
+          name: ${SOPS_GIT_AGE_SECRET:-sops-age-key}
+          key: age.agekey

@@ -1,0 +1,32 @@
+---
+# Harvester capability, WRITTEN OUT rather than rendered from a chart, because
+# there is no harvester capability chart. The other three environments have one;
+# this one is the newest hypervisor in the fleet and never got one.
+#
+# It is also the shortest, and for a structural reason: harvester-vm renders a
+# KubeVirt VirtualMachine through provider-kubernetes and registers no provider
+# of its own. There is no hypervisor API to authenticate against -- only the
+# Harvester cluster's own Kubernetes API -- so there is no credential to fetch
+# from sops-git here, and no ClusterSecretStore.
+#
+# WHAT IS STILL NEEDED and is not in this file: a ClusterProviderConfig pointing
+# provider-kubernetes at the Harvester cluster, which means a kubeconfig for it.
+# On this fleet those come from provider-kubeconfig reading Vault, and that is
+# the piece a self-contained cluster does not have yet. Until it does, the
+# EnvironmentConfig below names `in-cluster`, which composes VMs onto the
+# cluster itself -- correct for a demo lab where Harvester IS the cluster, and
+# wrong the moment it is a separate one.
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: harvester-vm-defaults
+  labels:
+    # Config-scoped, matched against an XR's spec.environmentConfig.
+    # function-environment-configs requires EXACTLY ONE selector match.
+    harvester-vm.resources.stuttgart-things.com/environment: default
+data:
+  providerConfigRef: ${CROSSPLANE_CAPABILITY_HARVESTER_PROVIDER_CONFIG:-in-cluster}
+  storageClassName: ${CROSSPLANE_CAPABILITY_HARVESTER_STORAGE_CLASS:-harvester-longhorn}
+  namespace: ${CROSSPLANE_CAPABILITY_HARVESTER_NAMESPACE:-vms}
+  networkName: ${CROSSPLANE_CAPABILITY_HARVESTER_NETWORK:-default/vms}
+  imageId: ${CROSSPLANE_CAPABILITY_HARVESTER_IMAGE:-default/image-ubuntu}
