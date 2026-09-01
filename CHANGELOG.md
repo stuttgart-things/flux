@@ -1,3 +1,10 @@
+## [1.54.1](https://github.com/stuttgart-things/flux/compare/v1.54.0...v1.54.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **sops-secrets-operator:** v0.9.1, which is the first version whose manager starts ([#363](https://github.com/stuttgart-things/flux/issues/363)) ([6c8fb03](https://github.com/stuttgart-things/flux/commit/6c8fb039fef4df5e02cf70676b96a62281c2b696)), closes [sops-secrets-operator#105](https://github.com/sops-secrets-operator/issues/105)
+
 # [1.54.0](https://github.com/stuttgart-things/flux/compare/v1.53.0...v1.54.0) (2026-09-01)
 
 
