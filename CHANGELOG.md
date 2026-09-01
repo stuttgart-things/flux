@@ -1,3 +1,10 @@
+## [1.49.1](https://github.com/stuttgart-things/flux/compare/v1.49.0...v1.49.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **hack:** a pass-through that RENAMES the variable still wins, and was unchecked ([#352](https://github.com/stuttgart-things/flux/issues/352)) ([232ae79](https://github.com/stuttgart-things/flux/commit/232ae79e288e920ad49f7162c429f087fa64ec63)), closes [#337](https://github.com/stuttgart-things/flux/issues/337)
+
 # [1.49.0](https://github.com/stuttgart-things/flux/compare/v1.48.0...v1.49.0) (2026-09-01)
 
 
