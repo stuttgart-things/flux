@@ -90,6 +90,23 @@ ROOT = Path(__file__).resolve().parent.parent
 # list with the one entry that did not conflict, so the machinery profile below
 # names IT rather than the shared release.yaml -- that file's provider list is
 # the other family's spellings and is what this profile exists to avoid.
+# THE CONVENTION DECIDES WHICH RULES APPLY, so it is declared rather than
+# guessed. Both are valid; what is fatal is applying one file's rules to the
+# other's file.
+#
+#   "short"   a CR is named after the package (`vspherevm`), so an explicit
+#             entry and a dependsOn-derived one are TWO lock nodes. Everything
+#             transitive must therefore be absent, and a Configuration that
+#             depends on a sibling must skip resolution. Rules 1 and 2 as
+#             written.
+#
+#   "derived" a CR carries the name Crossplane itself derives from the package
+#             path, so the two are the SAME node and there is nothing to
+#             collide. This is what the KCL catalog asserts and what every
+#             ManagementPlane-built cluster runs. Rule 1 cannot apply; rule 2
+#             becomes informational -- see check_profile.
+NAMING = {"cicd-platform": "short", "machinery": "derived"}
+
 PROFILES = {
     "cicd-platform": [
         "cicd/crossplane/components/install/release.yaml",
@@ -97,9 +114,10 @@ PROFILES = {
         "cicd/crossplane/components/configs/configs.yaml",
     ],
     "machinery": [
-        "cicd/crossplane/profiles/machinery/install/kustomization.yaml",
+        # GENERATED from the KCL catalog -- one file now, and it carries the
+        # providers and functions too. The install root installs no package at
+        # all (it empties the chart's provider list), so it is not listed.
         "cicd/crossplane/profiles/machinery/configs/configs.yaml",
-        "cicd/crossplane/profiles/machinery/platform/configs.yaml",
     ],
 }
 
@@ -176,11 +194,11 @@ def main():
 
     cache, fail = {}, 0
     for profile, files in PROFILES.items():
-        fail |= check_profile(profile, files, cache)
+        fail |= check_profile(profile, files, cache, NAMING[profile])
     return fail
 
 
-def check_profile(profile, files, cache):
+def check_profile(profile, files, cache, naming):
     pkgs = shipped(files)
     if not pkgs:
         print(f"FAIL {profile}: no package references found -- did the files "
@@ -194,6 +212,7 @@ def check_profile(profile, files, cache):
         by_name.setdefault(src.rsplit("/", 1)[-1], []).append(src)
 
     fail, checked = 0, 0
+    mirrors = []
     for src, (ver, skip, where) in sorted(pkgs.items()):
         deps = dependencies(src, ver, cache)
         if deps is None:
@@ -208,7 +227,7 @@ def check_profile(profile, files, cache):
         siblings = {s for s, (_, _, w) in pkgs.items() if w == where}
         overlap = [d for d, _, kind in deps
                    if kind == "configuration" and d in siblings and d != src]
-        if overlap and not skip:
+        if overlap and not skip and naming == "short":
             print(f"FAIL {where}: {name} depends on {len(overlap)} package(s) "
                   f"this bundle also installs, and does not set "
                   f"skipDependencyResolution", file=sys.stderr)
@@ -229,6 +248,22 @@ def check_profile(profile, files, cache):
             if d in pkgs:
                 continue
             other = [s for s in by_name.get(d.rsplit("/", 1)[-1], []) if s != d]
+            if other and naming == "derived":
+                # NOT a failure here, and the difference is the whole reason
+                # the convention is declared. Two nodes with two DISTINCT
+                # sources are healthy -- seed-labda-1 carries function-kcl
+                # twice, short-named on upbound and long-named on
+                # crossplane.io, both Healthy. What freezes the resolver is two
+                # nodes with the SAME source, which derived names make
+                # impossible for providers and configurations.
+                #
+                # For FUNCTIONS the split is deliberate: a Function must keep a
+                # short name because Compositions reference it in functionRef,
+                # so it cannot use the derived name -- and putting it on the
+                # other mirror is what keeps the two permanently distinct
+                # instead of colliding during an upgrade window.
+                mirrors.append((name, d, other))
+                continue
             if other:
                 print(f"FAIL {where}: {name} needs {d} ({constraint}), and "
                       f"this bundle installs that package from a DIFFERENT "
@@ -240,9 +275,18 @@ def check_profile(profile, files, cache):
                       f"registry its consumers declare.", file=sys.stderr)
                 fail = 1
 
+    if mirrors:
+        seen = sorted({(d, o) for _, d, os_ in mirrors for o in os_})
+        print(f"note {profile}: {len(seen)} package(s) installed from a "
+              f"different mirror than their consumers declare, which is "
+              f"expected under derived naming:")
+        for d, o in seen:
+            print(f"       declared {d}\n       installed {o}")
     if not fail:
+        what = ("no duplicate node" if naming == "derived"
+                else "no duplicate or cross-registry node")
         print(f"OK {profile}: {checked} crossplane package(s), dependencies "
-              f"read from the registry, no duplicate or cross-registry node")
+              f"read from the registry, {what}")
     return fail
 
 

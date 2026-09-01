@@ -1,0 +1,45 @@
+# GENERATED -- DO NOT EDIT.
+#
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.4.0, profile `machinery`.
+# Regenerate: python3 hack/gen-crossplane-profile.py
+#
+# This is the same list `ManagementPlane` installs, so a cluster built by
+# Flux and one built by Crossplane are the same cluster. Change a version
+# in the catalog, not here -- an edit here is reverted by the next run and
+# fails CI in between.
+#
+# All three, because this profile installs all three providers itself.
+# They are an instance of a CRD each PROVIDER registers, which is a later
+# moment than the chart being installed -- hence a Kustomization of their
+# own, behind the one that applies configs.yaml.
+---
+apiVersion: helm.m.crossplane.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials:
+    source: InjectedIdentity
+---
+apiVersion: kubernetes.m.crossplane.io/v1alpha1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials:
+    source: InjectedIdentity
+---
+apiVersion: opentofu.m.upbound.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: in-cluster
+spec:
+  credentials: []
+  configuration: |
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "clusterproviderconfig-in-cluster"
+        namespace         = "crossplane-system"
+        in_cluster_config = true
+      }
+    }

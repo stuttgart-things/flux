@@ -1,20 +1,12 @@
 ---
-# ClusterProviderConfigs for the machinery profile.
+# ClusterProviderConfigs for the machinery profile -- GENERATED from the KCL
+# catalog's `providerConfigs` (hack/gen-crossplane-profile.py).
 #
-# kubernetes + opentofu ONLY. NOT helm: of the packages ../configs installs, not
-# one declares provider-helm -- it reaches a machinery cluster solely through
-# the fleet-manager half (cni, flux-init, platform and management-plane all
-# declare it), which brings its own at ../platform-provider-configs. Shipping it
-# here would leave a Kustomization on a pure VM builder retrying forever against
-# a kind that never registers, which reads like a slow reconcile rather than a
-# mistake.
-#
-# opentofu is the one provider ../install installs explicitly; provider-kubernetes
-# arrives through every Configuration's dependsOn, which is why the Kustomization
-# rendering this depends on the CONFIGS one and not on the install.
+# All three, and this root does NOT compose ../../../components/provider-configs
+# the way the cicd-platform profile does. It cannot: the catalog owns the exact
+# spec of each one, including the opentofu backend HCL, and rendering it from a
+# second place is the drift this whole generator exists to remove.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources: []
-components:
-  - ../../../components/provider-configs/kubernetes
-  - ../../../components/provider-configs/opentofu
+resources:
+  - provider-configs.yaml

@@ -1,0 +1,25 @@
+# GENERATED -- DO NOT EDIT.
+#
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.4.0, profile `machinery`.
+# Regenerate: python3 hack/gen-crossplane-profile.py
+#
+# This is the same list `ManagementPlane` installs, so a cluster built by
+# Flux and one built by Crossplane are the same cluster. Change a version
+# in the catalog, not here -- an edit here is reverted by the next run and
+# fails CI in between.
+#
+# Two values, both from the catalog:
+#
+#   the chart version, which the fleet pins per profile -- so this profile
+#   deliberately does NOT read ${CROSSPLANE_VERSION}, the bundle-wide
+#   variable the cicd-platform profile uses;
+#
+#   an EMPTY provider list, because the providers are package CRs in
+#   configs.yaml under the catalog's derived names. Letting the chart
+#   install them too would put the same source under a second CR.
+- op: replace
+  path: /spec/chart/spec/version
+  value: "2.3.3"
+- op: replace
+  path: /spec/values/provider/packages
+  value: []

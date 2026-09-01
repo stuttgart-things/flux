@@ -2,9 +2,17 @@
 # A build root of its own, NOT a Component: nothing else composes this profile,
 # and a Flux Kustomization's spec.path points here directly.
 #
-# PACKAGES ONLY. No EnvironmentConfig lives here, and that is a rule rather than
-# an omission -- see the header of configs.yaml.
+# configs.yaml is GENERATED from the KCL catalog (hack/gen-crossplane-profile.py).
+# preconditions.yaml is not, and the split is the point: the catalog models what
+# a management cluster INSTALLS, and deliberately not the things a package
+# documents as required and cannot ship itself.
+#
+# Both need the same thing and nothing more -- the CRDs crossplane CORE installs,
+# plus rbac.authorization.k8s.io from the API server itself -- so one pass covers
+# them. The ClusterProviderConfigs do NOT: those are instances of CRDs the
+# PROVIDERS register, and they live at ../provider-configs.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - configs.yaml
+  - preconditions.yaml
