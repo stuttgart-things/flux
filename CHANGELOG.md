@@ -1,3 +1,10 @@
+# [1.52.0](https://github.com/stuttgart-things/flux/compare/v1.51.0...v1.52.0) (2026-09-01)
+
+
+### Features
+
+* **sops-git:** the age key, the git credential and the GitRepository ([#361](https://github.com/stuttgart-things/flux/issues/361)) ([71c7c31](https://github.com/stuttgart-things/flux/commit/71c7c31b143b7d1783e8911c6c51adfd4c7e3d47))
+
 # [1.51.0](https://github.com/stuttgart-things/flux/compare/v1.50.0...v1.51.0) (2026-09-01)
 
 
