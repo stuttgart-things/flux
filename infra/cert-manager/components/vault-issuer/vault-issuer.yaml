@@ -23,6 +23,11 @@ spec:
     # The CA that signed the Vault PKI, so cert-manager can verify the chain it
     # gets back. Placed by the pipeline; a missing Secret keeps the issuer
     # not-Ready rather than silently trusting nothing.
+    #
+    # REMOVABLE, with `components: [./components/ca-none]` -- for an issuer that
+    # reaches Vault/OpenBao IN-CLUSTER over plain HTTP, where there is no
+    # certificate to verify at all. Keep it for every HTTPS/cross-cluster setup,
+    # which is what the default `ca-bundle` component does.
     caBundleSecretRef:
       name: ${VAULT_ISSUER_CA_SECRET:-vault-pki-ca}
       key: ${VAULT_ISSUER_CA_KEY:-ca.crt}

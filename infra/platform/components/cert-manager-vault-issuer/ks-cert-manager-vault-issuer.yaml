@@ -26,6 +26,24 @@ spec:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
   path: ./infra/cert-manager/components/vault-issuer
+  # WHETHER THE ISSUER VERIFIES A CA. Substituted by the parent before this is
+  # applied, so one component covers both:
+  #
+  #   bundle  caBundleSecretRef stays -- the DEFAULT, and exactly what every
+  #           consumer had before this line existed. Correct whenever Vault is
+  #           reached over HTTPS, i.e. every cross-cluster setup.
+  #   none    no caBundleSecretRef. For an issuer reaching Vault/OpenBao
+  #           IN-CLUSTER over plain HTTP, where there is no certificate to
+  #           verify -- and where going through the Gateway instead would be
+  #           CIRCULAR, because that hostname's certificate is issued by this
+  #           very ClusterIssuer.
+  #
+  # It cannot be a plain substitution: caBundleSecretRef is a BLOCK, and
+  # postBuild.substitute is map[string]string. An empty value renders a YAML
+  # null the API server rejects, and a Secret name that does not exist keeps the
+  # ClusterIssuer not-Ready. The key has to be ABSENT, so it has to be a patch.
+  components:
+    - ./components/ca-${VAULT_ISSUER_CA_MODE:-bundle}
   postBuild:
     substitute:
       CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
@@ -38,5 +56,8 @@ spec:
       VAULT_ISSUER_AUTH_MOUNT_PATH: "${VAULT_ISSUER_AUTH_MOUNT_PATH:-set-VAULT_ISSUER_AUTH_MOUNT_PATH.invalid}"
       VAULT_ISSUER_AUTH_ROLE: "${VAULT_ISSUER_AUTH_ROLE:-certmanager}"
       VAULT_ISSUER_SERVICE_ACCOUNT: "${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}"
+      # Both unused when VAULT_ISSUER_CA_MODE is `none` -- the patch removes the
+      # block they fill in. Left substituted anyway so switching modes is one
+      # line, not four.
       VAULT_ISSUER_CA_SECRET: "${VAULT_ISSUER_CA_SECRET:-vault-pki-ca}" # pragma: allowlist secret
       VAULT_ISSUER_CA_KEY: "${VAULT_ISSUER_CA_KEY:-ca.crt}"
