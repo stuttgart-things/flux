@@ -1,0 +1,35 @@
+---
+# THE sops-git BACKEND, which is what lets a self-contained cluster hold
+# hypervisor credentials without a Vault of its own.
+#
+# The capability charts (vspherevm, proxmoxvm, ansible) can read their
+# credentials three ways: `eso` from a per-environment Vault, `sops` from a blob
+# passed in at deploy time, or `sops-git` from the encrypted files already in
+# the repository. This directory is what the third one needs.
+#
+# WHY sops-git AND NOT eso, on a cluster Flux built: the ESO path needs a
+# Kubernetes auth mount on each environment's Vault -- LabDA vSphere, LabUL
+# Proxmox and the Harvester lab each run their own -- and for a cluster that is
+# nobody's managed cluster, NOTHING creates those. On the fleet's managed
+# clusters that mount comes from the `vaultIssuer` block of a Platform XR, whose
+# autoReviewer chain lives in the platform Composition; a standalone VaultK8sAuth
+# has `backendConfig.secretName` as a required field and no producer for it.
+# sops-git removes the question: the credentials are files in git, and the only
+# secret the cluster needs is the age key to read them.
+#
+# THREE OBJECTS, and the split matters:
+#
+#   the age key and the git token arrive through ExternalSecrets, from the ONE
+#   Vault this cluster already authenticates to -- the sthings-infra OpenBao,
+#   whose auth mount the VM pipeline creates. That is the whole point: one
+#   working Vault relationship bootstraps access to all three environments'
+#   credentials without a fourth.
+#
+#   the GitRepository comes from the sops-git-secrets chart, which is also what
+#   the ansible play installs on the kind machinery clusters.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - age-key.yaml
+  - git-credentials.yaml
+  - release.yaml

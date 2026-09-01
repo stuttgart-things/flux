@@ -1,0 +1,36 @@
+---
+# The age private key the sops-secrets-operator decrypts with.
+#
+# IN crossplane-system, NOT the operator's namespace, and that is not a choice:
+# the operator resolves `spec.decryption.keyRef` in the namespace of the
+# SopsSecret CR, and every capability chart creates its CR next to the
+# GitRepository -- which is crossplane-system. The operator's own namespace is
+# only the right place when it runs with --global-age-key-secret, which the
+# sops-secrets-operator component in this bundle does not set.
+#
+# THE PROPERTY IS DISCOVERED, not configured. hack/gen-cluster-secrets.py walks
+# the bundle's ExternalSecrets and derives which KV properties a cluster needs,
+# so adding this file is what makes the pipeline seed `age_key` for every
+# cluster that selects this component. It is a READ, not a generate: the key is
+# the repository's, shared by every cluster that reads these blobs, and a
+# freshly generated one would decrypt nothing.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: sops-age-key
+  namespace: ${SOPS_GIT_NAMESPACE:-crossplane-system}
+spec:
+  refreshInterval: ${SOPS_GIT_REFRESH_INTERVAL:-1h}
+  secretStoreRef:
+    name: ${SOPS_GIT_ESO_STORE:-set-SOPS_GIT_ESO_STORE}
+    kind: ${SOPS_GIT_ESO_STORE_KIND:-ClusterSecretStore}
+  target:
+    name: ${SOPS_GIT_AGE_SECRET:-sops-age-key}
+    creationPolicy: Owner
+  data:
+    # age.agekey is the file name sops expects, and the charts default their
+    # ageKeySecret.key to it. Renaming it here means renaming it in every chart.
+    - secretKey: age.agekey
+      remoteRef:
+        key: ${SOPS_GIT_ESO_SECRET_PATH:-sops-git}
+        property: ${SOPS_GIT_ESO_AGE_PROPERTY:-age_key}
