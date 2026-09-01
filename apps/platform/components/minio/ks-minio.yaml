@@ -65,6 +65,9 @@ spec:
       MINIO_INGRESS_CLASS: "${MINIO_INGRESS_CLASS:-nginx}"
       # REQUIRED. A PVC that never binds leaves the pod Pending while the
       # HelmRelease reports installed.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing, so the placeholder is the louder failure.
       STORAGE_CLASS: "${MINIO_STORAGE_CLASS:-set-MINIO_STORAGE_CLASS}"
       # passthrough-override: the platform bundle sizes minio for a cluster, the
       # app's own default is the single-app minimum.

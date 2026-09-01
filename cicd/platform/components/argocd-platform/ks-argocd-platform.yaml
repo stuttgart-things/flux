@@ -74,6 +74,11 @@ spec:
   postBuild:
     substitute:
       BUNDLE_NAME: "${ARGOCD_PLATFORM_BUNDLE_NAME:-argocd-platform}"
+      # passthrough-override: the base defaults to `apps-upstream`, a source that
+      # exists in the repository this overlay came from. Here the AppSets have to
+      # read the SAME GitRepository this Kustomization does -- APPS_SOURCE, whose
+      # own default is flux-apps -- or they resolve against a source the cluster
+      # does not have and every generated Application stays unknown.
       FLUX_SOURCE: "${APPS_SOURCE:-flux-apps}"
       ARGOCD_CATALOG_SOURCE: "${ARGOCD_CATALOG_SOURCE:-argocd-catalog}"
       # Kept equal to the argo-cd component's default on purpose: both paths
@@ -106,6 +111,9 @@ spec:
       # copy wins on purpose, so an unset ISSUER_NAME fails visibly.
       ISSUER_NAME: "${ISSUER_NAME:-set-ISSUER_NAME.invalid}"
       ISSUER_KIND: "${ISSUER_KIND:-ClusterIssuer}"
+      # passthrough-override: the base defaults to another lab's domain, which
+      # RESOLVES AND SERVES -- so ArgoCD comes up healthy on a hostname that is not
+      # this cluster's, and nothing reports it. Same reasoning as ISSUER_NAME above.
       INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       INGRESS_HOSTNAME: "${INGRESS_HOSTNAME:-argocd}"
       # Passed through under its own name as well, because the base builds

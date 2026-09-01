@@ -52,6 +52,10 @@ spec:
   postBuild:
     substitute:
       DAPR_WORKFLOWS_SECRET: "${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}"
+      # passthrough-override: both are loud placeholders and neither is a version;
+      # the difference is only which VARIABLE a cluster is told to set. The bundle
+      # name wins on purpose, so the message names DAPR_WORKFLOWS_ESO_STORE -- the
+      # key that actually appears in a cluster's substitute block.
       DAPR_ESO_STORE_NAME: "${DAPR_WORKFLOWS_ESO_STORE:-set-DAPR_WORKFLOWS_ESO_STORE}"
       DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
       DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
@@ -100,13 +104,24 @@ spec:
       DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
       DAPR_BACKSTAGE_TPL_VERSION: "${DAPR_WORKFLOWS_VERSION:-49b147e70413}"
       DAPR_BACKSTAGE_TPL_IMAGE_TAG: "${DAPR_WORKFLOWS_IMAGE_TAG:-49b147e70413}"
-      # The Redis this Kustomization now deploys, not another cluster's. The
-      # base default names homerun2-flux, which anywhere else resolves to
-      # nothing and fails at the first workflow rather than at deploy time.
+      # passthrough-override: the Redis this Kustomization now deploys, not another
+      # cluster's. The base default names homerun2-flux, which anywhere else
+      # resolves to nothing and fails at the first workflow rather than at deploy
+      # time.
       DAPR_BACKSTAGE_TPL_REDIS_HOST: "${DAPR_WORKFLOWS_REDIS_HOST:-redis-stack.dapr-redis:6379}"
 
       DAPR_REDIS_NAMESPACE: "${DAPR_WORKFLOWS_REDIS_NAMESPACE:-dapr-redis}"
+      # The chart version, carried here as well as in the base so renovate moves
+      # BOTH in one PR. Without this annotation it saw only the base, bumped that
+      # to 22.0.7 in #337, and nothing landed anywhere -- this copy wins, so
+      # cicd-test3 was still on 17.1.4 five releases later with every check green.
+      # Taking 22.0.7 is a real upgrade of a running Redis and belongs in a PR that
+      # says so.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/redis/redis
       DAPR_REDIS_VERSION: "${DAPR_WORKFLOWS_REDIS_CHART_VERSION:-17.1.4}"
+      # passthrough-override: the base names `standard`, which no cluster in this
+      # fleet has; these all run openebs-hostpath. A missing StorageClass leaves
+      # the PVC Pending while the HelmRelease reports installed.
       DAPR_REDIS_STORAGE_CLASS: "${DAPR_WORKFLOWS_REDIS_STORAGE_CLASS:-openebs-hostpath}"
       DAPR_REDIS_STORAGE_SIZE: "${DAPR_WORKFLOWS_REDIS_STORAGE_SIZE:-8Gi}"
       DAPR_REDIS_AUTH_SECRET: "${DAPR_WORKFLOWS_REDIS_AUTH_SECRET:-redis-auth}"

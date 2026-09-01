@@ -70,6 +70,9 @@ spec:
       INGRESS_ENABLED: "false"
       INGRESS_CLASS_NAME: "${VAULT_INGRESS_CLASS:-nginx}"
       # REQUIRED: a PVC that never binds leaves the pod Pending silently.
+      # passthrough-override: the base names `standard`, the kind/minikube default,
+      # which no cluster in this fleet has. Failing on the placeholder beats
+      # failing on a plausible name nobody typed.
       STORAGE_CLASS: "${VAULT_STORAGE_CLASS:-set-VAULT_STORAGE_CLASS}"
       ISSUER_NAME: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
       ISSUER_KIND: "${APPS_CLUSTER_ISSUER_KIND:-ClusterIssuer}"
