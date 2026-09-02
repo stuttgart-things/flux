@@ -76,6 +76,15 @@ roleRef:
   kind: Role
   name: cert-manager-tokenrequest
 subjects:
+  # The actor that CALLS TokenRequest is the cert-manager CONTROLLER SA
+  # (system:serviceaccount:<ns>:cert-manager), NOT the login SA whose token is
+  # minted -- that one is serviceAccountRef / resourceNames above. The two are
+  # equal only while VAULT_ISSUER_SERVICE_ACCOUNT is left at its cert-manager
+  # default. A dedicated login SA -- e.g. the `certmanager` SA that
+  # vault-base-setup's Terraform creates and binds the Vault role to -- makes
+  # them differ, and binding the login SA here leaves the controller forbidden
+  # from `create serviceaccounts/token` (the issuer then never mints a token).
+  # So bind the controller SA, independently, defaulting to cert-manager.
   - kind: ServiceAccount
-    name: ${VAULT_ISSUER_SERVICE_ACCOUNT:-cert-manager}
+    name: ${VAULT_ISSUER_TOKENREQUESTER_SA:-cert-manager}
     namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
