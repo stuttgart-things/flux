@@ -1,3 +1,10 @@
+## [1.54.2](https://github.com/stuttgart-things/flux/compare/v1.54.1...v1.54.2) (2026-09-02)
+
+
+### Bug Fixes
+
+* **openbao:** drop the cilium-gateway dependsOn that deadlocks the PKI migration ([#364](https://github.com/stuttgart-things/flux/issues/364)) ([496d57b](https://github.com/stuttgart-things/flux/commit/496d57b9803b70d83176c1b69fd33f388b900c16)), closes [stuttgart-things/harvester#152](https://github.com/stuttgart-things/harvester/issues/152)
+
 ## [1.54.1](https://github.com/stuttgart-things/flux/compare/v1.54.0...v1.54.1) (2026-09-01)
 
 
