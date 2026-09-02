@@ -1,3 +1,10 @@
+## [1.54.4](https://github.com/stuttgart-things/flux/compare/v1.54.3...v1.54.4) (2026-09-02)
+
+
+### Bug Fixes
+
+* **vault-issuer:** bind the tokenrequest RoleBinding to the controller SA ([#367](https://github.com/stuttgart-things/flux/issues/367)) ([fbcc356](https://github.com/stuttgart-things/flux/commit/fbcc3569906f9655e9d1f7e1bb5659f9bac7dc52)), closes [stuttgart-things/harvester#152](https://github.com/stuttgart-things/harvester/issues/152)
+
 ## [1.54.3](https://github.com/stuttgart-things/flux/compare/v1.54.2...v1.54.3) (2026-09-02)
 
 
