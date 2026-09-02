@@ -118,7 +118,7 @@ spec:
       # Taking 22.0.7 is a real upgrade of a running Redis and belongs in a PR that
       # says so.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/redis/redis
-      DAPR_REDIS_VERSION: "${DAPR_WORKFLOWS_REDIS_CHART_VERSION:-17.1.4}"
+      DAPR_REDIS_VERSION: "${DAPR_WORKFLOWS_REDIS_CHART_VERSION:-22.0.7}"
       # passthrough-override: the base names `standard`, which no cluster in this
       # fleet has; these all run openebs-hostpath. A missing StorageClass leaves
       # the PVC Pending while the HelmRelease reports installed.
