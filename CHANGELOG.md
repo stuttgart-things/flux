@@ -1,3 +1,10 @@
+## [1.54.3](https://github.com/stuttgart-things/flux/compare/v1.54.2...v1.54.3) (2026-09-02)
+
+
+### Bug Fixes
+
+* **sops-secrets-operator:** pin v0.9.2 so the manager actually starts ([#366](https://github.com/stuttgart-things/flux/issues/366)) ([48decbe](https://github.com/stuttgart-things/flux/commit/48decbed0c1002572205dea5a3a1b78f51537697)), closes [sops-secrets-operator#106](https://github.com/sops-secrets-operator/issues/106)
+
 ## [1.54.2](https://github.com/stuttgart-things/flux/compare/v1.54.1...v1.54.2) (2026-09-02)
 
 
