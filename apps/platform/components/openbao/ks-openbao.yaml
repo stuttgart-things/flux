@@ -1,7 +1,15 @@
 ---
 # OpenBao with a real transit auto-unseal → ./apps/openbao
 #
-# dependsOn cilium-gateway: the base renders an HTTPRoute against that Gateway.
+# NO dependsOn cilium-gateway. The base renders an HTTPRoute against that
+# Gateway, and an HTTPRoute is valid against a Gateway that is not yet Ready --
+# it simply does not attach until the Gateway comes up. Gating the whole
+# instance on cilium-gateway created a deadlock the first time this cluster
+# hosted the PKI it depends on: cilium-gateway waits on the platform wildcard
+# certificate, which during a PKI migration is issued by the very Vault this
+# OpenBao replaces. OpenBao could not come up to end the outage that kept it
+# down. Bring OpenBao up independently of ingress; the HTTPRoute settles once
+# the Gateway does. See stuttgart-things/harvester#152.
 #
 # TWO THINGS THIS COMPONENT CANNOT CHECK FOR YOU, both of which go green while
 # being wrong:
@@ -26,8 +34,6 @@ metadata:
     kustomization.stuttgart-things.com/type: apps
     kustomization.stuttgart-things.com/bundle: apps-platform
 spec:
-  dependsOn:
-    - name: cilium-gateway
   interval: 1h
   retryInterval: 1m
   timeout: 10m
