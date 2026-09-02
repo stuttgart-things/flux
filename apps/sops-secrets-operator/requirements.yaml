@@ -26,4 +26,4 @@ spec:
   # Renovate DOES see: the two would have drifted apart on the next release.
   url: oci://ghcr.io/stuttgart-things/sops-secrets-operator-kustomize
   ref:
-    tag: ${SOPS_OPERATOR_VERSION:-v0.9.1}
+    tag: ${SOPS_OPERATOR_VERSION:-v0.9.2}
