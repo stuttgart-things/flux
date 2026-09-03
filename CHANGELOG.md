@@ -1,3 +1,10 @@
+## [1.55.1](https://github.com/stuttgart-things/flux/compare/v1.55.0...v1.55.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **minio:** thread MINIO_VERSION so a cluster can stay on chart 16 ([#371](https://github.com/stuttgart-things/flux/issues/371)) ([0bfbeff](https://github.com/stuttgart-things/flux/commit/0bfbeff10f04ff4d6e92f4430d1dd680666d4157))
+
 # [1.55.0](https://github.com/stuttgart-things/flux/compare/v1.54.4...v1.55.0) (2026-09-03)
 
 
