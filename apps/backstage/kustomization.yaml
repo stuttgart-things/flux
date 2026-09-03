@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - requirements.yaml
   - pre-release.yaml
+  - catalog-config.yaml
   - httproute.yaml
   - release.yaml

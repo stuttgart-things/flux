@@ -1,0 +1,98 @@
+---
+# Backstage → ./apps/backstage
+#
+# dependsOn cilium-gateway: the base renders an HTTPRoute and a ReferenceGrant,
+# and a route whose parent Gateway does not exist yet is accepted, reports
+# nothing, and is simply never programmed.
+#
+# NOT cert-manager-install, unlike rancher, minio and vault beside it: this app
+# renders no Certificate of its own -- it is published on the Gateway's wildcard
+# and has nothing to wait for.
+#
+# REQUIRES a Secret carrying the six credentials listed under substituteFrom,
+# and an image tag that exists.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backstage
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # 15m, not the 10m minio uses: on first install the backend runs the whole
+  # catalog schema migration against a Postgres that is itself being created.
+  # The base already widens the startupProbe to ~5m for the same reason; a
+  # timeout shorter than the startup it waits for turns a slow first boot into
+  # a failed Kustomization.
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${BACKSTAGE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/backstage
+  postBuild:
+    substitute:
+      # ---- the bundle-wide names, mapped onto the base's own -------------
+      # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads,
+      # so a cluster defines them once for both layers. The base calls them
+      # DOMAIN and GATEWAY_*; the rename happens here rather than in the base,
+      # which is also used stand-alone.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+
+      BACKSTAGE_NAMESPACE: "${BACKSTAGE_NAMESPACE:-portal}"
+
+      # REQUIRED.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing -- the Postgres PVC stays Pending while the HelmRelease
+      # reports installed -- so the placeholder is the louder failure.
+      BACKSTAGE_STORAGE_CLASS: "${BACKSTAGE_STORAGE_CLASS:-set-BACKSTAGE_STORAGE_CLASS}"
+
+      # The IMAGE, not the chart. BACKSTAGE_VERSION (the upstream backstage
+      # chart) is deliberately not set here: its default lives in the base and
+      # carries the renovate annotation that keeps it current, and a copy in
+      # this file would win and pin it silently.
+      #
+      # `latest` is the base's default and is kept as one on purpose -- a real
+      # tag here would be a second pin that nothing updates. Every cluster
+      # should set BACKSTAGE_IMAGE_TAG to a released tag; a wrong one is an
+      # ImagePullBackOff that names itself, which `latest` is not.
+      BACKSTAGE_IMAGE_TAG: "${BACKSTAGE_IMAGE_TAG:-latest}"
+
+      # BACKSTAGE_REPLICAS is deliberately NOT threaded: it resolves to an int,
+      # and postBuild.substitute takes strings only -- quoting it here does not
+      # survive kustomize, which strips the quotes again. The base's default of
+      # 1 stands; a cluster that wants more patches the HelmRelease.
+      BACKSTAGE_APP_TITLE: "${BACKSTAGE_APP_TITLE:-Stuttgart Things Backstage}"
+      BACKSTAGE_ORGANIZATION_NAME: "${BACKSTAGE_ORGANIZATION_NAME:-stuttgart-things}"
+
+      # Which org's User/Group and service entities the catalog loads. The
+      # github sign-in resolver matches a GitHub username against a User entity,
+      # so this decides who can sign in, not just what is listed.
+      BACKSTAGE_CATALOG_ORG: "${BACKSTAGE_CATALOG_ORG:-sthings-dev}"
+    substituteFrom:
+      # substituteFrom-keys: BACKSTAGE_GITHUB_TOKEN, BACKSTAGE_GITHUB_CLIENT_ID,
+      # BACKSTAGE_GITHUB_CLIENT_SECRET, BACKSTAGE_BACKEND_SECRET,
+      # BACKSTAGE_POSTGRESQL_PASSWORD, BACKSTAGE_EXTERNAL_ACCESS_TOKEN
+      #
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret missing BACKSTAGE_POSTGRESQL_PASSWORD gives a Postgres and a
+      # backend that agree on an empty password and start; one missing
+      # BACKSTAGE_GITHUB_CLIENT_SECRET gives a Backstage whose GitHub login
+      # fails only when somebody tries it. See #331.
+      - kind: Secret
+        name: ${BACKSTAGE_SECRET:-backstage-secrets-subst}
+        optional: false

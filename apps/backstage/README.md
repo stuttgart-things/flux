@@ -12,6 +12,15 @@ This Kustomize overlay creates four groups of resources in this order:
    - A Secret (`backstage-secrets`) containing all runtime env vars (URLs, GitHub credentials, backend secret)
 3. **release.yaml** - The main Backstage HelmRelease (`backstage-deployment`), which `dependsOn` the pre-release. Deploys the Backstage container with PostgreSQL, mounts the app-config ConfigMap, and injects secrets as environment variables
 4. **httproute.yaml** - A HelmRelease (`backstage-httproute`) using `sthings-cluster` to create a Gateway API HTTPRoute + ReferenceGrant for external access at `backstage.<DOMAIN>`
+5. **catalog-config.yaml** - The `backstage-catalog-config` ConfigMap mounted as `app-config.catalog.yaml`, pointing at the `${BACKSTAGE_CATALOG_ORG}` entity files
+
+## Selecting it from the platform bundle
+
+`apps/platform/components/backstage` wraps this path as one line in a cluster's
+`apps-platform` Kustomization, mapping the bundle-wide `INFRA_DOMAIN` /
+`INFRA_GATEWAY_*` onto the `DOMAIN` / `GATEWAY_*` names below. Everything in
+this README still applies — the sections a bundle consumer still has to act on
+are the GitHub OAuth app and the substitution Secret.
 
 ## Prerequisites
 
@@ -60,7 +69,11 @@ rm backstage-secrets.yaml
 
 ### 3. Helm Overrides ConfigMap
 
-The image tag is passed via a ConfigMap (not via Flux substitution) because Helm treats bare numeric values like `260218.1436` as floats. Using `valuesFrom` with `targetPath` preserves the string type:
+The image tag is passed via a ConfigMap (not via Flux substitution) because Helm treats bare numeric values like `260218.1436` as floats. Using `valuesFrom` with `targetPath` preserves the string type.
+
+**Only numeric tags need it.** The `valuesFrom` entry is `optional: true`, so a
+cluster running a `v1.5.1` sets `BACKSTAGE_IMAGE_TAG` and creates no ConfigMap
+at all. Where the ConfigMap does exist it still wins over the substituted tag:
 
 ```yaml
 ---
@@ -73,9 +86,15 @@ data:
   imageTag: "260218.1436"
 ```
 
-### 4. Catalog Config ConfigMap
+### 4. Catalog Config ConfigMap — no longer required
 
-Define which Backstage catalog locations to load. This ConfigMap is mounted as an extra app-config file. The catalog must contain `User` entities whose `metadata.name` matches GitHub usernames for sign-in to work:
+`catalog-config.yaml` above now ships this ConfigMap, with the org selected by
+`BACKSTAGE_CATALOG_ORG` (default `sthings-dev`). It was a prerequisite because
+the Deployment mounts it as a volume: absent, the pod stays in
+ContainerCreating while every HelmRelease and Kustomization reports Ready.
+
+A cluster that needs different locations still overrides it, by replacing the
+ConfigMap with its own. The shape:
 
 ```yaml
 ---

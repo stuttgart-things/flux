@@ -12,6 +12,7 @@ apps/platform/
     ├── vault/       → ./apps/vault       (existing instances only — see below)
     ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
     ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret)
+    ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     └── vcluster/    → ./apps/vcluster
 ```
@@ -40,9 +41,28 @@ how a platform delivers things. A consumer that selected
 
 ## Every app here needs a Secret you must supply
 
-`rancher` and `minio` use `substituteFrom` with `optional: false`. That is on
-purpose: left optional, Flux proceeds with the variables unset and installs a
-MinIO with an empty admin password, and reports success.
+`rancher`, `minio` and `backstage` use `substituteFrom` with `optional: false`.
+That is on purpose: left optional, Flux proceeds with the variables unset and
+installs a MinIO with an empty admin password, and reports success.
+
+## backstage needs an image tag and a GitHub OAuth app
+
+Two things are worth knowing before selecting it:
+
+- **`BACKSTAGE_IMAGE_TAG` is the image, not the chart.** The component leaves
+  the chart version to the base, where the renovate annotation lives, and
+  threads only the tag of `ghcr.io/stuttgart-things/sthings-backstage`. Its
+  default is the base's `latest`, which is a placeholder rather than a choice —
+  set a released tag per cluster.
+- **Sign-in needs a GitHub OAuth app per cluster.** The resolver is
+  `usernameMatchingUserEntityName`, so the callback URL
+  `https://backstage.<domain>/api/auth/github/handler/frame` and a `User` entity
+  matching the GitHub username both have to exist. `BACKSTAGE_CATALOG_ORG`
+  decides which org file those entities come from.
+
+The catalog ConfigMap the Deployment mounts is shipped by the app itself. It
+used to be a cluster prerequisite, and a missing one does not degrade the
+catalog — the pod never starts, while everything reports Ready.
 
 ## minio stays on chart 16
 
