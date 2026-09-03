@@ -67,12 +67,42 @@ spec:
         timeoutSeconds: 5
         failureThreshold: ${BACKSTAGE_STARTUP_FAILURE_THRESHOLD:-30}
         successThreshold: 1
+      # The container shipped with `resources: {}` -- no requests and no limits.
+      #
+      # That is BestEffort: the scheduler counts this pod as costing nothing, so
+      # it is placed on a node that cannot hold it, and it is the FIRST thing
+      # evicted under memory pressure. On the single-node clusters this bundle
+      # targets, that node is also running Rancher and kube-prometheus-stack.
+      #
+      # NODE_OPTIONS below is the other half and cannot be left out: V8 sizes
+      # its default heap from the machine's physical memory, not from the cgroup
+      # limit, so a Node process on a 16 GB node happily grows past a 1Gi limit
+      # and is OOMKilled instead of collecting garbage. The limit alone converts
+      # a node-wide incident into a crash loop; the two together make it neither.
+      #
+      # 768 is ~75% of the 1Gi default, the usual headroom for buffers, stacks
+      # and the non-heap parts of the runtime. A cluster raising
+      # BACKSTAGE_MEMORY_LIMIT should raise BACKSTAGE_NODE_OPTIONS with it --
+      # and one LOWERING the limit below the heap size gets the OOMKill this
+      # exists to prevent.
+      #
+      # Measured idle on sthings-platform: ~300Mi / 9m with the catalog loaded
+      # (80 entities), ~139m during startup.
+      resources:
+        requests:
+          cpu: ${BACKSTAGE_CPU_REQUEST:-100m}
+          memory: ${BACKSTAGE_MEMORY_REQUEST:-512Mi}
+        limits:
+          cpu: ${BACKSTAGE_CPU_LIMIT:-1000m}
+          memory: ${BACKSTAGE_MEMORY_LIMIT:-1Gi}
       image:
         registry: ${BACKSTAGE_IMAGE_REGISTRY:-ghcr.io}
         repository: ${BACKSTAGE_IMAGE_REPOSITORY:-stuttgart-things/sthings-backstage}
         tag: ${BACKSTAGE_IMAGE_TAG:-latest}
         digest: ${BACKSTAGE_IMAGE_DIGEST:-""}
       extraEnvVars:
+        - name: NODE_OPTIONS
+          value: ${BACKSTAGE_NODE_OPTIONS:---max-old-space-size=768}
         - name: APP_TITLE
           valueFrom:
             secretKeyRef:

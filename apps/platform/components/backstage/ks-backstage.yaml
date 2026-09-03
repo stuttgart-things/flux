@@ -74,6 +74,17 @@ spec:
       # and postBuild.substitute takes strings only -- quoting it here does not
       # survive kustomize, which strips the quotes again. The base's default of
       # 1 stands; a cluster that wants more patches the HelmRelease.
+      # ---- resources ----------------------------------------------------
+      # Threaded, defaults are the base's. The pair that matters is the memory
+      # LIMIT and NODE_OPTIONS: V8 sizes its heap from the machine's physical
+      # memory, not from the cgroup limit, so raising one without the other
+      # either wastes the headroom or turns the limit into a crash loop.
+      BACKSTAGE_CPU_REQUEST: "${BACKSTAGE_CPU_REQUEST:-100m}"
+      BACKSTAGE_MEMORY_REQUEST: "${BACKSTAGE_MEMORY_REQUEST:-512Mi}"
+      BACKSTAGE_CPU_LIMIT: "${BACKSTAGE_CPU_LIMIT:-1000m}"
+      BACKSTAGE_MEMORY_LIMIT: "${BACKSTAGE_MEMORY_LIMIT:-1Gi}"
+      BACKSTAGE_NODE_OPTIONS: "${BACKSTAGE_NODE_OPTIONS:---max-old-space-size=768}"
+
       BACKSTAGE_APP_TITLE: "${BACKSTAGE_APP_TITLE:-Stuttgart Things Backstage}"
       BACKSTAGE_ORGANIZATION_NAME: "${BACKSTAGE_ORGANIZATION_NAME:-stuttgart-things}"
 
