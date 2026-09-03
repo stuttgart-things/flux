@@ -1,3 +1,10 @@
+## [1.55.4](https://github.com/stuttgart-things/flux/compare/v1.55.3...v1.55.4) (2026-09-03)
+
+
+### Bug Fixes
+
+* **backstage:** the first upgrade of every install failed on the postgres secret key ([#374](https://github.com/stuttgart-things/flux/issues/374)) ([b53b6f4](https://github.com/stuttgart-things/flux/commit/b53b6f435b0a73dc0302b3389bd0e72356771b40))
+
 ## [1.55.3](https://github.com/stuttgart-things/flux/compare/v1.55.2...v1.55.3) (2026-09-03)
 
 
