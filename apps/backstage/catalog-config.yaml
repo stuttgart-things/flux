@@ -39,4 +39,10 @@ data:
         - type: url
           target: https://github.com/stuttgart-things/stuttgart-things/blob/main/catalog-info.yaml
           rules:
-            - allow: [Location, Component, System, API, Resource, Template]
+            # Domain and Group are in this list because the monorepo defines
+            # them. A kind that is not allowed for its location is REJECTED with
+            # a warning in the backend log and nothing else: the entity is
+            # simply absent from the catalog, and everything else about the
+            # location keeps working. sthings-platform's first catalog load
+            # dropped domain:default/labs exactly this way.
+            - allow: [Location, Component, System, API, Resource, Template, Domain, Group]

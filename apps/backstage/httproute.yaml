@@ -5,6 +5,21 @@ metadata:
   name: backstage-httproute
   namespace: ${BACKSTAGE_NAMESPACE:-portal}
 spec:
+  # The route must not exist before the Service it points at.
+  #
+  # Cilium resolves a backendRef ONCE, when it admits the route. Created first,
+  # the route is admitted with ResolvedRefs=False / BackendNotFound and STAYS
+  # there after the Service appears seconds later -- nothing re-resolves it. The
+  # Gateway keeps reporting Programmed, the HelmRelease reports installed, the
+  # Kustomization reports Ready, and the hostname answers 500 forever. The cure
+  # is a no-op annotation on the route, which is not something anybody thinks to
+  # try on a green cluster.
+  #
+  # Measured on sthings-platform's first install: Service created 3m26s before
+  # the route was still called "not found".
+  dependsOn:
+    - name: backstage-deployment
+      namespace: ${BACKSTAGE_NAMESPACE:-portal}
   interval: 30m
   chart:
     spec:
