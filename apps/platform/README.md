@@ -64,17 +64,24 @@ The catalog ConfigMap the Deployment mounts is shipped by the app itself. It
 used to be a cluster prerequisite, and a missing one does not degrade the
 catalog — the pod never starts, while everything reports Ready.
 
-## minio stays on chart 16
+## minio is on chart 17, and the console caveat is still open
 
-Not lag — it predates MinIO's licence change, and the pin is the point. A
-higher number is not an improvement here, so the component sets no chart or
-image values at all and lets the base decide.
+The base sat on chart 16 deliberately — it predates MinIO's licence change, and
+a higher number was not an improvement. Renovate has since carried it to
+17.0.21, which the caveat below was written about and which nothing has
+addressed:
 
-Chart 17 does work if it is ever wanted: it splits the console into its own
-deployment, and the mirror carries
-`ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3` for it. The
-base parameterises the registry globally but not that repository, so it must be
-set as well. That is a licence decision first and a config change second.
+Chart 17 splits the console into its own deployment with its own image. The
+base parameterises the registry globally but not that repository, so it
+resolves to `ghcr.io/bitnami/minio-object-browser` and cannot be pulled — while
+the server keeps serving and the HelmRelease reports installed. The mirror does
+carry `ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3`, so 17
+is reachable once that repository is set too. That is a licence decision first
+and a config change second.
+
+Until it is made, a cluster that needs the console pins `MINIO_VERSION` to
+`16.0.10`. The component threads that variable — the image values it still
+leaves entirely to the base.
 
 ## `vault` never becomes Ready on its own
 

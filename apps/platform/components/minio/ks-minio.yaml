@@ -47,20 +47,34 @@ spec:
   postBuild:
     substitute:
       MINIO_NAMESPACE: "${MINIO_NAMESPACE:-minio}"
-      # CHART, REGISTRY, REPOSITORY and IMAGE_TAG are deliberately NOT set here.
-      # The base defaults to chart 16.0.10 with
-      # ghcr.io/stuttgart-things/minio:2025.4.22-debian-12-r1, which is what
-      # platform-sthings runs -- and that is a CHOICE, not lag: it predates
-      # MinIO's licence change. Newer is not better here. Do not "update" this
-      # because a higher number exists.
+      # THREADED, not set: the default is the base's own, so this pins nothing
+      # and moves with it -- but a cluster that must stay on chart 16 now has a
+      # line to write, and before this it did not. Setting MINIO_VERSION on the
+      # apps-platform Kustomization did nothing at all, silently, because a child
+      # cannot inherit what it does not name.
       #
-      # I overrode it with chart 17.0.21 and the console failed to pull. Chart
-      # 17 splits the console into its own deployment with its own image, and
-      # the base parameterises the registry globally but not that repository,
-      # so it resolved to ghcr.io/bitnami/minio-object-browser. The mirror does
-      # carry ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3,
-      # so chart 17 is reachable -- it needs the console repository set too.
-      # That is a licence decision first and a config change second.
+      # That matters here more than elsewhere. Renovate carried this base from
+      # 16.0.10 to 17.0.21 and the caveat below is still unaddressed, so any
+      # consumer moving its source pin across that release takes chart 17 with
+      # it -- and gets a console that cannot be pulled while the server keeps
+      # serving and the HelmRelease reports installed.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/minio/minio
+      MINIO_VERSION: "${MINIO_VERSION:-17.0.21}"
+      # REGISTRY, REPOSITORY and IMAGE_TAG are deliberately NOT set here.
+      # The image stays at ghcr.io/stuttgart-things/minio:2025.4.22-debian-12-r1,
+      # which is what platform-sthings runs -- and that is a CHOICE, not lag: it
+      # predates MinIO's licence change. Newer is not better here. Do not
+      # "update" it because a higher number exists.
+      #
+      # Chart 17 is the base's default now, and this is what a cluster on it
+      # runs into: 17 splits the console into its own deployment with its own
+      # image, and the base parameterises the registry globally but not that
+      # repository, so it resolves to ghcr.io/bitnami/minio-object-browser and
+      # cannot be pulled. The mirror does carry
+      # ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3, so 17
+      # is reachable -- it needs the console repository set as well, which is a
+      # licence decision first and a config change second. Until somebody makes
+      # it, a cluster that cares pins MINIO_VERSION to 16.0.10.
       MINIO_INGRESS_ENABLED: "false"
       MINIO_INGRESS_CLASS: "${MINIO_INGRESS_CLASS:-nginx}"
       # REQUIRED. A PVC that never binds leaves the pod Pending while the
