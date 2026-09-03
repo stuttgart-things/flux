@@ -1,3 +1,10 @@
+## [1.55.3](https://github.com/stuttgart-things/flux/compare/v1.55.2...v1.55.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* **backstage:** give the container requests, limits and a matching Node heap ([#373](https://github.com/stuttgart-things/flux/issues/373)) ([351ffd8](https://github.com/stuttgart-things/flux/commit/351ffd8dbc070d3f777a01610f7ba30244d9a180))
+
 ## [1.55.2](https://github.com/stuttgart-things/flux/compare/v1.55.1...v1.55.2) (2026-09-03)
 
 
