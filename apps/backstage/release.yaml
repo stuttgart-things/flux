@@ -10,10 +10,20 @@ spec:
       namespace: ${BACKSTAGE_NAMESPACE:-portal}
   interval: 30m
   valuesFrom:
+    # The image tag, when it is a NUMBER: Helm reads `260218.1436` from a
+    # substituted value as a float and installs `2.602181436e+08`. Read from a
+    # ConfigMap with targetPath it stays a string.
+    #
+    # optional, because that is a problem only some tags have. A cluster that
+    # runs a `v1.5.1` sets BACKSTAGE_IMAGE_TAG and never creates this ConfigMap
+    # -- and without `optional: true` the HelmRelease then fails outright on a
+    # ConfigMap it does not need. The ConfigMap still WINS where it exists, so
+    # nothing changes for a cluster that has one.
     - kind: ConfigMap
       name: backstage-helm-overrides
       valuesKey: imageTag
       targetPath: backstage.image.tag
+      optional: true
   chart:
     spec:
       chart: backstage

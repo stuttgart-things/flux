@@ -1,0 +1,9 @@
+---
+# backstage
+#
+# REQUIRES cilium-gateway from the infra bundle, a real BACKSTAGE_STORAGE_CLASS,
+# and a Secret with the GitHub, backend and Postgres credentials.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-backstage.yaml

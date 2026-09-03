@@ -1,0 +1,42 @@
+---
+# The catalog ConfigMap the Deployment mounts as app-config.catalog.yaml.
+#
+# Shipped by the app rather than left to the cluster, because the way it fails
+# when it is absent is the worst of both worlds: `extraAppConfig` turns it into
+# a VOLUME, so a missing ConfigMap does not degrade the catalog -- the pod never
+# starts at all, and sits in ContainerCreating while every HelmRelease and every
+# Kustomization reports Ready.
+#
+# A copy in the consumer's cluster directory is not an answer either: it would
+# be applied by the root sync, BEFORE the namespace below exists, which fails
+# the ROOT Kustomization and takes every unrelated app down with it. The
+# namespace is created by this same Kustomization, so here it is always in
+# order.
+#
+# What is parameterised is the ORG the entities come from. The third location
+# is the monorepo's own catalog-info.yaml and is the same everywhere.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-catalog-config
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+data:
+  app-config.catalog.yaml: |
+    catalog:
+      locations:
+        # User and Group entities. The github sign-in resolver is
+        # usernameMatchingUserEntityName, so a login only works for a GitHub
+        # username that appears HERE -- an empty org file is a working
+        # Backstage nobody can sign into.
+        - type: url
+          target: https://github.com/stuttgart-things/backstage-resources/blob/main/org/${BACKSTAGE_CATALOG_ORG:-sthings-dev}/org.yaml
+          rules:
+            - allow: [User, Group]
+        - type: url
+          target: https://github.com/stuttgart-things/backstage-resources/blob/main/services/${BACKSTAGE_CATALOG_ORG:-sthings-dev}/catalog-index.yaml
+          rules:
+            - allow: [Component, Location, System, API, Resource, Template]
+        - type: url
+          target: https://github.com/stuttgart-things/stuttgart-things/blob/main/catalog-info.yaml
+          rules:
+            - allow: [Location, Component, System, API, Resource, Template]
