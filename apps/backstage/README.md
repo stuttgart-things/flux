@@ -299,6 +299,11 @@ spec:
 | `BACKSTAGE_IMAGE_REPOSITORY` | `stuttgart-things/sthings-backstage` | Container image repository |
 | `BACKSTAGE_STORAGE_CLASS` | `nfs4-csi` | StorageClass for PostgreSQL PVC |
 | `BACKSTAGE_REPLICAS` | `1` | Number of Backstage pod replicas |
+| `BACKSTAGE_CPU_REQUEST` | `100m` | CPU request |
+| `BACKSTAGE_MEMORY_REQUEST` | `512Mi` | Memory request. Without one the pod is BestEffort: counted as free by the scheduler, evicted first under pressure |
+| `BACKSTAGE_CPU_LIMIT` | `1000m` | CPU limit |
+| `BACKSTAGE_MEMORY_LIMIT` | `1Gi` | Memory limit. Raise `BACKSTAGE_NODE_OPTIONS` with it, and never below the heap size |
+| `BACKSTAGE_NODE_OPTIONS` | `--max-old-space-size=768` | V8 sizes its heap from the machine's physical memory, not from the cgroup limit, so a Node process on a 16 GB node grows past a 1Gi limit and is OOMKilled instead of collecting garbage. ~75% of the limit is the usual headroom |
 | `BACKSTAGE_APP_TITLE` | `Stuttgart Things Backstage` | Title shown in the Backstage UI |
 | `BACKSTAGE_ORGANIZATION_NAME` | `stuttgart-things` | Organization name shown in UI |
 | `DOMAIN` | *(required)* | Cluster base domain (Backstage will be at `backstage.<DOMAIN>`) |
