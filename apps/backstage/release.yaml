@@ -44,6 +44,27 @@ spec:
       auth:
         username: backstage
         password: ${BACKSTAGE_POSTGRESQL_PASSWORD}
+        secretKeys:
+          # WITHOUT THIS, THE FIRST UPGRADE OF EVERY INSTALL FAILS:
+          #
+          #   PASSWORDS ERROR: The secret "backstage-deployment-postgresql"
+          #   does not contain the key "user-password"
+          #
+          # The backstage chart sets postgresql.auth.secretKeys.userPasswordKey
+          # to `user-password` (its values.yaml), but the postgresql 12.10.0
+          # subchart it bundles WRITES the key as a hardcoded `password`
+          # (charts/postgresql/templates/secrets.yaml) and only READS the
+          # configured name. Install therefore succeeds -- no secret exists, the
+          # provided value is used -- and every upgrade afterwards looks for a
+          # key that install never wrote.
+          #
+          # The StatefulSet and the backstage Deployment both already reference
+          # `password`, so this aligns the lookup with what the release actually
+          # uses rather than changing anything about it. Verified on
+          # sthings-platform: two env vars pointing at
+          # backstage-deployment-postgresql/password, and a secret carrying
+          # `password` + `postgres-password` and no `user-password`.
+          userPasswordKey: password
       architecture: standalone
     backstage:
       # Stakater Reloader: roll the Deployment when any referenced Secret/
