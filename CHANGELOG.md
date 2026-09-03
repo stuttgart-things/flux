@@ -1,3 +1,10 @@
+## [1.55.2](https://github.com/stuttgart-things/flux/compare/v1.55.1...v1.55.2) (2026-09-03)
+
+
+### Bug Fixes
+
+* **backstage:** order the route after its Service, allow Domain in the catalog ([#372](https://github.com/stuttgart-things/flux/issues/372)) ([fe0cf71](https://github.com/stuttgart-things/flux/commit/fe0cf71c6e71e51035f66d50d0baca8129de4d5f)), closes [stuttgart-things#2726](https://github.com/stuttgart-things/issues/2726)
+
 ## [1.55.1](https://github.com/stuttgart-things/flux/compare/v1.55.0...v1.55.1) (2026-09-03)
 
 
