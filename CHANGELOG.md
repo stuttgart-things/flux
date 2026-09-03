@@ -1,3 +1,10 @@
+# [1.55.0](https://github.com/stuttgart-things/flux/compare/v1.54.4...v1.55.0) (2026-09-03)
+
+
+### Features
+
+* **backstage:** add the platform-bundle component ([#369](https://github.com/stuttgart-things/flux/issues/369)) ([16b00cf](https://github.com/stuttgart-things/flux/commit/16b00cf3738c502142d67cf793694527204a87fa))
+
 ## [1.54.4](https://github.com/stuttgart-things/flux/compare/v1.54.3...v1.54.4) (2026-09-02)
 
 
