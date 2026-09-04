@@ -1,3 +1,10 @@
+## [1.55.5](https://github.com/stuttgart-things/flux/compare/v1.55.4...v1.55.5) (2026-09-04)
+
+
+### Bug Fixes
+
+* **crossplane:** gate crossplane-configs on Configurations being Healthy ([#376](https://github.com/stuttgart-things/flux/issues/376)) ([5e3d7a3](https://github.com/stuttgart-things/flux/commit/5e3d7a3787c399b2f28da9efb3bf2e0321820dab)), closes [stuttgart-things/clusterbook#186](https://github.com/stuttgart-things/clusterbook/issues/186)
+
 ## [1.55.4](https://github.com/stuttgart-things/flux/compare/v1.55.3...v1.55.4) (2026-09-03)
 
 
