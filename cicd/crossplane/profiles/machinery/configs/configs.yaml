@@ -116,7 +116,7 @@ kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-harvester-vm
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/harvester-vm:v0.1.9
+  package: ghcr.io/stuttgart-things/crossplane-configurations/harvester-vm:v0.1.10
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -137,7 +137,7 @@ kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-cluster-backup
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster-backup:v0.1.0
+  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster-backup:v0.2.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration

@@ -44,7 +44,7 @@ spec:
     substitute:
       MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
-      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.13.4}"
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.13.5}"
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
