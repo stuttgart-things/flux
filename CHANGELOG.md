@@ -1,3 +1,10 @@
+## [1.56.1](https://github.com/stuttgart-things/flux/compare/v1.56.0...v1.56.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **crossplane:** catalog 0.5.1 -- function-kcl back to v0.12.2 ([#378](https://github.com/stuttgart-things/flux/issues/378)) ([7adafd3](https://github.com/stuttgart-things/flux/commit/7adafd3bb9cc80887f5ef0065f33dfcc5ae48bad))
+
 # [1.56.0](https://github.com/stuttgart-things/flux/compare/v1.55.5...v1.56.0) (2026-09-04)
 
 
