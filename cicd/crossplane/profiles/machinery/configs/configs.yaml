@@ -1,6 +1,6 @@
 # GENERATED -- DO NOT EDIT.
 #
-# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.4.0, profile `machinery`.
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.5.0, profile `machinery`.
 # Regenerate: python3 hack/gen-crossplane-profile.py
 #
 # This is the same list `ManagementPlane` installs, so a cluster built by
@@ -53,28 +53,28 @@ kind: Function
 metadata:
   name: function-kcl
 spec:
-  package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.2
+  package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.3
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: Function
 metadata:
   name: function-auto-ready
 spec:
-  package: xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.6.7
+  package: xpkg.crossplane.io/crossplane-contrib/function-auto-ready:v0.6.8
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: Function
 metadata:
   name: function-go-templating
 spec:
-  package: xpkg.crossplane.io/crossplane-contrib/function-go-templating:v0.12.3
+  package: xpkg.crossplane.io/crossplane-contrib/function-go-templating:v0.12.4
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Function
 metadata:
   name: function-environment-configs
 spec:
-  package: xpkg.crossplane.io/crossplane-contrib/function-environment-configs:v0.7.3
+  package: xpkg.crossplane.io/crossplane-contrib/function-environment-configs:v0.7.4
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: Function
