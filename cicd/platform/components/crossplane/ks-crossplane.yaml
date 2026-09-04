@@ -130,6 +130,33 @@ spec:
   # meaningless, so one line turns both off.
   suspend: ${CROSSPLANE_SUSPEND:-false}
   wait: true
+  # `wait: true` alone is not enough for a Configuration. Its status carries
+  # `Installed` and `Healthy`, and NO `Ready` -- so kstatus has nothing to key
+  # on and reports the resource current as soon as the CR is accepted, which is
+  # minutes before the package manager has pulled the image and established the
+  # XRDs. This Kustomization then goes Ready with no CRD on the cluster yet, and
+  # anything downstream that reads those API groups starts against an API that
+  # does not serve them.
+  #
+  # That is not theoretical: the machinery dashboard resolves its kinds ONCE at
+  # startup and drops the ones the cluster does not serve, permanently. On
+  # machinery-test1 its pod came up 31 seconds before the first XRD CRD existed
+  # and served an empty table for three days, with every Kustomization green.
+  # stuttgart-things/clusterbook#186.
+  #
+  # NO `failed:` EXPRESSION ON PURPOSE. A package can be Healthy=False
+  # transiently -- a registry hiccup, an image still pulling -- and that should
+  # retry against the 20m timeout above, not fail the Kustomization on the first
+  # observation. The cost is that a genuinely broken package now blocks here for
+  # 20m instead of reporting green: that is the point. A cluster whose packages
+  # are all Healthy=False (the lock collision on a duplicate source string) used
+  # to look perfectly reconciled.
+  #
+  # `has(status.conditions)` guards the window between apply and first status.
+  healthCheckExprs:
+    - apiVersion: pkg.crossplane.io/v1
+      kind: Configuration
+      current: "has(status.conditions) && status.conditions.exists(e, e.type == 'Healthy' && e.status == 'True')"
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
