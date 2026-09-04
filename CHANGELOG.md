@@ -1,3 +1,10 @@
+# [1.56.0](https://github.com/stuttgart-things/flux/compare/v1.55.5...v1.56.0) (2026-09-04)
+
+
+### Features
+
+* **crossplane:** catalog 0.5.0 -- the machinery functions move up ([#377](https://github.com/stuttgart-things/flux/issues/377)) ([06ac16a](https://github.com/stuttgart-things/flux/commit/06ac16a74a1c7a9b4628b879c836986db71fb2d5))
+
 ## [1.55.5](https://github.com/stuttgart-things/flux/compare/v1.55.4...v1.55.5) (2026-09-04)
 
 
