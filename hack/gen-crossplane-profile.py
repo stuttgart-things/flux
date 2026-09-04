@@ -57,7 +57,7 @@ CATALOG = "ghcr.io/stuttgart-things/xplane-crossplane-catalog"
 # regenerated in the same PR, which is what turns "the catalog moved" into a
 # reviewable list of package versions instead of a one-line number change.
 # renovate: datasource=docker depName=ghcr.io/stuttgart-things/xplane-crossplane-catalog
-CATALOG_VERSION = "0.5.0"
+CATALOG_VERSION = "0.5.1"
 PROFILE = "machinery"
 
 OUT = ROOT / "cicd/crossplane/profiles" / PROFILE

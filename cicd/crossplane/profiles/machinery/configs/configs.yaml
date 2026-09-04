@@ -1,6 +1,6 @@
 # GENERATED -- DO NOT EDIT.
 #
-# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.5.0, profile `machinery`.
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.5.1, profile `machinery`.
 # Regenerate: python3 hack/gen-crossplane-profile.py
 #
 # This is the same list `ManagementPlane` installs, so a cluster built by
@@ -53,7 +53,7 @@ kind: Function
 metadata:
   name: function-kcl
 spec:
-  package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.3
+  package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.2
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: Function
