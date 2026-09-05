@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-demo-pitcher-kustomize
   ref:
-    tag: ${HOMERUN2_DEMO_PITCHER_VERSION:-v2.0.0}
+    tag: ${HOMERUN2_DEMO_PITCHER_VERSION:-v2.0.1}
