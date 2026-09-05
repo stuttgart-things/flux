@@ -14,7 +14,7 @@ spec:
     spec:
       chart: argo-cd
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
-      version: ${ARGO_CD_VERSION:-10.5.0}
+      version: ${ARGO_CD_VERSION:-10.8.0}
       sourceRef:
         kind: HelmRepository
         name: argocd
