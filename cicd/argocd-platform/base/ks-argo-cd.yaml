@@ -41,7 +41,7 @@ spec:
       # (The base in ./cicd/argo-cd still says 9.4.15 and is renovate's to
       # move; a consumer that passes neither gets that one.)
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
-      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.5.0}"
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.8.0}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       # ARGO_CD_INGRESS_ENABLED is intentionally NOT threaded here. A bare
       # boolean cannot survive a nested Kustomization substitute: kustomize
