@@ -44,7 +44,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-git-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-git-pitcher:${HOMERUN2_GIT_PITCHER_VERSION:-v1.0.0}
+                  image: ghcr.io/stuttgart-things/homerun2-git-pitcher:${HOMERUN2_GIT_PITCHER_VERSION:-v1.0.1}
     # Override the Redis password secret
     - target:
         kind: Secret
