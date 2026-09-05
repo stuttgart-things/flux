@@ -32,7 +32,7 @@ spec:
     substitute:
       ARGO_ROLLOUTS_NAMESPACE: "${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}"
       # renovate: datasource=helm depName=argo-rollouts registryUrl=https://argoproj.github.io/argo-helm
-      ARGO_ROLLOUTS_VERSION: "${ARGO_ROLLOUTS_VERSION:-2.41.1}"
+      ARGO_ROLLOUTS_VERSION: "${ARGO_ROLLOUTS_VERSION:-2.43.0}"
       # The dashboard toggle is NOT threaded here, and cannot be: a
       # bool-valued substitute fails the PARENT Kustomization and every sibling
       # with it, and no quoting form survives kustomize -- "x", 'x' and !!str
