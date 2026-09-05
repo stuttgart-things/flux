@@ -63,7 +63,7 @@ spec:
     substitute:
       OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
       # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
-      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.29.2}"
+      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.29.3}"
       # No OPENBAO_VERSION: the image tag is not parameterised at all. It
       # follows the chart's appVersion with the leading "v" stripped by the
       # chart, so the chart version below is the single thing to keep current.
