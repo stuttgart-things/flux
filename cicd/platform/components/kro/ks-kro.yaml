@@ -30,4 +30,4 @@ spec:
     substitute:
       KRO_NAMESPACE: "${KRO_NAMESPACE:-kro-system}"
       # renovate: datasource=docker depName=registry.k8s.io/kro/charts/kro
-      KRO_VERSION: "${KRO_VERSION:-0.9.3}"
+      KRO_VERSION: "${KRO_VERSION:-0.9.4}"
