@@ -1,3 +1,10 @@
+## [1.56.3](https://github.com/stuttgart-things/flux/compare/v1.56.2...v1.56.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* **dapr:** trust the cluster's own CA bundle instead of a seeded Secret ([#387](https://github.com/stuttgart-things/flux/issues/387)) ([deb9718](https://github.com/stuttgart-things/flux/commit/deb97182aa14f683691f09a46ee7dd48efc4d6d3))
+
 ## [1.56.2](https://github.com/stuttgart-things/flux/compare/v1.56.1...v1.56.2) (2026-09-07)
 
 
