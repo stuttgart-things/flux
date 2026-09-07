@@ -75,11 +75,33 @@ spec:
           template:
             spec:
               volumes:
+                # The CA that signs the Backstage this worker calls.
+                #
+                # DEFAULT IS THE CLUSTER'S OWN TRUST BUNDLE, not a per-cluster
+                # secret. trust-manager already distributes that bundle into
+                # every namespace, and it holds the lab CA next to the public
+                # roots -- so it is right by construction on the cluster it
+                # runs on, and it cannot go stale.
+                #
+                # What it replaces: a `backstage_ca` property seeded per
+                # cluster from a shared Vault path. Shared is exactly wrong
+                # here -- the value belongs to ONE Backstage instance. A LabDA
+                # cluster seeded from a path holding the LabUL CA fails every
+                # call with
+                #   x509: certificate signed by unknown authority
+                # while the worker, the Deployment and every Kustomization stay
+                # green. Witnessed on cicd-machinery-test5, 2026-09-07.
+                #
+                # A cluster WITHOUT trust-manager must point these at something
+                # that exists. That failure is loud -- the pod cannot mount the
+                # volume and never starts -- which is the point: a missing CA
+                # should stop the workflow, not make it fail obscurely at the
+                # first TLS handshake.
                 - name: backstage-ca
-                  secret:
-                    secretName: backstage-ca
+                  configMap:
+                    name: ${DAPR_BACKSTAGE_CA_CONFIGMAP:-cluster-trust-bundle}
                     items:
-                      - key: ca.crt
+                      - key: ${DAPR_BACKSTAGE_CA_KEY:-trust-bundle.pem}
                         path: ca.crt
               containers:
                 - name: workflow

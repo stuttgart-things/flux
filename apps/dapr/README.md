@@ -128,14 +128,34 @@ wget -O /tmp/infra-vsphere-ca.crt \
 openssl x509 -in /tmp/infra-vsphere-ca.crt -noout -subject -issuer -dates
 ```
 
-Ship the PEM as a `Secret` named `backstage-ca` in the
-`${DAPR_BACKSTAGE_TPL_NAMESPACE}` namespace (key: `ca.crt`). The
-`template-execution` component re-adds the volume, mount and
-`SSL_CERT_FILE` env on the `workflow` container so the CA is trusted at
-runtime — see
+**You do not need to ship it.** `template-execution` mounts the cluster's own
+trust bundle — the ConfigMap `cluster-trust-bundle` that trust-manager
+distributes into every namespace — and points `SSL_CERT_FILE` at it. That
+bundle already holds the lab CA next to the public roots, so it is right by
+construction on the cluster it runs on and cannot go stale. See
 [`components/template-execution/release.yaml`](./components/template-execution/release.yaml).
-An example cluster-side Secret lives at
-`stuttgart-things/clusters/labul/vsphere/cd-mgmt-1/apps/dapr-backstage-ca.yaml`.
+
+The command above is still how you look at the CA; fetching it by hand is for
+inspection, not for deployment.
+
+**Why not a per-cluster Secret, which is what this used to be.** The value
+belongs to ONE Backstage instance, but it was seeded per cluster from a *shared*
+Vault path. A LabDA cluster seeded from a path holding the LabUL CA fails every
+call with `x509: certificate signed by unknown authority` while the worker, the
+Deployment and every Kustomization stay green — the failure is only visible in a
+workflow run's error. Witnessed on `cicd-machinery-test5`, 2026-09-07.
+
+**On a cluster without trust-manager**, override both variables to point at a
+ConfigMap that does exist:
+
+| variable | default |
+|---|---|
+| `DAPR_BACKSTAGE_CA_CONFIGMAP` | `cluster-trust-bundle` |
+| `DAPR_BACKSTAGE_CA_KEY` | `trust-bundle.pem` |
+
+Getting this wrong is loud: the pod cannot mount the volume and never starts.
+That is deliberate — a missing CA should stop the workflow up front rather than
+surface as an obscure TLS error on the first call.
 
 ## Adding a new dapr-based workflow app
 
