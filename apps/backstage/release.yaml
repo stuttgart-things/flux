@@ -77,16 +77,40 @@ spec:
       # fresh Postgres) can finish before liveness kicks in. The chart default
       # startupProbe only allows ~30s (failureThreshold 3 x periodSeconds 10),
       # which the first migration overruns -> one SIGKILL/restart. failureThreshold
-      # 30 x 10s = up to ~5m. Liveness stays tight for fast detection once running.
+      # 60 x 10s = up to ~10m. Liveness stays tight for fast detection once running.
+      #
+      # PROBE READINESS, NOT LIVENESS. Liveness only answers "the root HTTP
+      # router is up"; it returns 200 while every backend plugin is dead, so a
+      # startupProbe pointed at it passes ~10s in and hands over to liveness,
+      # which then keeps the container alive forever in a state that serves
+      # nothing. Readiness is what actually reports the plugins.
+      #
+      # Not hypothetical -- sthings-platform, 2026-09-07. The node rebooted,
+      # backstage started 06:53:00, CoreDNS only became ready 06:53:49, so the
+      # Postgres lookup lost the race:
+      #
+      #   Failed to connect to the database to make sure that
+      #   'backstage_plugin_app' exists, Error: getaddrinfo EAI_AGAIN
+      #   backstage-deployment-postgresql
+      #
+      # All 11 plugins failed to initialise. The backend logged that it was
+      # shutting down, then did not exit -- liveness 200, readiness 503, pod
+      # 0/1 Running for 3d19h until someone restarted it by hand. Against
+      # readiness the startupProbe would have exhausted its budget and let
+      # kubelet restart the container, and the retry would have found DNS up.
+      #
+      # The budget must be wider than the liveness-based one it replaces:
+      # readiness only flips once the catalog migration is DONE, whereas
+      # liveness answered long before that.
       startupProbe:
         httpGet:
-          path: /.backstage/health/v1/liveness
+          path: /.backstage/health/v1/readiness
           port: 7007
           scheme: HTTP
         initialDelaySeconds: 10
         periodSeconds: 10
         timeoutSeconds: 5
-        failureThreshold: ${BACKSTAGE_STARTUP_FAILURE_THRESHOLD:-30}
+        failureThreshold: ${BACKSTAGE_STARTUP_FAILURE_THRESHOLD:-60}
         successThreshold: 1
       # The container shipped with `resources: {}` -- no requests and no limits.
       #
