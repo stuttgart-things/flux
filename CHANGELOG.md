@@ -1,3 +1,10 @@
+## [1.56.2](https://github.com/stuttgart-things/flux/compare/v1.56.1...v1.56.2) (2026-09-07)
+
+
+### Bug Fixes
+
+* **backstage:** point startupProbe at readiness, not liveness ([#386](https://github.com/stuttgart-things/flux/issues/386)) ([1f9b8a3](https://github.com/stuttgart-things/flux/commit/1f9b8a315005cea957cb10cae497cc28426b8981))
+
 ## [1.56.1](https://github.com/stuttgart-things/flux/compare/v1.56.0...v1.56.1) (2026-09-04)
 
 
