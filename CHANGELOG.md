@@ -1,3 +1,10 @@
+## [1.56.6](https://github.com/stuttgart-things/flux/compare/v1.56.5...v1.56.6) (2026-09-08)
+
+
+### Bug Fixes
+
+* **backstage:** scaffolder needs --no-node-snapshot on Node 20+ ([#390](https://github.com/stuttgart-things/flux/issues/390)) ([9ffd5cc](https://github.com/stuttgart-things/flux/commit/9ffd5cc005e85f2fb4004e0a16b0f68beb0153b8))
+
 ## [1.56.5](https://github.com/stuttgart-things/flux/compare/v1.56.4...v1.56.5) (2026-09-08)
 
 
