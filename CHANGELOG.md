@@ -1,3 +1,10 @@
+## [1.56.5](https://github.com/stuttgart-things/flux/compare/v1.56.4...v1.56.5) (2026-09-08)
+
+
+### Bug Fixes
+
+* **dapr:** bump backstage-template-execution to 176ce9291a4b ([#389](https://github.com/stuttgart-things/flux/issues/389)) ([44c55c6](https://github.com/stuttgart-things/flux/commit/44c55c6caf66912b093d8995f775647772941b17)), closes [stuttgart-things/dapr-workflows#28](https://github.com/stuttgart-things/dapr-workflows/issues/28)
+
 ## [1.56.4](https://github.com/stuttgart-things/flux/compare/v1.56.3...v1.56.4) (2026-09-08)
 
 
