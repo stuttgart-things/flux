@@ -147,7 +147,7 @@ spec:
         digest: ${BACKSTAGE_IMAGE_DIGEST:-""}
       extraEnvVars:
         - name: NODE_OPTIONS
-          value: ${BACKSTAGE_NODE_OPTIONS:---max-old-space-size=768}
+          value: ${BACKSTAGE_NODE_OPTIONS:---max-old-space-size=768 --no-node-snapshot}
         - name: APP_TITLE
           valueFrom:
             secretKeyRef:
