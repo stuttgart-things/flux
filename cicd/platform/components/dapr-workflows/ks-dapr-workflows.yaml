@@ -102,8 +102,8 @@ spec:
   postBuild:
     substitute:
       DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
-      DAPR_BACKSTAGE_TPL_VERSION: "${DAPR_WORKFLOWS_VERSION:-16b5776b0903}"
-      DAPR_BACKSTAGE_TPL_IMAGE_TAG: "${DAPR_WORKFLOWS_IMAGE_TAG:-16b5776b0903}"
+      DAPR_BACKSTAGE_TPL_VERSION: "${DAPR_WORKFLOWS_VERSION:-176ce9291a4b}"
+      DAPR_BACKSTAGE_TPL_IMAGE_TAG: "${DAPR_WORKFLOWS_IMAGE_TAG:-176ce9291a4b}"
       # passthrough-override: the Redis this Kustomization now deploys, not another
       # cluster's. The base default names homerun2-flux, which anywhere else
       # resolves to nothing and fails at the first workflow rather than at deploy
