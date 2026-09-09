@@ -35,9 +35,19 @@ spec:
       ZAEHLWERK_NAMESPACE: "${TISCHTENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
       ZAEHLWERK_VERSION: "${TISCHTENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
       ZAEHLWERK_HOSTNAME: "${TISCHTENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
-      # Empty on purpose: no panel is a supported, silent configuration. A
-      # placeholder URL here would look configured and resolve to nothing.
-      ZAEHLWERK_OMNI_PITCHER_URL: "${TISCHTENNIS_ZAEHLWERK_OMNI_PITCHER_URL:-}"
+      # No `:-` default on purpose, and it is the only form that works here.
+      # Unset means "no panel", which zaehlwerk supports and does silently, so
+      # this value has to be able to arrive EMPTY. But `${VAR:-}` parses as
+      # YAML null, and a null in postBuild.substitute fails the PARENT
+      # Kustomization and every sibling with it -- hack/check-substitute-strings
+      # rejects it for exactly that reason. A bare `${VAR}` substitutes to an
+      # empty string, which is what is wanted.
+      #
+      # A `.invalid` sentinel, this bundle's convention for "must be set",
+      # would be wrong here: an unreachable URL counts as SET upstream, so the
+      # scoreboard would keep failing to reach a panel instead of running
+      # without one.
+      ZAEHLWERK_OMNI_PITCHER_URL: "${TISCHTENNIS_ZAEHLWERK_OMNI_PITCHER_URL}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
       # and guessing wrong points ESO at another cluster's secrets, which reads
       # as "the Secret never appears". The sentinel names the variable a cluster

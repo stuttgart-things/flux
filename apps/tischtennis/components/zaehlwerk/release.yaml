@@ -43,7 +43,7 @@ spec:
         spec:
           secretStoreRef:
             kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-SECRET_STORE_NAME}
+            name: ${SECRET_STORE_NAME:-set-TISCHTENNIS_SECRET_STORE}
     # Where the score goes. The base ships the placeholder
     # https://omni-pitcher.example.com, which resolves to nothing -- a cluster
     # that leaves this unset runs the scoreboard without a panel, which the
