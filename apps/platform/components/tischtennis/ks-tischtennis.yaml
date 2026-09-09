@@ -29,6 +29,14 @@ spec:
   path: ./apps/tischtennis/profiles/base
   postBuild:
     substitute:
+      # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads, so
+      # a cluster sets them once and both layers see them. Without this mapping
+      # the app components' ${DOMAIN} and ${GATEWAY_NAME} resolve to EMPTY and
+      # the HTTPRoutes come out with no gateway and a hostname of
+      # "schmetterpause." -- while every Kustomization still reports Ready.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
       SCHMETTERPAUSE_NAMESPACE: "${TISCHTENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
       SCHMETTERPAUSE_VERSION: "${TISCHTENNIS_SCHMETTERPAUSE_VERSION:-v0.5.0}"
       SCHMETTERPAUSE_HOSTNAME: "${TISCHTENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
