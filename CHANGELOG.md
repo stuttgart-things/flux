@@ -1,3 +1,10 @@
+# [1.59.0](https://github.com/stuttgart-things/flux/compare/v1.58.0...v1.59.0) (2026-09-09)
+
+
+### Features
+
+* **velero:** a schedule component, separate from the install ([#400](https://github.com/stuttgart-things/flux/issues/400)) ([ac17af3](https://github.com/stuttgart-things/flux/commit/ac17af3663d22e3bb9fc9d322d865f349d580abc))
+
 # [1.58.0](https://github.com/stuttgart-things/flux/compare/v1.57.1...v1.58.0) (2026-09-09)
 
 
