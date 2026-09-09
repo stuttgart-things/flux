@@ -1,0 +1,64 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: zaehlwerk
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: zaehlwerk-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  patches:
+    # parentRefs is a list on a CRD: kustomize replaces it rather than merging,
+    # so every field is repeated here, sectionName included.
+    - target:
+        kind: HTTPRoute
+        name: zaehlwerk
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: zaehlwerk
+        spec:
+          parentRefs:
+            - name: ${GATEWAY_NAME}
+              namespace: ${GATEWAY_NAMESPACE:-default}
+              sectionName: https
+          hostnames:
+            - ${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}
+    - target:
+        kind: ExternalSecret
+        name: zaehlwerk-panel
+      patch: |
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: zaehlwerk-panel
+        spec:
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${SECRET_STORE_NAME:-set-TISCHTENNIS_SECRET_STORE}
+    # Where the score goes. The base ships the placeholder
+    # https://omni-pitcher.example.com, which resolves to nothing -- a cluster
+    # that leaves this unset runs the scoreboard without a panel, which the
+    # service supports and does silently (see the profile's own note).
+    #
+    # OMNI_PITCHER_URL and a Redis address are alternatives, and omni-pitcher
+    # wins where both are set. Only the URL is exposed here; a Redis-fed setup
+    # needs its own component rather than a second half-wired knob.
+    - target:
+        kind: ConfigMap
+        name: zaehlwerk-config
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: zaehlwerk-config
+        data:
+          OMNI_PITCHER_URL: "${ZAEHLWERK_OMNI_PITCHER_URL}"

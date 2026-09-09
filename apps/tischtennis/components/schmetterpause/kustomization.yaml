@@ -1,0 +1,11 @@
+---
+# schmetterpause -- office table tennis matchmaking, league and tournaments.
+#
+# REQUIRES a Gateway (GATEWAY_NAME/GATEWAY_NAMESPACE), a resolvable DOMAIN, and
+# a ClusterSecretStore named in SECRET_STORE_NAME holding the entry
+# `schmetterpause` (keys for the app and the database).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - requirements.yaml
+  - release.yaml

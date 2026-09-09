@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: zaehlwerk-kustomize
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/zaehlwerk-kustomize
+  ref:
+    tag: ${ZAEHLWERK_VERSION:-v0.2.0}

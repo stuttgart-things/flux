@@ -1,0 +1,11 @@
+---
+# The pair, as one unit. They are separate services in separate namespaces, but
+# they are one thing to operate: zaehlwerk keeps the live score of a match,
+# schmetterpause holds the league that match counts towards, and zaehlwerk's
+# own profile already expects schmetterpause's origin in allowedOrigins once
+# its live tab exists. A cluster that wants one almost always wants both.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/schmetterpause
+  - ../../components/zaehlwerk

@@ -1,0 +1,15 @@
+---
+# zaehlwerk -- live scorekeeping for office table tennis.
+#
+# REQUIRES a Gateway (GATEWAY_NAME/GATEWAY_NAMESPACE), a resolvable DOMAIN, and
+# a ClusterSecretStore named in SECRET_STORE_NAME holding the entry `zaehlwerk`.
+#
+# ONE REPLICA, AND THE UPSTREAM SCHEMA REFUSES MORE. The running match lives in
+# the process's memory and this service is its only writer, so a second pod
+# keeps a second score rather than sharing load. The base sets replicas: 1 and
+# strategy Recreate on purpose -- do not "scale" this.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - requirements.yaml
+  - release.yaml
