@@ -1,0 +1,64 @@
+---
+# A recurring Velero backup → ./infra/velero/schedule
+#
+# Separate from the velero component on purpose, and not merged into it: a
+# Schedule is a velero.io CR whose CRD the velero HelmRelease creates. Shipped
+# in ONE Kustomization with that install, Flux applies NOTHING and never
+# converges -- the whole apply is rejected, not just the Schedule. A child that
+# dependsOn velero is the only ordering that survives a fresh cluster.
+#
+# Selecting this component without ../components/velero leaves it waiting on a
+# dependency that will never become Ready, which is the correct failure: it
+# says so, instead of installing a Schedule nothing will ever run.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: velero-schedule
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: velero
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/velero/schedule
+  postBuild:
+    substitute:
+      VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
+      VELERO_SCHEDULE_NAME: "${VELERO_SCHEDULE_NAME:-daily-all}"
+      # Cluster-local time is UTC on these nodes; 02:00 is after the nightly
+      # renovate/CI traffic and before the working day.
+      VELERO_SCHEDULE_CRON: "${VELERO_SCHEDULE_CRON:-0 2 * * *}"
+      VELERO_SCHEDULE_TTL: "${VELERO_SCHEDULE_TTL:-720h0m0s}"
+      VELERO_SCHEDULE_STORAGE_LOCATION: "${VELERO_SCHEDULE_STORAGE_LOCATION:-default}"
+
+      # NOT threaded: VELERO_SCHEDULE_PAUSED. It resolves to a bool, and
+      # postBuild.substitute is map[string]string -- the API server rejects the
+      # typed patch and fails the PARENT Kustomization, taking every sibling
+      # component in this bundle with it. No quoting survives: kustomize
+      # re-emits the bundle and drops "x", 'x' and !!str alike before envsubst
+      # runs. See hack/check-substitute-strings.py, and the same note in
+      # ../velero/ks-velero.yaml.
+      #
+      # To pause, patch this child from the consumer with a LITERAL value:
+      #
+      #   patches:
+      #     - target: {kind: Kustomization, name: velero-schedule}
+      #       patch: |
+      #         - op: add
+      #           path: /spec/postBuild/substitute/VELERO_SCHEDULE_PAUSED
+      #           value: "true"
+      #
+      # The namespace lists are not threaded either, for a different reason:
+      # they are YAML sequences and substitution is textual. Patch the built
+      # Schedule from the consumer if a cluster needs a narrower scope.
