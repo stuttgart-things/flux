@@ -1,3 +1,10 @@
+## [1.57.1](https://github.com/stuttgart-things/flux/compare/v1.57.0...v1.57.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* **velero:** extraEnvVars is a list from chart 10.0.0 on ([#396](https://github.com/stuttgart-things/flux/issues/396)) ([2e322d5](https://github.com/stuttgart-things/flux/commit/2e322d581eeed7a5aea699ae7e29d6bd2f0f3ce7))
+
 # [1.57.0](https://github.com/stuttgart-things/flux/compare/v1.56.7...v1.57.0) (2026-09-09)
 
 
