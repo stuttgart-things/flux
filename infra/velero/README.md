@@ -159,8 +159,8 @@ Workarounds:
 | Variable | Default | Description |
 |---|---|---|
 | `VELERO_NAMESPACE` | `velero` | Target namespace |
-| `VELERO_VERSION` | `9.0.0` | velero Helm chart version |
-| `VELERO_PLUGIN_AWS_VERSION` | `v1.13.0` | velero-plugin-for-aws image tag |
+| `VELERO_VERSION` | `12.1.0` | velero Helm chart version. **Minimum 10.0.0** — the base writes `configuration.extraEnvVars` in the list form the chart requires from 10.x on; pinning back to 9.x fails the install on the chart schema. |
+| `VELERO_PLUGIN_AWS_VERSION` | `v1.14.2` | velero-plugin-for-aws image tag |
 | `VELERO_KUBECTL_IMAGE_REPOSITORY` | `docker.io/bitnamilegacy/kubectl` | kubectl image used by the chart's CRD-install hook (bitnami sunset their free namespace late 2025) |
 | `VELERO_KUBECTL_IMAGE_TAG` | `1.33.4` | kubectl image tag for the CRD-install hook |
 | `VELERO_BUCKET` | *(required)* | S3 bucket name |

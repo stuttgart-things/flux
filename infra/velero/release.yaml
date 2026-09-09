@@ -44,8 +44,17 @@ spec:
         mountPath: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}
         readOnly: true
     configuration:
+      # A LIST of name/value, not a map. The chart changed this field's shape
+      # in 10.0.0 (9.x took a map) and enforces it in values.schema.json, so
+      # the map form does not misbehave -- it fails the Helm install outright
+      # with `at '/configuration/extraEnvVars': got object, want array`,
+      # whatever SSL_CERT_DIR resolves to.
+      #
+      # A consumer that pins VELERO_VERSION back to 9.x gets the mirror image
+      # of that error and has to move the pin up instead.
       extraEnvVars:
-        SSL_CERT_DIR: ${VELERO_SSL_CERT_DIR:-}
+        - name: SSL_CERT_DIR
+          value: "${VELERO_SSL_CERT_DIR:-}"
       backupStorageLocation:
         - name: default
           provider: aws
