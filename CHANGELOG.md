@@ -1,3 +1,10 @@
+# [1.60.0](https://github.com/stuttgart-things/flux/compare/v1.59.0...v1.60.0) (2026-09-09)
+
+
+### Features
+
+* **hack:** check every HelmRelease's values against its chart's schema ([#401](https://github.com/stuttgart-things/flux/issues/401)) ([a5defac](https://github.com/stuttgart-things/flux/commit/a5defac2e6a6f41f78a2795d456e6786f538a890)), closes [#396](https://github.com/stuttgart-things/flux/issues/396) [argocd#380](https://github.com/argocd/issues/380)
+
 # [1.59.0](https://github.com/stuttgart-things/flux/compare/v1.58.0...v1.59.0) (2026-09-09)
 
 
