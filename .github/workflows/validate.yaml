@@ -74,6 +74,19 @@ jobs:
       # anything that installs a tool.
       - name: Kustomizations rendering one path are wired the same way
         run: python3 ./hack/check-shared-path-wiring.py
+      # helm, because a values/schema mismatch is invisible in a manifest.
+      # Every check above reads YAML; this one is the only thing here that
+      # asks the CHART whether the values it is handed are the shape it
+      # expects. That is a different question, and the one that let velero's
+      # extraEnvVars go map -> list unnoticed in two catalogs at once.
+      #
+      # Reads public chart repositories. A chart it cannot pull is reported as
+      # skipped with its reason and counted in the summary rather than passing
+      # quietly -- same contract as verify-image-tags.py above.
+      - name: Install helm
+        run: curl -sSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      - name: Every HelmRelease's values satisfy its chart's schema
+        run: python3 ./hack/check-helm-values.py
       # kcl, because the machinery profile is GENERATED from a KCL catalog
       # published as an OCI module -- the same one ManagementPlane reads. The
       # check re-renders it and compares; without kcl it reports itself

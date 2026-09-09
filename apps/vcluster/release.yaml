@@ -27,6 +27,17 @@ spec:
         etcd:
           embedded:
             enabled: true
+      # resources, highAvailability and persistence belong to the STATEFULSET,
+      # not to backingStore or to controlPlane itself. The chart rejects them
+      # anywhere else against its own schema:
+      #
+      #   at '/controlPlane/backingStore': additional properties
+      #     'highAvailability', 'resources' not allowed
+      #   at '/controlPlane': additional properties 'persistence' not allowed
+      #
+      # so this release could not install at all. Found by
+      # hack/check-helm-values.py on its first run.
+      statefulSet:
         resources:
           requests:
             cpu: 200m
@@ -37,13 +48,13 @@ spec:
             ephemeral-storage: 8Gi
         highAvailability:
           replicas: 1  # Set to 3 for true HA in production
-      persistence:
-        volumeClaim:
-          enabled: ${VCLUSTER_STORAGE_ENABLED:-true}
-          retentionPolicy: Retain
-          size: ${VCLUSTER_STORAGE_SIZE:-10Gi}
-          storageClass: ${VCLUSTER_STORAGE_CLASS}
-          accessModes: ["ReadWriteOnce"]
+        persistence:
+          volumeClaim:
+            enabled: ${VCLUSTER_STORAGE_ENABLED:-true}
+            retentionPolicy: Retain
+            size: ${VCLUSTER_STORAGE_SIZE:-10Gi}
+            storageClass: ${VCLUSTER_STORAGE_CLASS}
+            accessModes: ["ReadWriteOnce"]
     sync:
       toHost:
         services:
