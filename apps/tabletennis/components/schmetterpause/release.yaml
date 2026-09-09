@@ -63,7 +63,7 @@ spec:
     # The store is named per cluster (pattern vault-<cluster>) and is never
     # plain "vault" -- `kubectl get clustersecretstore` is the reliable source.
     #
-    # The sentinel names TISCHTENNIS_SECRET_STORE, not this component's own
+    # The sentinel names TABLETENNIS_SECRET_STORE, not this component's own
     # variable: the platform component passes the value through with its own
     # default, and that copy wins. Naming the key a cluster actually sets is
     # what makes the failure message actionable.
@@ -80,7 +80,7 @@ spec:
         spec:
           secretStoreRef:
             kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-TISCHTENNIS_SECRET_STORE}
+            name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
     - target:
         kind: ExternalSecret
         name: schmetterpause-db
@@ -92,4 +92,4 @@ spec:
         spec:
           secretStoreRef:
             kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-TISCHTENNIS_SECRET_STORE}
+            name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}

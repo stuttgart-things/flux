@@ -1,11 +1,11 @@
 ---
-# tischtennis -- schmetterpause + zaehlwerk, the office table tennis pair.
+# tabletennis -- schmetterpause + zaehlwerk, the office table tennis pair.
 #
 # REQUIRES cilium-gateway and external-secrets from their bundles, a resolvable
-# DOMAIN, a GATEWAY_NAME, and TISCHTENNIS_SECRET_STORE naming the cluster's
+# DOMAIN, a GATEWAY_NAME, and TABLETENNIS_SECRET_STORE naming the cluster's
 # ClusterSecretStore. That store must hold the entries `schmetterpause` and
 # `zaehlwerk`.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
-  - ks-tischtennis.yaml
+  - ks-tabletennis.yaml

@@ -2,7 +2,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: tischtennis
+  name: tabletennis
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
@@ -21,20 +21,28 @@ spec:
   timeout: 10m
   force: false
   prune: true
-  suspend: ${TISCHTENNIS_SUSPEND:-false}
+  suspend: ${TABLETENNIS_SUSPEND:-false}
   wait: true
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/tischtennis/profiles/base
+  path: ./apps/tabletennis/profiles/base
   postBuild:
     substitute:
-      SCHMETTERPAUSE_NAMESPACE: "${TISCHTENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
-      SCHMETTERPAUSE_VERSION: "${TISCHTENNIS_SCHMETTERPAUSE_VERSION:-v0.5.0}"
-      SCHMETTERPAUSE_HOSTNAME: "${TISCHTENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
-      ZAEHLWERK_NAMESPACE: "${TISCHTENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
-      ZAEHLWERK_VERSION: "${TISCHTENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
-      ZAEHLWERK_HOSTNAME: "${TISCHTENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads, so
+      # a cluster sets them once and both layers see them. Without this mapping
+      # the app components' ${DOMAIN} and ${GATEWAY_NAME} resolve to EMPTY and
+      # the HTTPRoutes come out with no gateway and a hostname of
+      # "schmetterpause." -- while every Kustomization still reports Ready.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.5.0}"
+      SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
+      ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
+      ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       # No `:-` default on purpose, and it is the only form that works here.
       # Unset means "no panel", which zaehlwerk supports and does silently, so
       # this value has to be able to arrive EMPTY. But `${VAR:-}` parses as
@@ -47,9 +55,9 @@ spec:
       # would be wrong here: an unreachable URL counts as SET upstream, so the
       # scoreboard would keep failing to reach a panel instead of running
       # without one.
-      ZAEHLWERK_OMNI_PITCHER_URL: "${TISCHTENNIS_ZAEHLWERK_OMNI_PITCHER_URL}"
+      ZAEHLWERK_OMNI_PITCHER_URL: "${TABLETENNIS_ZAEHLWERK_OMNI_PITCHER_URL}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
       # and guessing wrong points ESO at another cluster's secrets, which reads
       # as "the Secret never appears". The sentinel names the variable a cluster
       # actually has to set, so the failure says what to do.
-      SECRET_STORE_NAME: "${TISCHTENNIS_SECRET_STORE:-set-TISCHTENNIS_SECRET_STORE}"
+      SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
