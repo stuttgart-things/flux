@@ -1,3 +1,10 @@
+# [1.57.0](https://github.com/stuttgart-things/flux/compare/v1.56.7...v1.57.0) (2026-09-09)
+
+
+### Features
+
+* **tischtennis:** schmetterpause + zaehlwerk as one platform component ([#392](https://github.com/stuttgart-things/flux/issues/392)) ([43a1e77](https://github.com/stuttgart-things/flux/commit/43a1e779def0f1ddfd92f82b8ce48b0d460206db))
+
 ## [1.56.7](https://github.com/stuttgart-things/flux/compare/v1.56.6...v1.56.7) (2026-09-09)
 
 
