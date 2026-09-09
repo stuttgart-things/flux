@@ -1,3 +1,10 @@
+# [1.58.0](https://github.com/stuttgart-things/flux/compare/v1.57.1...v1.58.0) (2026-09-09)
+
+
+### Features
+
+* **tabletennis:** rename from tischtennis, and map the gateway variables ([#397](https://github.com/stuttgart-things/flux/issues/397)) ([ce0cba2](https://github.com/stuttgart-things/flux/commit/ce0cba2a65cb557dbc5d56d7dbe1970e65c0c4cf)), closes [stuttgart-things/flux#395](https://github.com/stuttgart-things/flux/issues/395)
+
 ## [1.57.1](https://github.com/stuttgart-things/flux/compare/v1.57.0...v1.57.1) (2026-09-09)
 
 
