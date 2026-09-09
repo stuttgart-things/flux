@@ -1,0 +1,90 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: schmetterpause
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: schmetterpause-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  patches:
+    # The published base is deliberately environment-free: it names
+    # `gateway`/`default` and `schmetterpause.cluster.example.com`, and an
+    # environment is expected to patch those in. We PATCH rather than
+    # $patch:delete-and-reship, because the base carries TWO routes whose
+    # split is a design decision -- the http one redirects, the https one
+    # serves -- and re-shipping them here would fork that decision into the
+    # bundle.
+    #
+    # parentRefs is a list on a CRD, so kustomize replaces it wholesale rather
+    # than merging into it. Every field has to be repeated, sectionName
+    # included: dropping it would attach the route to every listener.
+    - target:
+        kind: HTTPRoute
+        name: schmetterpause
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: schmetterpause
+        spec:
+          parentRefs:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: ${GATEWAY_NAME}
+              namespace: ${GATEWAY_NAMESPACE:-default}
+              sectionName: https
+          hostnames:
+            - ${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}
+    - target:
+        kind: HTTPRoute
+        name: schmetterpause-redirect
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: schmetterpause-redirect
+        spec:
+          parentRefs:
+            - group: gateway.networking.k8s.io
+              kind: Gateway
+              name: ${GATEWAY_NAME}
+              namespace: ${GATEWAY_NAMESPACE:-default}
+              sectionName: http
+          hostnames:
+            - ${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}
+    # The store is named per cluster (pattern vault-<cluster>) and is never
+    # plain "vault" -- `kubectl get clustersecretstore` is the reliable source.
+    # Both secrets read from the same store; the base's `vault-cluster` is a
+    # placeholder that resolves to nothing.
+    - target:
+        kind: ExternalSecret
+        name: schmetterpause-app
+      patch: |
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: schmetterpause-app
+        spec:
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${SECRET_STORE_NAME:-set-SECRET_STORE_NAME}
+    - target:
+        kind: ExternalSecret
+        name: schmetterpause-db
+      patch: |
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: schmetterpause-db
+        spec:
+          secretStoreRef:
+            kind: ClusterSecretStore
+            name: ${SECRET_STORE_NAME:-set-SECRET_STORE_NAME}

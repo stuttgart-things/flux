@@ -1,0 +1,45 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tischtennis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  # Both apps publish over the gateway and read from a ClusterSecretStore, so
+  # neither can come up before those exist. external-secrets is named rather
+  # than assumed: the ExternalSecrets fail closed, and a missing store shows up
+  # as a Secret that never appears rather than as an error anyone reads.
+  dependsOn:
+    - name: cilium-gateway
+    - name: external-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${TISCHTENNIS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/tischtennis/profiles/base
+  postBuild:
+    substitute:
+      SCHMETTERPAUSE_NAMESPACE: "${TISCHTENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      SCHMETTERPAUSE_VERSION: "${TISCHTENNIS_SCHMETTERPAUSE_VERSION:-v0.5.0}"
+      SCHMETTERPAUSE_HOSTNAME: "${TISCHTENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
+      ZAEHLWERK_NAMESPACE: "${TISCHTENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      ZAEHLWERK_VERSION: "${TISCHTENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
+      ZAEHLWERK_HOSTNAME: "${TISCHTENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      # Empty on purpose: no panel is a supported, silent configuration. A
+      # placeholder URL here would look configured and resolve to nothing.
+      ZAEHLWERK_OMNI_PITCHER_URL: "${TISCHTENNIS_ZAEHLWERK_OMNI_PITCHER_URL:-}"
+      # No safe default exists. The store is named per cluster (vault-<cluster>)
+      # and guessing wrong points ESO at another cluster's secrets, which reads
+      # as "the Secret never appears". The sentinel names the variable a cluster
+      # actually has to set, so the failure says what to do.
+      SECRET_STORE_NAME: "${TISCHTENNIS_SECRET_STORE:-set-TISCHTENNIS_SECRET_STORE}"
