@@ -154,6 +154,26 @@ Workarounds:
 - **Have prometheus-operator** → set `VELERO_SERVICE_MONITOR_ENABLED=true` (default uses label `release: prometheus` for Prometheus discovery; override via the chart's `metrics.serviceMonitor.additionalLabels` if your operator selects differently).
 - **No operator, just want metrics** → leave `VELERO_SERVICE_MONITOR_ENABLED=false` (default). The `/metrics` endpoint is still exposed on the velero Service (port `8085`); scrape it with a static `prometheus.yml` job or a `kubernetes_sd_configs` scrape rule.
 
+## Recurring backups
+
+A `Schedule` lives in `./infra/velero/schedule`, selected as its own bundle component (`infra/platform/components/velero-schedule`), **not** as part of this path.
+
+That separation is not tidiness. A `Schedule` is a `velero.io` CR whose CRD the HelmRelease here creates. Shipped in one Kustomization with that install, Flux applies **nothing** and never converges — the whole apply is rejected on a fresh cluster, not just the Schedule. The component `dependsOn: velero`, which is the only ordering that survives a bootstrap.
+
+| Variable | Default | Description |
+|---|---|---|
+| `VELERO_SCHEDULE_NAME` | `daily-all` | Schedule name, and the `velero-schedule` label on the backups it takes |
+| `VELERO_SCHEDULE_CRON` | `0 2 * * *` | Cron expression (cluster time, UTC on these nodes) |
+| `VELERO_SCHEDULE_TTL` | `720h0m0s` | How long each backup is retained |
+| `VELERO_SCHEDULE_STORAGE_LOCATION` | `default` | BackupStorageLocation to write to |
+| `VELERO_SCHEDULE_PAUSED` | `false` | Not threaded — bool, see below |
+
+Backups are **metadata only**, matching the base's `snapshotsEnabled` / `deployNodeAgent` defaults. Turning `snapshotVolumes` on without one of those produces backups that silently contain no volume data.
+
+`VELERO_SCHEDULE_PAUSED` and the namespace lists are not threaded through `postBuild.substitute`: the first is a bool (which `map[string]string` rejects, failing the parent and every sibling), the second is a YAML sequence and substitution is textual. Patch the child from the consumer with a literal value instead — the component file carries the exact patch.
+
+Sizing, measured on a small single-node RKE2 cluster (54 pods, Rancher + Flux + kube-prometheus-stack): **1060 items, 21 MiB** per full-cluster metadata run. Thirty days of dailies is well under a gigabyte.
+
 ## Required variables
 
 | Variable | Default | Description |

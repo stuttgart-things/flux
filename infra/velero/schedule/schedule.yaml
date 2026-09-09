@@ -1,0 +1,43 @@
+---
+# A recurring backup, as its own Kustomization.
+#
+# NOT part of ./infra/velero, deliberately. A Schedule is a velero.io CR, and
+# the CRD that defines it is created by the HelmRelease in that path. An object
+# and the install that creates its CRD in ONE Kustomization means Flux applies
+# NOTHING and never converges -- it is not that the Schedule fails and the rest
+# proceeds, the whole apply is rejected on a fresh cluster. Hence a separate
+# path, reached by a child Kustomization that dependsOn velero.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: ${VELERO_SCHEDULE_NAME:-daily-all}
+  namespace: ${VELERO_NAMESPACE:-velero}
+spec:
+  schedule: "${VELERO_SCHEDULE_CRON:-0 2 * * *}"
+  # Off switch that keeps the object: no new backups, existing ones untouched.
+  paused: ${VELERO_SCHEDULE_PAUSED:-false}
+  # false: a backup outliving the Schedule that made it is the point. With
+  # owner references, deleting the Schedule would garbage-collect every backup
+  # it ever took -- including the one you are deleting it in order to restore.
+  useOwnerReferencesInBackup: false
+  template:
+    ttl: ${VELERO_SCHEDULE_TTL:-720h0m0s}
+    includedNamespaces:
+      - "*"
+    # The three that never restore usefully: kube-system carries per-cluster
+    # control-plane objects, the other two are recreated empty by the API
+    # server itself.
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+    # Metadata only. Volume data needs snapshotsEnabled (CSI + a
+    # VolumeSnapshotClass) or deployNodeAgent (Kopia), both off in the base --
+    # turning this on without them produces backups that silently contain no
+    # volume data at all.
+    snapshotVolumes: false
+    defaultVolumesToFsBackup: false
+    storageLocation: ${VELERO_SCHEDULE_STORAGE_LOCATION:-default}
+    metadata:
+      labels:
+        velero-schedule: ${VELERO_SCHEDULE_NAME:-daily-all}
