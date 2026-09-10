@@ -1,0 +1,7 @@
+---
+# Opt-in: cnpg-barman-cloud -- the Barman Cloud plugin for CloudNativePG
+# backups. Requires ../cnpg-operator and ../cert-manager-install.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cnpg-barman-cloud.yaml

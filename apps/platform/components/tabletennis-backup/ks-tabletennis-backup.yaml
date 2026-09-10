@@ -1,0 +1,78 @@
+---
+# tabletennis with schmetterpause's database backed up → ./apps/tabletennis/profiles/base
+#
+# ---------------------------------------------------------------------------
+# THE ALTERNATIVE TO ../tabletennis, NOT AN ADD-ON. Both render the child
+# Kustomization `tabletennis` from the same path, so a cluster switches between
+# them without the apps being pruned and re-created, and selecting both is one
+# object defined twice. check-shared-path-wiring.py keeps the two in step: this
+# file may only ADD the backup component and its variables.
+# ---------------------------------------------------------------------------
+#
+# What it adds, from ../../components/schmetterpause-db-backup: an ObjectStore,
+# continuous WAL archiving on schmetterpause-db through the Barman Cloud plugin,
+# a daily ScheduledBackup, and the ExternalSecret that carries both the S3 pair
+# and the CA bundle. Recovery: that component's README.md.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tabletennis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  # As ../tabletennis, plus:
+  #   cnpg-barman-cloud  the plugin, and the ObjectStore CRD this applies
+  #   trust-manager      publishes the cluster-trust-bundle ConfigMap the
+  #                      ExternalSecret turns into the endpoint CA
+  dependsOn:
+    - name: cilium-gateway
+    - name: external-secrets
+    - name: cnpg-operator
+    - name: cnpg-barman-cloud
+    - name: trust-manager
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${TABLETENNIS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/tabletennis/profiles/base
+  components:
+    - ../../components/schmetterpause-db-backup
+  postBuild:
+    substitute:
+      # ---- identical to ../tabletennis ----------------------------------
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
+      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.6.0}"
+      SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
+      SCHMETTERPAUSE_DB_IMAGE: "${TABLETENNIS_SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}"
+      SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
+      ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
+      ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
+      # ---- the backup -----------------------------------------------------
+      # REQUIRED, both. A bucket of its own: Velero treats unknown top-level
+      # directories in ITS bucket as an invalid store, so sharing one breaks the
+      # Velero backups rather than this.
+      SCHMETTERPAUSE_BACKUP_BUCKET: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_BUCKET:-set-SCHMETTERPAUSE_BACKUP_BUCKET}"
+      SCHMETTERPAUSE_BACKUP_S3_ENDPOINT: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_S3_ENDPOINT:-https://set-SCHMETTERPAUSE_BACKUP_S3_ENDPOINT.invalid}"
+      # The KV entry holding access_key and secret_key. A cluster whose MinIO
+      # user already has an entry -- the one Velero uses, say -- points this at
+      # it instead of keeping the same credential twice.
+      SCHMETTERPAUSE_BACKUP_SECRET_PATH: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_SECRET_PATH:-schmetterpause-backup}"
+      SCHMETTERPAUSE_BACKUP_RETENTION: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_RETENTION:-7d}"
+      # Six fields, seconds first.
+      SCHMETTERPAUSE_BACKUP_SCHEDULE: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_SCHEDULE:-0 0 3 * * *}"

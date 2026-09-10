@@ -1,0 +1,36 @@
+---
+# The Barman Cloud plugin for CloudNativePG → ./apps/cnpg-barman-cloud
+#
+# cnpg-operator because the plugin joins the operator's namespace and reuses
+# its HelmRepository; cert-manager-install because the chart's operator <->
+# plugin TLS is a cert-manager Issuer and two Certificates, which the dry-run
+# rejects without the CRDs.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cnpg-barman-cloud
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cnpg-operator
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CNPG_BARMAN_CLOUD_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/cnpg-barman-cloud
+  postBuild:
+    substitute:
+      CNPG_NAMESPACE: "${CNPG_NAMESPACE:-cnpg-system}"
+      # renovate: datasource=helm depName=plugin-barman-cloud registryUrl=https://cloudnative-pg.github.io/charts
+      CNPG_BARMAN_CLOUD_VERSION: "${CNPG_BARMAN_CLOUD_VERSION:-0.8.0}"

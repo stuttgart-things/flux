@@ -1,0 +1,37 @@
+---
+# schmetterpause-db-backup -- continuous WAL archiving and a daily base backup
+# for schmetterpause's CloudNativePG Cluster, through the Barman Cloud plugin.
+#
+# Selected by the tabletennis-backup bundle component, never on its own: it
+# patches the Cluster that ../schmetterpause ships.
+#
+# REQUIRES
+#   cnpg-barman-cloud   the plugin and the ObjectStore CRD
+#   trust-manager       the cluster-trust-bundle ConfigMap the CA is read from
+#   a bucket            SCHMETTERPAUSE_BACKUP_BUCKET on SCHMETTERPAUSE_BACKUP_S3_ENDPOINT,
+#                       NOT the one Velero writes to -- Velero treats unknown
+#                       top-level directories in its bucket as an invalid store
+#   a KV entry          ${SCHMETTERPAUSE_BACKUP_SECRET_PATH}: access_key, secret_key
+#
+# Recovery is described in README.md beside this file.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+  - object-store.yaml
+  - scheduled-backup.yaml
+patches:
+  # The Cluster archives WAL through the plugin. Nothing else about it changes,
+  # so this is an add, not a copy of database.yaml.
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+      name: schmetterpause-db
+    patch: |
+      - op: add
+        path: /spec/plugins
+        value:
+          - name: barman-cloud.cloudnative-pg.io
+            isWALArchiver: true
+            parameters:
+              barmanObjectName: schmetterpause-db
