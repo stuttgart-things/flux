@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/stuttgart-things/flux/compare/v1.60.2...v1.61.0) (2026-09-10)
+
+
+### Features
+
+* **tabletennis:** give schmetterpause its CloudNativePG database ([#407](https://github.com/stuttgart-things/flux/issues/407)) ([8c2dc94](https://github.com/stuttgart-things/flux/commit/8c2dc94f958cb27b8e50582f2a5e1a7864511a39))
+
 ## [1.60.2](https://github.com/stuttgart-things/flux/compare/v1.60.1...v1.60.2) (2026-09-10)
 
 
