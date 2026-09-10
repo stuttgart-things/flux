@@ -1,3 +1,10 @@
+## [1.62.1](https://github.com/stuttgart-things/flux/compare/v1.62.0...v1.62.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **tabletennis:** let renovate bump the version copies with their base ([#409](https://github.com/stuttgart-things/flux/issues/409)) ([67fd134](https://github.com/stuttgart-things/flux/commit/67fd1340d4e37020a0d8825b581857542a987359)), closes [flux#359](https://github.com/flux/issues/359) [check-passthrou#defaults](https://github.com/check-passthrou/issues/defaults)
+
 # [1.62.0](https://github.com/stuttgart-things/flux/compare/v1.61.0...v1.62.0) (2026-09-10)
 
 
