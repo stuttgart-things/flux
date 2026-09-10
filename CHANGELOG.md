@@ -1,3 +1,10 @@
+## [1.60.1](https://github.com/stuttgart-things/flux/compare/v1.60.0...v1.60.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **tabletennis:** stop passing a null OMNI_PITCHER_URL, and make the checker see it ([#405](https://github.com/stuttgart-things/flux/issues/405)) ([ccee700](https://github.com/stuttgart-things/flux/commit/ccee7006cf2ac0e73cecac1946e51eb4b354bb81))
+
 # [1.60.0](https://github.com/stuttgart-things/flux/compare/v1.59.0...v1.60.0) (2026-09-09)
 
 
