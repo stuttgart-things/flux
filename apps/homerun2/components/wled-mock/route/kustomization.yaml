@@ -1,0 +1,13 @@
+---
+# wled-mock: its HTTPRoute, as a component of its own.
+#
+# Not in the component beside it, because that one's child Kustomization
+# creates the Service LATER than a route shipped with it -- and Cilium
+# resolves backendRefs once: a route that saw no Service serves 500 for good,
+# with every Kustomization Ready (labda-dev-a, 2026-09-10, three of seven).
+# The bundle applies this from a separate Kustomization that waits for the
+# app one; profiles/base and the root still apply it alongside.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

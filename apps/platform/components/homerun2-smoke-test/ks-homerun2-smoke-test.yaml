@@ -6,7 +6,7 @@
 # Changing anything re-runs it (the Job carries force). Add the optional
 # components' probes to HOMERUN2_SMOKE_PROBES when they are selected.
 #
-# REQUIRES ../homerun2.
+# REQUIRES ../homerun2, and waits on its homerun2-routes.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -18,7 +18,7 @@ metadata:
     kustomization.stuttgart-things.com/bundle: apps-platform
 spec:
   dependsOn:
-    - name: homerun2
+    - name: homerun2-routes
   interval: 1h
   retryInterval: 1m
   timeout: 20m
@@ -38,4 +38,6 @@ spec:
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       HOMERUN2_OMNI_PITCHER_HOSTNAME: "${HOMERUN2_OMNI_PITCHER_HOSTNAME:-omni-pitcher}"
+      # Through the gateway, <hostname>/<path>, comma-separated without spaces.
+      HOMERUN2_SMOKE_EXTERNAL_PROBES: "${HOMERUN2_SMOKE_EXTERNAL_PROBES:-omni-pitcher/health,core-catcher/health,scout/health,led-catcher/healthz}"
       HOMERUN2_SMOKE_PROBES: "${HOMERUN2_SMOKE_PROBES:-homerun2-core-catcher/health,homerun2-scout/health,homerun2-led-catcher/healthz}"

@@ -71,6 +71,13 @@ spec:
             # the real hostname for SNI, Host and certificate validation.
             - name: CONNECT_TO
               value: cilium-gateway-${GATEWAY_NAME}.${GATEWAY_NAMESPACE:-default}.svc.cluster.local
+            # Through the gateway, <hostname>/<path>: every route this cluster
+            # publishes. A route can serve 500 while its pod is healthy (Cilium
+            # resolves backends once), so the in-cluster probes alone miss it.
+            - name: EXTERNAL_PROBES
+              value: ${HOMERUN2_SMOKE_EXTERNAL_PROBES:-omni-pitcher/health,core-catcher/health,scout/health,led-catcher/healthz}
+            - name: DOMAIN
+              value: ${DOMAIN}
             - name: PROBES
               value: ${HOMERUN2_SMOKE_PROBES:-homerun2-core-catcher/health,homerun2-scout/health,homerun2-led-catcher/healthz}
           command:
@@ -116,4 +123,8 @@ spec:
               [ -s /etc/ssl/bundle/trust-bundle.pem ] && CA="--cacert /etc/ssl/bundle/trust-bundle.pem"
               wait_ok external "https://$EXTERNAL_HOST/health" --connect-to "$EXTERNAL_HOST:443:$CONNECT_TO:443" $CA
               pitch_checks external "https://$EXTERNAL_HOST" --connect-to "$EXTERNAL_HOST:443:$CONNECT_TO:443" $CA
+              for p in $(echo "$EXTERNAL_PROBES" | tr ',' ' '); do
+                h=$(echo "$p" | cut -d/ -f1).$DOMAIN; path=/$(echo "$p" | cut -d/ -f2-)
+                wait_ok "external $h" "https://$h$path" --connect-to "$h:443:$CONNECT_TO:443" $CA
+              done
               echo "PASS"

@@ -19,3 +19,10 @@ components:
   - components/light-catcher/sops
   - components/demo-pitcher/sops
   - components/led-catcher/sops
+  - components/omni-pitcher/route
+  - components/core-catcher/route
+  - components/scout/route
+  - components/led-catcher/route
+  - components/light-catcher/route
+  - components/wled-mock/route
+  - components/demo-pitcher/route

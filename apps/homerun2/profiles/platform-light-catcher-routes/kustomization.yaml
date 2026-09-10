@@ -1,0 +1,7 @@
+---
+# HTTPRoutes for profiles/platform-light-catcher, applied after it is Ready.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher/route
+  - ../../components/wled-mock/route

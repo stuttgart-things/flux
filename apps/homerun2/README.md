@@ -13,6 +13,8 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
 
+**Routes come last.** Each of the first three brings a second Kustomization, `<name>-routes`, that applies the HTTPRoutes (`components/<c>/route`) only once the app Kustomization is Ready. Cilium resolves a route's backends once; a route applied before its Service serves HTTP 500 for good while everything reports Ready. `profiles/base` and the root still apply the routes inline.
+
 **Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets, used by the bundle components) or `components/<c>/sops` (plain Secrets from `substituteFrom`, used by `profiles/base` and the root, with the same variable names as before). The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
 
 **zaehlwerk.** tabletennis clusters with `TABLETENNIS_ZAEHLWERK_PANEL: homerun2` point zaehlwerk at omni-pitcher and the led-catcher in the same cluster; omni-pitcher routes `system: tabletennis` onto the `tabletennis` stream.
