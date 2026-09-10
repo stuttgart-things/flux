@@ -1,3 +1,10 @@
+## [1.62.3](https://github.com/stuttgart-things/flux/compare/v1.62.2...v1.62.3) (2026-09-10)
+
+
+### Bug Fixes
+
+* **deps:** update helm release openbao to v0.29.4 ([#329](https://github.com/stuttgart-things/flux/issues/329)) ([dc05fea](https://github.com/stuttgart-things/flux/commit/dc05fea3655f571586c95bea43fdb0d3ba4ef507))
+
 ## [1.62.2](https://github.com/stuttgart-things/flux/compare/v1.62.1...v1.62.2) (2026-09-10)
 
 
