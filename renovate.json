@@ -38,12 +38,12 @@
     },
     {
       "customType": "regex",
-      "description": "Update HelmRelease chart.spec.version defaults behind Flux variable substitution. The flux manager skips these as contains-variable, so the datasource/registry is supplied by a preceding renovate comment.",
+      "description": "Update HelmRelease chart.spec.version defaults behind Flux variable substitution. The flux manager skips these as contains-variable, so the datasource/registry is supplied by a preceding renovate comment. The value may be QUOTED (`version: \"${VAR:-1.2.3}\"`): without the optional quotes this matched neither apps/openbao's base nor the flux-operator precondition, so renovate bumped only openbao's bundle copy and check-passthrough-defaults failed the PR.",
       "fileMatch": [
         "\\.yaml$"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+version:\\s*\"?\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}\"?"
       ]
     },
     {
@@ -93,9 +93,11 @@
   ],
   "packageRules": [
     {
-      "description": "Never touch the GENERATED machinery profile. Its package versions come from the KCL catalog pinned in hack/gen-crossplane-profile.py (watched by its own manager above); the two crossplane package managers otherwise match `package:` lines inside it, and a bump there fails `gen-crossplane-profile.py --check` for the whole group PR -- flux#359 bumped harvester-vm and cluster-backup in configs.yaml while the catalog stayed 0.5.1. A newer package belongs in the catalog, for every management cluster at once.",
+      "description": "Never touch the GENERATED machinery profile. Its package versions come from the KCL catalog pinned in hack/gen-crossplane-profile.py (watched by its own manager above); the two crossplane package managers otherwise match `package:` lines inside it, and a bump there fails `gen-crossplane-profile.py --check` for the whole group PR -- flux#359 bumped harvester-vm and cluster-backup in configs.yaml while the catalog stayed 0.5.1. A newer package belongs in the catalog, for every management cluster at once. The three files hack/gen-crossplane-profile.py writes, NAMED: the directory also holds the handwritten configs/preconditions.yaml, whose flux-operator version renovate must keep bumping.",
       "matchFileNames": [
-        "cicd/crossplane/profiles/machinery/**"
+        "cicd/crossplane/profiles/machinery/install/catalog-patch.yaml",
+        "cicd/crossplane/profiles/machinery/configs/configs.yaml",
+        "cicd/crossplane/profiles/machinery/provider-configs/provider-configs.yaml"
       ],
       "enabled": false
     },
