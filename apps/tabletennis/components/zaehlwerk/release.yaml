@@ -44,21 +44,23 @@ spec:
           secretStoreRef:
             kind: ClusterSecretStore
             name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
-    # Where the score goes. The base ships the placeholder
-    # https://omni-pitcher.example.com, which resolves to nothing -- a cluster
-    # that leaves this unset runs the scoreboard without a panel, which the
-    # service supports and does silently (see the profile's own note).
+    # No panel unless a cluster asks for one, and the only form of "none" that
+    # zaehlwerk accepts is the variable being UNSET: it tests
+    # `os.Getenv("OMNI_PITCHER_URL") != ""`, so any non-empty sentinel would be
+    # taken for a URL. The base ships a placeholder
+    # (https://omni-pitcher.example.com) that would be dialled forever.
     #
-    # OMNI_PITCHER_URL and a Redis address are alternatives, and omni-pitcher
-    # wins where both are set. Only the URL is exposed here; a Redis-fed setup
-    # needs its own component rather than a second half-wired knob.
+    # So the key is REMOVED rather than substituted. An empty substitution is
+    # not possible at all: Flux replaces an unset ${VAR} with nothing,
+    # kustomize has already dropped the quotes, and `KEY:` is YAML null --
+    # which the API server rejects, failing the parent Kustomization. That
+    # happened on labda-dev-a with a bare ${VAR} whose empty-string
+    # behaviour had been assumed rather than observed.
+    #
+    # A cluster that has a panel adds its own patch setting the key.
     - target:
         kind: ConfigMap
         name: zaehlwerk-config
       patch: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: zaehlwerk-config
-        data:
-          OMNI_PITCHER_URL: "${ZAEHLWERK_OMNI_PITCHER_URL}"
+        - op: remove
+          path: /data/OMNI_PITCHER_URL
