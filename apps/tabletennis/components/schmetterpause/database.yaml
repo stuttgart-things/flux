@@ -1,0 +1,48 @@
+---
+# The CloudNativePG Cluster schmetterpause stores everything in.
+#
+# NOT IN THE PUBLISHED BASE, on purpose -- schmetterpause keeps it out so that
+# removing the application can never prune the data (kcl/database.k). It lives
+# here, applied by the tabletennis Kustomization, so it needs the same guard:
+# the PVC carries an ownerReference to this object, and deleting the Cluster
+# deletes the data with no CNPG-side retention to catch it. See the Namespace
+# in requirements.yaml for the other half.
+#
+# FIXED NAMES. The base's ExternalSecret builds
+#   postgresql://<username>:<password>@schmetterpause-db-rw.schmetterpause.svc:5432/schmetterpause
+# so the Cluster name, the database and the owner are not variables: changing
+# any of them here yields a database the application cannot find.
+#
+# initdb reads username and password from `schmetterpause-db`, the same Secret
+# the DSN comes from, instead of generating a password of its own. Under ESO
+# that Secret appears only after the ExternalSecret has synced -- this object is
+# applied into that gap.
+#
+# REQUIRES the cnpg-operator Kustomization (the CRD), which ks-tabletennis
+# waits on.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: schmetterpause-db
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  # One instance, not a variable: a count substituted through
+  # postBuild.substitute arrives as an int and fails the parent Kustomization.
+  # A cluster wanting HA patches this object.
+  instances: 1
+  # The major schmetterpause is built and tested against (compose.yaml,
+  # dagger/main.go).
+  imageName: ${SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}
+  bootstrap:
+    initdb:
+      database: schmetterpause
+      owner: schmetterpause
+      secret:
+        name: schmetterpause-db
+  # storageClass is omitted rather than substituted: CNPG treats an absent key
+  # as the cluster's default StorageClass, and an empty string as a class with
+  # no name -- which is what an unset variable would render.
+  storage:
+    size: ${SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}

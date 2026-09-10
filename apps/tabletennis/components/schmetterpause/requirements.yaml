@@ -1,10 +1,17 @@
 ---
+# Not pruned, because the database lives in it. The guard on the Cluster alone
+# does not hold: taking tabletennis off a cluster prunes this Namespace, and a
+# deleted Namespace takes the Cluster and its volume with it. The cost is an
+# orphaned namespace to remove by hand -- the right trade for data git cannot
+# restore.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
   labels:
     toolkit.fluxcd.io/tenant: sthings-team
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
 ---
 apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
 kind: OCIRepository
