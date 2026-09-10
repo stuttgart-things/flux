@@ -32,7 +32,7 @@ spec:
     spec:
       chart: openbao
       # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
-      version: "${OPENBAO_CHART_VERSION:-0.29.2}"
+      version: "${OPENBAO_CHART_VERSION:-0.29.4}"
       sourceRef:
         kind: HelmRepository
         name: openbao
