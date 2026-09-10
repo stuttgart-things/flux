@@ -43,6 +43,11 @@ spec:
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
       SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      # The copy that WINS over requirements.yaml's default, so renovate has to
+      # bump it in the same PR -- without this line it moved only the base and
+      # check-passthrough-defaults failed the PR (flux#359). Keep the comment
+      # directly above the key: the manager matches the two as one block.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
       SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.5.0}"
       SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
       # The whole image rather than a major version: a bare 18 resolves to an
@@ -50,6 +55,8 @@ spec:
       SCHMETTERPAUSE_DB_IMAGE: "${TABLETENNIS_SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}"
       SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
       ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      # Same as SCHMETTERPAUSE_VERSION above: the winning copy, bumped with the base.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
       ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
