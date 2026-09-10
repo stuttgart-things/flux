@@ -1,3 +1,10 @@
+# [1.63.0](https://github.com/stuttgart-things/flux/compare/v1.62.3...v1.63.0) (2026-09-10)
+
+
+### Features
+
+* **cnpg:** back up schmetterpause's database through the Barman Cloud plugin ([#412](https://github.com/stuttgart-things/flux/issues/412)) ([8352a43](https://github.com/stuttgart-things/flux/commit/8352a43eb4e3f9b16a8be60b701780905f6f8711)), closes [passthrou#defaults](https://github.com/passthrou/issues/defaults)
+
 ## [1.62.3](https://github.com/stuttgart-things/flux/compare/v1.62.2...v1.62.3) (2026-09-10)
 
 
