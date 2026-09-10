@@ -11,3 +11,6 @@ components:
   - ../../components/omni-pitcher/sops
   - ../../components/core-catcher/sops
   - ../../components/scout/sops
+  - ../../components/omni-pitcher/route
+  - ../../components/core-catcher/route
+  - ../../components/scout/route

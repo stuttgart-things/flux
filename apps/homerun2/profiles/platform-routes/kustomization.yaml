@@ -1,0 +1,9 @@
+---
+# HTTPRoutes for profiles/platform, applied by homerun2-routes after homerun2 is Ready.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/omni-pitcher/route
+  - ../../components/core-catcher/route
+  - ../../components/scout/route
+  - ../../components/led-catcher/route
