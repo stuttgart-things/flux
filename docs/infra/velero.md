@@ -11,7 +11,7 @@ Anchors the work in [#111](https://github.com/stuttgart-things/flux/issues/111) 
 
 ## Credential modes
 
-The base layer creates the `cloud-credentials` Secret via the `sthings-cluster` helper chart using substitution variables. To use ESO instead, enable the `components/external-secret/` kustomize Component and patch out the helper-chart HelmRelease — see the [README](https://github.com/stuttgart-things/flux/blob/main/infra/velero/README.md#2-external-secrets-operator-opt-in) for the patch.
+The base layer creates the `cloud-credentials` Secret as a plain manifest (`pre-release.yaml`) from substitution variables. To read the pair from a ClusterSecretStore instead, a bundle cluster selects the `velero-eso` component in place of `velero`; other consumers enable the `components/external-secret/` kustomize Component and delete the base Secret — see the [README](https://github.com/stuttgart-things/flux/blob/main/infra/velero/README.md#2-external-secrets-operator-opt-in).
 
 ## Trust bundle for self-signed S3 endpoints
 
@@ -88,7 +88,7 @@ spec:
 | `VELERO_METRICS_ENABLED` | `true` | Expose Prometheus metrics |
 | `VELERO_SERVICE_MONITOR_ENABLED` | `false` | Create a Prometheus ServiceMonitor |
 | `VELERO_ESO_SECRET_STORE_NAME` | `vault-cluster` | ClusterSecretStore name (ESO mode) |
-| `VELERO_ESO_SECRET_PATH` | `kv/data/velero/s3` | Vault KV path (ESO mode) |
+| `VELERO_ESO_SECRET_PATH` | `velero` | KV entry name; the store supplies mount and version (ESO mode) |
 
 See [README](https://github.com/stuttgart-things/flux/blob/main/infra/velero/README.md) for the full list, including all ESO mode variables.
 

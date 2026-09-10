@@ -1,0 +1,8 @@
+---
+# Opt-in: velero-eso -- velero with its S3 pair read from a ClusterSecretStore.
+# An ALTERNATIVE to ../velero, not an add-on: select one of the two.
+# bundle-alternative-of: velero
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-velero-eso.yaml

@@ -67,6 +67,22 @@ MUST_MATCH = {
         # one here means adding it there in the same commit.
         "extra_allowed": set(),
     },
+    "./infra/velero": {
+        "why": "velero-eso is the velero component with its S3 pair read from a "
+               "ClusterSecretStore instead of substituted from a Secret -- the "
+               "chart, the plugin and the bucket wiring are the same install "
+               "and have to move together",
+        # The ESO mode's own two: which store, which entry. Everything else the
+        # base reads must be threaded by both, so a cluster switching modes
+        # keeps its bucket, endpoint and versions.
+        "extra_allowed": {
+            "VELERO_ESO_SECRET_STORE_NAME",
+            "VELERO_ESO_SECRET_PATH",
+        },
+        # That mode IS this component. Its delete patch for the mode-1 Secret
+        # is not compared here; the render test in the PR that added it is.
+        "extra_components_allowed": {"./components/external-secret"},
+    },
 }
 
 # Rendered more than once ON PURPOSE, and not comparable.
@@ -133,9 +149,11 @@ def main():
 
         rule = MUST_MATCH[path]
         extra_ok = rule["extra_allowed"]
+        extra_comps_ok = rule.get("extra_components_allowed", set())
         base = entries[0]
         for other in entries[1:]:
             (fa, na, ca, sa), (fb, nb, cb, sb) = base, other
+            ca, cb = ca - extra_comps_ok, cb - extra_comps_ok
 
             if ca != cb:
                 only_a = sorted(x.rsplit("/", 1)[-1] for x in ca - cb)

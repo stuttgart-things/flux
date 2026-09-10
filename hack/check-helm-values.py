@@ -37,6 +37,8 @@ from pathlib import Path
 
 import yaml
 
+from bundle_alternatives import selections
+
 ROOT = Path(__file__).resolve().parent.parent
 BUNDLES = sorted(
     str(d.relative_to(ROOT))
@@ -84,18 +86,23 @@ def children():
     seen = {}
     with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
         tmp = Path(tmp)
+        builds = []
         for bundle in BUNDLES:
-            comps = ROOT / bundle / "components"
-            lines = ["apiVersion: kustomize.config.k8s.io/v1beta1",
-                     "kind: Kustomization", "resources:", f"  - ../{bundle}/root",
-                     "components:"]
-            lines += [f"  - ../{bundle}/components/{d.name}"
-                      for d in sorted(comps.iterdir()) if d.is_dir()]
-            (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
-            docs, err = build(tmp)
-            if docs is None:
-                print(err, file=sys.stderr)
-                sys.exit(1)
+            # One build per selection: an alternative component cannot be
+            # built beside the one it replaces, and its children count too.
+            for label, names in selections(ROOT / bundle / "components"):
+                lines = ["apiVersion: kustomize.config.k8s.io/v1beta1",
+                         "kind: Kustomization", "resources:", f"  - ../{bundle}/root",
+                         "components:"]
+                lines += [f"  - ../{bundle}/components/{n}" for n in names]
+                (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
+                docs, err = build(tmp)
+                if docs is None:
+                    print(f"{bundle} ({label}):", file=sys.stderr)
+                    print(err, file=sys.stderr)
+                    sys.exit(1)
+                builds.append(docs)
+        for docs in builds:
             for doc in yaml.safe_load_all(docs):
                 if not doc or doc.get("kind") != "Kustomization":
                     continue
