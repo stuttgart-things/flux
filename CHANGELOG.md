@@ -1,3 +1,10 @@
+# [1.62.0](https://github.com/stuttgart-things/flux/compare/v1.61.0...v1.62.0) (2026-09-10)
+
+
+### Features
+
+* **velero:** add velero-eso, the velero component with credentials from a store ([#408](https://github.com/stuttgart-things/flux/issues/408)) ([f1b8f5b](https://github.com/stuttgart-things/flux/commit/f1b8f5bdb21b76eea1589d3b98259116413e1bf6))
+
 # [1.61.0](https://github.com/stuttgart-things/flux/compare/v1.60.2...v1.61.0) (2026-09-10)
 
 
