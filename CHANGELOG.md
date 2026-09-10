@@ -1,3 +1,10 @@
+## [1.60.2](https://github.com/stuttgart-things/flux/compare/v1.60.1...v1.60.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* **dapr-workflows:** pin the worker to e6676d8b7411 ([#406](https://github.com/stuttgart-things/flux/issues/406)) ([d4ed0df](https://github.com/stuttgart-things/flux/commit/d4ed0dfa7018f114188462ec711459adf824db11)), closes [#39](https://github.com/stuttgart-things/flux/issues/39) [#38](https://github.com/stuttgart-things/flux/issues/38) [#37](https://github.com/stuttgart-things/flux/issues/37) [#39](https://github.com/stuttgart-things/flux/issues/39)
+
 ## [1.60.1](https://github.com/stuttgart-things/flux/compare/v1.60.0...v1.60.1) (2026-09-10)
 
 
