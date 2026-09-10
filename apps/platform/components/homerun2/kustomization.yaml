@@ -1,0 +1,6 @@
+---
+# homerun2 -- the core homerun2 stack: redis-stack, omni-pitcher, core-catcher,
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2.yaml

@@ -1,0 +1,7 @@
+---
+# demo-pitcher on top of profiles/platform (bundle component homerun2-demo-pitcher).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/demo-pitcher
+  - ../../components/demo-pitcher/eso

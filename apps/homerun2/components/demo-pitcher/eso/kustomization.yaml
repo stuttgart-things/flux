@@ -1,0 +1,8 @@
+---
+# demo-pitcher: credentials from a ClusterSecretStore. The entry is
+# ${HOMERUN2_SECRET_PATH} (property redis-password, plus the component's token
+# where it has one), so nothing credential-shaped passes through Flux.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml

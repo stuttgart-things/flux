@@ -1,0 +1,40 @@
+---
+# zaehlwerk-panel-homerun2 -- zaehlwerk pitching scores to homerun2 on the
+# same cluster. Selected with TABLETENNIS_ZAEHLWERK_PANEL: homerun2.
+#
+# Two settings, both into zaehlwerk's ConfigMap: OMNI_PITCHER_URL, where scores
+# go (omni-pitcher routes system tabletennis onto the stream of that name), and
+# CATCHER_URL, the led-catcher zaehlwerk switches onto the tabletennis stream
+# during a match and back to messages when idle.
+#
+# WHY A COMPONENT AND NOT A VARIABLE. The base's URL is removed in
+# components/zaehlwerk/release.yaml, because an empty substitution renders as
+# YAML null and fails the whole apps layer -- so "off" cannot be a value. And a
+# patch from a cluster cannot reach the child Kustomization that applies the
+# ConfigMap. This appends a patch to that child from inside the build that
+# renders it, which is the one place that can.
+#
+# The token is NOT set here: zaehlwerk reads <mount>/zaehlwerk:omni-pitcher-token,
+# and a cluster points homerun2's HOMERUN2_OMNI_PITCHER_TOKEN_PATH/_PROPERTY at
+# that same entry, so both sides hold one credential.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/OMNI_PITCHER_URL
+              value: http://homerun2-omni-pitcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+            - op: add
+              path: /data/CATCHER_URL
+              value: http://homerun2-led-catcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local

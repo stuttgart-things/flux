@@ -23,6 +23,7 @@ data:
       - messages
       - alerts
       - github-events
+      - tabletennis
 
     # Catch-all stream when no rule matches.
     default_stream: messages
@@ -39,3 +40,9 @@ data:
       - match:
           endpoint: /pitch/github
         stream: github-events
+
+      # zaehlwerk pitches its scores with system: tabletennis; they go to the
+      # stream it switches the led-catcher onto during a match.
+      - match:
+          system: tabletennis
+        stream: tabletennis

@@ -9,7 +9,7 @@ spec:
     - name: ${GATEWAY_NAME}
       namespace: ${GATEWAY_NAMESPACE:-default}
   hostnames:
-    - ${HOMERUN2_LED_CATCHER_HOSTNAME}.${DOMAIN}
+    - ${HOMERUN2_LED_CATCHER_HOSTNAME:-led-catcher}.${DOMAIN}
   rules:
     - matches:
         - path:

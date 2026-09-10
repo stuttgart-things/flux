@@ -1,0 +1,8 @@
+---
+# led-catcher: credentials as plain Secrets substituted from the consumer's
+# substituteFrom Secret -- HOMERUN2_REDIS_PASSWORD_B64 and the auth tokens.
+# The mode platform-sthings uses; eso/ is the alternative.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml

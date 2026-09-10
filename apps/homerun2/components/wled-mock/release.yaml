@@ -15,6 +15,17 @@ spec:
   wait: true
   targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
   patches:
+    # The base ships Namespace homerun2. Owned here too, pruning this one
+    # component would take the namespace -- and every other component -- along.
+    - target:
+        kind: Namespace
+        name: homerun2
+      patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: homerun2
+        $patch: delete
     # Override the container image tag
     - target:
         kind: Deployment

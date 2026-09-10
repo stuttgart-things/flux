@@ -1,0 +1,6 @@
+---
+# homerun2-demo-pitcher -- demo-pitcher, pitching sample messages at omni-pitcher
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-demo-pitcher.yaml

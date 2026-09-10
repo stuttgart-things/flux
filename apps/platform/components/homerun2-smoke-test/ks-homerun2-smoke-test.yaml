@@ -1,0 +1,41 @@
+---
+# the homerun2 smoke test as a Job → ./apps/homerun2/smoke-test
+#
+# Ready only once the Job completed, so a red Kustomization here is a failed
+# test, not a failed apply: `kubectl -n homerun2 logs job/homerun2-smoke-test`.
+# Changing anything re-runs it (the Job carries force). Add the optional
+# components' probes to HOMERUN2_SMOKE_PROBES when they are selected.
+#
+# REQUIRES ../homerun2.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-smoke-test
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 20m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SMOKE_TEST_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/smoke-test
+  postBuild:
+    substitute:
+      # INFRA_* are what infra/platform already reads, so a cluster sets them once.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      HOMERUN2_OMNI_PITCHER_HOSTNAME: "${HOMERUN2_OMNI_PITCHER_HOSTNAME:-omni-pitcher}"
+      HOMERUN2_SMOKE_PROBES: "${HOMERUN2_SMOKE_PROBES:-homerun2-core-catcher/health,homerun2-scout/health,homerun2-led-catcher/healthz}"

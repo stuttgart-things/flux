@@ -50,7 +50,8 @@ spec:
               containers:
                 - name: homerun2-demo-pitcher
                   image: ghcr.io/stuttgart-things/homerun2-demo-pitcher:${HOMERUN2_DEMO_PITCHER_VERSION:-v2.0.1}
-    # Override the Redis password secret
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-demo-pitcher-redis
@@ -59,8 +60,7 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-demo-pitcher-redis
-        data:
-          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+        $patch: delete
     # Mount trust-manager CA bundle for TLS trust
     - target:
         kind: Deployment
@@ -110,7 +110,7 @@ spec:
                     - name: OMNI_PITCHER_API_PATH
                       value: pitch
                     - name: OMNI_PITCHER_URL
-                      value: https://pitcher.${DOMAIN}
+                      value: http://homerun2-omni-pitcher.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: PITCH_TARGET
                       value: omni-pitcher
                     - name: AUTH_TOKEN

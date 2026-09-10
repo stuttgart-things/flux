@@ -7,3 +7,7 @@ components:
   - ../../components/core-catcher
   - ../../components/notification-catcher
   - ../../components/scout
+  - ../../components/redis-stack/sops
+  - ../../components/omni-pitcher/sops
+  - ../../components/core-catcher/sops
+  - ../../components/scout/sops
