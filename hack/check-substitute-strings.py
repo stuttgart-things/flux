@@ -49,7 +49,14 @@ def resolved(value):
         return value
     default = m.group(2)
     if default is None:
-        return ""
+        # A bare ${VAR} with no `:-` is NOT an empty string on a cluster. Flux
+        # substitutes an unset variable with nothing, kustomize has already
+        # stripped any quotes, and `KEY:` parses as null -- the same failure as
+        # `${VAR:-}`. This returned "" until labda-dev-a proved otherwise: the
+        # check passed and the parent Kustomization was rejected with
+        # `Invalid value: "null"`. An empty string cannot be carried through
+        # substitute in any spelling; give a sentinel or remove the key.
+        return None
     try:
         return yaml.safe_load(default)
     except yaml.YAMLError:
