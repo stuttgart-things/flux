@@ -1,0 +1,28 @@
+---
+# Where schmetterpause-db's base backups and WAL go. serverName defaults to the
+# Cluster's name, so the objects land under s3://<bucket>/schmetterpause-db/ --
+# which is also what a recovery names.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: schmetterpause-db
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+spec:
+  retentionPolicy: "${SCHMETTERPAUSE_BACKUP_RETENTION:-7d}"
+  configuration:
+    destinationPath: s3://${SCHMETTERPAUSE_BACKUP_BUCKET:-set-SCHMETTERPAUSE_BACKUP_BUCKET}/
+    endpointURL: ${SCHMETTERPAUSE_BACKUP_S3_ENDPOINT:-https://set-SCHMETTERPAUSE_BACKUP_S3_ENDPOINT.invalid}
+    endpointCA:
+      name: schmetterpause-db-backup
+      key: trust-bundle.pem
+    s3Credentials:
+      accessKeyId:
+        name: schmetterpause-db-backup
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: schmetterpause-db-backup
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip

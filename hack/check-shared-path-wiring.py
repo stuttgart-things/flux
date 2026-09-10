@@ -83,6 +83,23 @@ MUST_MATCH = {
         # is not compared here; the render test in the PR that added it is.
         "extra_components_allowed": {"./components/external-secret"},
     },
+    "./apps/tabletennis/profiles/base": {
+        "why": "tabletennis-backup is tabletennis with schmetterpause's database "
+               "archived through the Barman Cloud plugin -- the apps, their "
+               "versions and their gateway wiring are the same install and have "
+               "to move together",
+        # The backup's own variables. Everything the apps read must be threaded
+        # by both, so switching a cluster to or from backups keeps its versions,
+        # hostnames and store.
+        "extra_allowed": {
+            "SCHMETTERPAUSE_BACKUP_BUCKET",
+            "SCHMETTERPAUSE_BACKUP_S3_ENDPOINT",
+            "SCHMETTERPAUSE_BACKUP_SECRET_PATH",
+            "SCHMETTERPAUSE_BACKUP_RETENTION",
+            "SCHMETTERPAUSE_BACKUP_SCHEDULE",
+        },
+        "extra_components_allowed": {"../../components/schmetterpause-db-backup"},
+    },
 }
 
 # Rendered more than once ON PURPOSE, and not comparable.

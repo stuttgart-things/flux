@@ -1,0 +1,40 @@
+---
+# The Barman Cloud plugin for CloudNativePG: WAL archiving, base backups and
+# recovery against object storage, running as a sidecar the operator injects.
+#
+# WHY A PLUGIN AND NOT spec.backup.barmanObjectStore: CloudNativePG 1.30 warns
+# on every Cluster that uses the in-tree Barman Cloud support that it is removed
+# in 1.31.0, and renovate moves the operator chart. A backup that silently stops
+# being possible after an operator bump is the wrong thing to ship.
+#
+# Same namespace as the operator on purpose: the operator discovers plugins by
+# the `cnpg.io/pluginName` label on a Service in its own namespace. The chart's
+# TLS between operator and plugin comes from cert-manager (a self-signed Issuer
+# and two Certificates it renders), which is why the bundle component waits on
+# cert-manager-install. The HelmRepository is the operator's -- one source, one
+# owner.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+  namespace: ${CNPG_NAMESPACE:-cnpg-system}
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: plugin-barman-cloud
+      # renovate: datasource=helm depName=plugin-barman-cloud registryUrl=https://cloudnative-pg.github.io/charts
+      version: ${CNPG_BARMAN_CLOUD_VERSION:-0.8.0}
+      sourceRef:
+        kind: HelmRepository
+        name: cloudnative-pg
+        namespace: ${CNPG_NAMESPACE:-cnpg-system}
+      interval: 12h
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
+  values:
+    crds:
+      create: true
