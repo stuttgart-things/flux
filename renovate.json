@@ -93,6 +93,13 @@
   ],
   "packageRules": [
     {
+      "description": "Never touch the GENERATED machinery profile. Its package versions come from the KCL catalog pinned in hack/gen-crossplane-profile.py (watched by its own manager above); the two crossplane package managers otherwise match `package:` lines inside it, and a bump there fails `gen-crossplane-profile.py --check` for the whole group PR -- flux#359 bumped harvester-vm and cluster-backup in configs.yaml while the catalog stayed 0.5.1. A newer package belongs in the catalog, for every management cluster at once.",
+      "matchFileNames": [
+        "cicd/crossplane/profiles/machinery/**"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Hold function-auto-ready below v0.7.0. crossplane-configurations declares '>=v0.6.5,<v0.7.0' on it; a bump past that bound breaks dependency resolution for every package that depends on it, and the failure is a whole-graph Healthy=False, not a single unhealthy package. Raise this together with the constraint, not before it.",
       "matchDatasources": [
         "docker"
