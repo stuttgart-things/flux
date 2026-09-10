@@ -40,27 +40,6 @@ spec:
               containers:
                 - name: homerun2-led-catcher
                   image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.7.0}
-    # Override the Redis password secret
-    - target:
-        kind: Secret
-        name: homerun2-led-catcher-redis
-      patch: |
-        apiVersion: v1
-        kind: Secret
-        metadata:
-          name: homerun2-led-catcher-redis
-        data:
-          password: ${HOMERUN2_REDIS_PASSWORD_B64}
-    # Delete the KCL-generated profile ConfigMap (calling side provides its own)
-    - target:
-        kind: ConfigMap
-        name: homerun2-led-catcher-profile
-      patch: |
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          name: homerun2-led-catcher-profile
-        $patch: delete
     # Override Redis connection
     - target:
         kind: Deployment

@@ -12,3 +12,10 @@ components:
   - components/demo-pitcher
   - components/led-catcher
   - components/git-pitcher
+  - components/redis-stack/sops
+  - components/omni-pitcher/sops
+  - components/core-catcher/sops
+  - components/scout/sops
+  - components/light-catcher/sops
+  - components/demo-pitcher/sops
+  - components/led-catcher/sops

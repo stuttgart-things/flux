@@ -9,7 +9,7 @@ spec:
     - name: ${GATEWAY_NAME}
       namespace: ${GATEWAY_NAMESPACE:-default}
   hostnames:
-    - ${HOMERUN2_WLED_MOCK_HOSTNAME}.${DOMAIN}
+    - ${HOMERUN2_WLED_MOCK_HOSTNAME:-wled-mock}.${DOMAIN}
   rules:
     - matches:
         - path:

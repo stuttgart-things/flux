@@ -1,0 +1,5 @@
+---
+# zaehlwerk-panel-off -- zaehlwerk without a scoreboard panel: the default.
+# Selected through TABLETENNIS_ZAEHLWERK_PANEL (default off). Empty on purpose.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component

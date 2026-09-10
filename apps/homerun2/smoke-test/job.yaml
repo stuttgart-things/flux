@@ -1,0 +1,119 @@
+---
+# The homerun2 smoke test, ported from the Argo CD chart (argocd
+# apps/homerun2/smoke-test). In-cluster first, then through the gateway:
+# omni-pitcher /health, an unauthenticated POST /pitch that must be 401, an
+# authenticated one that must be 2xx, and a health probe per component in
+# HOMERUN2_SMOKE_PROBES ("service/path,service/path" -- commas and no spaces,
+# because kustomize folds a long value at a space and the default then differs
+# from its copy).
+#
+# NO ${...} IN THE SCRIPT. Flux substitutes that form in every resource it
+# applies, and an unset name becomes empty -- a script using it would run with
+# its variables blanked. Plain $VAR is never touched, so the script uses only
+# that; the values it needs arrive as env set from the substitutions below.
+#
+# force: a Job's pod template is immutable. Flux deletes and recreates it when
+# anything here changes, which is also what re-runs the test.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: homerun2-smoke-test
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  annotations:
+    kustomize.toolkit.fluxcd.io/force: enabled
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: homerun2-smoke-test
+        app.kubernetes.io/part-of: homerun2
+    spec:
+      restartPolicy: Never
+      # Numeric on purpose: curlimages/curl declares a named user, and with
+      # only runAsNonRoot the kubelet cannot prove it is not root.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: ca-bundle
+          configMap:
+            name: ${HOMERUN2_SMOKE_TRUST_BUNDLE_CM:-cluster-trust-bundle}
+            optional: true
+      containers:
+        - name: smoke
+          image: ${HOMERUN2_SMOKE_IMAGE:-curlimages/curl:8.22.0}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: ca-bundle
+              mountPath: /etc/ssl/bundle
+              readOnly: true
+          env:
+            - name: AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: homerun2-omni-pitcher-token
+                  key: auth-token
+            - name: INTERNAL_URL
+              value: http://homerun2-omni-pitcher
+            - name: EXTERNAL_HOST
+              value: ${HOMERUN2_OMNI_PITCHER_HOSTNAME:-omni-pitcher}.${DOMAIN}
+            # A Cilium LoadBalancer VIP does not hairpin from pods on the same
+            # node, so the external pass dials the gateway's Service and keeps
+            # the real hostname for SNI, Host and certificate validation.
+            - name: CONNECT_TO
+              value: cilium-gateway-${GATEWAY_NAME}.${GATEWAY_NAMESPACE:-default}.svc.cluster.local
+            - name: PROBES
+              value: ${HOMERUN2_SMOKE_PROBES:-homerun2-core-catcher/health,homerun2-scout/health,homerun2-led-catcher/healthz}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              fail() { echo "FAIL: $*"; exit 1; }
+              code() {
+                m=$1; u=$2; shift 2
+                curl -s -m 15 -o /dev/null -w '%{http_code}' -X "$m" "$u" "$@" || true
+              }
+              wait_ok() {
+                label=$1; url=$2; shift 2; i=1
+                while [ "$i" -le 30 ]; do
+                  if curl -sf -m 10 -o /dev/null "$@" "$url"; then
+                    echo "[$label] $url ok after $i attempt(s)"; return 0
+                  fi
+                  i=$((i + 1)); sleep 10
+                done
+                fail "[$label] $url never answered 2xx"
+              }
+              pitch_checks() {
+                label=$1; base=$2; shift 2
+                c=$(code POST "$base/pitch" -H 'Content-Type: application/json' \
+                      -d '{"title":"smoke-test","message":"no token, must be rejected","severity":"info","author":"smoke-test"}' "$@")
+                [ "$c" = "401" ] || fail "[$label] unauthenticated POST /pitch returned $c, expected 401 -- /pitch is not protected"
+                echo "[$label] unauthenticated POST /pitch -> 401"
+                c=$(code POST "$base/pitch" -H "Authorization: Bearer $AUTH_TOKEN" -H 'Content-Type: application/json' \
+                      -d '{"title":"smoke-test","message":"homerun2 smoke test","severity":"info","author":"smoke-test","system":"smoke-test"}' "$@")
+                case "$c" in
+                  200|201|202) echo "[$label] authenticated POST /pitch -> $c" ;;
+                  *) fail "[$label] authenticated POST /pitch returned $c" ;;
+                esac
+              }
+              wait_ok internal "$INTERNAL_URL/health"
+              pitch_checks internal "$INTERNAL_URL"
+              for p in $(echo "$PROBES" | tr ',' ' '); do
+                svc=$(echo "$p" | cut -d/ -f1); path=/$(echo "$p" | cut -d/ -f2-)
+                wait_ok "$svc" "http://$svc$path"
+              done
+              CA=""
+              [ -s /etc/ssl/bundle/trust-bundle.pem ] && CA="--cacert /etc/ssl/bundle/trust-bundle.pem"
+              wait_ok external "https://$EXTERNAL_HOST/health" --connect-to "$EXTERNAL_HOST:443:$CONNECT_TO:443" $CA
+              pitch_checks external "https://$EXTERNAL_HOST" --connect-to "$EXTERNAL_HOST:443:$CONNECT_TO:443" $CA
+              echo "PASS"

@@ -1,0 +1,9 @@
+---
+# light-catcher and the wled-mock it drives, on top of profiles/platform
+# (bundle component homerun2-light-catcher).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher
+  - ../../components/light-catcher/eso
+  - ../../components/wled-mock

@@ -1,0 +1,46 @@
+---
+# light-catcher and the wled-mock it drives
+# → ./apps/homerun2/profiles/platform-light-catcher
+#
+# REQUIRES ../homerun2 (namespace and redis).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-light-catcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_LIGHT_CATCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-light-catcher
+  postBuild:
+    substitute:
+      # INFRA_* are what infra/platform already reads, so a cluster sets them once.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
+      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.0.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
+      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.0.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-wled-mock-kustomize
+      HOMERUN2_WLED_MOCK_VERSION: "${HOMERUN2_WLED_MOCK_VERSION:-v1.0.0}"
+      HOMERUN2_LIGHT_CATCHER_HOSTNAME: "${HOMERUN2_LIGHT_CATCHER_HOSTNAME:-light-catcher}"
+      HOMERUN2_WLED_MOCK_HOSTNAME: "${HOMERUN2_WLED_MOCK_HOSTNAME:-wled-mock}"

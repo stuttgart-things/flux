@@ -1,0 +1,6 @@
+---
+# homerun2-smoke-test -- the homerun2 smoke test as a Job → ./apps/homerun2/smoke-test
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-smoke-test.yaml

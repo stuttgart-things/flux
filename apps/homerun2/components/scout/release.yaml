@@ -15,6 +15,17 @@ spec:
   wait: true
   targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
   patches:
+    # The base ships Namespace homerun2. Owned here too, pruning this one
+    # component would take the namespace -- and every other component -- along.
+    - target:
+        kind: Namespace
+        name: homerun2
+      patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: homerun2
+        $patch: delete
     # Remove the Ingress from the kustomize base (we use Gateway API HTTPRoute)
     - target:
         kind: Ingress
@@ -50,7 +61,8 @@ spec:
               containers:
                 - name: homerun2-scout
                   image: ghcr.io/stuttgart-things/homerun2-scout:${HOMERUN2_SCOUT_VERSION:-v0.8.2}
-    # Override the auth token secret
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-scout-token
@@ -59,9 +71,9 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-scout-token
-        stringData:
-          auth-token: ${HOMERUN2_SCOUT_AUTH_TOKEN:-changeme}
-    # Override the Redis password secret
+        $patch: delete
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-scout-redis
@@ -70,8 +82,7 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-scout-redis
-        data:
-          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+        $patch: delete
     # Mount trust-manager CA bundle for TLS trust
     - target:
         kind: Deployment

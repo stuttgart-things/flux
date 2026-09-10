@@ -50,7 +50,8 @@ spec:
               containers:
                 - name: homerun2-core-catcher
                   image: ghcr.io/stuttgart-things/homerun2-core-catcher:${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.0}
-    # Override the Redis password secret
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-core-catcher-redis
@@ -59,8 +60,7 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-core-catcher-redis
-        data:
-          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+        $patch: delete
     # Override Redis connection to point to the co-deployed redis-stack
     - target:
         kind: Deployment

@@ -10,16 +10,19 @@ spec:
     spec:
       chart: redis
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/redis/redis
-      version: ${HOMERUN2_REDIS_VERSION:-22.0.7}
+      version: ${HOMERUN2_REDIS_VERSION:-17.1.4}
       sourceRef:
         kind: HelmRepository
         name: stuttgart-things-redis
         namespace: ${HOMERUN2_NAMESPACE:-homerun2}
       interval: 12h
   values:
-    global:
-      redis:
-        password: ${HOMERUN2_REDIS_PASSWORD}
+    # The password is read from redis-stack-auth, which sops/ or eso/ beside
+    # this component creates -- the same Secret either way, so the chart does
+    # not care where the value comes from.
+    auth:
+      existingSecret: redis-stack-auth
+      existingSecretPasswordKey: redis-password
     sentinel:
       enabled: true
       masterSet: mymaster

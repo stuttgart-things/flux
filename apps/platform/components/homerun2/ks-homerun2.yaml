@@ -1,0 +1,79 @@
+---
+# the core homerun2 stack: redis-stack, omni-pitcher, core-catcher,
+# scout and led-catcher → ./apps/homerun2/profiles/platform
+#
+# Credentials come from a ClusterSecretStore: entry ${HOMERUN2_SECRET_PATH}
+# (redis-password, scout-auth-token) and the omni-pitcher token from
+# ${HOMERUN2_OMNI_PITCHER_TOKEN_PATH} / ..._PROPERTY -- separate so a cluster can
+# share that token with a client that already has it (zaehlwerk). Nothing
+# credential-shaped passes through Flux.
+#
+# demo-pitcher, light-catcher (+ wled-mock) and the smoke test are their own
+# components, each waiting on this one.
+#
+# REQUIRES cilium-gateway, external-secrets and a store; trust-manager's
+# cluster-trust-bundle is mounted where present.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: external-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform
+  postBuild:
+    substitute:
+      # INFRA_* are what infra/platform already reads, so a cluster sets them once.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      HOMERUN2_OMNI_PITCHER_TOKEN_PATH: "${HOMERUN2_OMNI_PITCHER_TOKEN_PATH:-homerun2}"
+      HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY: "${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY:-omni-pitcher-auth-token}"
+      # ---- redis-stack ---------------------------------------------------
+      # Held at 17.1.4 on purpose and without a renovate line: every consumer
+      # runs 17.1.4, and the 22.x default this replaced was never installed
+      # anywhere (its non-Bitnami images need allowInsecureImages).
+      HOMERUN2_REDIS_VERSION: "${HOMERUN2_REDIS_VERSION:-17.1.4}"
+      # passthrough-override: no StorageClass is safe to guess -- the base's
+      # "standard" exists on almost no cluster here, and a PVC that never binds
+      # reads as a slow redis. A sentinel names the variable to set.
+      HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
+      HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"
+      # ---- versions: the copies that win, bumped with their base ------------
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-omni-pitcher-kustomize
+      HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-core-catcher-kustomize
+      HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION:-v1.0.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-core-catcher
+      HOMERUN2_CORE_CATCHER_VERSION: "${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-scout-kustomize
+      HOMERUN2_SCOUT_KUSTOMIZE_VERSION: "${HOMERUN2_SCOUT_KUSTOMIZE_VERSION:-v0.8.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-scout
+      HOMERUN2_SCOUT_VERSION: "${HOMERUN2_SCOUT_VERSION:-v0.8.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-led-catcher-kustomize
+      HOMERUN2_LED_CATCHER_VERSION: "${HOMERUN2_LED_CATCHER_VERSION:-v0.7.0}"
+      # ---- hostnames: <name>.${DOMAIN} ------------------------------------
+      HOMERUN2_OMNI_PITCHER_HOSTNAME: "${HOMERUN2_OMNI_PITCHER_HOSTNAME:-omni-pitcher}"
+      HOMERUN2_CORE_CATCHER_HOSTNAME: "${HOMERUN2_CORE_CATCHER_HOSTNAME:-core-catcher}"
+      HOMERUN2_SCOUT_HOSTNAME: "${HOMERUN2_SCOUT_HOSTNAME:-scout}"
+      HOMERUN2_LED_CATCHER_HOSTNAME: "${HOMERUN2_LED_CATCHER_HOSTNAME:-led-catcher}"

@@ -1,0 +1,6 @@
+---
+# homerun2-light-catcher -- light-catcher and the wled-mock it drives
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-light-catcher.yaml

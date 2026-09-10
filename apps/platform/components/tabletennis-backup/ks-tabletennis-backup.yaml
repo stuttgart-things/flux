@@ -46,6 +46,9 @@ spec:
   path: ./apps/tabletennis/profiles/base
   components:
     - ../../components/schmetterpause-db-backup
+    # zaehlwerk's scoreboard panel: off, or homerun2 on the same cluster.
+    # A component rather than a variable -- see components/zaehlwerk-panel-homerun2.
+    - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
   postBuild:
     substitute:
       # ---- identical to ../tabletennis ----------------------------------

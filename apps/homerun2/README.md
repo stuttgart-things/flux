@@ -1,5 +1,24 @@
 # stuttgart-things/flux/homerun2
 
+## On a bundle cluster (apps/platform)
+
+Selected like any other app component, with credentials from a ClusterSecretStore:
+
+| Bundle component | Path | What it deploys |
+|---|---|---|
+| `homerun2` | `profiles/platform` | redis-stack, omni-pitcher, core-catcher, scout, led-catcher |
+| `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
+| `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
+| `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway |
+
+A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
+
+**Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets, used by the bundle components) or `components/<c>/sops` (plain Secrets from `substituteFrom`, used by `profiles/base` and the root, with the same variable names as before). The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
+
+**zaehlwerk.** tabletennis clusters with `TABLETENNIS_ZAEHLWERK_PANEL: homerun2` point zaehlwerk at omni-pitcher and the led-catcher in the same cluster; omni-pitcher routes `system: tabletennis` onto the `tabletennis` stream.
+
+The version tables further down predate this section; the current defaults are in each component's `requirements.yaml` and `release.yaml`.
+
 Homerun2 application stack using Kustomize Components pattern. Deploys Redis Stack + homerun2 microservices into a shared namespace.
 
 ## Components

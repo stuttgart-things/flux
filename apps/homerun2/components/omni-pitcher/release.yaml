@@ -25,6 +25,17 @@ spec:
         metadata:
           name: homerun2-omni-pitcher
         $patch: delete
+    # The base ships an HTTPRoute of the same name pointing at another
+    # cluster's gateway; httproute.yaml beside this file is the one that applies.
+    - target:
+        kind: HTTPRoute
+        name: homerun2-omni-pitcher
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-omni-pitcher
+        $patch: delete
     # Override the container image tag
     - target:
         kind: Deployment
@@ -39,8 +50,9 @@ spec:
             spec:
               containers:
                 - name: homerun2-omni-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v2.0.0}
-    # Override the auth token secret
+                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.0}
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-omni-pitcher-token
@@ -49,9 +61,9 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-omni-pitcher-token
-        stringData:
-          auth-token: ${HOMERUN2_OMNI_PITCHER_AUTH_TOKEN:-changeme}
-    # Override the Redis password secret
+        $patch: delete
+    # The base's placeholder Secret. sops/ or eso/ beside this component
+    # creates the real one, so the credential never lives in this object.
     - target:
         kind: Secret
         name: homerun2-omni-pitcher-redis
@@ -60,8 +72,7 @@ spec:
         kind: Secret
         metadata:
           name: homerun2-omni-pitcher-redis
-        data:
-          password: ${HOMERUN2_REDIS_PASSWORD_B64}
+        $patch: delete
     # Override Redis connection to point to the co-deployed redis-stack
     - target:
         kind: Deployment
