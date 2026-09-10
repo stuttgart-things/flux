@@ -53,8 +53,21 @@ tmp=".bundle-check"
 rm -rf "$tmp"; mkdir -p "$tmp"
 trap 'rm -rf "$tmp"' EXIT
 
-total=0
-for bundle in $bundles; do
+# An ALTERNATIVE stands in for another component: the same child Kustomization,
+# under the same name, wired differently (velero-eso for velero). It declares
+# that with a line `# bundle-alternative-of: <component>` in its
+# kustomization.yaml. Selecting both is one object defined twice, so "every
+# component at once" cannot include them -- the main build leaves alternatives
+# out, and each is then built again IN PLACE of the component it replaces.
+# Skipping them instead would be the "reports OK while unverified" case above.
+alternative_of() {
+  sed -n 's/^# bundle-alternative-of: *//p' "$1/kustomization.yaml" 2>/dev/null | head -1
+}
+
+# build <bundle> <what> <component dir>... -- leaves the output in $out.
+build() {
+  local bundle=$1 what=$2
+  shift 2
   {
     echo "---"
     echo "apiVersion: kustomize.config.k8s.io/v1beta1"
@@ -62,18 +75,42 @@ for bundle in $bundles; do
     echo "resources:"
     echo "  - ../$bundle/root"
     echo "components:"
-    for dir in "$bundle"/components/*/; do echo "  - ../$dir"; done
+    for dir in "$@"; do echo "  - ../$dir"; done
   } > "$tmp/kustomization.yaml"
 
   if ! out=$(kustomize build "$tmp" 2>&1); then
-    echo "FAIL: $bundle does not build with every component selected" >&2
+    echo "FAIL: $bundle does not build $what" >&2
     echo "$out" >&2
     exit 1
   fi
+}
 
+total=0
+for bundle in $bundles; do
+  regular=()
+  alternatives=()
+  for dir in "$bundle"/components/*/; do
+    if [ -n "$(alternative_of "$dir")" ]; then alternatives+=("$dir"); else regular+=("$dir"); fi
+  done
+
+  build "$bundle" "with every component selected" "${regular[@]}"
   n=$(ls -d "$bundle"/components/*/ | wc -l)
   count=$(grep -c '^kind: Kustomization' <<<"$out" || true)
   echo "OK: $bundle -- $n components, builds, $count child Kustomizations"
+
+  for alt in "${alternatives[@]}"; do
+    replaced=$(alternative_of "$alt")
+    if [ ! -d "$bundle/components/$replaced" ]; then
+      echo "FAIL $(basename "$alt"): declares itself an alternative of '$replaced', which is not a component of $bundle" >&2
+      exit 1
+    fi
+    swapped=()
+    for dir in "${regular[@]}"; do
+      [ "$dir" = "$bundle/components/$replaced/" ] || swapped+=("$dir")
+    done
+    build "$bundle" "with $(basename "$alt") in place of $replaced" "${swapped[@]}" "$alt"
+    echo "OK: $bundle -- $(basename "$alt") builds in place of $replaced"
+  done
   total=$((total + n))
 done
 echo "OK: $total components across $(echo $bundles | wc -w) bundles"

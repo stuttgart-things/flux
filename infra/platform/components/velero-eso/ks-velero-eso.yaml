@@ -1,0 +1,89 @@
+---
+# Velero, credentials from a ClusterSecretStore → ./infra/velero
+#
+# ---------------------------------------------------------------------------
+# THE ALTERNATIVE TO ../velero, NOT AN ADD-ON. Both render the child
+# Kustomization `velero` -- the same name on purpose, so ../velero-schedule's
+# dependsOn holds for either. Selecting both is one object defined twice and
+# fails the whole infra-platform build; check-cluster-components.py in the
+# cluster repository refuses the pair before it gets that far.
+# ---------------------------------------------------------------------------
+#
+# Credential mode 2 of the base. components/external-secret renders
+# `cloud-credentials` from one KV entry, and the base's mode-1 Secret is
+# deleted below, so exactly one writer owns that name. This is what a kustomize
+# Component alone cannot say and a Flux Kustomization can: spec.components plus
+# a delete patch on the path it builds. The pair never passes through Flux --
+# no substituteFrom, no Secret in the cluster repository.
+#
+# The entry is <the store's mount>/${VELERO_ESO_SECRET_PATH}, with properties
+# access_key and secret_key. The store carries the mount and the KV version, so
+# the path is the entry NAME and nothing else; `kv/data/velero/s3` style paths
+# point at something that exists nowhere and say so only on the ExternalSecret.
+# A missing entry is the same shape as mode 1's empty pair, only louder:
+# `cloud-credentials` never appears and the Deployment never starts, rather
+# than starting and failing every upload.
+#
+# Everything else -- the bucket, the endpoint, the bool knobs that cannot be
+# substituted, VELERO_SSL_CERT_DIR -- is identical to ../velero and documented
+# there; the literal patches shown in ../velero/ks-velero.yaml target this
+# child just the same, because it has the same name.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: velero
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  # external-secrets is not named here because the store is: without
+  # external-secrets-vault-store there is nothing to read from, and that
+  # component already waits on external-secrets.
+  dependsOn:
+    - name: external-secrets-vault-store
+  interval: 1h
+  retryInterval: 1m
+  # 10m: the chart's init container downloads the AWS object-store plugin
+  # before the server starts, and `wait: true` holds for both.
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${VELERO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/velero
+  components:
+    - ./components/external-secret
+  patches:
+    # No namespace in the body: with a target selector kustomize takes name
+    # and namespace from each matched object, and the base's namespace is still
+    # the unsubstituted ${VELERO_NAMESPACE:-velero} when patches run.
+    - target:
+        kind: Secret
+        name: cloud-credentials
+      patch: |
+        $patch: delete
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: cloud-credentials
+  postBuild:
+    substitute:
+      VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
+      # renovate: datasource=helm depName=velero registryUrl=https://vmware-tanzu.github.io/helm-charts
+      VELERO_VERSION: "${VELERO_VERSION:-12.1.0}"
+      # renovate: datasource=docker depName=velero/velero-plugin-for-aws
+      VELERO_PLUGIN_AWS_VERSION: "${VELERO_PLUGIN_AWS_VERSION:-v1.14.2}"
+      # REQUIRED, see ../velero/ks-velero.yaml for why these are sentinels.
+      VELERO_BUCKET: "${VELERO_BUCKET:-set-VELERO_BUCKET}"
+      VELERO_S3_ENDPOINT: "${VELERO_S3_ENDPOINT:-https://set-VELERO_S3_ENDPOINT.invalid}"
+      VELERO_S3_REGION: "${VELERO_S3_REGION:-minio}"
+      # passthrough-override: no store name is safe to guess. Stores are named
+      # per cluster (vault-<cluster>), and the base's vault-cluster exists on
+      # none of them -- a sentinel naming the variable says what to set.
+      VELERO_ESO_SECRET_STORE_NAME: "${VELERO_ESO_SECRET_STORE_NAME:-set-VELERO_ESO_SECRET_STORE_NAME}"
+      VELERO_ESO_SECRET_PATH: "${VELERO_ESO_SECRET_PATH:-velero}"

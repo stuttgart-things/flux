@@ -98,7 +98,9 @@ postBuild:
 
 ### 2. External Secrets Operator (opt-in)
 
-Use the kustomize Component at `components/external-secret/` to pull credentials from Vault via ESO instead. Enable it in your consumer Flux `Kustomization` overlay and patch out the base `cloud-credentials` Secret so the two don't fight over it:
+A bundle cluster selects **`infra/platform/components/velero-eso`** instead of `velero`. It is the same child Kustomization `velero` (so `velero-schedule` works with either), wired as below; set `VELERO_ESO_SECRET_STORE_NAME` to the cluster's store. The entry it reads is `<store mount>/velero` with properties `access_key` and `secret_key` -- the store carries the mount and KV version, so `VELERO_ESO_SECRET_PATH` is the entry name, not a path.
+
+Outside the bundle, use the kustomize Component at `components/external-secret/` in your own Flux `Kustomization` and patch out the base `cloud-credentials` Secret so the two don't fight over it:
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -196,7 +198,7 @@ Sizing, measured on a small single-node RKE2 cluster (54 pods, Rancher + Flux + 
 | `VELERO_SERVICE_MONITOR_ENABLED` | `false` | Create a Prometheus ServiceMonitor |
 | `VELERO_ESO_SECRET_STORE_NAME` | `vault-cluster` | ClusterSecretStore name (mode 2 only) |
 | `VELERO_ESO_SECRET_STORE_KIND` | `ClusterSecretStore` | Secret store kind (mode 2 only) |
-| `VELERO_ESO_SECRET_PATH` | `kv/data/velero/s3` | Vault KV path holding the S3 credentials (mode 2 only) |
+| `VELERO_ESO_SECRET_PATH` | `velero` | KV entry name holding the S3 credentials; the store supplies mount and version (mode 2 only) |
 | `VELERO_ESO_ACCESS_KEY_PROPERTY` | `access_key` | KV property for access key (mode 2 only) |
 | `VELERO_ESO_SECRET_KEY_PROPERTY` | `secret_key` | KV property for secret key (mode 2 only) |
 | `VELERO_ESO_REFRESH_INTERVAL` | `1h` | ESO refresh interval (mode 2 only) |

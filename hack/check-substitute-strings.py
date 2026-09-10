@@ -26,6 +26,8 @@ from pathlib import Path
 
 import yaml
 
+from bundle_alternatives import selections
+
 ROOT = Path(__file__).resolve().parent.parent
 # Discovered, not listed: a new bundle (cicd/platform was the third) is covered
 # the day it exists. Hardcoding the list is how TEKTON_RESULT_DISABLED reached a
@@ -68,23 +70,25 @@ def main():
         tmp = Path(tmp)
         docs = ""
         for bundle in BUNDLES:
-            comps = ROOT / bundle / "components"
-            lines = [
-                "apiVersion: kustomize.config.k8s.io/v1beta1",
-                "kind: Kustomization",
-                "resources:",
-                f"  - ../{bundle}/root",
-                "components:",
-            ]
-            lines += [f"  - ../{bundle}/components/{d.name}"
-                      for d in sorted(comps.iterdir()) if d.is_dir()]
-            (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
-            out = subprocess.run(["kustomize", "build", str(tmp)],
-                                 capture_output=True, text=True)
-            if out.returncode != 0:
-                print(out.stderr, file=sys.stderr)
-                return 1
-            docs += out.stdout + "\n---\n"
+            # One build per selection: an alternative component cannot be
+            # built beside the one it replaces, and must still be checked.
+            for label, names in selections(ROOT / bundle / "components"):
+                lines = [
+                    "apiVersion: kustomize.config.k8s.io/v1beta1",
+                    "kind: Kustomization",
+                    "resources:",
+                    f"  - ../{bundle}/root",
+                    "components:",
+                ]
+                lines += [f"  - ../{bundle}/components/{n}" for n in names]
+                (tmp / "kustomization.yaml").write_text("\n".join(lines) + "\n")
+                out = subprocess.run(["kustomize", "build", str(tmp)],
+                                     capture_output=True, text=True)
+                if out.returncode != 0:
+                    print(f"{bundle} ({label}):", file=sys.stderr)
+                    print(out.stderr, file=sys.stderr)
+                    return 1
+                docs += out.stdout + "\n---\n"
 
     bad = []
     checked = 0
