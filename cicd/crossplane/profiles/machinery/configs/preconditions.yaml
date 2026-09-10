@@ -67,7 +67,7 @@ data:
     # string only because a two-dot version cannot parse as a number. Keep three
     # components; "0.55" would arrive as a FLOAT.
     # renovate: datasource=docker depName=ghcr.io/controlplaneio-fluxcd/charts/flux-operator
-    version: "${CROSSPLANE_MACHINERY_FLUX_OPERATOR_VERSION:-0.55.0}"
+    version: "${CROSSPLANE_MACHINERY_FLUX_OPERATOR_VERSION:-0.59.0}"
     repoURL: "oci://ghcr.io/controlplaneio-fluxcd/charts"
   instance:
     distribution: "2.x"
