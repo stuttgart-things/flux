@@ -1,3 +1,10 @@
+## [1.64.1](https://github.com/stuttgart-things/flux/compare/v1.64.0...v1.64.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **homerun2:** apply HTTPRoutes only after their Services exist ([#416](https://github.com/stuttgart-things/flux/issues/416)) ([39ad76c](https://github.com/stuttgart-things/flux/commit/39ad76cef37a47f97c7e895b2a3ffa30ad48c840))
+
 # [1.64.0](https://github.com/stuttgart-things/flux/compare/v1.63.0...v1.64.0) (2026-09-10)
 
 
