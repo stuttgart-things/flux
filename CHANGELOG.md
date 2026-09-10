@@ -1,3 +1,10 @@
+## [1.62.2](https://github.com/stuttgart-things/flux/compare/v1.62.1...v1.62.2) (2026-09-10)
+
+
+### Bug Fixes
+
+* **renovate:** see quoted chart versions; skip only the generated machinery files ([#411](https://github.com/stuttgart-things/flux/issues/411)) ([4ed1a3a](https://github.com/stuttgart-things/flux/commit/4ed1a3ae056520e0cc6f41b8f93dabd6cb034286)), closes [check-passthrou#defaults](https://github.com/check-passthrou/issues/defaults) [#410](https://github.com/stuttgart-things/flux/issues/410) [flux#359](https://github.com/flux/issues/359)
+
 ## [1.62.1](https://github.com/stuttgart-things/flux/compare/v1.62.0...v1.62.1) (2026-09-10)
 
 
