@@ -1,3 +1,10 @@
+# [1.64.0](https://github.com/stuttgart-things/flux/compare/v1.63.0...v1.64.0) (2026-09-10)
+
+
+### Features
+
+* **homerun2:** selectable on bundle clusters, credentials from a store, stale pins fixed ([#413](https://github.com/stuttgart-things/flux/issues/413)) ([b4737b8](https://github.com/stuttgart-things/flux/commit/b4737b83ca4ad7b933cb98682a812dbead8b4f3c))
+
 # [1.63.0](https://github.com/stuttgart-things/flux/compare/v1.62.3...v1.63.0) (2026-09-10)
 
 
