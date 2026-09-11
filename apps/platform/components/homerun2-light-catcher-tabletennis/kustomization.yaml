@@ -1,0 +1,16 @@
+---
+# homerun2-light-catcher-tabletennis -- a light-catcher for the strip at the
+# table tennis table, fed by zaehlwerk's `tabletennis` stream.
+#
+# REQUIRES ../homerun2 (redis) and zaehlwerk v0.3.0+ pitching into it
+# (../tabletennis with TABLETENNIS_ZAEHLWERK_PANEL: homerun2): the effects match
+# on the tags zaehlwerk sends, and nothing else writes that stream.
+#
+# Drives the homerun2 wled-mock by default, which ../homerun2-light-catcher
+# brings. A real strip is HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT, and
+# then that component is not needed for this one.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-light-catcher-tabletennis.yaml
+  - ks-homerun2-light-catcher-tabletennis-routes.yaml

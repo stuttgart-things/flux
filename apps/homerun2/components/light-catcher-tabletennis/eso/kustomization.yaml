@@ -1,0 +1,8 @@
+---
+# light-catcher-tabletennis: the redis password from a ClusterSecretStore, into
+# this instance's namespace. The same entry as every other homerun2 component
+# (${HOMERUN2_SECRET_PATH}, property redis-password) -- it is the same redis.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml

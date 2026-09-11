@@ -1,0 +1,9 @@
+---
+# The light-catcher for the table tennis table, on top of profiles/platform
+# (bundle component homerun2-light-catcher-tabletennis). Its own namespace --
+# see components/light-catcher-tabletennis for why.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher-tabletennis
+  - ../../components/light-catcher-tabletennis/eso

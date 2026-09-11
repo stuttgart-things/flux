@@ -1,0 +1,122 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-light-catcher-tabletennis
+  namespace: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-light-catcher-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}
+  patches:
+    # The base's HTTPRoute -- ./route brings one with this instance's hostname.
+    - target:
+        kind: HTTPRoute
+        name: homerun2-light-catcher
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-light-catcher
+        $patch: delete
+    # The base's placeholder Secret. ./eso creates the real one.
+    - target:
+        kind: Secret
+        name: homerun2-light-catcher-redis
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: homerun2-light-catcher-redis
+        $patch: delete
+    - target:
+        kind: Deployment
+        name: homerun2-light-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-light-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-light-catcher
+                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.0}
+                  env:
+                    # redis stays where homerun2 runs; only this catcher moved.
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
+                    - name: REDIS_STREAM
+                      value: tabletennis
+                    # A group of its own. The name is per stream, so it would not
+                    # collide with the other light-catcher today -- but a shared
+                    # name is one REDIS_STREAMS change away from two catchers
+                    # splitting the table's points between them.
+                    - name: CONSUMER_GROUP
+                      value: homerun2-light-catcher-tabletennis
+    # The whole profile, replacing the base's wildcard rules.
+    #
+    # First match wins, in document order (light-catcher v1.0.2+). zaehlwerk
+    # tags every transition `transition=<kind>` and, where it went to one,
+    # `side=a|b` (zaehlwerk v0.3.0+). What has no rule -- an undo, a correction
+    # that lowered a score -- lights nothing and logs `no matching effect`.
+    #
+    # match_won is SUCCESS like set_won, so the tags are what tells them apart.
+    # A point's one-second flash does not cut the match effect short: the older
+    # timer stands down for the newer effect (light-catcher v1.0.2+).
+    - target:
+        kind: ConfigMap
+        name: homerun2-light-catcher-profile
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: homerun2-light-catcher-profile
+        data:
+          profile.yaml: |
+            effects:
+              tabletennis-match:
+                systems: [tabletennis]
+                severity: [success]
+                tags: [transition=match_won]
+                fx: Fireworks
+                duration: 10
+                color: forest
+                segments: [0]
+                endpoint: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}
+              tabletennis-set:
+                systems: [tabletennis]
+                severity: [success]
+                tags: [transition=set_won]
+                fx: Rainbow
+                duration: 4
+                color: forest
+                segments: [0]
+                endpoint: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}
+              tabletennis-point-a:
+                systems: [tabletennis]
+                severity: [info]
+                tags: [transition=point, side=a]
+                fx: Solid
+                duration: 1
+                color: blue
+                segments: [0]
+                endpoint: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}
+              tabletennis-point-b:
+                systems: [tabletennis]
+                severity: [info]
+                tags: [transition=point, side=b]
+                fx: Solid
+                duration: 1
+                color: red
+                segments: [0]
+                endpoint: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}

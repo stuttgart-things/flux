@@ -1,0 +1,8 @@
+---
+# light-catcher-tabletennis: its HTTPRoute, as a component of its own, applied
+# once the app is Ready -- Cilium resolves backendRefs once, see
+# components/light-catcher/route.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

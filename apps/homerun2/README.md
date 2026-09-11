@@ -9,6 +9,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2` | `profiles/platform-redis`, then `profiles/platform` | the namespace and redis-stack (`homerun2-redis`), then omni-pitcher, core-catcher, scout, led-catcher once redis answers |
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
+| `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again only when the Job spec changes (a bundle bump that touches it, changed probe variables); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
@@ -20,6 +21,8 @@ A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both 
 **Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets, used by the bundle components) or `components/<c>/sops` (plain Secrets from `substituteFrom`, used by `profiles/base` and the root, with the same variable names as before). The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
 
 **zaehlwerk.** tabletennis clusters with `TABLETENNIS_ZAEHLWERK_PANEL: homerun2` point zaehlwerk at omni-pitcher and the led-catcher in the same cluster; omni-pitcher routes `system: tabletennis` onto the `tabletennis` stream.
+
+**A light at the table.** `homerun2-light-catcher-tabletennis` reads that stream with a profile of its own: a one-second flash in side a's or side b's colour per point, Rainbow on a set, Fireworks on the match. The rules match on the tags zaehlwerk v0.3.0+ sends (`transition=`, `side=`), which needs light-catcher v1.1.0+. It is a second instance in its own namespace rather than a second stream on `homerun2-light-catcher`, whose wildcard rules would fire on every point -- see `components/light-catcher-tabletennis`. It drives the homerun2 wled-mock until `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` names a strip.
 
 Homerun2 application stack using Kustomize Components pattern. Deploys Redis Stack + homerun2 microservices into a shared namespace.
 
@@ -33,6 +36,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `k8s-pitcher` | OCIRepository + Flux Kustomization | K8s cluster watcher (informers + collectors) |
 | `scout` | OCIRepository + Flux Kustomization | Scout service with web dashboard |
 | `light-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer triggering WLED light effects |
+| `light-catcher-tabletennis` | OCIRepository + Flux Kustomization | A second light-catcher on zaehlwerk's `tabletennis` stream, in its own namespace |
 | `wled-mock` | OCIRepository + Flux Kustomization | WLED mock server with dashboard (for dev/testing) |
 | `demo-pitcher` | OCIRepository + Flux Kustomization | Web UI for manually pitching demo messages to Redis Streams |
 | `led-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer for LED display output |
@@ -122,6 +126,16 @@ that component ships only via `profiles/base`.
 | `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.0` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.0` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+
+### Light Catcher (tabletennis)
+
+Shares the version variables above.
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE` | `homerun2-tabletennis` | no | Namespace of this instance |
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` | `http://homerun2-wled-mock.homerun2.svc.cluster.local` | no | The WLED device at the table |
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME` | `light-catcher-tabletennis` | no | HTTPRoute hostname prefix |
 
 ### WLED Mock
 

@@ -1,0 +1,46 @@
+---
+# a light-catcher on the `tabletennis` stream, in a namespace of its own
+# → ./apps/homerun2/profiles/platform-light-catcher-tabletennis
+#
+# REQUIRES ../homerun2 (redis). Not ../homerun2-light-catcher: the wled-mock it
+# brings is only the default endpoint, and waiting on it would block a cluster
+# that drives a real strip and never selects the mock.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-light-catcher-tabletennis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-light-catcher-tabletennis
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}"
+      # The homerun2 wled-mock unless the cluster has a strip. Written out rather
+      # than built from HOMERUN2_NAMESPACE: a default cannot nest a reference.
+      HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      # The same version variables as ../homerun2-light-catcher: one catcher, two
+      # instances. v1.1.0 is the floor here -- the profile matches on tags.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
+      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
+      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.0}"
