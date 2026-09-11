@@ -49,7 +49,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-light-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.0}
+                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.3}
     # The base's placeholder Secret. sops/ or eso/ beside this component
     # creates the real one, so the credential never lives in this object.
     - target:
