@@ -1,0 +1,24 @@
+---
+# light-catcher-tabletennis -- a second light-catcher, for the strip at the
+# table tennis table, reading only the `tabletennis` stream zaehlwerk pitches to.
+#
+# A SECOND INSTANCE, NOT A SECOND STREAM. Adding `tabletennis` to the existing
+# light-catcher sends every point through a profile of wildcard rules -- `info`
+# on systems ["*"] fires DJ Light for three seconds per point -- and a profile
+# has no rule that matches and does nothing, nor one that excludes a system.
+# The strip at the table is not the strip that shows cluster alerts anyway.
+#
+# ITS OWN NAMESPACE, NOT A NAME SUFFIX. The kustomize base names everything
+# homerun2-light-catcher and selects on those labels -- the Service, the
+# Deployment selector and its pod anti-affinity. Renamed into the homerun2
+# namespace, the two Services would each route to both instances. In a
+# namespace of its own the base applies unchanged.
+#
+# REQUIRES light-catcher v1.1.0 or later: the rules match on tags, which an
+# older catcher ignores -- the first rule would then take every set AND match,
+# and side a's colour every point.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - requirements.yaml
+  - release.yaml

@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: homerun2-light-catcher-kustomize
+  namespace: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
+  ref:
+    tag: ${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.0}

@@ -1,0 +1,6 @@
+---
+# HTTPRoute for profiles/platform-light-catcher-tabletennis, applied after it is Ready.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher-tabletennis/route
