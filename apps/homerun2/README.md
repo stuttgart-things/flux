@@ -10,7 +10,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
-| `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again only when the Job spec changes (a bundle bump that touches it, changed probe variables); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
+| `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
 

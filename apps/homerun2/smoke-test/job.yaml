@@ -13,7 +13,8 @@
 # that; the values it needs arrive as env set from the substitutions below.
 #
 # force: a Job's pod template is immutable. Flux deletes and recreates it when
-# anything here changes, which is also what re-runs the test.
+# anything here changes, which is also what re-runs the test -- including the
+# tested-versions annotation, so a component bump re-runs it too.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -29,6 +30,12 @@ spec:
       labels:
         app.kubernetes.io/name: homerun2-smoke-test
         app.kubernetes.io/part-of: homerun2
+      # What the test last ran against. A component bump changes this, which
+      # (force, immutable template) recreates the Job and re-runs the test.
+      # No defaults here: the Kustomization always sets them, and a second copy
+      # of each would be one renovate cannot see.
+      annotations:
+        homerun2.stuttgart-things.com/tested-versions: "redis=${HOMERUN2_REDIS_VERSION},omni-pitcher=${HOMERUN2_OMNI_PITCHER_VERSION},core-catcher=${HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION}/${HOMERUN2_CORE_CATCHER_VERSION},scout=${HOMERUN2_SCOUT_KUSTOMIZE_VERSION}/${HOMERUN2_SCOUT_VERSION},led-catcher=${HOMERUN2_LED_CATCHER_VERSION},demo-pitcher=${HOMERUN2_DEMO_PITCHER_VERSION},light-catcher=${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION}/${HOMERUN2_LIGHT_CATCHER_VERSION},wled-mock=${HOMERUN2_WLED_MOCK_VERSION}"
     spec:
       restartPolicy: Never
       # Numeric on purpose: curlimages/curl declares a named user, and with

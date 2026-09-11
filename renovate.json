@@ -112,16 +112,6 @@
       "allowedVersions": "<v0.7.0"
     },
     {
-      "description": "Skip the orphaned homerun2-light-catcher-kustomize v1.0.1. It was pushed 2026-03-14, five months BEFORE v1.0.0 (2026-08-20), so it is the older artifact under the higher number; flux#414 bumped to it and the component would have shipped the March manifests. A real v1.0.2 still comes through; drop the rule if upstream ever overwrites v1.0.1.",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize"
-      ],
-      "allowedVersions": "!/^v1\\.0\\.1$/"
-    },
-    {
       "description": "Skip the orphaned homerun2-scout-kustomize v1.0.0. It was pushed 2026-03-11, two months BEFORE v0.8.2 (2026-05-17), and homerun2-scout never released a v1.0.0 -- no git tag, no image. flux#415 proposed it; the component would have shipped the March manifests against a v0.8.2 image. A real v1.0.1 still comes through; drop the rule if upstream ever overwrites v1.0.0.",
       "matchDatasources": [
         "docker"
