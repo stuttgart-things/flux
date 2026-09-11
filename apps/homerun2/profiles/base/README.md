@@ -40,7 +40,8 @@ children are, so `dependsOn` covers the Services.
 **Moving an existing install** (routes were in this profile before): the stack
 Kustomization prunes them before `base-routes` recreates them -- a short 404.
 Annotate the live routes with `kustomize.toolkit.fluxcd.io/prune=disabled`
-first and `base-routes` adopts them instead; remove the annotation afterwards.
+first and `base-routes` adopts them instead (platform-sthings, 2026-09-11: no
+404). Flux strips the kubectl-set annotation itself on its next apply.
 
 To add Git event watching, deploy [`profiles/cicd`](../cicd/README.md) as a
 **second** Flux Kustomization alongside this one — it is an add-on that carries
