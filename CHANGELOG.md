@@ -1,3 +1,10 @@
+## [1.66.2](https://github.com/stuttgart-things/flux/compare/v1.66.1...v1.66.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **homerun2:** light-catcher v1.1.3, for both instances ([#428](https://github.com/stuttgart-things/flux/issues/428)) ([3cc5a83](https://github.com/stuttgart-things/flux/commit/3cc5a83151e94e81d204211b0b03496c4ee6f4c7)), closes [homerun2-light-catcher#55](https://github.com/homerun2-light-catcher/issues/55) [#57](https://github.com/stuttgart-things/flux/issues/57) [#59](https://github.com/stuttgart-things/flux/issues/59)
+
 ## [1.66.1](https://github.com/stuttgart-things/flux/compare/v1.66.0...v1.66.1) (2026-09-11)
 
 
