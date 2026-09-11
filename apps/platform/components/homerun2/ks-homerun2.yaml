@@ -1,6 +1,11 @@
 ---
-# the core homerun2 stack: redis-stack, omni-pitcher, core-catcher,
-# scout and led-catcher → ./apps/homerun2/profiles/platform
+# the core homerun2 stack: omni-pitcher, core-catcher, scout and led-catcher
+# → ./apps/homerun2/profiles/platform
+#
+# Waits for homerun2-redis (namespace + redis-stack). Applied together, the
+# apps came up before redis answered: omni-pitcher gives it 30s, core-catcher
+# no retry, and a fresh redis-stack took ~70s -- 2 and 4 restarts on
+# labda-dev-a's first install.
 #
 # Credentials come from a ClusterSecretStore: entry ${HOMERUN2_SECRET_PATH}
 # (redis-password, scout-auth-token) and the omni-pitcher token from
@@ -24,8 +29,7 @@ metadata:
     kustomization.stuttgart-things.com/bundle: apps-platform
 spec:
   dependsOn:
-    - name: cilium-gateway
-    - name: external-secrets
+    - name: homerun2-redis
   interval: 1h
   retryInterval: 1m
   timeout: 15m
@@ -49,16 +53,6 @@ spec:
       HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
       HOMERUN2_OMNI_PITCHER_TOKEN_PATH: "${HOMERUN2_OMNI_PITCHER_TOKEN_PATH:-homerun2}"
       HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY: "${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY:-omni-pitcher-auth-token}"
-      # ---- redis-stack ---------------------------------------------------
-      # Held at 17.1.4 on purpose and without a renovate line: every consumer
-      # runs 17.1.4, and the 22.x default this replaced was never installed
-      # anywhere (its non-Bitnami images need allowInsecureImages).
-      HOMERUN2_REDIS_VERSION: "${HOMERUN2_REDIS_VERSION:-17.1.4}"
-      # passthrough-override: no StorageClass is safe to guess -- the base's
-      # "standard" exists on almost no cluster here, and a PVC that never binds
-      # reads as a slow redis. A sentinel names the variable to set.
-      HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
-      HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"
       # ---- versions: the copies that win, bumped with their base ------------
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-omni-pitcher-kustomize
       HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.0}"

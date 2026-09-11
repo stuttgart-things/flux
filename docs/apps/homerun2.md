@@ -107,15 +107,15 @@ spec:
 
 | Variable | Default | Description |
 |---|---|---|
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v1.2.0` | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.0` | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | *(required)* | HTTPRoute hostname prefix |
 
 ### Core Catcher
 
 | Variable | Default | Description |
 |---|---|---|
-| `HOMERUN2_CORE_CATCHER_VERSION` | `v0.5.0` | Container image tag |
-| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v0.5.0` | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.0` | Container image tag |
+| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.0` | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | *(required)* | HTTPRoute hostname prefix |
 
 ## Testing

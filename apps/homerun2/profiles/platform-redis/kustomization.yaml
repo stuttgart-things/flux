@@ -1,0 +1,9 @@
+---
+# The homerun2 namespace and redis-stack for the apps-platform bundle, applied
+# by homerun2-redis BEFORE profiles/platform: omni-pitcher gives redis 30s and
+# core-catcher no retry at all, and a fresh redis-stack takes ~70s to answer.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/redis-stack
+  - ../../components/redis-stack/eso

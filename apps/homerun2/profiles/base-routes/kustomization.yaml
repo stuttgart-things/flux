@@ -1,0 +1,14 @@
+---
+# HTTPRoutes for profiles/base. Apply from a Kustomization that dependsOn the
+# profiles/base one and substitutes GATEWAY_NAME, GATEWAY_NAMESPACE, DOMAIN,
+# HOMERUN2_NAMESPACE and the three HOMERUN2_*_HOSTNAME variables.
+#
+# Separate because Cilium resolves a route's backendRefs once: a route applied
+# beside the child Kustomization that later creates its Service serves HTTP 500
+# for good while every Kustomization reports Ready.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/omni-pitcher/route
+  - ../../components/core-catcher/route
+  - ../../components/scout/route
