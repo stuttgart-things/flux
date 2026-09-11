@@ -50,7 +50,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-omni-pitcher
-                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.1}
+                  image: ghcr.io/stuttgart-things/homerun2-omni-pitcher:${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.2}
     # The base's placeholder Secret. sops/ or eso/ beside this component
     # creates the real one, so the credential never lives in this object.
     - target:
