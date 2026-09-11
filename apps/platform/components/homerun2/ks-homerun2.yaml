@@ -55,11 +55,11 @@ spec:
       HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY: "${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY:-omni-pitcher-auth-token}"
       # ---- versions: the copies that win, bumped with their base ------------
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-omni-pitcher-kustomize
-      HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.0}"
+      HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.1.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-core-catcher-kustomize
-      HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION:-v1.0.0}"
+      HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION:-v1.0.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-core-catcher
-      HOMERUN2_CORE_CATCHER_VERSION: "${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.0}"
+      HOMERUN2_CORE_CATCHER_VERSION: "${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-scout-kustomize
       HOMERUN2_SCOUT_KUSTOMIZE_VERSION: "${HOMERUN2_SCOUT_KUSTOMIZE_VERSION:-v0.8.2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-scout

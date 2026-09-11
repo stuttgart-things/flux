@@ -93,7 +93,7 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.1` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for the `/pitch` endpoint (use substituteFrom Secret) |
 
@@ -101,8 +101,8 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.0` | no | Container image tag |
-| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.0` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.1` | no | Container image tag |
+| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.1` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### K8s Pitcher
