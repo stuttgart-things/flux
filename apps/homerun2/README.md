@@ -123,8 +123,8 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.0` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.0` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.3` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.3` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Light Catcher (tabletennis)

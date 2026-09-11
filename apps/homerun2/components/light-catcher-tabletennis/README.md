@@ -45,8 +45,8 @@ redis is still reached at `redis-stack.${HOMERUN2_NAMESPACE}`.
 | `HOMERUN2_NAMESPACE` | `homerun2` | Where redis runs |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE` | `homerun2-tabletennis` | This instance's namespace |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` | `http://homerun2-wled-mock.homerun2.svc.cluster.local` | The WLED device the effects go to |
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.0` | OCI kustomize artifact version, shared with `light-catcher` |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.0` | Container image tag, shared with `light-catcher` |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.3` | OCI kustomize artifact version, shared with `light-catcher` |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.3` | Container image tag, shared with `light-catcher` |
 | `HOMERUN2_SECRET_STORE` | *(required)* | ClusterSecretStore for `eso/` |
 | `HOMERUN2_SECRET_PATH` | `homerun2` | Entry holding `redis-password` |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME` | `light-catcher-tabletennis` | HTTPRoute hostname prefix (`route/`) |
