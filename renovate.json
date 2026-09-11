@@ -122,6 +122,16 @@
       "allowedVersions": "!/^v1\\.0\\.1$/"
     },
     {
+      "description": "Skip the orphaned homerun2-scout-kustomize v1.0.0. It was pushed 2026-03-11, two months BEFORE v0.8.2 (2026-05-17), and homerun2-scout never released a v1.0.0 -- no git tag, no image. flux#415 proposed it; the component would have shipped the March manifests against a v0.8.2 image. A real v1.0.1 still comes through; drop the rule if upstream ever overwrites v1.0.0.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/homerun2-scout-kustomize"
+      ],
+      "allowedVersions": "!/^v1\\.0\\.0$/"
+    },
+    {
       "description": "Group the crossplane-contrib packages so a registry change arrives as one reviewable PR. THE REGISTRY IS NOT INTERCHANGEABLE: each package here is on the registry the installed Configurations declare for it, and Crossplane keys its lock on the source string -- the other spelling of the same image reads as a missing dependency. Do not 'tidy' these onto one registry; that has to start in the packages' own dependsOn.",
       "matchDatasources": [
         "docker"
