@@ -63,7 +63,7 @@ spec:
       SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
       ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
-      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.3.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
       # ---- the backup -----------------------------------------------------
