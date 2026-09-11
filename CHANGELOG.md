@@ -1,3 +1,10 @@
+# [1.66.0](https://github.com/stuttgart-things/flux/compare/v1.65.2...v1.66.0) (2026-09-11)
+
+
+### Features
+
+* **homerun2:** a light-catcher for the table tennis table, light-catcher v1.1.0, zaehlwerk v0.3.0 ([#424](https://github.com/stuttgart-things/flux/issues/424)) ([504de5b](https://github.com/stuttgart-things/flux/commit/504de5b61a7b3db2b10bc7350d746746202b86ba)), closes [homerun2-light-catcher#50](https://github.com/homerun2-light-catcher/issues/50) [#51](https://github.com/stuttgart-things/flux/issues/51) [zaehlwerk#35](https://github.com/zaehlwerk/issues/35)
+
 ## [1.65.2](https://github.com/stuttgart-things/flux/compare/v1.65.1...v1.65.2) (2026-09-11)
 
 
