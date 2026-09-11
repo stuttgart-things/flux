@@ -1,3 +1,10 @@
+# [1.65.0](https://github.com/stuttgart-things/flux/compare/v1.64.1...v1.65.0) (2026-09-11)
+
+
+### Features
+
+* **homerun2:** redis before the apps, base-routes split, zaehlwerk reloads its config ([#417](https://github.com/stuttgart-things/flux/issues/417)) ([74d1223](https://github.com/stuttgart-things/flux/commit/74d1223f35bb778edebaf767bd14b5454dab9e78)), closes [#414](https://github.com/stuttgart-things/flux/issues/414)
+
 ## [1.64.1](https://github.com/stuttgart-things/flux/compare/v1.64.0...v1.64.1) (2026-09-10)
 
 
