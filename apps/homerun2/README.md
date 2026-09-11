@@ -119,15 +119,15 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.0.0` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.0.0` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.0` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.0` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### WLED Mock
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_WLED_MOCK_VERSION` | `v1.0.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_WLED_MOCK_VERSION` | `v1.1.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_WLED_MOCK_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Demo Pitcher
