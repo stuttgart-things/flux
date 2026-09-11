@@ -1,3 +1,10 @@
+## [1.65.2](https://github.com/stuttgart-things/flux/compare/v1.65.1...v1.65.2) (2026-09-11)
+
+
+### Bug Fixes
+
+* **homerun2:** omni-pitcher v2.1.2 and core-catcher v1.0.2, with a startupProbe covering the Redis wait ([#423](https://github.com/stuttgart-things/flux/issues/423)) ([f8d5a7b](https://github.com/stuttgart-things/flux/commit/f8d5a7b6c0e8ac0fd187b74caf8e9537a86ac07c))
+
 ## [1.65.1](https://github.com/stuttgart-things/flux/compare/v1.65.0...v1.65.1) (2026-09-11)
 
 
