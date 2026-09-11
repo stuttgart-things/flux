@@ -1,16 +1,15 @@
 ---
 # The core homerun2 stack for the apps-platform bundle component `homerun2`:
-# redis-stack, omni-pitcher, core-catcher, scout and led-catcher, credentials
-# from a ClusterSecretStore.
+# omni-pitcher, core-catcher, scout and led-catcher, credentials from a
+# ClusterSecretStore. The namespace and redis-stack come from
+# profiles/platform-redis, which homerun2 waits for.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
-  - ../../components/redis-stack
   - ../../components/omni-pitcher
   - ../../components/core-catcher
   - ../../components/scout
   - ../../components/led-catcher
-  - ../../components/redis-stack/eso
   - ../../components/omni-pitcher/eso
   - ../../components/core-catcher/eso
   - ../../components/scout/eso

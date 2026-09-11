@@ -112,6 +112,16 @@
       "allowedVersions": "<v0.7.0"
     },
     {
+      "description": "Skip the orphaned homerun2-light-catcher-kustomize v1.0.1. It was pushed 2026-03-14, five months BEFORE v1.0.0 (2026-08-20), so it is the older artifact under the higher number; flux#414 bumped to it and the component would have shipped the March manifests. A real v1.0.2 still comes through; drop the rule if upstream ever overwrites v1.0.1.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize"
+      ],
+      "allowedVersions": "!/^v1\\.0\\.1$/"
+    },
+    {
       "description": "Group the crossplane-contrib packages so a registry change arrives as one reviewable PR. THE REGISTRY IS NOT INTERCHANGEABLE: each package here is on the registry the installed Configurations declare for it, and Crossplane keys its lock on the source string -- the other spelling of the same image reads as a missing dependency. Do not 'tidy' these onto one registry; that has to start in the packages' own dependsOn.",
       "matchDatasources": [
         "docker"

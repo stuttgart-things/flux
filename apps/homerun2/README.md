@@ -6,20 +6,20 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 
 | Bundle component | Path | What it deploys |
 |---|---|---|
-| `homerun2` | `profiles/platform` | redis-stack, omni-pitcher, core-catcher, scout, led-catcher |
+| `homerun2` | `profiles/platform-redis`, then `profiles/platform` | the namespace and redis-stack (`homerun2-redis`), then omni-pitcher, core-catcher, scout, led-catcher once redis answers |
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
-| `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway |
+| `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again only when the Job spec changes (a bundle bump that touches it, changed probe variables); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
 
-**Routes come last.** Each of the first three brings a second Kustomization, `<name>-routes`, that applies the HTTPRoutes (`components/<c>/route`) only once the app Kustomization is Ready. Cilium resolves a route's backends once; a route applied before its Service serves HTTP 500 for good while everything reports Ready. `profiles/base` and the root still apply the routes inline.
+**Redis comes first.** `homerun2` waits for `homerun2-redis`. omni-pitcher gives redis 30s at start and core-catcher does not retry at all, while a fresh redis-stack takes ~70s to answer -- applied together, the two restarted 2 and 4 times on labda-dev-a's first install.
+
+**Routes come last.** Each of the first three brings a second Kustomization, `<name>-routes`, that applies the HTTPRoutes (`components/<c>/route`) only once the app Kustomization is Ready. Cilium resolves a route's backends once; a route applied before its Service serves HTTP 500 for good while everything reports Ready. `profiles/base` has the same split: its routes are in `profiles/base-routes`. Only the root still applies them inline.
 
 **Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets, used by the bundle components) or `components/<c>/sops` (plain Secrets from `substituteFrom`, used by `profiles/base` and the root, with the same variable names as before). The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
 
 **zaehlwerk.** tabletennis clusters with `TABLETENNIS_ZAEHLWERK_PANEL: homerun2` point zaehlwerk at omni-pitcher and the led-catcher in the same cluster; omni-pitcher routes `system: tabletennis` onto the `tabletennis` stream.
-
-The version tables further down predate this section; the current defaults are in each component's `requirements.yaml` and `release.yaml`.
 
 Homerun2 application stack using Kustomize Components pattern. Deploys Redis Stack + homerun2 microservices into a shared namespace.
 
@@ -46,6 +46,7 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | Profile | Components | Use case |
 |---------|------------|----------|
 | `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
+| `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
 | *(root)* | 10 of the 11 components — everything except `notification-catcher` | Full stack deployment |
 
@@ -92,7 +93,7 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v1.2.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for the `/pitch` endpoint (use substituteFrom Secret) |
 
@@ -100,15 +101,15 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_CORE_CATCHER_VERSION` | `v0.5.0` | no | Container image tag |
-| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v0.5.0` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.0` | no | Container image tag |
+| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.0` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### K8s Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_K8S_PITCHER_VERSION` | `v0.4.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_K8S_PITCHER_VERSION` | `v1.0.1` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
@@ -118,41 +119,43 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v0.3.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.0.0` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.0.0` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### WLED Mock
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_WLED_MOCK_VERSION` | `v0.3.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_WLED_MOCK_VERSION` | `v1.0.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_WLED_MOCK_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Demo Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_DEMO_PITCHER_VERSION` | `v1.4.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.1` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### LED Catcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LED_CATCHER_VERSION` | `v0.1.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LED_CATCHER_VERSION` | `v0.7.0` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Git Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_GIT_PITCHER_VERSION` | `v0.5.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.1` | no | OCI kustomize base + container image tag |
 
 ### Scout
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_SCOUT_VERSION` | `v0.7.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.8.2` | no | OCI kustomize base tag |
+| `HOMERUN2_SCOUT_VERSION` | `v0.8.2` | no | Container image tag |
 | `HOMERUN2_SCOUT_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 The WLED mock provides a dashboard simulating a WLED device. Use it during development/testing instead of a real WLED device. The light-catcher's profile should point its endpoints to `homerun2-wled-mock.NAMESPACE.svc.cluster.local`.

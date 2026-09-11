@@ -64,3 +64,18 @@ spec:
       patch: |
         - op: remove
           path: /data/OMNI_PITCHER_URL
+    # Stakater Reloader: roll zaehlwerk when zaehlwerk-config or one of its
+    # Secrets changes. zaehlwerk reads them only at start, so a changed
+    # ConfigMap -- e.g. the panel URLs from zaehlwerk-panel-homerun2 -- sat
+    # unnoticed until a manual rollout restart on labda-dev-a. No-op on
+    # clusters without the Reloader controller (infra/reloader).
+    - target:
+        kind: Deployment
+        name: zaehlwerk
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: zaehlwerk
+          annotations:
+            reloader.stakater.com/auto: "true"

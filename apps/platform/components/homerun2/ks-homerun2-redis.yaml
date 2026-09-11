@@ -1,0 +1,49 @@
+---
+# homerun2-redis -- the homerun2 namespace and redis-stack
+# → ./apps/homerun2/profiles/platform-redis
+#
+# Its own Kustomization so the apps in homerun2 start against a redis that
+# already answers: `wait: true` holds this one until the HelmRelease is Ready,
+# which the chart reports only once redis is.
+#
+# REQUIRES external-secrets and a store (redis-password from
+# ${HOMERUN2_SECRET_PATH}), and a StorageClass.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-redis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: external-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-redis
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      # Held at 17.1.4 on purpose and without a renovate line: every consumer
+      # runs 17.1.4, and the 22.x default this replaced was never installed
+      # anywhere (its non-Bitnami images need allowInsecureImages).
+      HOMERUN2_REDIS_VERSION: "${HOMERUN2_REDIS_VERSION:-17.1.4}"
+      # passthrough-override: no StorageClass is safe to guess -- the base's
+      # "standard" exists on almost no cluster here, and a PVC that never binds
+      # reads as a slow redis. A sentinel names the variable to set.
+      HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
+      HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"

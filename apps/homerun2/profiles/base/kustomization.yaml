@@ -1,4 +1,6 @@
 ---
+# The HTTPRoutes are in profiles/base-routes: apply them from a second
+# Kustomization that dependsOn this one (see that profile).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 components:
@@ -11,6 +13,3 @@ components:
   - ../../components/omni-pitcher/sops
   - ../../components/core-catcher/sops
   - ../../components/scout/sops
-  - ../../components/omni-pitcher/route
-  - ../../components/core-catcher/route
-  - ../../components/scout/route
