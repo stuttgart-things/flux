@@ -61,7 +61,7 @@ spec:
       ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
       # Same as SCHMETTERPAUSE_VERSION above: the winning copy, bumped with the base.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
-      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.2.0}"
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.3.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
       # and guessing wrong points ESO at another cluster's secrets, which reads
