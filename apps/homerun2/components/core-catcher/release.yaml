@@ -49,7 +49,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-core-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-core-catcher:${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.1}
+                  image: ghcr.io/stuttgart-things/homerun2-core-catcher:${HOMERUN2_CORE_CATCHER_VERSION:-v1.0.2}
     # The base's placeholder Secret. sops/ or eso/ beside this component
     # creates the real one, so the credential never lives in this object.
     - target:
