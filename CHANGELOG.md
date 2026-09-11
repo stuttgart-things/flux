@@ -1,3 +1,10 @@
+## [1.66.1](https://github.com/stuttgart-things/flux/compare/v1.66.0...v1.66.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **homerun2:** the smoke test re-runs on component version bumps; drop the stale light-catcher renovate hold ([#427](https://github.com/stuttgart-things/flux/issues/427)) ([960775f](https://github.com/stuttgart-things/flux/commit/960775f1dd8dea74db165210dec8e34b34ff0967))
+
 # [1.66.0](https://github.com/stuttgart-things/flux/compare/v1.65.2...v1.66.0) (2026-09-11)
 
 
