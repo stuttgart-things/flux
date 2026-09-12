@@ -1,3 +1,10 @@
+# [1.67.0](https://github.com/stuttgart-things/flux/compare/v1.66.3...v1.67.0) (2026-09-12)
+
+
+### Features
+
+* **homerun2:** config-viewer component and opt-in platform Kustomization ([#439](https://github.com/stuttgart-things/flux/issues/439)) ([64d7d3b](https://github.com/stuttgart-things/flux/commit/64d7d3b88fbff299c08606ad1394b156535d682f)), closes [stuttgart-things/homerun-library#122](https://github.com/stuttgart-things/homerun-library/issues/122)
+
 ## [1.66.3](https://github.com/stuttgart-things/flux/compare/v1.66.2...v1.66.3) (2026-09-12)
 
 
