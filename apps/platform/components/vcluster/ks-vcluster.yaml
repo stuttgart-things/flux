@@ -35,7 +35,7 @@ spec:
     substitute:
       VCLUSTER_NAMESPACE: "${VCLUSTER_NAMESPACE:-vcluster}"
       # renovate: datasource=helm depName=vcluster registryUrl=https://charts.loft.sh
-      VCLUSTER_VERSION: "${VCLUSTER_VERSION:-0.36.1}"
+      VCLUSTER_VERSION: "${VCLUSTER_VERSION:-0.37.0}"
       # Not threaded, and cannot be: a bool-valued substitute fails the
       # PARENT Kustomization and every sibling, and no quoting survives
       # kustomize. Change it in apps/vcluster/release.yaml.
