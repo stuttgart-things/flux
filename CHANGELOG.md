@@ -1,3 +1,10 @@
+# [1.68.0](https://github.com/stuttgart-things/flux/compare/v1.67.3...v1.68.0) (2026-09-12)
+
+
+### Features
+
+* **homerun2:** scout v0.9.0, whose readiness follows its RediSearch index and aggregation ([#448](https://github.com/stuttgart-things/flux/issues/448)) ([196a9cb](https://github.com/stuttgart-things/flux/commit/196a9cbf16392bbd888991aac353a15b84c15316))
+
 ## [1.67.3](https://github.com/stuttgart-things/flux/compare/v1.67.2...v1.67.3) (2026-09-12)
 
 
