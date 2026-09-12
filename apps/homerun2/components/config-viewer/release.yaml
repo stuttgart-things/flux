@@ -1,0 +1,42 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-config-viewer
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-config-viewer-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Remove the KCL-generated HTTPRoute (the route component provides one)
+    - target:
+        kind: HTTPRoute
+        name: homerun2-config-viewer
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-config-viewer
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-config-viewer
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-config-viewer
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-config-viewer
+                  image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.1.0}

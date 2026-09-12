@@ -1,0 +1,36 @@
+---
+# homerun2-config-viewer-routes -- the HTTPRoute for homerun2-config-viewer → ./apps/homerun2/profiles/platform-config-viewer-routes
+#
+# A Kustomization of its own that waits for homerun2-config-viewer, because
+# Cilium resolves a route's backendRefs once: applied before its Service exists,
+# a route serves HTTP 500 for good while every Kustomization reports Ready.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-config-viewer-routes
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2-config-viewer
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_CONFIG_VIEWER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-config-viewer-routes
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      HOMERUN2_CONFIG_VIEWER_HOSTNAME: "${HOMERUN2_CONFIG_VIEWER_HOSTNAME:-config-viewer}"

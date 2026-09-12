@@ -12,6 +12,7 @@ components:
   - components/demo-pitcher
   - components/led-catcher
   - components/git-pitcher
+  - components/config-viewer
   - components/redis-stack/sops
   - components/omni-pitcher/sops
   - components/core-catcher/sops
@@ -26,3 +27,4 @@ components:
   - components/light-catcher/route
   - components/wled-mock/route
   - components/demo-pitcher/route
+  - components/config-viewer/route

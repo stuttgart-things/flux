@@ -9,6 +9,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2` | `profiles/platform-redis`, then `profiles/platform` | the namespace and redis-stack (`homerun2-redis`), then omni-pitcher, core-catcher, scout, led-catcher once redis answers |
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
+| `homerun2-config-viewer` | `profiles/platform-config-viewer` | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
 
@@ -42,6 +43,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `led-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer for LED display output |
 | `git-pitcher` | OCIRepository + Flux Kustomization | Watches Git repositories and pitches events to Redis Streams |
 | `notification-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer that forwards messages as notifications |
+| `config-viewer` | OCIRepository + Flux Kustomization | Read-only view of which alert triggers what in which catcher (reads the Kubernetes API, not Redis) |
 
 ## Profiles
 
@@ -52,7 +54,7 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
 | `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
-| *(root)* | 10 of the 11 components — everything except `notification-catcher` | Full stack deployment |
+| *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
 
 `profiles/cicd` composes only `git-pitcher`, and that is deliberate. It is
 consumed as its own Flux Kustomization next to a `profiles/base` one (see
@@ -163,6 +165,14 @@ Shares the version variables above.
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
 | `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.1` | no | OCI kustomize base + container image tag |
+
+### Config Viewer
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | `v0.1.0` | no | OCI kustomize base tag |
+| `HOMERUN2_CONFIG_VIEWER_VERSION` | `v0.1.0` | no | Container image tag |
+| `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
 
 ### Scout
 
@@ -429,7 +439,7 @@ data:
 
 Uses the Kustomize Components pattern:
 
-1. **Root kustomization.yaml** composes ten components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher` + `scout` + `light-catcher` + `wled-mock` + `demo-pitcher` + `led-catcher` + `git-pitcher`); `notification-catcher` is reachable only through `profiles/base`
+1. **Root kustomization.yaml** composes eleven components (`redis-stack` + `omni-pitcher` + `core-catcher` + `k8s-pitcher` + `scout` + `light-catcher` + `wled-mock` + `demo-pitcher` + `led-catcher` + `git-pitcher` + `config-viewer`); `notification-catcher` is reachable only through `profiles/base`
 2. **Outer Flux Kustomization** (consumer) reads `./apps/homerun2` from GitRepository, substitutes variables
 3. **Redis Stack component** deploys Redis via HelmRelease into the shared namespace
 4. **Omni Pitcher component** creates an OCIRepository + inner Flux Kustomization that reconciles the kustomize base from OCI, patches secrets, overrides image tag, and wires Redis connection
