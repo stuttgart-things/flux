@@ -1,0 +1,8 @@
+---
+# config-viewer: its HTTPRoute, as a component of its own -- applied from a
+# Kustomization that waits for the app one, because Cilium resolves a route's
+# backendRefs once (see components/wled-mock/route).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

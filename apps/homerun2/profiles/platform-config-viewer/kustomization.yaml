@@ -1,0 +1,8 @@
+---
+# config-viewer on top of profiles/platform (bundle component
+# homerun2-config-viewer). It reads the namespace, not the bus, so it needs no
+# credentials.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/config-viewer

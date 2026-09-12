@@ -1,0 +1,7 @@
+---
+# homerun2-config-viewer -- read-only view of which alert triggers what in which catcher
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-config-viewer.yaml
+  - ks-homerun2-config-viewer-routes.yaml

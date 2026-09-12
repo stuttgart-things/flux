@@ -1,0 +1,38 @@
+---
+# config-viewer: which alert triggers what in which catcher
+# → ./apps/homerun2/profiles/platform-config-viewer
+#
+# Reads the Deployments and ConfigMaps of ${HOMERUN2_NAMESPACE} through the
+# Kubernetes API with the Role its base ships. No Redis, no credentials.
+#
+# REQUIRES ../homerun2 (namespace, and the components worth looking at).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-config-viewer
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_CONFIG_VIEWER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-config-viewer
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer-kustomize
+      HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.1.0}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer
+      HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.1.0}"
