@@ -1,3 +1,10 @@
+## [1.68.1](https://github.com/stuttgart-things/flux/compare/v1.68.0...v1.68.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **deps:** homerun2 omni-pitcher v2.2.0 and scout v0.10.0 ([#452](https://github.com/stuttgart-things/flux/issues/452)) ([b04da4b](https://github.com/stuttgart-things/flux/commit/b04da4bcc4a37f27ab909d9a3a1c900ee4b956f0))
+
 # [1.68.0](https://github.com/stuttgart-things/flux/compare/v1.67.3...v1.68.0) (2026-09-12)
 
 
