@@ -12,7 +12,7 @@ GitHub API ──poll──> git-pitcher ──pitch──> Redis Streams ──
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.1` | no | OCI KCL base + container image tag |
+| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.2` | no | OCI KCL base + container image tag |
 | `HOMERUN2_REDIS_PASSWORD_B64` | - | yes | Base64-encoded Redis password (from `substituteFrom` Secret) |
 | `HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64` | - | yes | Base64-encoded GitHub PAT (from `substituteFrom` Secret) |
 | `HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name for TLS trust bundle |
@@ -39,7 +39,7 @@ GitHub API ──poll──> git-pitcher ──pitch──> Redis Streams ──
 ```yaml
 postBuild:
   substitute:
-    HOMERUN2_GIT_PITCHER_VERSION: v1.0.1
+    HOMERUN2_GIT_PITCHER_VERSION: v1.0.2
   substituteFrom:
     - kind: Secret
       name: homerun2-flux-secrets

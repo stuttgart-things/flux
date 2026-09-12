@@ -115,7 +115,7 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_K8S_PITCHER_VERSION` | `v1.0.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_K8S_PITCHER_VERSION` | `v1.0.2` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
@@ -150,21 +150,21 @@ Shares the version variables above.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.2` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### LED Catcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LED_CATCHER_VERSION` | `v0.7.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LED_CATCHER_VERSION` | `v0.7.1` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Git Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.2` | no | OCI kustomize base + container image tag |
 
 ### Config Viewer
 
