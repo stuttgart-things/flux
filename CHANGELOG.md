@@ -1,3 +1,10 @@
+## [1.67.1](https://github.com/stuttgart-things/flux/compare/v1.67.0...v1.67.1) (2026-09-12)
+
+
+### Bug Fixes
+
+* **homerun2:** notification-catcher v3.0.1 and scout v0.8.3, which survive a Redis that is not up yet ([#442](https://github.com/stuttgart-things/flux/issues/442)) ([ed60dbb](https://github.com/stuttgart-things/flux/commit/ed60dbb83ed909932e44b371cfa1a72c4d92099c)), closes [#440](https://github.com/stuttgart-things/flux/issues/440)
+
 # [1.67.0](https://github.com/stuttgart-things/flux/compare/v1.66.3...v1.67.0) (2026-09-12)
 
 
