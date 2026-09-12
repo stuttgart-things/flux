@@ -12,7 +12,7 @@ Browser → demo-pitcher Web UI → Redis Streams → core-catcher / light-catch
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.3` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_DEMO_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_REDIS_PASSWORD_B64` | - | yes | Base64-encoded Redis password (from `substituteFrom` Secret) |
 

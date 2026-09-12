@@ -26,8 +26,8 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | `v3.0.1` | OCI kustomize artifact version |
-| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | `v3.0.1` | Container image tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | OCI kustomize artifact version |
+| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | see `release.yaml` | Container image tag |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `TEAMS_WEBHOOK_URL` | *(required)* | Power Automate webhook URL for the destination Teams channel |
 
