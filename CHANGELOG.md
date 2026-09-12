@@ -1,3 +1,10 @@
+## [1.67.2](https://github.com/stuttgart-things/flux/compare/v1.67.1...v1.67.2) (2026-09-12)
+
+
+### Bug Fixes
+
+* **homerun2:** git-pitcher v1.0.2, demo-pitcher v2.0.2, k8s-pitcher v1.0.2, led-catcher v0.7.1, which survive a Redis that is not up yet ([#443](https://github.com/stuttgart-things/flux/issues/443)) ([5bfb0a3](https://github.com/stuttgart-things/flux/commit/5bfb0a3b27ab5f83c3cad77c0ea2a69209dc5b28))
+
 ## [1.67.1](https://github.com/stuttgart-things/flux/compare/v1.67.0...v1.67.1) (2026-09-12)
 
 
