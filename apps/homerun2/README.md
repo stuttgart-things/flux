@@ -178,8 +178,8 @@ Shares the version variables above.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.8.2` | no | OCI kustomize base tag |
-| `HOMERUN2_SCOUT_VERSION` | `v0.8.2` | no | Container image tag |
+| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.8.3` | no | OCI kustomize base tag |
+| `HOMERUN2_SCOUT_VERSION` | `v0.8.3` | no | Container image tag |
 | `HOMERUN2_SCOUT_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 The WLED mock provides a dashboard simulating a WLED device. Use it during development/testing instead of a real WLED device. The light-catcher's profile should point its endpoints to `homerun2-wled-mock.NAMESPACE.svc.cluster.local`.
