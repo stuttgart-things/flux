@@ -14,8 +14,8 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.3` | OCI kustomize artifact version (not `v1.0.1`: an orphaned March artifact) |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.3` | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.4` | OCI kustomize artifact version |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.4` | Container image tag |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `GATEWAY_NAME` | *(required)* | Gateway resource name for HTTPRoute |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |

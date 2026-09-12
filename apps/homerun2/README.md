@@ -97,7 +97,7 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.2` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.3` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for the `/pitch` endpoint (use substituteFrom Secret) |
 
@@ -105,8 +105,8 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.2` | no | Container image tag |
-| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.2` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.3` | no | Container image tag |
+| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.3` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### K8s Pitcher
@@ -123,8 +123,8 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.3` | no | OCI kustomize base tag (skip `v1.0.1`: an orphaned March artifact) |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.3` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.4` | no | OCI kustomize base tag |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.4` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Light Catcher (tabletennis)
