@@ -41,6 +41,6 @@ spec:
       # The same version variables as ../homerun2-light-catcher: one catcher, two
       # instances. v1.1.0 is the floor here -- the profile matches on tags.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
-      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.3}"
+      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.4}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
-      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.3}"
+      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.1.4}"

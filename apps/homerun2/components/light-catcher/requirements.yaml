@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
   ref:
-    tag: ${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.3}
+    tag: ${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.1.4}
