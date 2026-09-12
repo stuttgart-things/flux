@@ -37,4 +37,4 @@ spec:
       HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
       HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-demo-pitcher-kustomize
-      HOMERUN2_DEMO_PITCHER_VERSION: "${HOMERUN2_DEMO_PITCHER_VERSION:-v2.0.1}"
+      HOMERUN2_DEMO_PITCHER_VERSION: "${HOMERUN2_DEMO_PITCHER_VERSION:-v2.0.2}"
