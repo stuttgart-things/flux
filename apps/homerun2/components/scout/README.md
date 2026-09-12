@@ -14,8 +14,8 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.8.2` | OCI kustomize artifact version |
-| `HOMERUN2_SCOUT_VERSION` | `v0.8.2` | Container image tag |
+| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.8.3` | OCI kustomize artifact version |
+| `HOMERUN2_SCOUT_VERSION` | `v0.8.3` | Container image tag |
 | `HOMERUN2_SCOUT_AUTH_TOKEN` | `changeme` | Auth token for scout API |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `HOMERUN2_SCOUT_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | ConfigMap with CA bundle for TLS |
