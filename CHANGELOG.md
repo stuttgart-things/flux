@@ -1,3 +1,10 @@
+## [1.68.3](https://github.com/stuttgart-things/flux/compare/v1.68.2...v1.68.3) (2026-09-12)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 git-pitcher to v1.0.3 ([#445](https://github.com/stuttgart-things/flux/issues/445)) ([0e73cf1](https://github.com/stuttgart-things/flux/commit/0e73cf1ecadd9a22f12c96f00295fc450fb8bc0c))
+
 ## [1.68.2](https://github.com/stuttgart-things/flux/compare/v1.68.1...v1.68.2) (2026-09-12)
 
 
