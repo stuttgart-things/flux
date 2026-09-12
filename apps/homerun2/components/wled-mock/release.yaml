@@ -40,4 +40,4 @@ spec:
             spec:
               containers:
                 - name: homerun2-wled-mock
-                  image: ghcr.io/stuttgart-things/homerun2-wled-mock:${HOMERUN2_WLED_MOCK_VERSION:-v1.1.3}
+                  image: ghcr.io/stuttgart-things/homerun2-wled-mock:${HOMERUN2_WLED_MOCK_VERSION:-v1.1.4}
