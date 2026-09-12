@@ -33,6 +33,6 @@ spec:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer-kustomize
-      HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.1.0}"
+      HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.2.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer
-      HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.1.0}"
+      HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.2.1}"
