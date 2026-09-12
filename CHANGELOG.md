@@ -1,3 +1,10 @@
+## [1.67.3](https://github.com/stuttgart-things/flux/compare/v1.67.2...v1.67.3) (2026-09-12)
+
+
+### Bug Fixes
+
+* **homerun2:** demo-pitcher v2.0.3, which fails startup on an unknown PITCH_TARGET or DEMO_MODE ([#446](https://github.com/stuttgart-things/flux/issues/446)) ([c7364fb](https://github.com/stuttgart-things/flux/commit/c7364fbc6b195a1889ae830496145df869cb78b8)), closes [argocd#360](https://github.com/argocd/issues/360)
+
 ## [1.67.2](https://github.com/stuttgart-things/flux/compare/v1.67.1...v1.67.2) (2026-09-12)
 
 
