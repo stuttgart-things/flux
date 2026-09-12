@@ -10,7 +10,7 @@ spec:
     spec:
       chart: vcluster
       # renovate: datasource=helm depName=vcluster registryUrl=https://charts.loft.sh
-      version: ${VCLUSTER_VERSION:-0.36.1}
+      version: ${VCLUSTER_VERSION:-0.37.0}
       sourceRef:
         kind: HelmRepository
         name: loft
