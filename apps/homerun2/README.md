@@ -67,6 +67,8 @@ that component ships only via `profiles/base`.
 
 ## SUBSTITUTION VARIABLES
 
+Version defaults are not repeated in these tables. Each component pins them in `components/<name>/requirements.yaml` (the kustomize OCI tag) and `release.yaml` (the image tag), bundle copies sit in `apps/platform/components/homerun2*/ks-*.yaml`, and renovate bumps all of them in one `fix(deps)` PR per component. A version column here was one more copy that nothing updated.
+
 ### Global
 
 | Variable | Default | Required | Purpose |
@@ -99,7 +101,7 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.3` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token for the `/pitch` endpoint (use substituteFrom Secret) |
 
@@ -107,15 +109,15 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_CORE_CATCHER_VERSION` | `v1.0.3` | no | Container image tag |
-| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | `v1.0.3` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
+| `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### K8s Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_K8S_PITCHER_VERSION` | `v1.0.2` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_K8S_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_K8S_PITCHER_NAMESPACE` | `homerun2-flux` | no | Namespace (can differ from shared namespace) |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
@@ -125,8 +127,8 @@ that component ships only via `profiles/base`.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | `v1.1.4` | no | OCI kustomize base tag |
-| `HOMERUN2_LIGHT_CATCHER_VERSION` | `v1.1.4` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
+| `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Light Catcher (tabletennis)
@@ -143,43 +145,43 @@ Shares the version variables above.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_WLED_MOCK_VERSION` | `v1.1.0` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_WLED_MOCK_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_WLED_MOCK_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Demo Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.3` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_DEMO_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### LED Catcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_LED_CATCHER_VERSION` | `v0.7.1` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_LED_CATCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Git Pitcher
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_GIT_PITCHER_VERSION` | `v1.0.2` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_GIT_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 
 ### Config Viewer
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | `v0.1.0` | no | OCI kustomize base tag |
-| `HOMERUN2_CONFIG_VIEWER_VERSION` | `v0.1.0` | no | Container image tag |
+| `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
+| `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
 
 ### Scout
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | `v0.9.0` | no | OCI kustomize base tag |
-| `HOMERUN2_SCOUT_VERSION` | `v0.9.0` | no | Container image tag |
+| `HOMERUN2_SCOUT_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
+| `HOMERUN2_SCOUT_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_SCOUT_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 The WLED mock provides a dashboard simulating a WLED device. Use it during development/testing instead of a real WLED device. The light-catcher's profile should point its endpoints to `homerun2-wled-mock.NAMESPACE.svc.cluster.local`.

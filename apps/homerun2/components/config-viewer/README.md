@@ -14,8 +14,8 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace -- also the namespace the viewer reads |
-| `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | `v0.1.0` | OCI kustomize artifact version |
-| `HOMERUN2_CONFIG_VIEWER_VERSION` | `v0.1.0` | Container image tag |
+| `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | see `requirements.yaml` | OCI kustomize artifact version |
+| `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | Container image tag |
 | `GATEWAY_NAME` | *(required)* | Gateway resource name for HTTPRoute |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | Hostname prefix for HTTPRoute |

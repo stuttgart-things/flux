@@ -143,14 +143,15 @@
       "groupName": "stuttgart-things images"
     },
     {
-      "description": "Group each homerun2 component on its own, so a component's image and its -kustomize artifact are always bumped in the same PR and cannot drift apart (see #208). Overrides the broad stuttgart-things grouping above.",
+      "description": "Group each homerun2 component on its own, so a component's image and its -kustomize artifact are always bumped in the same PR and cannot drift apart (see #208). Overrides the broad stuttgart-things grouping above. Committed as fix(deps), not chore(deps): semantic-release cuts a flux release only for fix/feat, so a merged homerun2 bump used to sit on main and never reach a cluster until someone opened a fix: PR by hand (stuttgart-things/homerun-library#127).",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
         "ghcr.io/stuttgart-things/homerun2-**"
       ],
-      "groupName": "homerun2 {{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/homerun2-' '' depName)}}}"
+      "groupName": "homerun2 {{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/homerun2-' '' depName)}}}",
+      "semanticCommitType": "fix"
     },
     {
       "description": "Group clusterbook and clusterbook-operator each on their own, so a component's image and its -kustomize artifact always move in the same PR (same reason as homerun2, see #208) and a patch-only bump is not held back by an unrelated minor in the combined stuttgart-things group. Overrides the broad stuttgart-things grouping above.",
