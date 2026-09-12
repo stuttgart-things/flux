@@ -150,7 +150,7 @@ Shares the version variables above.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|
-| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.2` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_DEMO_PITCHER_VERSION` | `v2.0.3` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### LED Catcher
