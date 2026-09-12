@@ -1,3 +1,10 @@
+## [1.66.3](https://github.com/stuttgart-things/flux/compare/v1.66.2...v1.66.3) (2026-09-12)
+
+
+### Bug Fixes
+
+* **homerun2:** omni-pitcher v2.1.3, light-catcher and wled-mock v1.1.4, which stop the Redis wait on SIGTERM ([#437](https://github.com/stuttgart-things/flux/issues/437)) ([6843b5d](https://github.com/stuttgart-things/flux/commit/6843b5d8605506f4c96384aea9eaaddfb7db0e06)), closes [#421](https://github.com/stuttgart-things/flux/issues/421) [#399](https://github.com/stuttgart-things/flux/issues/399) [#433](https://github.com/stuttgart-things/flux/issues/433) [#433](https://github.com/stuttgart-things/flux/issues/433) [#434](https://github.com/stuttgart-things/flux/issues/434)
+
 ## [1.66.2](https://github.com/stuttgart-things/flux/compare/v1.66.1...v1.66.2) (2026-09-11)
 
 
