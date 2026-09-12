@@ -60,7 +60,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-scout
-                  image: ghcr.io/stuttgart-things/homerun2-scout:${HOMERUN2_SCOUT_VERSION:-v0.9.0}
+                  image: ghcr.io/stuttgart-things/homerun2-scout:${HOMERUN2_SCOUT_VERSION:-v0.10.0}
     # The base's placeholder Secret. sops/ or eso/ beside this component
     # creates the real one, so the credential never lives in this object.
     - target:
