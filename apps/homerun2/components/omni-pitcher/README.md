@@ -14,7 +14,7 @@ OCIRepository + Flux Kustomization
 | Variable | Default | Description |
 |---|---|---|
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.2` | OCI kustomize base + container image tag |
+| `HOMERUN2_OMNI_PITCHER_VERSION` | `v2.1.3` | OCI kustomize base + container image tag |
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | Auth token for pitcher API |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `GATEWAY_NAME` | *(required)* | Gateway resource name for HTTPRoute |
