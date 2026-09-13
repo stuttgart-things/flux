@@ -72,13 +72,17 @@ spec:
     # but we set it explicitly to mirror the core-catcher / omni-pitcher
     # components and to make the namespace override visible here.)
     #
-    # REDIS_STREAM=messages: the omni-pitcher version currently deployed
-    # (v1.6.2) does not have the config-driven stream routing (added in
-    # v1.9.0+), so every /pitch/* webhook lands in the default stream
-    # `messages` regardless of the routes-configmap. Pinning catcher to
-    # `messages` keeps it picking up alerts until omni-pitcher is bumped.
-    # Once on v1.9.0+, drop this line (chart default is also `messages`
-    # as of homerun2-notification-catcher v2.0.2).
+    # REDIS_STREAMS=messages,alerts: omni-pitcher routes by config since
+    # v1.9.0 (routes-configmap.yaml), and /pitch/grafana — Alertmanager and
+    # Grafana — goes to `alerts`, while git-pitcher still writes to
+    # `messages`. The catcher dispatches both: teams-git-prs from `messages`,
+    # teams-grafana-alerts from `alerts`. Subscribed to one of them only, the
+    # other output goes silent while every pod reports healthy — which is
+    # what happened with the former `REDIS_STREAM: messages` pin once
+    # routing was on: every alert landed in a stream nobody read.
+    #
+    # REDIS_STREAMS (comma-separated) wins over REDIS_STREAM in the catcher;
+    # REDIS_STREAM stays as the fallback for a catcher without it.
     - target:
         kind: ConfigMap
         name: homerun2-notification-catcher-env
@@ -91,6 +95,7 @@ spec:
           REDIS_ADDR: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
           REDIS_PORT: "6379"
           REDIS_STREAM: messages
+          REDIS_STREAMS: ${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:=messages,alerts}
 
     # Output secrets — webhook URLs for each Notifier the catcher dispatches
     # to. The KCL base emits placeholders; Flux substituteFrom on the

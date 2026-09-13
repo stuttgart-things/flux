@@ -1,15 +1,16 @@
 # homerun2/notification-catcher
 
-Outbound dispatcher — reads the `alerts` Redis stream and posts each message to Microsoft Teams (and any other configured webhook sink). Replacement for the in-cluster `prometheus-msteams` proxy: the Adaptive Card formatting and routing logic live in version-controlled Go code (see [`homerun2-notification-catcher`](https://github.com/stuttgart-things/homerun2-notification-catcher)).
+Outbound dispatcher — reads the `messages` and `alerts` Redis streams and posts each message to Microsoft Teams (and any other configured webhook sink). Replacement for the in-cluster `prometheus-msteams` proxy: the Adaptive Card formatting and routing logic live in version-controlled Go code (see [`homerun2-notification-catcher`](https://github.com/stuttgart-things/homerun2-notification-catcher)).
 
 Pure consumer — no Service, no Ingress, no HTTPRoute.
 
 ## Pipeline
 
 ```
-Alertmanager ─▶ omni-pitcher /pitch/grafana ─▶ Redis stream "alerts"
-                                                     │
-                                          notification-catcher
+Alertmanager ─▶ omni-pitcher /pitch/grafana ─▶ Redis stream "alerts"   ─┐
+git-pitcher  ──────────────────────────────▶ Redis stream "messages" ─┤
+                                                                       │
+                                                        notification-catcher
                                                      │
                                                 ▶ MS Teams
 ```
@@ -30,6 +31,7 @@ OCIRepository + Flux Kustomization
 | `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | see `release.yaml` | Container image tag |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `TEAMS_WEBHOOK_URL` | *(required)* | Power Automate webhook URL for the destination Teams channel |
+| `HOMERUN2_NOTIFICATION_CATCHER_STREAMS` | `messages,alerts` | Streams the catcher subscribes to (`REDIS_STREAMS`). Drop `alerts` and Alertmanager alerts reach nobody; drop `messages` and the git PR cards stop |
 
 `TEAMS_WEBHOOK_URL` must be supplied via the parent stack's `substituteFrom: homerun2-secrets`.
 
@@ -37,7 +39,7 @@ OCIRepository + Flux Kustomization
 
 - Sets the container image tag to `HOMERUN2_NOTIFICATION_CATCHER_VERSION`.
 - Patches the Redis password Secret with the cluster's `HOMERUN2_REDIS_PASSWORD_B64`.
-- Patches the env ConfigMap to point at `redis-stack.<namespace>.svc.cluster.local:6379`.
+- Patches the env ConfigMap to point at `redis-stack.<namespace>.svc.cluster.local:6379` and subscribes to `HOMERUN2_NOTIFICATION_CATCHER_STREAMS`.
 - Patches the output-secrets Secret with `TEAMS_WEBHOOK_URL`.
 - **Defaults `DRY_RUN=true`** so the first reconciliation logs `dry-run: would send …` instead of posting to Teams. Flip it from the consuming Kustomization once routing is verified in `kubectl logs` by setting `postBuild.substitute.HOMERUN2_NOTIFICATION_CATCHER_DRYRUN: "false"`.
 
