@@ -1,0 +1,9 @@
+---
+# dapr-workflows-trigger — the BackstageTemplateRun kind for the
+# template-execution worker: the kro RGD, delivered at the worker's release.
+#
+# REQUIRES kro and dapr-workflows.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-dapr-workflows-trigger.yaml

@@ -20,6 +20,7 @@ cicd/platform/
     ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
     ├── dapr/                 → ./apps/dapr/root       (control plane only)
     ├── dapr-workflows/       → ./apps/dapr/workflow-secrets  (needs dapr, a Redis + a Secret)
+    ├── dapr-workflows-trigger/ → ./apps/dapr/root     (the BackstageTemplateRun RGD; needs kro + dapr-workflows)
     ├── komoplane/            → ./cicd/komoplane       (needs crossplane + cilium-gateway)
     ├── claim-machinery-api/  → ./apps/claim-machinery-api    (needs cilium-gateway)
     └── clusterbook-operator/ → ./apps/clusterbook-operator

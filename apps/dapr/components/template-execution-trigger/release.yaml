@@ -1,0 +1,28 @@
+---
+# Applies the artifact as published: one ResourceGraphDefinition.
+#
+# NO postBuild.substitute here, and that is load-bearing. The RGD is made of
+# kro expressions in dollar-brace form -- schema.spec.values,
+# trigger.status.failed -- and Flux substitution would rewrite or empty them.
+# The RGD would still apply, and every BackstageTemplateRun after it would
+# render a broken Job.
+#
+# No targetNamespace either: a ResourceGraphDefinition is cluster-scoped.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-backstage-template-execution-trigger
+  namespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: dapr-backstage-template-execution-trigger
+  # prune: true -- deselecting the component removes the RGD. Runs lose their
+  # controller; nothing a run built (PR, VM) is touched.
+  prune: true
+  # wait: true -- the RGD reports Ready once kro has compiled it and its CRD
+  # exists. A run file applied before that fails on "no matches for kind".
+  wait: true

@@ -18,11 +18,16 @@ apps/dapr/
     │   ├── requirements.yaml
     │   ├── release.yaml
     │   └── README.md
-    └── template-execution/    # dapr-backstage-template-execution workflow app
+    ├── template-execution/    # dapr-backstage-template-execution workflow app
+    │   ├── kustomization.yaml
+    │   ├── requirements.yaml
+    │   ├── release.yaml
+    │   ├── secrets.yaml
+    │   └── README.md
+    └── template-execution-trigger/  # its BackstageTemplateRun kind (kro RGD)
         ├── kustomization.yaml
         ├── requirements.yaml
         ├── release.yaml
-        ├── secrets.yaml
         └── README.md
 ```
 
@@ -36,6 +41,7 @@ own — the same convention used by `infra/cert-manager/components/*`.
 |-----------|---------|---------|
 | [`control-plane`](./components/control-plane/README.md) | Dapr runtime (operator, placement, scheduler, sentry, sidecar injector) via the official Helm chart | Namespace: `dapr-system` |
 | [`template-execution`](./components/template-execution/README.md) | `dapr-backstage-template-execution` workflow worker — drives Backstage scaffolder templates and watches the resulting GitHub Actions run | Namespace: `backstage-workflows` |
+| [`template-execution-trigger`](./components/template-execution-trigger/README.md) | The kro RGD `backstage-template-run`: one `BackstageTemplateRun` CR starts one run of the worker. Pinned to the worker's release (`<tag>-trigger`) | Cluster-scoped; needs kro |
 
 The control-plane must reconcile before `template-execution` — the cluster-side
 Flux `Kustomization` for template-execution therefore uses `dependsOn` on the
