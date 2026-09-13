@@ -48,7 +48,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update chart-version defaults threaded into a bundle's child Kustomization, e.g. infra/platform's `CERT_MANAGER_VERSION: \"${CERT_MANAGER_VERSION:-v1.21.1}\"` inside postBuild.substitute. These are a second copy of the base's default (a child CR cannot inherit it \u2014 an empty substitute value renders as YAML null and the API server rejects the CR), so they must be bumped in the same PR as the base or the bundle silently pins the old version.",
+      "description": "Update chart-version defaults threaded into a bundle's child Kustomization, e.g. infra/platform's `CERT_MANAGER_VERSION: \"${CERT_MANAGER_VERSION:-v1.21.1}\"` inside postBuild.substitute. These are a second copy of the base's default (a child CR cannot inherit it — an empty substitute value renders as YAML null and the API server rejects the CR), so they must be bumped in the same PR as the base or the bundle silently pins the old version.",
       "fileMatch": [
         "\\.yaml$"
       ],
@@ -122,6 +122,16 @@
       "allowedVersions": "!/^v1\\.0\\.0$/"
     },
     {
+      "description": "Hold the redis chart at 17.x. 22.x refuses our redis-stack-server/redis-sentinel images without global.security.allowInsecureImages, moves the password to REDIS_PASSWORD_FILE and adds readOnlyRootFilesystem -- none of it tested with our start scripts. Every consumer runs 17.1.4 (apps/platform/components/homerun2/ks-homerun2-redis.yaml holds it on purpose); stuttgart-things/flux#355 was the renovate PR. Migrate deliberately, not via renovate.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/charts/redis/redis"
+      ],
+      "allowedVersions": "<18.0.0"
+    },
+    {
       "description": "Group the crossplane-contrib packages so a registry change arrives as one reviewable PR. THE REGISTRY IS NOT INTERCHANGEABLE: each package here is on the registry the installed Configurations declare for it, and Crossplane keys its lock on the source string -- the other spelling of the same image reads as a missing dependency. Do not 'tidy' these onto one registry; that has to start in the packages' own dependsOn.",
       "matchDatasources": [
         "docker"
@@ -164,7 +174,7 @@
       "groupName": "{{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/' '' depName)}}}"
     },
     {
-      "description": "Auto-merge patch and digest updates once CI passes \u2014 keeps low-risk bumps from piling up",
+      "description": "Auto-merge patch and digest updates once CI passes — keeps low-risk bumps from piling up",
       "matchUpdateTypes": [
         "patch",
         "digest"
