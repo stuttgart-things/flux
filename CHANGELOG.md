@@ -1,3 +1,10 @@
+## [1.68.4](https://github.com/stuttgart-things/flux/compare/v1.68.3...v1.68.4) (2026-09-13)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 scout to v0.11.0 ([#441](https://github.com/stuttgart-things/flux/issues/441)) ([840fe26](https://github.com/stuttgart-things/flux/commit/840fe26285c451b0049f98edb4b994b2d8502570))
+
 ## [1.68.3](https://github.com/stuttgart-things/flux/compare/v1.68.2...v1.68.3) (2026-09-12)
 
 
