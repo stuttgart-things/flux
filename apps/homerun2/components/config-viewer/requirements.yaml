@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-config-viewer-kustomize
   ref:
-    tag: ${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.2.1}
+    tag: ${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.2.2}
