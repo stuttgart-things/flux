@@ -1,3 +1,10 @@
+# [1.69.0](https://github.com/stuttgart-things/flux/compare/v1.68.7...v1.69.0) (2026-09-13)
+
+
+### Features
+
+* **dapr-workflows:** deliver the BackstageTemplateRun RGD, pinned to the worker's release ([#458](https://github.com/stuttgart-things/flux/issues/458)) ([0934663](https://github.com/stuttgart-things/flux/commit/09346635468553c801a4df870c288f74e1a75b0a)), closes [stuttgart-things/dapr-workflows#42](https://github.com/stuttgart-things/dapr-workflows/issues/42) [40..#42](https://github.com/40../issues/42)
+
 ## [1.68.7](https://github.com/stuttgart-things/flux/compare/v1.68.6...v1.68.7) (2026-09-13)
 
 
