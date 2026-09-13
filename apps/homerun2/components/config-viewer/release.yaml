@@ -39,4 +39,4 @@ spec:
             spec:
               containers:
                 - name: homerun2-config-viewer
-                  image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.2.1}
+                  image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.2.2}
