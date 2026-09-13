@@ -108,7 +108,9 @@ DIVERGENT = {
                         "the workflow one adds template-execution, redis-stack, "
                         "redis-auth and backstage-ca, the plain one adds "
                         "control-plane. Each carries components and variables "
-                        "the other must not have.",
+                        "the other must not have. dapr-workflows-trigger is a "
+                        "third: only template-execution-trigger, the kro RGD, "
+                        "split out so clusters without kro can run the worker.",
 }
 
 

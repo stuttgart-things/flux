@@ -1,0 +1,12 @@
+---
+# template-execution-trigger — the kro ResourceGraphDefinition behind
+# BackstageTemplateRun, published by stuttgart-things/dapr-workflows next to
+# the worker's kustomize base, under <release-tag>-trigger.
+#
+# REQUIRES kro, for the ResourceGraphDefinition kind, and template-execution,
+# for the namespace this lands in and the worker the trigger Job calls.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - requirements.yaml
+  - release.yaml

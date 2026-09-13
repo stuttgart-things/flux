@@ -1,0 +1,14 @@
+---
+# The worker's kustomize package, at the trigger tag of the same release. Not a
+# package of its own: this one is public, and a new ghcr package starts
+# private -- flux pulls these anonymously.
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: dapr-backstage-template-execution-trigger
+  namespace: ${DAPR_BACKSTAGE_TPL_NAMESPACE:-backstage-workflows}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/dapr-backstage-template-execution-kustomize
+  ref:
+    tag: ${DAPR_BACKSTAGE_TPL_TRIGGER_TAG:-204e4f214ad1-trigger}

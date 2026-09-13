@@ -1,0 +1,48 @@
+---
+# The BackstageTemplateRun RGD -> ./apps/dapr/root + template-execution-trigger.
+#
+# A component of its own rather than a line in dapr-workflows: that one runs on
+# clusters without kro, and a ResourceGraphDefinition there fails its apply --
+# with wait: true, the worker's whole Kustomization would never report Ready.
+# Here the failure stays in this Kustomization.
+#
+# Until now the RGD was applied by hand on each cluster, and a cluster that had
+# not been told silently had no BackstageTemplateRun kind: a run file then
+# failed the Kustomization that applies runs, far from here.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-workflows-trigger
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  # kro for the kind, dapr-workflows for the namespace this lands in and the
+  # worker the trigger Job calls.
+  dependsOn:
+    - name: kro
+    - name: dapr-workflows
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${DAPR_WORKFLOWS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/template-execution-trigger
+  postBuild:
+    substitute:
+      # Substitutes the two small wrapper objects only. The RGD itself arrives
+      # through the child Kustomization, which deliberately has no postBuild.
+      DAPR_BACKSTAGE_TPL_NAMESPACE: "${DAPR_WORKFLOWS_NAMESPACE:-backstage-workflows}"
+      # The release the worker runs, with -trigger appended. Kept a separate
+      # variable, like DAPR_WORKFLOWS_VERSION and DAPR_WORKFLOWS_IMAGE_TAG are,
+      # and moved together with them.
+      DAPR_BACKSTAGE_TPL_TRIGGER_TAG: "${DAPR_WORKFLOWS_TRIGGER_TAG:-204e4f214ad1-trigger}"
