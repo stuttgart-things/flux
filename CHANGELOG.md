@@ -1,3 +1,10 @@
+## [1.68.6](https://github.com/stuttgart-things/flux/compare/v1.68.5...v1.68.6) (2026-09-13)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 config-viewer to v0.2.2 ([#455](https://github.com/stuttgart-things/flux/issues/455)) ([468e10a](https://github.com/stuttgart-things/flux/commit/468e10af0fd5438cc6eddccc4cd09bb5d69ade90))
+
 ## [1.68.5](https://github.com/stuttgart-things/flux/compare/v1.68.4...v1.68.5) (2026-09-13)
 
 
