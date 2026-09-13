@@ -1,3 +1,10 @@
+## [1.68.7](https://github.com/stuttgart-things/flux/compare/v1.68.6...v1.68.7) (2026-09-13)
+
+
+### Bug Fixes
+
+* **homerun2:** subscribe notification-catcher to the alerts stream as well ([#457](https://github.com/stuttgart-things/flux/issues/457)) ([30fab0c](https://github.com/stuttgart-things/flux/commit/30fab0c0bd5f6d73982378ec7dc50e9722742150)), closes [stuttgart-things/schmetterpause#194](https://github.com/stuttgart-things/schmetterpause/issues/194)
+
 ## [1.68.6](https://github.com/stuttgart-things/flux/compare/v1.68.5...v1.68.6) (2026-09-13)
 
 
