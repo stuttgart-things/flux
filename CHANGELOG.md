@@ -1,3 +1,10 @@
+# [1.70.0](https://github.com/stuttgart-things/flux/compare/v1.69.2...v1.70.0) (2026-09-14)
+
+
+### Features
+
+* **tabletennis:** schmetterpause monitoring, ported from the argocd catalog ([#466](https://github.com/stuttgart-things/flux/issues/466)) ([10db79a](https://github.com/stuttgart-things/flux/commit/10db79aa669fcca6776618769e282f5e7bf6a86b))
+
 ## [1.69.2](https://github.com/stuttgart-things/flux/compare/v1.69.1...v1.69.2) (2026-09-14)
 
 
