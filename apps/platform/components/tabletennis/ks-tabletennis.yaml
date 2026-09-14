@@ -36,6 +36,13 @@ spec:
   # A component rather than a variable -- see components/zaehlwerk-panel-homerun2.
   components:
     - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
+    # PodMonitors + alert rules for the app and its database: off, on, or backup
+    # (on plus the WAL/base-backup rules). A component rather than a variable,
+    # like the panel above -- and for the same reason the argocd side gates them
+    # behind a value: the Prometheus Operator CRDs have to be on the cluster, and
+    # without them the dry-run rejects the WHOLE apps layer, not just these
+    # objects.
+    - ../../components/schmetterpause-monitoring-${TABLETENNIS_SCHMETTERPAUSE_MONITORING:-off}
   postBuild:
     substitute:
       # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads, so
@@ -68,3 +75,14 @@ spec:
       # as "the Secret never appears". The sentinel names the variable a cluster
       # actually has to set, so the failure says what to do.
       SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
+      SCHMETTERPAUSE_MONITORING_INTERVAL: "${TABLETENNIS_SCHMETTERPAUSE_MONITORING_INTERVAL:-60s}"
+      # Only read by the `backup` monitoring variant. The ScheduledBackup is
+      # daily; 26 h leaves room for one slow run before it alerts.
+      #
+      # A PRODUCT RATHER THAN THE NUMBER OF SECONDS, and not the number of
+      # hours either: a bare 93600 or 26 resolves to an int, which
+      # postBuild.substitute rejects -- for every sibling in this block at
+      # once, not just this key. Same reason SCHMETTERPAUSE_DB_IMAGE above
+      # carries the whole image rather than the major version. `26 * 3600` is
+      # a string here and valid PromQL there, so the hours stay readable.
+      SCHMETTERPAUSE_BACKUP_MAX_AGE_SECONDS: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_MAX_AGE_SECONDS:-26 * 3600}"

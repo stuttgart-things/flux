@@ -1,0 +1,51 @@
+---
+# Alerts that need nothing but the two PodMonitors beside this file.
+#
+# Kept as its own PrometheusRule rather than a third group in one object, so the
+# backup variant can add its rules without repeating these. Prometheus merges
+# every PrometheusRule it selects, so two objects and one object behave alike.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: schmetterpause
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  labels:
+    app.kubernetes.io/name: schmetterpause
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: kube-prometheus-stack
+spec:
+  groups:
+    - name: schmetterpause.app
+      rules:
+        # No healthy /metrics target. `absent(up{...} == 1)` rather than
+        # `up == 0`, so it also fires when the target has disappeared entirely
+        # instead of merely failing.
+        #
+        # It fires while the app is scaled to 0 on purpose -- a restore -- which
+        # is the one time somebody is watching anyway. Whether the site answers
+        # at all is the blackbox probe's job on platform-sthings; this is the
+        # inside view.
+        #
+        # The job label of a PodMonitor target is <namespace>/<monitor name>.
+        - alert: SchmetterpauseMetricsDown
+          expr: absent(up{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}", job="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}/schmetterpause"} == 1)
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: schmetterpause exposes no metrics
+            description: No schmetterpause pod in ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause} has answered on /metrics for 10 minutes.
+    - name: schmetterpause.database
+      rules:
+        # Worth its own alert rather than being folded into the app one: with the
+        # exporter down, every backup and archiving alert in the backup variant
+        # silently cannot fire either, so this is the rule that says why the
+        # others went quiet.
+        - alert: SchmetterpauseDatabaseExporterDown
+          expr: absent(cnpg_collector_up{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}", cluster="schmetterpause-db"} == 1)
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: schmetterpause-db exports no metrics
+            description: The CloudNativePG exporter of schmetterpause-db in ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause} has reported nothing for 10 minutes, so its backup and archiving alerts cannot fire either.
