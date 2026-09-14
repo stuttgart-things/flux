@@ -324,3 +324,63 @@ spec:
           emptyDir: {}
         - name: cmp-tmp
           emptyDir: {}
+    # --- notifications -------------------------------------------------------
+    # A stalled sync used to be silent. Argo CD does not re-attempt an automated
+    # sync for a revision that already failed, and with a pinned Helm
+    # targetRevision that revision never changes -- so on 2026-09-14 a
+    # cert-manager install sat at phase=Error for 50 minutes and nothing said so.
+    # argocd-sync-sweeper (sync-sweeper.yaml) retries those; this makes them
+    # visible while it happens.
+    # The controller ships on; what is per-cluster is WHERE it posts, and that
+    # is threaded as a string. A boolean cannot be: a nested Kustomization
+    # substitute loses the quotes around ${VAR}, envsubst then yields a YAML
+    # bool, and Flux rejects it because postBuild.substitute is
+    # map[string]string -- the same reason ARGO_CD_INGRESS_ENABLED is not
+    # threaded in ../argocd-platform/base/ks-argo-cd.yaml.
+    #
+    # A cluster that wants Teams sets ARGO_CD_TEAMS_CHANNEL and supplies an
+    # argocd-notifications-secret with teams-webhook-url from its own repo (for
+    # sthings-lab: stuttgart-things/harvester clusters/platform/apps/). One that
+    # does not gets the channel `none`, which maps to a secret key that does not
+    # exist -- nothing is delivered, and the controller logs a failed send the
+    # first time an Application actually stalls.
+    notifications:
+      enabled: true
+      # The chart must NOT own the Secret: its content is a per-cluster webhook
+      # URL that belongs in that cluster's repo, SOPS-encrypted. With
+      # create: true the chart would render an empty one and fight it.
+      secret:
+        create: false
+      notifiers:
+        service.teams: |
+          recipientUrls:
+            ${ARGO_CD_TEAMS_CHANNEL:-none}: $$teams-webhook-url
+      templates:
+        template.sync-stalled: |
+          message: |
+            Argo CD: {{.app.metadata.name}} is stuck at {{.app.status.operationState.phase}}.
+            Sync {{.app.status.sync.status}}, health {{.app.status.health.status}}.
+          teams:
+            title: "Argo CD sync stalled: {{.app.metadata.name}}"
+            text: |
+              **{{.app.metadata.name}}** ended its last sync in `{{.app.status.operationState.phase}}`
+              and has not recovered (sync `{{.app.status.sync.status}}`, health `{{.app.status.health.status}}`).
+
+              Destination: `{{.app.spec.destination.server}}{{.app.spec.destination.name}}` / `{{.app.spec.destination.namespace}}`
+
+              {{if .app.status.operationState.message}}`{{.app.status.operationState.message}}`{{end}}
+
+              argocd-sync-sweeper retries this every 10 minutes. If it keeps
+              reappearing, the retry is not the problem.
+      triggers:
+        # oncePer keeps a permanently broken app from posting every reconcile:
+        # one message per revision that fails, not one per check.
+        trigger.on-sync-stalled: |
+          - when: app.status.operationState.phase in ['Error', 'Failed'] and app.status.sync.status != 'Synced'
+            oncePer: app.status.sync.revision
+            send: [sync-stalled]
+      subscriptions:
+        - recipients:
+            - teams:${ARGO_CD_TEAMS_CHANNEL:-none}
+          triggers:
+            - on-sync-stalled

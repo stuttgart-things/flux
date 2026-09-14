@@ -50,6 +50,12 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
       ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.9.1}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
+      # Teams channel for Argo CD notifications. A STRING, not a boolean: a
+      # nested substitute loses the quotes and Flux then rejects a YAML bool
+      # (postBuild.substitute is map[string]string). Must stay in step with
+      # ../../../argocd-platform/base/ks-argo-cd.yaml -- both render
+      # ./cicd/argo-cd, and Flux does not inherit postBuild.substitute.
+      ARGO_CD_TEAMS_CHANNEL: "${ARGO_CD_TEAMS_CHANNEL:-none}"
       ARGO_CD_INGRESS_ENABLED: "false"
       # passthrough-override: this is a rotate-now stamp. Bundles rotate on their
       # own schedule, so the values are meant to differ.
