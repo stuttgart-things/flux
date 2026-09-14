@@ -47,7 +47,7 @@ spec:
       TRUST_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
       TRUST_MANAGER_TRUST_NAMESPACE: "${TRUST_MANAGER_TRUST_NAMESPACE:-cert-manager}"
       # renovate: datasource=helm depName=trust-manager registryUrl=https://charts.jetstack.io
-      TRUST_MANAGER_VERSION: "${TRUST_MANAGER_VERSION:-v0.24.0}"
+      TRUST_MANAGER_VERSION: "${TRUST_MANAGER_VERSION:-v0.25.0}"
       TRUST_BUNDLE_NAME: "${TRUST_BUNDLE_NAME:-cluster-trust-bundle}"
       TRUST_BUNDLE_CA_SECRET: "${CERT_MANAGER_CA_SECRET:-cluster-ca-secret}" # pragma: allowlist secret
       TRUST_BUNDLE_CA_KEY: "${TRUST_BUNDLE_CA_KEY:-ca.crt}"
