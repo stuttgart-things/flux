@@ -43,6 +43,11 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
       ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.9.1}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
+      # Which Teams channel the notifications controller posts to. A STRING on
+      # purpose -- see the ARGO_CD_INGRESS_ENABLED note below for why the
+      # boolean shape cannot be threaded here. Unset means channel `none`, which
+      # maps to a secret key that does not exist: nothing is delivered.
+      ARGO_CD_TEAMS_CHANNEL: "${ARGO_CD_TEAMS_CHANNEL:-none}"
       # ARGO_CD_INGRESS_ENABLED is intentionally NOT threaded here. A bare
       # boolean cannot survive a nested Kustomization substitute: kustomize
       # build drops the quotes around ${VAR}, envsubst then yields a YAML bool,

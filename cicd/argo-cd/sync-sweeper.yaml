@@ -1,0 +1,163 @@
+---
+# argocd-sync-sweeper — retries Applications whose last sync ended in Error or
+# Failed.
+#
+# WHY THIS EXISTS. Argo CD deliberately does not re-attempt an automated sync
+# for a revision that already failed: it waits for the desired state to change.
+# With a Helm `targetRevision` pinned to a tag that never happens, so one
+# transient failure parks the Application indefinitely. `retry` does not cover
+# it either -- that applies to phase=Failed, while a controller-level panic ends
+# as phase=Error and is terminal. Nor does `selfHeal`: an Application that never
+# synced is not drifting, it is missing.
+#
+# Measured here 2026-09-14: Argo CD v3.3.4 panicked installing cert-manager into
+# a freshly built cluster that was briefly unreachable, then sat at phase=Error
+# for 50 minutes with retryCount 0, while four more Applications stacked up
+# behind it waiting for CRDs that never arrived. One explicitly patched
+# `operation` synced first try.
+#
+# This is a SAFETY NET, not the fix. The fix is not pointing Argo at a cluster
+# before its API answers -- stuttgart-things/clusterbook-operator#119.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argocd-sync-sweeper
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+  labels:
+    app.kubernetes.io/name: argocd-sync-sweeper
+    app.kubernetes.io/part-of: argocd
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argocd-sync-sweeper
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+rules:
+  # Namespaced on purpose: the sweeper only touches Applications in the Argo CD
+  # namespace, and patching `operation` is the whole of its job.
+  - apiGroups: ["argoproj.io"]
+    resources: ["applications"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-sync-sweeper
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argocd-sync-sweeper
+subjects:
+  - kind: ServiceAccount
+    name: argocd-sync-sweeper
+    namespace: ${ARGO_CD_NAMESPACE:-argocd}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-sync-sweeper
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+  annotations:
+    # MUST stay disabled. Flux postBuild substitution replaces bare `$VAR` too,
+    # not just `${VAR}` -- with it on, every shell variable below ($name,
+    # $phase, $sync, $found) is substituted to an empty string at build time and
+    # the script silently does nothing. The namespace comes from the downward
+    # API instead, so this file needs no substitution at all.
+    kustomize.toolkit.fluxcd.io/substitute: disabled
+data:
+  sweep.sh: |
+    #!/bin/sh
+    set -eu
+    found=0
+
+    # Three conditions must all hold before we touch anything:
+    #   phase   Error|Failed  -- the last sync actually broke
+    #   sync    != Synced     -- and it has not recovered since
+    #   auto    has automated -- the app opted into automation; one driven by
+    #                            hand is not ours to re-sync behind someone's back
+    kubectl -n "$POD_NAMESPACE" get applications.argoproj.io -o go-template='
+    {{- range .items -}}
+      {{- $phase := "None" -}}
+      {{- with .status.operationState }}{{ $phase = .phase }}{{ end -}}
+      {{- $sync := "Unknown" -}}
+      {{- with .status.sync }}{{ $sync = .status }}{{ end -}}
+      {{- $auto := "manual" -}}
+      {{- with .spec.syncPolicy }}{{ with .automated }}{{ $auto = "auto" }}{{ end }}{{ end -}}
+      {{ .metadata.name }} {{ $phase }} {{ $sync }} {{ $auto }}{{ "\n" }}
+    {{- end -}}' > /tmp/apps.txt
+
+    while read -r name phase sync auto; do
+      [ -n "$name" ] || continue
+      case "$phase" in Error|Failed) ;; *) continue ;; esac
+      [ "$sync" != "Synced" ] || continue
+      [ "$auto" = "auto" ] || continue
+      found=$((found + 1))
+      echo "retrying $name (phase=$phase sync=$sync)"
+      kubectl -n "$POD_NAMESPACE" patch applications.argoproj.io "$name" --type=merge -p \
+        '{"operation":{"initiatedBy":{"username":"argocd-sync-sweeper","automated":true},"sync":{"syncStrategy":{"hook":{}}}}}'
+    done < /tmp/apps.txt
+
+    echo "argocd-sync-sweeper: $found application(s) retried"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: argocd-sync-sweeper
+  namespace: ${ARGO_CD_NAMESPACE:-argocd}
+  labels:
+    app.kubernetes.io/name: argocd-sync-sweeper
+    app.kubernetes.io/part-of: argocd
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 3600
+      template:
+        spec:
+          restartPolicy: Never
+          serviceAccountName: argocd-sync-sweeper
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: sweeper
+              image: ${ARGOCD_SWEEPER_IMAGE:-rancher/kubectl:v1.33.3}
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              command: ["/bin/sh", "/scripts/sweep.sh"]
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: script
+              configMap:
+                name: argocd-sync-sweeper
+                defaultMode: 0555
+            - name: tmp
+              emptyDir: {}

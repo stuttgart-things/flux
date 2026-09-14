@@ -5,3 +5,6 @@ resources:
   - requirements.yaml
   - pre-release.yaml
   - release.yaml
+  # Retries Applications parked at phase=Error/Failed, which Argo CD does not
+  # re-attempt on its own for an unchanged revision.
+  - sync-sweeper.yaml
