@@ -1,0 +1,65 @@
+---
+# WAL archiving and base backups -- the half of the alerting that only makes
+# sense where components/schmetterpause-db-backup is selected too.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: schmetterpause-backup
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  labels:
+    app.kubernetes.io/name: schmetterpause
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: kube-prometheus-stack
+spec:
+  groups:
+    - name: schmetterpause.backup
+      rules:
+        # NOT "seconds since the last archival". With nobody writing, no WAL
+        # segment fills and that number grows all night while everything is fine.
+        # A failure NEWER than the last success is the signal.
+        - alert: SchmetterpauseWALArchivingFailing
+          expr: cnpg_pg_stat_archiver_last_failed_time{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"} > cnpg_pg_stat_archiver_last_archived_time{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"}
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: WAL archiving of schmetterpause-db is failing
+            description: The last WAL archive attempt of schmetterpause-db failed and none has succeeded since, for 15 minutes. Point-in-time recovery stops at the last archived segment.
+        - alert: SchmetterpauseWALArchiveBacklog
+          expr: cnpg_collector_pg_wal_archive_status{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}", value="ready"} > 10
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: WAL segments of schmetterpause-db are waiting to be archived
+            description: More than 10 WAL segments of schmetterpause-db have been ready for archiving for 30 minutes.
+        # The Barman Cloud PLUGIN's own timestamp.
+        # `cnpg_collector_last_available_backup_timestamp` stays 0 for plugin
+        # backups, so it cannot be used here; this series is the one the plugin
+        # publishes. It is absent entirely on a Cluster with no ObjectStore, which
+        # is why these rules are a variant rather than always shipped -- an
+        # absent series means this alert can never fire, and a rule that can never
+        # fire is worse than no rule.
+        #
+        # The threshold arrives as the PRODUCT `26 * 3600`, not as a number of
+        # seconds: postBuild.substitute takes strings only, and a bare int fails
+        # every substitution in the block, not just this one (hack/
+        # check-substitute-strings.py catches it). PromQL evaluates the product,
+        # and comparison binds looser than `*`, so this reads
+        # (time() - ts) > (26 * 3600).
+        - alert: SchmetterpauseBackupTooOld
+          expr: time() - barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"} > ${SCHMETTERPAUSE_BACKUP_MAX_AGE_SECONDS:-26 * 3600}
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: No recent base backup of schmetterpause-db
+            description: The newest base backup of schmetterpause-db has aged past the configured maximum (${SCHMETTERPAUSE_BACKUP_MAX_AGE_SECONDS:-26 * 3600} seconds); the daily ScheduledBackup has not completed.
+        - alert: SchmetterpauseBackupFailed
+          expr: barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"} > barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{namespace="${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: The last base backup of schmetterpause-db failed
+            description: A base backup of schmetterpause-db failed after the last successful one. `kubectl -n ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause} get backup` shows which.

@@ -1,0 +1,20 @@
+---
+# schmetterpause-monitoring-backup -- everything `on` ships, plus the rules about
+# WAL archiving and base backups. Selected through
+# TABLETENNIS_SCHMETTERPAUSE_MONITORING: backup.
+#
+# A component that includes the other rather than repeating it, so the app and
+# database rules cannot drift between the two variants.
+#
+# Pair it with the tabletennis-backup platform component: these rules watch what
+# components/schmetterpause-db-backup sets up. On a cluster with no ObjectStore
+# the barman_cloud_* series do not exist, so SchmetterpauseBackupTooOld would
+# have nothing to compare -- and that is the quiet kind of nothing, an alert that
+# can never fire rather than one that fires wrongly. Hence a variant rather than
+# shipping these unconditionally.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+components:
+  - ../schmetterpause-monitoring-on
+resources:
+  - prometheusrule-backup.yaml

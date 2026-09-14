@@ -1,0 +1,22 @@
+---
+# schmetterpause-monitoring-on -- PodMonitors for the app and its database, plus
+# the alert rules that only need those two. Ported from
+# stuttgart-things/argocd apps/schmetterpause/monitoring, which had no
+# counterpart here.
+#
+# REQUIRES THE PROMETHEUS OPERATOR CRDs on the cluster (infra/kube-prometheus-stack).
+# Without them the whole tabletennis Kustomization fails its dry-run, not just
+# these two objects -- which is why this is a component and not part of the base.
+#
+# REQUIRES SCHMETTERPAUSE v0.8.0 OR LATER for the app monitor to find anything:
+# that release added the container port `metrics` (SP_METRICS_ADDR). Against an
+# older one the monitor selects the pods and scrapes nothing, and
+# SchmetterpauseMetricsDown fires.
+#
+# For a cluster that also archives WAL and takes base backups, select `backup`
+# instead of `on` -- it adds the rules for those on top of these.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - podmonitors.yaml
+  - prometheusrule.yaml

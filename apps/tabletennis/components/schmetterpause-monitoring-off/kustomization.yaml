@@ -1,0 +1,6 @@
+---
+# schmetterpause-monitoring-off -- no PodMonitors and no alert rules: the
+# default. Selected through TABLETENNIS_SCHMETTERPAUSE_MONITORING (default off).
+# Empty on purpose, the same way zaehlwerk-panel-off is.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
