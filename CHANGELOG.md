@@ -1,3 +1,10 @@
+## [1.71.2](https://github.com/stuttgart-things/flux/compare/v1.71.1...v1.71.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **argo-cd:** sweeper image needs a shell ([#471](https://github.com/stuttgart-things/flux/issues/471)) ([48d8deb](https://github.com/stuttgart-things/flux/commit/48d8debc4f01e9926babe2168ae2c6cd555499ae))
+
 ## [1.71.1](https://github.com/stuttgart-things/flux/compare/v1.71.0...v1.71.1) (2026-09-14)
 
 
