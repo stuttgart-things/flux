@@ -58,13 +58,6 @@ kind: ConfigMap
 metadata:
   name: argocd-sync-sweeper
   namespace: ${ARGO_CD_NAMESPACE:-argocd}
-  annotations:
-    # MUST stay disabled. Flux postBuild substitution replaces bare `$VAR` too,
-    # not just `${VAR}` -- with it on, every shell variable below ($name,
-    # $phase, $sync, $found) is substituted to an empty string at build time and
-    # the script silently does nothing. The namespace comes from the downward
-    # API instead, so this file needs no substitution at all.
-    kustomize.toolkit.fluxcd.io/substitute: disabled
 data:
   sweep.sh: |
     #!/bin/sh
@@ -76,29 +69,29 @@ data:
     #   sync    != Synced     -- and it has not recovered since
     #   auto    has automated -- the app opted into automation; one driven by
     #                            hand is not ours to re-sync behind someone's back
-    kubectl -n "$POD_NAMESPACE" get applications.argoproj.io -o go-template='
+    kubectl -n "$$POD_NAMESPACE" get applications.argoproj.io -o go-template='
     {{- range .items -}}
-      {{- $phase := "None" -}}
-      {{- with .status.operationState }}{{ $phase = .phase }}{{ end -}}
-      {{- $sync := "Unknown" -}}
-      {{- with .status.sync }}{{ $sync = .status }}{{ end -}}
-      {{- $auto := "manual" -}}
-      {{- with .spec.syncPolicy }}{{ with .automated }}{{ $auto = "auto" }}{{ end }}{{ end -}}
-      {{ .metadata.name }} {{ $phase }} {{ $sync }} {{ $auto }}{{ "\n" }}
+      {{- $$phase := "None" -}}
+      {{- with .status.operationState }}{{ $$phase = .phase }}{{ end -}}
+      {{- $$sync := "Unknown" -}}
+      {{- with .status.sync }}{{ $$sync = .status }}{{ end -}}
+      {{- $$auto := "manual" -}}
+      {{- with .spec.syncPolicy }}{{ with .automated }}{{ $$auto = "auto" }}{{ end }}{{ end -}}
+      {{ .metadata.name }} {{ $$phase }} {{ $$sync }} {{ $$auto }}{{ "\n" }}
     {{- end -}}' > /tmp/apps.txt
 
     while read -r name phase sync auto; do
-      [ -n "$name" ] || continue
-      case "$phase" in Error|Failed) ;; *) continue ;; esac
-      [ "$sync" != "Synced" ] || continue
-      [ "$auto" = "auto" ] || continue
-      found=$((found + 1))
-      echo "retrying $name (phase=$phase sync=$sync)"
-      kubectl -n "$POD_NAMESPACE" patch applications.argoproj.io "$name" --type=merge -p \
+      [ -n "$$name" ] || continue
+      case "$$phase" in Error|Failed) ;; *) continue ;; esac
+      [ "$$sync" != "Synced" ] || continue
+      [ "$$auto" = "auto" ] || continue
+      found=$$((found + 1))
+      echo "retrying $$name (phase=$$phase sync=$$sync)"
+      kubectl -n "$$POD_NAMESPACE" patch applications.argoproj.io "$$name" --type=merge -p \
         '{"operation":{"initiatedBy":{"username":"argocd-sync-sweeper","automated":true},"sync":{"syncStrategy":{"hook":{}}}}}'
     done < /tmp/apps.txt
 
-    echo "argocd-sync-sweeper: $found application(s) retried"
+    echo "argocd-sync-sweeper: $$found application(s) retried"
 ---
 apiVersion: batch/v1
 kind: CronJob
