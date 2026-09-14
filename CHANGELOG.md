@@ -1,3 +1,10 @@
+## [1.71.1](https://github.com/stuttgart-things/flux/compare/v1.71.0...v1.71.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* **argo-cd:** sweeper namespace was never substituted ([#470](https://github.com/stuttgart-things/flux/issues/470)) ([84be1c9](https://github.com/stuttgart-things/flux/commit/84be1c9b585ebecc1fd127332c0a4e5ffa75b4d7))
+
 # [1.71.0](https://github.com/stuttgart-things/flux/compare/v1.70.0...v1.71.0) (2026-09-14)
 
 
