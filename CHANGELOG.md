@@ -1,3 +1,10 @@
+## [1.69.2](https://github.com/stuttgart-things/flux/compare/v1.69.1...v1.69.2) (2026-09-14)
+
+
+### Bug Fixes
+
+* **deps:** align omni-pitcher and schmetterpause with the argocd catalog ([#465](https://github.com/stuttgart-things/flux/issues/465)) ([c7976f9](https://github.com/stuttgart-things/flux/commit/c7976f935d55f5abf8c39860d0eb8a296bf639a0))
+
 ## [1.69.1](https://github.com/stuttgart-things/flux/compare/v1.69.0...v1.69.1) (2026-09-13)
 
 
