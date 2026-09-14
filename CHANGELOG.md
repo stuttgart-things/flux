@@ -1,3 +1,10 @@
+# [1.71.0](https://github.com/stuttgart-things/flux/compare/v1.70.0...v1.71.0) (2026-09-14)
+
+
+### Features
+
+* **argo-cd:** retry stalled syncs, and route notifications per cluster ([#469](https://github.com/stuttgart-things/flux/issues/469)) ([ef5be7e](https://github.com/stuttgart-things/flux/commit/ef5be7e3f9b455e7b4cbeff64639bec598af0539)), closes [stuttgart-things/crossplane-configurations#411](https://github.com/stuttgart-things/crossplane-configurations/issues/411)
+
 # [1.70.0](https://github.com/stuttgart-things/flux/compare/v1.69.2...v1.70.0) (2026-09-14)
 
 
