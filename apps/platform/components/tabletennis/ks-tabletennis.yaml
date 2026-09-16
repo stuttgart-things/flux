@@ -43,6 +43,30 @@ spec:
     # without them the dry-run rejects the WHOLE apps layer, not just these
     # objects.
     - ../../components/schmetterpause-monitoring-${TABLETENNIS_SCHMETTERPAUSE_MONITORING:-off}
+    # The first admin, granted at every start (schmetterpause ADR-0008): off or
+    # on, with the name in TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN. A
+    # component rather than a plain value because "none" is the empty string,
+    # and an empty postBuild.substitute value renders as YAML null and fails
+    # this whole Kustomization -- see hack/check-substitute-strings.py.
+    - ../../components/schmetterpause-admin-${TABLETENNIS_SCHMETTERPAUSE_ADMIN:-off}
+    # schmetterpause's JSON surface for the Zählwerk -- GET /api/players and
+    # POST /api/results (schmetterpause ADR-0015): off or on. A component
+    # because the token is one more entry in the app's ExternalSecret, and ESO
+    # fails the WHOLE Secret over one missing Vault property -- session key
+    # included, which signs every player out. "Off" therefore has to mean the
+    # property is not asked for, which no substituted value can express.
+    - ../../components/schmetterpause-scoreboard-${TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD:-off}
+    # zaehlwerk reporting a won match into schmetterpause (zaehlwerk ADR-0004):
+    # off or on. THE OTHER END OF THE SWITCH ABOVE -- select both or neither.
+    # On its own this points zaehlwerk at a surface that does not exist, and
+    # nothing turns red: the match still scores, and only zaehlwerk's log
+    # carries the 404.
+    - ../../components/zaehlwerk-handover-${TABLETENNIS_ZAEHLWERK_HANDOVER:-off}
+    # Kyverno's check that the application image carries schmetterpause's CI
+    # signature (ADR-0020/0021): off or on. A component for the same reason as
+    # the monitoring variants -- without the Kyverno CRDs the dry-run would
+    # reject it. Note this repository ships no Kyverno; see the component.
+    - ../../components/schmetterpause-policy-${TABLETENNIS_SCHMETTERPAUSE_POLICY:-off}
   postBuild:
     substitute:
       # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads, so
@@ -59,7 +83,7 @@ spec:
       # check-passthrough-defaults failed the PR (flux#359). Keep the comment
       # directly above the key: the manager matches the two as one block.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
-      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.8.0}"
+      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.11.0}"
       SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
       # The whole image rather than a major version: a bare 18 resolves to an
       # int, which postBuild.substitute rejects for every sibling at once.
@@ -68,13 +92,48 @@ spec:
       ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
       # Same as SCHMETTERPAUSE_VERSION above: the winning copy, bumped with the base.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
-      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.3.0}"
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.5.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
       # and guessing wrong points ESO at another cluster's secrets, which reads
       # as "the Secret never appears". The sentinel names the variable a cluster
       # actually has to set, so the failure says what to do.
       SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
+      # The display name the admin flag lands on, read only by the `on` admin
+      # variant. The person has to have joined first; a name nobody carries is a
+      # warning in the log rather than a failed start.
+      #
+      # A SENTINEL RATHER THAN EMPTY, and not a preference: an empty value here
+      # renders as YAML null once kustomize has dropped the quotes, and the API
+      # server then refuses the whole Kustomization. "None" is expressed by
+      # leaving the admin component at `off`, which is its default.
+      SCHMETTERPAUSE_BOOTSTRAP_ADMIN: "${TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN:-set-TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN}"
+      # Read by the `on` scoreboard and handover variants, and by BOTH of them:
+      # one Vault entry holds the token schmetterpause serves its /api with and
+      # zaehlwerk calls it with, so a rotation is one value rather than two that
+      # can disagree.
+      #
+      # ITS OWN ENTRY, not the application's. vault-base-setup writes an entry
+      # with data_json and rewrites it whole, so putting this on `schmetterpause`
+      # means restating session-key, username and password in the same JSON --
+      # and a wrong session-key signs every player out at once.
+      SCHMETTERPAUSE_SCOREBOARD_VAULT_PATH: "${TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD_VAULT_PATH:-schmetterpause-scoreboard}"
+      SCHMETTERPAUSE_SCOREBOARD_VAULT_PROPERTY: "${TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD_VAULT_PROPERTY:-token}"
+      # Where zaehlwerk reports to, read only by the `on` handover variant. The
+      # HTTPRoute is the default -- a browser's own path, TLS end to end -- and
+      # the in-cluster Service (http://schmetterpause.<ns>.svc) works too where
+      # both run on one cluster.
+      #
+      # passthrough-override: the component derives this from SCHMETTERPAUSE_HOSTNAME
+      # and DOMAIN, which exist one level down; the same value has to be built
+      # from this layer's own INFRA_DOMAIN here.
+      ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # Browser origins allowed to read zaehlwerk's live match stream.
+      # schmetterpause's own origin by default, for its live tab; upstream
+      # refuses the `*` wildcard, and empty means none.
+      #
+      # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
+      ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       SCHMETTERPAUSE_MONITORING_INTERVAL: "${TABLETENNIS_SCHMETTERPAUSE_MONITORING_INTERVAL:-60s}"
       # Only read by the `backup` monitoring variant. The ScheduledBackup is
       # daily; 26 h leaves room for one slow run before it alerts.

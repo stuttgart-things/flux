@@ -22,4 +22,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/schmetterpause-kustomize
   ref:
-    tag: ${SCHMETTERPAUSE_VERSION:-v0.8.0}
+    tag: ${SCHMETTERPAUSE_VERSION:-v0.11.0}

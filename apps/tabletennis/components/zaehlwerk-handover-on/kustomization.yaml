@@ -1,0 +1,61 @@
+---
+# zaehlwerk-handover-on -- the handover to schmetterpause: a won match goes to
+# its POST /api/results and the scoring page offers schmetterpause's real
+# players (zaehlwerk ADR-0004, schmetterpause ADR-0015).
+# Selected with TABLETENNIS_ZAEHLWERK_HANDOVER: on.
+#
+# SELECT schmetterpause-scoreboard-on TOGETHER WITH THIS. They are the two ends
+# of one feature: without the scoreboard the receiving surface does not exist
+# and every finished match comes back 404, with nothing red anywhere -- the
+# match still scores and shows, and only zaehlwerk's log says so.
+#
+# REQUIRES ZAEHLWERK v0.5.0 OR LATER. The URL below goes over the HTTPRoute,
+# whose certificate is signed by the cluster's internal CA, and only from
+# v0.5.0 does zaehlwerk mount the trust-manager bundle and trust it. Before that
+# every call fails with "x509: certificate signed by unknown authority" while
+# the pod looks healthy. v0.4.0 is worse: the Secret carried
+# SCHMETTERPAUSE_TOKEN and no container read it.
+#
+# ONE CREDENTIAL, READ TWICE. The token is the one schmetterpause already holds
+# for its /api -- the same Vault entry schmetterpause-scoreboard-on names, read
+# directly rather than copied, so a rotation is one value and the two sides
+# cannot disagree. That assumes SECRET_STORE_NAME reaches schmetterpause's
+# mount, which it does wherever both run on one cluster.
+#
+# WHY A COMPONENT: the token half. Adding it to the ExternalSecret against a
+# Vault entry without the property fails the whole Secret, panel token included
+# -- the same reason schmetterpause-scoreboard-on is a component rather than a
+# substituted value.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/SCHMETTERPAUSE_URL
+              value: "${ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}}"
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            group: external-secrets.io
+            kind: ExternalSecret
+            name: zaehlwerk-panel
+          patch: |
+            - op: add
+              path: /spec/data/-
+              value:
+                secretKey: SCHMETTERPAUSE_TOKEN
+                remoteRef:
+                  key: "${SCHMETTERPAUSE_SCOREBOARD_VAULT_PATH:-schmetterpause-scoreboard}"
+                  property: "${SCHMETTERPAUSE_SCOREBOARD_VAULT_PROPERTY:-token}"

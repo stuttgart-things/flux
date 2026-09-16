@@ -1,0 +1,42 @@
+---
+# schmetterpause-admin-on -- the display name that gets the admin flag at every
+# start (SP_BOOTSTRAP_ADMIN, schmetterpause ADR-0008).
+# Selected with TABLETENNIS_SCHMETTERPAUSE_ADMIN: on, and the name itself comes
+# from TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN.
+#
+# NOT A SECRET. The name grants nothing without that player's own PIN; it only
+# sets the flag on an account that already exists.
+#
+# WHY A COMPONENT, when empty means "grant nothing" to the application and a
+# plain substitution would do. Because the variable has to reach here through
+# postBuild.substitute, and an empty value cannot: kustomize re-emits the map
+# and drops the quotes, Flux replaces the unset variable with nothing, and the
+# bare `KEY:` that is left parses as YAML null -- which the API server refuses,
+# failing the PARENT Kustomization and every sibling app with it. That is
+# hack/check-substitute-strings.py's whole subject, and it is why `off` is a
+# component here rather than an empty string.
+#
+# ADDED, not replaced: the base renders SP_BOOTSTRAP_ADMIN only when its own
+# bootstrapAdmin is set, and the published profile leaves it empty -- kustomize
+# cannot patch a key that was never rendered.
+#
+# Naming a player who has not joined yet is a WARNING in the log, not a failed
+# start: a typo must not become an outage.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: schmetterpause-config
+          patch: |
+            - op: add
+              path: /data/SP_BOOTSTRAP_ADMIN
+              value: "${SCHMETTERPAUSE_BOOTSTRAP_ADMIN:-set-TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN}"

@@ -1,0 +1,6 @@
+---
+# schmetterpause-policy-off -- no admission policy on the application image: the
+# default. Selected through TABLETENNIS_SCHMETTERPAUSE_POLICY (default off).
+# Empty on purpose.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component

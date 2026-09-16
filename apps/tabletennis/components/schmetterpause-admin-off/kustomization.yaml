@@ -1,0 +1,10 @@
+---
+# schmetterpause-admin-off -- no bootstrap admin: the default. Selected through
+# TABLETENNIS_SCHMETTERPAUSE_ADMIN (default off). Empty on purpose.
+#
+# The first admin is a SECOND-PASS value, not a first-boot one: the person has
+# to have joined the instance before the flag can land on them (schmetterpause
+# ADR-0008). A fresh cluster therefore starts here and moves to `on` once
+# somebody has a player to point at.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component

@@ -1,0 +1,10 @@
+---
+# zaehlwerk-handover-off -- zaehlwerk scoring and reporting nowhere: the
+# default. Selected through TABLETENNIS_ZAEHLWERK_HANDOVER (default off).
+#
+# Empty on purpose. zaehlwerk reads SCHMETTERPAUSE_URL as the on-switch, and the
+# base leaves the key out, so "off" is already what the base renders --
+# ADR-0004 keeps running without a handover a first-class way to use it, not a
+# degraded one.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component

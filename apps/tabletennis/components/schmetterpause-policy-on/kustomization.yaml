@@ -1,0 +1,29 @@
+---
+# schmetterpause-policy-on -- before the kubelet starts a schmetterpause
+# container, Kyverno checks that the image carries the keyless signature
+# schmetterpause's CI made (schmetterpause ADR-0020 and ADR-0021).
+# Selected with TABLETENNIS_SCHMETTERPAUSE_POLICY: on.
+#
+# THIS REPOSITORY HAS NO KYVERNO COMPONENT. infra/ carries cert-manager, cilium,
+# external-secrets, trust-manager and the rest, but not Kyverno -- so a cluster
+# selecting this has to get Kyverno from somewhere else (the argocd catalog's
+# infra/kyverno/install is where homerun2-test1 gets it). Until it is there the
+# child Kustomization below stays NotReady with "no matches for kind
+# ImageValidatingPolicy", which is loud and correct; nothing else in the
+# tabletennis bundle is affected, because it is a Kustomization of its own
+# rather than an object in the app's own apply.
+#
+# REQUIRES SCHMETTERPAUSE v0.9.0 OR LATER, and in practice a Kyverno serving
+# policies.kyverno.io/v1 (1.19 does). Earlier tags carry a kyverno.io/v1
+# ClusterPolicy that Kyverno 1.19 refuses outright.
+#
+# CLUSTER-SCOPED. The policy object is not namespaced, so select this in ONE
+# bundle per cluster or two Kustomizations fight over the same object.
+#
+# AUDIT MODE: an unsigned image still starts, and the refusal is a PolicyReport
+# in the namespace. With the `on` or `backup` monitoring variant selected, that
+# refusal also reaches a human -- which is the only place it does.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - policy.yaml
