@@ -1,3 +1,10 @@
+# [1.72.0](https://github.com/stuttgart-things/flux/compare/v1.71.2...v1.72.0) (2026-09-16)
+
+
+### Features
+
+* add tabletennis feature switches and update app versions ([#477](https://github.com/stuttgart-things/flux/issues/477)) ([351a653](https://github.com/stuttgart-things/flux/commit/351a653eee2805c845e102dd9ef6d22169d1d33c)), closes [flux#359](https://github.com/flux/issues/359)
+
 ## [1.71.2](https://github.com/stuttgart-things/flux/compare/v1.71.1...v1.71.2) (2026-09-14)
 
 
