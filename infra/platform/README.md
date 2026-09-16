@@ -34,17 +34,22 @@ infra/platform/
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
     ├── velero/                   → ./infra/velero                          (requires an S3 Secret)
+    ├── velero-eso/               → ./infra/velero                          (instead of velero; requires external-secrets-vault-store)
+    ├── velero-schedule/          → ./infra/velero/schedule                 (requires velero or velero-eso)
     ├── sops-secrets-operator/    → ./apps/sops-secrets-operator
+    ├── sops-git/                 → ./infra/sops-git                        (requires sops-secrets-operator, external-secrets-vault-store)
     ├── cnpg-operator/            → ./apps/cnpg-operator
+    ├── cnpg-barman-cloud/        → ./apps/cnpg-barman-cloud                (requires cnpg-operator, cert-manager-install)
     ├── prometheus-pve-exporter/  → ./infra/prometheus-pve-exporter          (requires kube-prometheus-stack)
     └── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
 ```
 
-Six of those paths are under `apps/`, and that is deliberate: the bundle a
+Five of those paths are under `apps/`, and that is deliberate: the bundle a
 component belongs to is decided by the layer it serves, not by the directory
 its base sits in. `flux-web` and `headlamp` are cluster dashboards,
 `sops-secrets-operator` is part of the secrets layer beside `external-secrets`,
-and `cnpg-operator` is one cluster-wide operator watching every namespace.
+and `cnpg-operator` is one cluster-wide operator watching every namespace, with
+`cnpg-barman-cloud` as its backup plugin.
 
 There is no always-on base. The first cluster pointed at this bundle wanted
 `cilium-lb` + `cert-manager-install` and neither the Gateway nor the PKI chain,
