@@ -3,3 +3,10 @@
 # Selected through TABLETENNIS_ZAEHLWERK_PANEL (default off). Empty on purpose.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
+# `patches: []` rather than nothing at all. kustomize refuses a kustomization.yaml
+# with no directives -- "kustomization.yaml is empty" -- and that refusal is not
+# only cosmetic: hack/check-passthrough-defaults.py renders every path with its
+# DEFAULT components selected, which is exactly these, got None back, and skipped
+# the whole tabletennis path in silence. The version-copy drift it exists to
+# catch (flux#359, on these very variables) therefore went unchecked here.
+patches: []
