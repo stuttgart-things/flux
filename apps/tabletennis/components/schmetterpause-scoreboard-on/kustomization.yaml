@@ -1,0 +1,54 @@
+---
+# schmetterpause-scoreboard-on -- the Zählwerk's JSON surface on schmetterpause:
+# GET /api/players and POST /api/results, which a counter at the table uses to
+# hand a finished match over (schmetterpause ADR-0015).
+# Selected with TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD: on.
+#
+# REQUIRES SCHMETTERPAUSE v0.10.0 OR LATER -- in v0.9.0 the handlers do not
+# exist, so the token is mounted and nothing serves it.
+#
+# WHY A COMPONENT AND NOT A VARIABLE. The token is one more entry in the app's
+# ExternalSecret, and ESO fails a WHOLE ExternalSecret over one missing
+# property: switching this on against a Vault entry that has no
+# scoreboard-token takes SP_SESSION_KEY and the database URL down with it, and
+# every player is signed out. So "off" has to mean the entry is not asked for,
+# which no substituted value can express.
+#
+# The published base has the same reason for leaving it out: it is shared by
+# every environment, and one that never asked for a scoreboard would lose its
+# session key over a Vault key it does not have.
+#
+# ORDER MATTERS. Write the Vault property FIRST, then select this. The other
+# way round the app's ExternalSecret stops syncing, and Flux still reports
+# Ready -- the check is
+#
+#   kubectl -n schmetterpause get externalsecret schmetterpause-app
+#
+# ITS OWN VAULT ENTRY, not the application's. vault-base-setup writes an entry
+# with data_json and therefore rewrites it whole: putting this token on the
+# `schmetterpause` entry means restating session-key, username and password in
+# the same JSON, and getting session-key wrong signs every player out at once.
+# The backup key pair is separate for exactly this reason.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            group: external-secrets.io
+            kind: ExternalSecret
+            name: schmetterpause-app
+          patch: |
+            - op: add
+              path: /spec/data/-
+              value:
+                secretKey: SP_SCOREBOARD_TOKEN
+                remoteRef:
+                  key: "${SCHMETTERPAUSE_SCOREBOARD_VAULT_PATH:-schmetterpause-scoreboard}"
+                  property: "${SCHMETTERPAUSE_SCOREBOARD_VAULT_PROPERTY:-token}"

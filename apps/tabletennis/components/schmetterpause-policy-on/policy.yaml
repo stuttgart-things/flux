@@ -1,0 +1,60 @@
+---
+# The policy is READ FROM THE SCHMETTERPAUSE REPOSITORY at the same tag as the
+# application, rather than copied into this catalog: the policy on a cluster is
+# then the one that release was tested against (`kyverno test` over policy/tests
+# there), and a bump moves both together with no second place to forget.
+#
+# A GitRepository and not the OCI artifact, because the policy is not in it --
+# `task kcl:publish` packages the rendered kustomize base, and the policy is a
+# plain file beside it. The argocd catalog reads the same file the same way.
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: GitRepository
+metadata:
+  name: schmetterpause-policy
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+spec:
+  interval: 1h
+  url: https://github.com/stuttgart-things/schmetterpause.git
+  ref:
+    # A THIRD COPY of the application's version, beside the OCIRepository in
+    # components/schmetterpause and the platform bundle's own thread. The
+    # oci:// customManager cannot see this one -- the url is an https git URL --
+    # so it carries its own annotation, and renovate.json has a manager for
+    # exactly this shape. Without it the policy would silently stay at the
+    # release it was last read at while the application moved on.
+    # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
+    tag: ${SCHMETTERPAUSE_VERSION:-v0.11.0}
+  # ONE FILE, AND THE EXCLUSION IS THE POINT. policy/tests holds kyverno test
+  # fixtures -- pods.yaml among them, deliberately unsigned Pods -- and a Flux
+  # Kustomization over a directory with no kustomization.yaml generates one from
+  # EVERY manifest it finds. Without this those Pods would be applied to the
+  # cluster, which is the one thing a policy directory must never do.
+  #
+  # gitignore semantics, so the directory has to be re-included before a file
+  # inside it can be: a file under an excluded directory cannot be brought back.
+  ignore: |
+    /*
+    !/policy
+    /policy/*
+    !/policy/verify-image-signature.yaml
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: schmetterpause-policy
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: schmetterpause-policy
+  path: ./policy
+  prune: true
+  # Not `wait: true`. An ImageValidatingPolicy has no health condition Flux can
+  # read, so waiting would only mean waiting out the timeout on every
+  # reconcile.
+  wait: false
+  # NOT targetNamespace: the object is cluster-scoped, and naming a namespace
+  # for it fails the apply.

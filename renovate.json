@@ -26,6 +26,16 @@
     },
     {
       "customType": "regex",
+      "description": "Update the tag default on a Flux GitRepository that reads another repository at the application's own release tag, e.g. apps/tabletennis's `schmetterpause-policy` GitRepository. The oci:// manager above cannot see these \u2014 the url is an https git URL \u2014 so without this the tag is a THIRD copy of a version the other two managers keep moving, and it silently pins the release the policy was last read at.",
+      "fileMatch": [
+        "\\.yaml$"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)(?: registryUrl=(?<registryUrl>\\S+))?(?: versioning=(?<versioning>\\S+))?\\s+tag:\\s*\"?\\$\\{[A-Z0-9_]+:-(?<currentValue>[^}]+)\\}\"?"
+      ]
+    },
+    {
+      "customType": "regex",
       "description": "Update default image tags in Flux patches like image: ghcr.io/org/app:${VAR:-v1.2.3}",
       "fileMatch": [
         "\\.yaml$"
@@ -48,7 +58,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update chart-version defaults threaded into a bundle's child Kustomization, e.g. infra/platform's `CERT_MANAGER_VERSION: \"${CERT_MANAGER_VERSION:-v1.21.1}\"` inside postBuild.substitute. These are a second copy of the base's default (a child CR cannot inherit it — an empty substitute value renders as YAML null and the API server rejects the CR), so they must be bumped in the same PR as the base or the bundle silently pins the old version.",
+      "description": "Update chart-version defaults threaded into a bundle's child Kustomization, e.g. infra/platform's `CERT_MANAGER_VERSION: \"${CERT_MANAGER_VERSION:-v1.21.1}\"` inside postBuild.substitute. These are a second copy of the base's default (a child CR cannot inherit it \u2014 an empty substitute value renders as YAML null and the API server rejects the CR), so they must be bumped in the same PR as the base or the bundle silently pins the old version.",
       "fileMatch": [
         "\\.yaml$"
       ],
@@ -174,7 +184,7 @@
       "groupName": "{{{replace '-kustomize$' '' (replace '^ghcr\\.io/stuttgart-things/' '' depName)}}}"
     },
     {
-      "description": "Auto-merge patch and digest updates once CI passes — keeps low-risk bumps from piling up",
+      "description": "Auto-merge patch and digest updates once CI passes \u2014 keeps low-risk bumps from piling up",
       "matchUpdateTypes": [
         "patch",
         "digest"

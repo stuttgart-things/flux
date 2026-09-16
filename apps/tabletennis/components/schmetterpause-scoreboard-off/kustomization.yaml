@@ -1,6 +1,10 @@
 ---
-# zaehlwerk-panel-off -- zaehlwerk without a scoreboard panel: the default.
-# Selected through TABLETENNIS_ZAEHLWERK_PANEL (default off). Empty on purpose.
+# schmetterpause-scoreboard-off -- schmetterpause without its JSON surface: the
+# default. Selected through TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD (default off).
+#
+# Empty on purpose, and "off" here is stronger than a disabled route: without
+# SP_SCOREBOARD_TOKEN the application never registers /api/players and
+# /api/results at all, so there is no half-on state to reason about.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 # `patches: []` rather than nothing at all. kustomize refuses a kustomization.yaml

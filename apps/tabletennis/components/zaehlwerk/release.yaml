@@ -64,6 +64,27 @@ spec:
       patch: |
         - op: remove
           path: /data/OMNI_PITCHER_URL
+    # Browser origins allowed to read the live match stream. schmetterpause's
+    # own origin by default, so its live tab can read a running match the moment
+    # that tab exists; upstream refuses the `*` wildcard on purpose
+    # (internal/api/stream.go) and this is the only origin that will ever need
+    # it.
+    #
+    # Empty is a supported value -- allowedOrigins() returns nil on an empty
+    # string and logs that cross-origin browsers cannot read the stream -- so
+    # like SP_BOOTSTRAP_ADMIN this is a plain substitution rather than an on/off
+    # component. The quotes are the same load-bearing ones: without them an unset
+    # variable renders `value:` and YAML null fails the whole apps layer.
+    #
+    # ADDED rather than replaced: the base leaves the key out entirely when its
+    # own allowedOrigins is empty, and the published profile leaves it empty.
+    - target:
+        kind: ConfigMap
+        name: zaehlwerk-config
+      patch: |
+        - op: add
+          path: /data/ALLOWED_ORIGINS
+          value: "${ZAEHLWERK_ALLOWED_ORIGINS:-https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}}"
     # Stakater Reloader: roll zaehlwerk when zaehlwerk-config or one of its
     # Secrets changes. zaehlwerk reads them only at start, so a changed
     # ConfigMap -- e.g. the panel URLs from zaehlwerk-panel-homerun2 -- sat
