@@ -1,0 +1,19 @@
+---
+# led-catcher on top of profiles/base, with credentials from the consumer's
+# substituteFrom Secret rather than a ClusterSecretStore.
+#
+# The sops counterpart to profiles/platform, which carries led-catcher too but
+# selects its eso/ variant. A cluster running profiles/base had no way to add
+# led-catcher at all: components are not standalone-buildable, so a Flux
+# Kustomization cannot point at components/led-catcher directly, and every
+# profile that included it was an eso one.
+#
+# Needs HOMERUN2_REDIS_PASSWORD_B64 -- the same value profiles/base already
+# requires, so a consumer that runs base needs nothing new. HTTPRoutes are in
+# profiles/base-led-catcher-routes; apply them from a Kustomization that
+# dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/led-catcher
+  - ../../components/led-catcher/sops
