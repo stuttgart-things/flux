@@ -1,3 +1,10 @@
+# [1.73.0](https://github.com/stuttgart-things/flux/compare/v1.72.0...v1.73.0) (2026-09-17)
+
+
+### Features
+
+* **homerun2:** base-led-catcher, the sops counterpart to platform's led-catcher ([#479](https://github.com/stuttgart-things/flux/issues/479)) ([e629fbd](https://github.com/stuttgart-things/flux/commit/e629fbdc8860b98e5186ae4d0263a2924d2c3e46))
+
 # [1.72.0](https://github.com/stuttgart-things/flux/compare/v1.71.2...v1.72.0) (2026-09-16)
 
 
