@@ -1,0 +1,19 @@
+---
+# HTTPRoutes for profiles/base-light-catcher, applied after it is Ready.
+#
+# Both routes, mirroring platform-light-catcher-routes: light-catcher's own and
+# wled-mock's, since the mock is what light-catcher drives until
+# HOMERUN2_LIGHT_CATCHER_WLED_ENDPOINT names a real strip.
+#
+# Separate from the profile for the reason base-routes and platform-routes are:
+# Cilium resolves a route's backendRefs once, so a route applied beside the
+# Kustomization that later creates its Service serves HTTP 500 for good while
+# every Kustomization reports Ready.
+#
+# Substitutes DOMAIN, GATEWAY_NAME, GATEWAY_NAMESPACE and the two
+# HOMERUN2_*_HOSTNAME names -- the same set profiles/base-routes uses.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher/route
+  - ../../components/wled-mock/route
