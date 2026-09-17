@@ -41,7 +41,7 @@ spec:
       # (The base in ./cicd/argo-cd still says 9.4.15 and is renovate's to
       # move; a consumer that passes neither gets that one.)
       # renovate: datasource=docker depName=ghcr.io/argoproj/argo-helm/argo-cd
-      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.9.1}"
+      ARGO_CD_VERSION: "${ARGO_CD_VERSION:-10.9.2}"
       ARGO_CD_NAMESPACE: "${ARGO_CD_NAMESPACE:-argocd}"
       # Which Teams channel the notifications controller posts to. A STRING on
       # purpose -- see the ARGO_CD_INGRESS_ENABLED note below for why the
