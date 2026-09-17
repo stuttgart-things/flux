@@ -1,0 +1,14 @@
+---
+# The HTTPRoute for profiles/base-demo-pitcher, applied after it is Ready.
+#
+# Separate from the profile for the reason every other *-routes profile here is:
+# Cilium resolves a route's backendRefs once, so a route applied beside the
+# Kustomization that later creates its Service serves HTTP 500 for good while
+# every Kustomization reports Ready.
+#
+# Substitutes DOMAIN, GATEWAY_NAME, GATEWAY_NAMESPACE and
+# HOMERUN2_DEMO_PITCHER_HOSTNAME -- the same names profiles/base-routes uses.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/demo-pitcher/route

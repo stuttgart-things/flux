@@ -1,0 +1,19 @@
+---
+# demo-pitcher on top of profiles/base, with credentials from the consumer's
+# substituteFrom Secret rather than a ClusterSecretStore.
+#
+# The third of the same shape, after base-led-catcher (#479) and
+# base-light-catcher (#481): components are not standalone-buildable, so a Flux
+# Kustomization cannot point at components/demo-pitcher directly, and the only
+# profile carrying it selected the eso/ variant. components/demo-pitcher/sops
+# was already there and unselected.
+#
+# Needs HOMERUN2_REDIS_PASSWORD_B64, which profiles/base already requires, so a
+# consumer running base needs nothing new. The HTTPRoute is in
+# profiles/base-demo-pitcher-routes; apply it from a Kustomization that
+# dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/demo-pitcher
+  - ../../components/demo-pitcher/sops
