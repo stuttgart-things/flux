@@ -1,3 +1,10 @@
+# [1.75.0](https://github.com/stuttgart-things/flux/compare/v1.74.0...v1.75.0) (2026-09-17)
+
+
+### Features
+
+* **homerun2:** base-demo-pitcher, completing the sops profile set ([#482](https://github.com/stuttgart-things/flux/issues/482)) ([b4415a3](https://github.com/stuttgart-things/flux/commit/b4415a3eced3bb9b19d87f91605e6f5867dca004)), closes [#479](https://github.com/stuttgart-things/flux/issues/479) [#481](https://github.com/stuttgart-things/flux/issues/481)
+
 # [1.74.0](https://github.com/stuttgart-things/flux/compare/v1.73.0...v1.74.0) (2026-09-17)
 
 
