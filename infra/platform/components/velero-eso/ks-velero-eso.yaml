@@ -75,7 +75,7 @@ spec:
     substitute:
       VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
       # renovate: datasource=helm depName=velero registryUrl=https://vmware-tanzu.github.io/helm-charts
-      VELERO_VERSION: "${VELERO_VERSION:-12.1.0}"
+      VELERO_VERSION: "${VELERO_VERSION:-12.2.0}"
       # renovate: datasource=docker depName=velero/velero-plugin-for-aws
       VELERO_PLUGIN_AWS_VERSION: "${VELERO_PLUGIN_AWS_VERSION:-v1.14.2}"
       # REQUIRED, see ../velero/ks-velero.yaml for why these are sentinels.
