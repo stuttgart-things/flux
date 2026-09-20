@@ -64,6 +64,7 @@ than a second component.
 Everything reachable through another package's `dependsOn` is deliberately
 absent. `ansible-run` (pulled by vspherevm and proxmoxvm), `volume-claim` and
 `cloud-config` (pulled by harvester-vm), `flux-apps`, `remote-cluster`,
+`rancher-cluster`, `vault-secrets`, `app-secret-profile`,
 `management-plane`, `cni`, `flux-init`, `ip-reservation`, `vault-auth` and
 `vault-pki-secrets` all arrive transitively. They appear in
 `kubectl get configuration` under package-manager-derived names like
@@ -81,13 +82,18 @@ Both are valid; do not mix them inside one file.
 whichever shape a file uses — it groups files by profile, so add any new profile
 to its `PROFILES` map or it is silently unchecked.
 
-Two packages the ansible play pins are deliberately **not** listed here for the
-same reason: `packer-build` (reached by `packer-release`) and `platform`
-(reached by `cluster`). The play can pin both because it applies packages in a
-waited sequence, where the dependency is already in the lock; a Kustomization
-applies in one pass and has no such ordering, so listing them makes each a
-sibling of its own dependent. They resolve to the newest tag satisfying their
-floor.
+`packer-build` (reached by `packer-release`) and `platform` (reached by
+`cluster`) are the exception the derived names buy: both are listed **and**
+pulled, and that is not a duplicate, because the CR the resolver would create
+carries the name the CR here already has — one lock node, not two. The rule
+that stays is the naming one, not "never name a reachable package".
+
+The inverse case is `capability` and `argocd-cluster`. **Nothing** pulls them,
+so they exist only where somebody installs them. On u26-kind3 somebody did, by
+hand, each with a live XR — which is why the gap here stayed invisible until a
+machinery cluster rebuilt from Git came up with neither XRD (u26-kindtest,
+2026-09-19). A package that only exists because of a past `kubectl apply` is not
+a fleet fact; being in the catalog is what makes it one.
 
 ## Source of truth for the pins
 
