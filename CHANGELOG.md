@@ -1,3 +1,10 @@
+## [1.75.1](https://github.com/stuttgart-things/flux/compare/v1.75.0...v1.75.1) (2026-09-20)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 led-catcher to v0.11.0 ([#486](https://github.com/stuttgart-things/flux/issues/486)) ([895e840](https://github.com/stuttgart-things/flux/commit/895e840bee7e0c9b88ee0a0d44961133cd74ae57))
+
 # [1.75.0](https://github.com/stuttgart-things/flux/compare/v1.74.0...v1.75.0) (2026-09-17)
 
 
