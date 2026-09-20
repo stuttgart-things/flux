@@ -1,3 +1,10 @@
+# [1.76.0](https://github.com/stuttgart-things/flux/compare/v1.75.1...v1.76.0) (2026-09-20)
+
+
+### Features
+
+* **crossplane:** machinery profile from catalog 0.6.0 ([#490](https://github.com/stuttgart-things/flux/issues/490)) ([5613e8f](https://github.com/stuttgart-things/flux/commit/5613e8f0b50afbc4801a45b4a70e09ba6186a630)), closes [stuttgart-things#3013](https://github.com/stuttgart-things/issues/3013) [stuttgart-things/kcl#276](https://github.com/stuttgart-things/kcl/issues/276)
+
 ## [1.75.1](https://github.com/stuttgart-things/flux/compare/v1.75.0...v1.75.1) (2026-09-20)
 
 
