@@ -1,3 +1,10 @@
+## [1.76.1](https://github.com/stuttgart-things/flux/compare/v1.76.0...v1.76.1) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 core-catcher to v1.0.5 ([#495](https://github.com/stuttgart-things/flux/issues/495)) ([823707e](https://github.com/stuttgart-things/flux/commit/823707e9a6662c9e83d699bd5daa29ea9055b7a1))
+
 # [1.76.0](https://github.com/stuttgart-things/flux/compare/v1.75.1...v1.76.0) (2026-09-20)
 
 
