@@ -1,3 +1,10 @@
+## [1.76.2](https://github.com/stuttgart-things/flux/compare/v1.76.1...v1.76.2) (2026-09-21)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 demo-pitcher to v2.0.6 ([#496](https://github.com/stuttgart-things/flux/issues/496)) ([cb63aab](https://github.com/stuttgart-things/flux/commit/cb63aabb8d70482674e13203c377f134c20c5a8d))
+
 ## [1.76.1](https://github.com/stuttgart-things/flux/compare/v1.76.0...v1.76.1) (2026-09-21)
 
 
