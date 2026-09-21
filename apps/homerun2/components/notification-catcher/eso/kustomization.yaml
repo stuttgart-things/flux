@@ -1,0 +1,49 @@
+---
+# notification-catcher: credentials from a ClusterSecretStore. Nothing
+# credential-shaped passes through Flux -- the redis password is the entry
+# every other homerun2 component reads (${HOMERUN2_SECRET_PATH}, property
+# redis-password) and the Teams webhook comes from
+# ${HOMERUN2_NOTIFICATION_CATCHER_SECRET_PATH}.
+#
+# sops/ beside this one is the alternative; select exactly one.
+#
+# Unlike sops/, this mode DELETES the base's placeholder Secrets: an
+# ExternalSecret owns the name it writes (creationPolicy: Owner), and two
+# writers for one name is the failure the velero bundle components document at
+# length. Dropping the base's other Notifier placeholders is correct here --
+# an ExternalSecret carries every key the store holds for that entry, so a
+# second output is added to the store, not to this repository.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-notification-catcher
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-redis
+          patch: |
+            $patch: delete
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-redis
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-secrets
+          patch: |
+            $patch: delete
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-secrets

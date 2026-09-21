@@ -1,5 +1,5 @@
 ---
-# homerun2-demo-pitcher-routes -- the HTTPRoutes for homerun2-demo-pitcher → ./apps/homerun2/profiles/platform-demo-pitcher-routes
+# homerun2-demo-pitcher-routes -- the HTTPRoutes for homerun2-demo-pitcher → ./apps/homerun2/root
 #
 # A Kustomization of its own that waits for homerun2-demo-pitcher, because Cilium resolves
 # a route's backendRefs once: applied before its Service exists, a route
@@ -27,7 +27,9 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-demo-pitcher-routes
+  path: ./apps/homerun2/root
+  components:
+    - ../components/demo-pitcher/route
   postBuild:
     substitute:
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

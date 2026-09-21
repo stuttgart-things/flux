@@ -142,6 +142,13 @@ tasks:
     cmds:
       - ./hack/check-chart-annotations.sh {{.CLI_ARGS}}
 
+  check-components:
+    desc: Build every spec.components list, in every credential mode it switches to
+    silent: true
+    cmds:
+      - ./hack/check-bundle-components.sh
+      - python3 hack/check-component-lists.py {{.CLI_ARGS}}
+
   verify-image-tags:
     desc: Check that every substituted image tag / OCIRepository ref exists in its registry
     silent: true

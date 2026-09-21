@@ -39,6 +39,37 @@ the wrapper was here, and ArgoCD is not an app a platform happens to run, it is
 how a platform delivers things. A consumer that selected
 `../components/argo-cd` has to repoint that line.
 
+## homerun2: ESO or SOPS, one line
+
+Every homerun2 component ships its credentials in two shapes — `eso/`
+(ExternalSecrets against a `ClusterSecretStore`) and `sops/` (plain Secrets
+filled from `postBuild.substituteFrom`, whose source is a SOPS-encrypted file
+in the cluster repository). The bundle's component lists name the directory
+through a variable, so **one line switches the whole stack**:
+
+```yaml
+      HOMERUN2_SECRETS: sops             # eso (default) | sops
+      HOMERUN2_SECRETS_FROM: homerun2-secrets-subst
+      HOMERUN2_SECRETS_FROM_OPTIONAL: "false"
+      HOMERUN2_SECRETS_DEPENDS_ON: infra-platform
+```
+
+| Variable | Default | What it is |
+|---|---|---|
+| `HOMERUN2_SECRETS` | `eso` | The credential variant of every homerun2 component |
+| `HOMERUN2_SECRETS_FROM` | `homerun2-secrets-subst` | The Secret `substituteFrom` reads on the sops path |
+| `HOMERUN2_SECRETS_FROM_OPTIONAL` | `true` | Set `"false"` with `sops`. Left optional, a missing Secret is not an error: Flux substitutes empty strings and installs a redis with no password and an omni-pitcher whose bearer token is the empty string, reporting success |
+| `HOMERUN2_SECRETS_DEPENDS_ON` | `external-secrets` | `homerun2-redis` waits for the ExternalSecret CRDs. A sops cluster has none, and Flux has no optional dependency — point it at a Kustomization the cluster does have |
+
+`HOMERUN2_SECRETS_FROM_OPTIONAL` is the one that has to be remembered, which is
+why it is listed in every example: it is a separate knob because Flux's
+`optional` is a bool field and no expression can derive it from the mode.
+
+A cluster that wants a component this bundle does not carry, or a mix the
+bundle does not offer, points a Kustomization of its own at
+[`./apps/homerun2/root`](../homerun2/root/kustomization.yaml) and lists
+components there. That is the same mechanism, without the bundle's opinions.
+
 ## Every app here needs a Secret you must supply
 
 `rancher`, `minio` and `backstage` use `substituteFrom` with `optional: false`.

@@ -1,23 +1,31 @@
 ---
 # the core homerun2 stack: omni-pitcher, core-catcher, scout and led-catcher
-# → ./apps/homerun2/profiles/platform
+# → ./apps/homerun2/root
 #
 # Waits for homerun2-redis (namespace + redis-stack). Applied together, the
 # apps came up before redis answered: omni-pitcher gives it 30s, core-catcher
 # no retry, and a fresh redis-stack took ~70s -- 2 and 4 restarts on
 # labda-dev-a's first install.
 #
-# Credentials come from a ClusterSecretStore: entry ${HOMERUN2_SECRET_PATH}
-# (redis-password, scout-auth-token) and the omni-pitcher token from
-# ${HOMERUN2_OMNI_PITCHER_TOKEN_PATH} / ..._PROPERTY -- separate so a cluster can
-# share that token with a client that already has it (zaehlwerk). Nothing
-# credential-shaped passes through Flux.
+# CREDENTIAL MODE is HOMERUN2_SECRETS, and it is the same line for every
+# homerun2 component in this bundle:
+#
+#   eso (default)  entry ${HOMERUN2_SECRET_PATH} in a ClusterSecretStore
+#                  (redis-password, scout-auth-token) and the omni-pitcher
+#                  token from ${HOMERUN2_OMNI_PITCHER_TOKEN_PATH} /
+#                  ..._PROPERTY -- separate so a cluster can share that token
+#                  with a client that already has it (zaehlwerk). Nothing
+#                  credential-shaped passes through Flux.
+#   sops           the same values from the substituteFrom Secret below,
+#                  decrypted by Flux from the cluster repository. No
+#                  external-secrets, no store -- which is the whole reason the
+#                  switch exists.
 #
 # demo-pitcher, light-catcher (+ wled-mock) and the smoke test are their own
 # components, each waiting on this one.
 #
-# REQUIRES cilium-gateway, external-secrets and a store; trust-manager's
-# cluster-trust-bundle is mounted where present.
+# REQUIRES cilium-gateway, and on the eso path external-secrets and a store;
+# trust-manager's cluster-trust-bundle is mounted where present.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -40,8 +48,30 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform
+  path: ./apps/homerun2/root
+  components:
+    # Both values are built by hack/check-component-lists.py, so a
+    # component with an eso/ and no sops/ fails the pull request
+    # rather than the one cluster that selects sops.
+    # component-switch: HOMERUN2_SECRETS = eso sops
+    - ../components/omni-pitcher
+    - ../components/omni-pitcher/${HOMERUN2_SECRETS:-eso}
+    - ../components/core-catcher
+    - ../components/core-catcher/${HOMERUN2_SECRETS:-eso}
+    - ../components/scout
+    - ../components/scout/${HOMERUN2_SECRETS:-eso}
+    - ../components/led-catcher
+    - ../components/led-catcher/${HOMERUN2_SECRETS:-eso}
   postBuild:
+    # The sops path's values. On the eso path -- the default -- no such Secret
+    # exists, which is why this is optional; a cluster setting
+    # HOMERUN2_SECRETS: sops sets HOMERUN2_SECRETS_FROM_OPTIONAL: "false" with
+    # it, so a missing Secret fails loudly instead of substituting empty
+    # strings and installing a redis with no password that reports Ready.
+    substituteFrom:
+      - kind: Secret
+        name: ${HOMERUN2_SECRETS_FROM:-homerun2-secrets-subst}
+        optional: ${HOMERUN2_SECRETS_FROM_OPTIONAL:-true}
     substitute:
       # INFRA_* are what infra/platform already reads, so a cluster sets them once.
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

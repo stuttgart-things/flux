@@ -1,0 +1,55 @@
+---
+# homerun2's component-selection target.
+#
+# Deliberately empty, exactly like infra/platform/root and apps/platform/root:
+# every component is opt-in and the consumer selects them with `spec.components`
+# on its own Flux Kustomization.
+#
+#   spec:
+#     path: ./apps/homerun2/root
+#     components:
+#       - ../components/redis-stack
+#       - ../components/redis-stack/sops
+#       - ../components/omni-pitcher
+#       - ../components/omni-pitcher/sops
+#
+# WHY THIS EXISTS. `path` has to name a directory kustomize can build, and a
+# `kind: Component` directory is not one. Every combination of components a
+# cluster wanted therefore needed a directory of its own under profiles/ --
+# and since the credential variant is a component too, the set was the CROSS
+# PRODUCT of (components x eso|sops x with|without routes). base-led-catcher,
+# base-light-catcher and base-demo-pitcher were three such directories added
+# one upstream PR at a time, each because a cluster on the sops path wanted one
+# more component that only existed in an eso profile (#479, #481, #482).
+#
+# With this directory the cross product is gone: the consumer lists what it
+# wants, in the credential mode it wants, on ONE Kustomization. Adding a
+# component to a cluster is a line in that list, not a pull request here.
+#
+# CREDENTIAL MODE is the second entry per component, and it is the whole point
+# of the split:
+#
+#   ../components/<c>          the workload -- OCIRepository + child Kustomization
+#   ../components/<c>/eso      its credentials from a ClusterSecretStore
+#   ../components/<c>/sops     its credentials from postBuild.substituteFrom
+#   ../components/<c>/route    its HTTPRoute (a SEPARATE Kustomization, below)
+#
+# Neither mode is the default and both are always available. Components that
+# read no credential (notification-catcher aside, see its README) have neither
+# directory and are selected with the one line.
+#
+# The credential entry may be written as `../components/<c>/${HOMERUN2_SECRETS}`
+# so one variable flips the whole stack -- that is what the apps-platform
+# bundle does, where the list is upstream and the consumer only sets
+# HOMERUN2_SECRETS. A cluster writing its own list has no reason to: it can
+# just write `sops` or `eso`.
+#
+# ROUTES DO NOT BELONG HERE. Cilium resolves an HTTPRoute's backendRefs once,
+# and the Services are created by the child Kustomizations seconds after this
+# one applies -- a route that got there first serves HTTP 500 for good while
+# every Kustomization reports Ready (labda-dev-a, 2026-09-10, three of seven).
+# Select the `route` components from a SECOND Flux Kustomization with
+# `dependsOn` on the first one and on the Gateway's.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []

@@ -61,6 +61,14 @@ jobs:
           sudo mv kustomize /usr/local/bin/
       - name: Every component is buildable and the bundle composes
         run: ./hack/check-bundle-components.sh
+      # Needs kustomize too. The bundle check above proves each component
+      # renders a Flux Kustomization; this one proves the `spec.components`
+      # list ON that Kustomization resolves -- entries kustomize never sees,
+      # because only Flux expands them, on a cluster.
+      - name: Every spec.components list builds, in every mode it switches to
+        run: |
+          pip install --quiet pyyaml
+          python3 ./hack/check-component-lists.py
       - name: Every postBuild.substitute value is a string
         run: |
           pip install --quiet pyyaml

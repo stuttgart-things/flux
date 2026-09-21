@@ -2,24 +2,38 @@
 
 ## On a bundle cluster (apps/platform)
 
-Selected like any other app component, with credentials from a ClusterSecretStore:
+Selected like any other app component. The **Components** column is the
+`spec.components` list each one carries; credentials follow `HOMERUN2_SECRETS`
+(below), so the same table serves an ESO cluster and a SOPS one.
 
-| Bundle component | Path | What it deploys |
+| Bundle component | Components | What it deploys |
 |---|---|---|
-| `homerun2` | `profiles/platform-redis`, then `profiles/platform` | the namespace and redis-stack (`homerun2-redis`), then omni-pitcher, core-catcher, scout, led-catcher once redis answers |
-| `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
-| `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
-| `homerun2-config-viewer` | `profiles/platform-config-viewer` | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
-| `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
+| `homerun2` | redis-stack, then omni-pitcher + core-catcher + scout + led-catcher | the namespace and redis-stack (`homerun2-redis`), then the apps once redis answers |
+| `homerun2-demo-pitcher` | demo-pitcher | demo-pitcher (waits on `homerun2`) |
+| `homerun2-light-catcher` | light-catcher + wled-mock | light-catcher and wled-mock (waits on `homerun2`) |
+| `homerun2-config-viewer` | config-viewer | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
+| `homerun2-light-catcher-tabletennis` | light-catcher-tabletennis | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
+| `homerun2-notification-catcher` | notification-catcher | forwards what it catches to the outputs it is configured with (Teams). Installed in its own DRY_RUN default: it logs `would have sent` and posts nowhere until a cluster runs it from a Kustomization of its own (waits on `homerun2`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval |
 
-A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
+A cluster sets `HOMERUN2_REDIS_STORAGE_CLASS`, which defaults to a sentinel, and
+picks a credential mode.
+
+**`HOMERUN2_SECRETS` is the switch.** Every component's list in the bundle names
+its credential directory through it, so `eso` (the default — a
+`ClusterSecretStore`, `HOMERUN2_SECRET_STORE` required) and `sops` (plain
+Secrets from a `substituteFrom` Secret the cluster repository carries,
+SOPS-encrypted) are the same bundle with one line changed. The sops path needs
+three more lines, and they are listed together in
+[apps/platform/README.md](../platform/README.md#homerun2-eso-or-sops-one-line)
+because forgetting `HOMERUN2_SECRETS_FROM_OPTIONAL: "false"` installs a redis
+with no password that reports Ready.
 
 **Redis comes first.** `homerun2` waits for `homerun2-redis`. omni-pitcher gives redis 30s at start and core-catcher does not retry at all, while a fresh redis-stack takes ~70s to answer -- applied together, the two restarted 2 and 4 times on labda-dev-a's first install.
 
 **Routes come last.** Each of the first three brings a second Kustomization, `<name>-routes`, that applies the HTTPRoutes (`components/<c>/route`) only once the app Kustomization is Ready. Cilium resolves a route's backends once; a route applied before its Service serves HTTP 500 for good while everything reports Ready. `profiles/base` has the same split: its routes are in `profiles/base-routes`. Only the root still applies them inline.
 
-**Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets, used by the bundle components) or `components/<c>/sops` (plain Secrets from `substituteFrom`, used by `profiles/base` and the root, with the same variable names as before). The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
+**Credentials.** Every component's child Kustomization deletes the placeholder Secrets its base ships. The real ones come from `components/<c>/eso` (ExternalSecrets) or `components/<c>/sops` (plain Secrets from `substituteFrom`) — both exist for every component that reads one, and which is selected is a line in the component list, not a property of the profile you picked. The entry is `${HOMERUN2_SECRET_PATH}` (`redis-password`, `scout-auth-token`); the omni-pitcher token is read from `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}` / `..._PROPERTY`, so a cluster can share it with a client that already holds it.
 
 **zaehlwerk.** tabletennis clusters with `TABLETENNIS_ZAEHLWERK_PANEL: homerun2` point zaehlwerk at omni-pitcher and the led-catcher in the same cluster; omni-pitcher routes `system: tabletennis` onto the `tabletennis` stream.
 
@@ -45,16 +59,83 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `notification-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer that forwards messages as notifications |
 | `config-viewer` | OCIRepository + Flux Kustomization | Read-only view of which alert triggers what in which catcher (reads the Kubernetes API, not Redis) |
 
-## Profiles
+## Selecting components
 
-Profiles provide pre-composed subsets of components for different deployment scenarios. Use `path: ./apps/homerun2/profiles/<name>` in the Flux Kustomization instead of `path: ./apps/homerun2`.
+`path: ./apps/homerun2/root` plus `spec.components` on your own Flux
+Kustomization. The root is an empty kustomization; the list is what deploys.
+
+```yaml
+spec:
+  path: ./apps/homerun2/root
+  components:
+    - ../components/redis-stack
+    - ../components/redis-stack/sops
+    - ../components/omni-pitcher
+    - ../components/omni-pitcher/sops
+    - ../components/core-catcher
+    - ../components/core-catcher/sops
+    - ../components/notification-catcher
+    - ../components/notification-catcher/sops
+```
+
+Two entries per component that reads a credential: the workload, then the
+credential mode. Both modes exist for every one of them —
+
+| Entry | What it adds |
+|---|---|
+| `../components/<c>` | the workload: an OCIRepository and a child Flux Kustomization |
+| `../components/<c>/eso` | its credentials as ExternalSecrets from a `ClusterSecretStore` |
+| `../components/<c>/sops` | its credentials as plain Secrets, filled from `postBuild.substituteFrom` |
+| `../components/<c>/route` | its HTTPRoute — **a second Kustomization**, see below |
+
+— so neither mode is the default and neither is a privileged path. Components
+that read no credential (`wled-mock`, `config-viewer`, `git-pitcher`,
+`k8s-pitcher`) have neither directory and are one line.
+
+Write the mode as `../components/<c>/${HOMERUN2_SECRETS:-eso}` to make it a
+variable instead; that is what the apps-platform bundle does, where the list is
+upstream and the cluster only sets `HOMERUN2_SECRETS`.
+
+### Routes go in a second Kustomization
+
+Cilium resolves an HTTPRoute's backendRefs once. The Services here are created
+by child Kustomizations seconds after the parent applies, and a route that got
+there first serves HTTP 500 for good while every Kustomization reports Ready
+(labda-dev-a, 2026-09-10, three of seven). So the `route` components belong to
+a Kustomization that `dependsOn` the stack one **and** the Gateway's:
+
+```yaml
+spec:
+  dependsOn:
+    - name: homerun2
+    - name: cilium-gateway
+  path: ./apps/homerun2/root
+  components:
+    - ../components/omni-pitcher/route
+    - ../components/core-catcher/route
+```
+
+### Why there are (almost) no profiles left
+
+`spec.path` has to name a directory kustomize can build, and a `kind: Component`
+directory is not one — so every combination a cluster wanted needed a
+`profiles/` directory of its own, and because the credential mode is a component
+too, the set was the cross product of components x `eso|sops` x
+with/without routes. `base-led-catcher`, `base-light-catcher` and
+`base-demo-pitcher` were three such directories, added one upstream pull
+request at a time (#479, #481, #482), each because a cluster on the sops path
+wanted one more component that existed only in an eso profile. With `root/`
+that cross product is a list, and adding a component to a cluster is a line in
+it rather than a pull request here.
+
+Three presets remain, for consumers that already point at them:
 
 | Profile | Components | Use case |
 |---------|------------|----------|
-| `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
+| `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout — all `sops` | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
 | `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
-| *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
+| *(root `kustomization.yaml`)* | 11 of the 13 components, `sops`, routes inline | Full stack in one Kustomization |
 
 `profiles/cicd` composes only `git-pitcher`, and that is deliberate. It is
 consumed as its own Flux Kustomization next to a `profiles/base` one (see
@@ -62,8 +143,16 @@ consumed as its own Flux Kustomization next to a `profiles/base` one (see
 needs neither the redis/gateway variables nor a second copy of the core stack —
 which would fight the base profile over the same objects.
 
-Note the root `kustomization.yaml` does **not** include `notification-catcher`;
-that component ships only via `profiles/base`.
+Note the top-level `kustomization.yaml` does **not** include
+`notification-catcher`; `profiles/base` and an explicit list do.
+
+### Checked, not assumed
+
+`hack/check-component-lists.py` builds every `spec.components` list in this
+repository, **in both credential modes**. kustomize never sees those entries —
+only Flux expands them, on a cluster — so a typo or a component that grew an
+`eso/` and never got a `sops/` would otherwise surface at deploy time. It runs
+in CI and as `task check-components`.
 
 ## SUBSTITUTION VARIABLES
 

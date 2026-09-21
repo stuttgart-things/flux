@@ -1,0 +1,89 @@
+---
+# notification-catcher -- reads the streams and forwards what matches to the
+# outputs it is configured with (Teams today) → ./apps/homerun2/root
+#
+# No HTTPRoute: it is a consumer, not a server, so there is no second
+# Kustomization here and nothing to wait for the Gateway.
+#
+# Why this component did not exist before: the catcher's credentials were
+# wired into apps/homerun2/components/notification-catcher itself, in the one
+# mode profiles/base uses, so there was nothing an eso bundle could select. It
+# has sops/ and eso/ beside it now like every other component, which is what
+# makes it bundleable at all.
+#
+# DRY_RUN defaults to true in the component, deliberately: a fresh cluster logs
+# `would have sent` instead of posting to a real channel. Flip it with
+# HOMERUN2_NOTIFICATION_CATCHER_DRYRUN: "false" once the routing is confirmed
+# in `kubectl -n <ns> logs deploy/homerun2-notification-catcher`.
+#
+# REQUIRES ../homerun2 (namespace and redis).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-notification-catcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_NOTIFICATION_CATCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/root
+  components:
+    # Both values are built by hack/check-component-lists.py, so a
+    # component with an eso/ and no sops/ fails the pull request
+    # rather than the one cluster that selects sops.
+    # component-switch: HOMERUN2_SECRETS = eso sops
+    - ../components/notification-catcher
+    - ../components/notification-catcher/${HOMERUN2_SECRETS:-eso}
+  postBuild:
+    # The sops path's values -- here the redis password AND TEAMS_WEBHOOK_URL,
+    # which is the one credential no other homerun2 component reads. On the eso
+    # path -- the default -- no such Secret exists, which is why this is
+    # optional; a cluster setting HOMERUN2_SECRETS: sops sets
+    # HOMERUN2_SECRETS_FROM_OPTIONAL: "false" with it, so a missing Secret
+    # fails loudly instead of installing a catcher that posts nowhere.
+    substituteFrom:
+      - kind: Secret
+        name: ${HOMERUN2_SECRETS_FROM:-homerun2-secrets-subst}
+        optional: ${HOMERUN2_SECRETS_FROM_OPTIONAL:-true}
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      # The store entry holding the outputs' webhook URLs, read with dataFrom:
+      # every key of the entry becomes a key of the Secret, so a second output
+      # is a write to the store and no change here. eso/ only.
+      HOMERUN2_NOTIFICATION_CATCHER_SECRET_PATH: "${HOMERUN2_NOTIFICATION_CATCHER_SECRET_PATH:-homerun2-notification-catcher}"
+      # DRY_RUN IS NOT HERE, and cannot be. postBuild.substitute is
+      # map[string]string; kustomize drops the quotes around
+      # "${VAR:-true}" because the bare form round-trips to the same string,
+      # and envsubst then hands the API server a YAML bool, which is rejected
+      # -- not just for this child, but for the parent apply and every sibling
+      # with it (hack/check-substitute-strings.py). A literal "false" survives,
+      # a reference defaulting to a bool does not.
+      #
+      # So the bundle installs the catcher in its own dry-run default: it logs
+      # `would have sent` and posts nowhere, which is the right first state on
+      # a cluster whose routing nobody has watched yet. A cluster that has
+      # confirmed its routing and wants it posting for real selects
+      # notification-catcher from a Kustomization of its own -- ./apps/homerun2/root
+      # with the two component lines -- where "false" is a literal and lands as
+      # a string.
+      HOMERUN2_NOTIFICATION_CATCHER_STREAMS: "${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:-messages,alerts}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.0.1}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.0.1}"

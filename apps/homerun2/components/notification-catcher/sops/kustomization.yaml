@@ -1,0 +1,50 @@
+---
+# notification-catcher: credentials substituted from the consumer's
+# substituteFrom Secret -- HOMERUN2_REDIS_PASSWORD_B64 and TEAMS_WEBHOOK_URL.
+# eso/ beside this one is the alternative; select exactly one.
+#
+# WHY PATCHES AND NOT RESOURCES. Every other component's sops/ renders its own
+# Secret, because the workload component deletes the placeholder the OCI base
+# ships. This catcher's base emits `homerun2-notification-catcher-secrets` with
+# one placeholder per Notifier it knows, and the Deployment reads the whole
+# Secret -- recreating it here would silently drop every key but the one below.
+# So the placeholders are kept and overwritten in place, which is what this
+# component did inline before the credential modes were split apart.
+#
+# The target is the child Flux Kustomization the workload component renders:
+# its own `patches` list is appended to, the same technique a consumer uses to
+# push a patch into a child (see apps/tabletennis/components/zaehlwerk-panel-homerun2).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-notification-catcher
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-redis
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-redis
+            data:
+              password: ${HOMERUN2_REDIS_PASSWORD_B64}
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-secrets
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-secrets
+            stringData:
+              TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL}

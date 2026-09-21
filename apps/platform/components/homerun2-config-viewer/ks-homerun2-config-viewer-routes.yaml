@@ -1,5 +1,5 @@
 ---
-# homerun2-config-viewer-routes -- the HTTPRoute for homerun2-config-viewer → ./apps/homerun2/profiles/platform-config-viewer-routes
+# homerun2-config-viewer-routes -- the HTTPRoute for homerun2-config-viewer → ./apps/homerun2/root
 #
 # A Kustomization of its own that waits for homerun2-config-viewer, because
 # Cilium resolves a route's backendRefs once: applied before its Service exists,
@@ -26,7 +26,9 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-config-viewer-routes
+  path: ./apps/homerun2/root
+  components:
+    - ../components/config-viewer/route
   postBuild:
     substitute:
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

@@ -1,0 +1,11 @@
+---
+# light-catcher-tabletennis: the redis password as a plain Secret substituted
+# from the consumer's substituteFrom Secret. eso/ beside this one is the
+# alternative; select exactly one.
+#
+# The same value every other homerun2 component reads -- it is the same redis
+# -- written into THIS instance's namespace, which is not the homerun2 one.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml

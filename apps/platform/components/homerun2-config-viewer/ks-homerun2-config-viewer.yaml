@@ -1,6 +1,6 @@
 ---
 # config-viewer: which alert triggers what in which catcher
-# → ./apps/homerun2/profiles/platform-config-viewer
+# → ./apps/homerun2/root
 #
 # Reads the Deployments and ConfigMaps of ${HOMERUN2_NAMESPACE} through the
 # Kubernetes API with the Role its base ships. No Redis, no credentials.
@@ -28,7 +28,9 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-config-viewer
+  path: ./apps/homerun2/root
+  components:
+    - ../components/config-viewer
   postBuild:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"

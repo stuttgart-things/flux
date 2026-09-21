@@ -1,5 +1,5 @@
 ---
-# homerun2-light-catcher-tabletennis-routes -- the HTTPRoute for homerun2-light-catcher-tabletennis → ./apps/homerun2/profiles/platform-light-catcher-tabletennis-routes
+# homerun2-light-catcher-tabletennis-routes -- the HTTPRoute for homerun2-light-catcher-tabletennis → ./apps/homerun2/root
 #
 # A Kustomization of its own that waits for homerun2-light-catcher-tabletennis,
 # because Cilium resolves a route's backendRefs once: applied before its Service
@@ -27,7 +27,9 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-light-catcher-tabletennis-routes
+  path: ./apps/homerun2/root
+  components:
+    - ../components/light-catcher-tabletennis/route
   postBuild:
     substitute:
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

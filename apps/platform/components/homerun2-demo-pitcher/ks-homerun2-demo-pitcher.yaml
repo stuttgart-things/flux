@@ -1,6 +1,6 @@
 ---
 # demo-pitcher, pitching sample messages at omni-pitcher
-# → ./apps/homerun2/profiles/platform-demo-pitcher
+# → ./apps/homerun2/root
 #
 # REQUIRES ../homerun2 (namespace, redis, omni-pitcher and its token).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -25,8 +25,24 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-demo-pitcher
+  path: ./apps/homerun2/root
+  components:
+    # Both values are built by hack/check-component-lists.py, so a
+    # component with an eso/ and no sops/ fails the pull request
+    # rather than the one cluster that selects sops.
+    # component-switch: HOMERUN2_SECRETS = eso sops
+    - ../components/demo-pitcher
+    - ../components/demo-pitcher/${HOMERUN2_SECRETS:-eso}
   postBuild:
+    # The sops path's values. On the eso path -- the default -- no such Secret
+    # exists, which is why this is optional; a cluster setting
+    # HOMERUN2_SECRETS: sops sets HOMERUN2_SECRETS_FROM_OPTIONAL: "false" with
+    # it, so a missing Secret fails loudly instead of substituting empty
+    # strings and installing a redis with no password that reports Ready.
+    substituteFrom:
+      - kind: Secret
+        name: ${HOMERUN2_SECRETS_FROM:-homerun2-secrets-subst}
+        optional: ${HOMERUN2_SECRETS_FROM_OPTIONAL:-true}
     substitute:
       # INFRA_* are what infra/platform already reads, so a cluster sets them once.
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

@@ -1,13 +1,18 @@
 ---
 # homerun2-redis -- the homerun2 namespace and redis-stack
-# → ./apps/homerun2/profiles/platform-redis
+# → ./apps/homerun2/root
 #
 # Its own Kustomization so the apps in homerun2 start against a redis that
 # already answers: `wait: true` holds this one until the HelmRelease is Ready,
 # which the chart reports only once redis is.
 #
-# REQUIRES external-secrets and a store (redis-password from
-# ${HOMERUN2_SECRET_PATH}), and a StorageClass.
+# CREDENTIAL MODE is HOMERUN2_SECRETS: `eso` (the default -- redis-password
+# from ${HOMERUN2_SECRET_PATH} in a ClusterSecretStore, nothing
+# credential-shaped through Flux) or `sops` (the value comes from the
+# substituteFrom Secret below). It selects the variant directory of every
+# component in the list, so the whole bundle moves with one line.
+#
+# REQUIRES a StorageClass, and on the eso path external-secrets and a store.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -20,7 +25,12 @@ metadata:
 spec:
   dependsOn:
     - name: cilium-gateway
-    - name: external-secrets
+    # The ExternalSecret CRDs. Only the eso path renders ExternalSecrets, but
+    # Flux has no optional dependency: pointed at a Kustomization the cluster
+    # does not have, this one parks on "dependency not ready" forever. A sops
+    # cluster therefore renames it to one it does have -- any Kustomization
+    # that reconciles before homerun2 will do.
+    - name: ${HOMERUN2_SECRETS_DEPENDS_ON:-external-secrets}
   interval: 1h
   retryInterval: 1m
   timeout: 15m
@@ -31,8 +41,24 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-redis
+  path: ./apps/homerun2/root
+  components:
+    # Both values are built by hack/check-component-lists.py, so a
+    # component with an eso/ and no sops/ fails the pull request
+    # rather than the one cluster that selects sops.
+    # component-switch: HOMERUN2_SECRETS = eso sops
+    - ../components/redis-stack
+    - ../components/redis-stack/${HOMERUN2_SECRETS:-eso}
   postBuild:
+    # The sops path's values. On the eso path -- the default -- no such Secret
+    # exists, which is why this is optional; a cluster setting
+    # HOMERUN2_SECRETS: sops sets HOMERUN2_SECRETS_FROM_OPTIONAL: "false" with
+    # it, so a missing Secret fails loudly instead of substituting empty
+    # strings and installing a redis with no password that reports Ready.
+    substituteFrom:
+      - kind: Secret
+        name: ${HOMERUN2_SECRETS_FROM:-homerun2-secrets-subst}
+        optional: ${HOMERUN2_SECRETS_FROM_OPTIONAL:-true}
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       # No safe default: stores are named per cluster (vault-<cluster>).

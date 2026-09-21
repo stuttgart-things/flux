@@ -1,6 +1,6 @@
 ---
 # a light-catcher on the `tabletennis` stream, in a namespace of its own
-# → ./apps/homerun2/profiles/platform-light-catcher-tabletennis
+# → ./apps/homerun2/root
 #
 # REQUIRES ../homerun2 (redis). Not ../homerun2-light-catcher: the wled-mock it
 # brings is only the default endpoint, and waiting on it would block a cluster
@@ -27,8 +27,24 @@ spec:
   sourceRef:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
-  path: ./apps/homerun2/profiles/platform-light-catcher-tabletennis
+  path: ./apps/homerun2/root
+  components:
+    # Both values are built by hack/check-component-lists.py, so a
+    # component with an eso/ and no sops/ fails the pull request
+    # rather than the one cluster that selects sops.
+    # component-switch: HOMERUN2_SECRETS = eso sops
+    - ../components/light-catcher-tabletennis
+    - ../components/light-catcher-tabletennis/${HOMERUN2_SECRETS:-eso}
   postBuild:
+    # The sops path's values. On the eso path -- the default -- no such Secret
+    # exists, which is why this is optional; a cluster setting
+    # HOMERUN2_SECRETS: sops sets HOMERUN2_SECRETS_FROM_OPTIONAL: "false" with
+    # it, so a missing Secret fails loudly instead of substituting empty
+    # strings and installing a redis with no password that reports Ready.
+    substituteFrom:
+      - kind: Secret
+        name: ${HOMERUN2_SECRETS_FROM:-homerun2-secrets-subst}
+        optional: ${HOMERUN2_SECRETS_FROM_OPTIONAL:-true}
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}"

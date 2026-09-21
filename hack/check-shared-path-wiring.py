@@ -111,6 +111,15 @@ DIVERGENT = {
                         "the other must not have. dapr-workflows-trigger is a "
                         "third: only template-execution-trigger, the kro RGD, "
                         "split out so clusters without kro can run the worker.",
+    "./apps/homerun2/root": "An empty selection target, like infra/platform/root "
+                            "-- rendering it more than once is the point. Each "
+                            "homerun2 bundle component selects a different set "
+                            "of components from it and passes the variables "
+                            "that set needs; a shared list would be the "
+                            "profiles/ cross product this replaced. What they "
+                            "DO share is checked by "
+                            "hack/check-component-lists.py, which builds every "
+                            "list in every credential mode.",
 }
 
 
