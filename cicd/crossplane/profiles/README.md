@@ -111,6 +111,25 @@ Nothing else is outstanding. `crossplane-contrib-provider-helm`,
 before applying, so every entry in its `machinery_packages` / `platform_packages`
 adopts the long-named CR on its own.
 
+That adoption only works in one direction: the play run over a Flux-built
+cluster. It does not help the reverse.
+
+### Never layer this profile over an existing kind machinery cluster
+
+A kind machinery cluster built by the play carries its root Configurations and
+three providers under **short** names. machinery-kind5 (2026-09-22) has
+`cluster`, `platform`, `proxmoxvm`, `vspherevm`, `minio`, `namespace`,
+`volume-claim`, … next to `provider-opentofu`, `provider-kubeconfig` and
+`provider-clusterbook`. This profile applies the same sources under their
+derived names. Nothing on the Flux side resolves by source, so every one of
+those becomes a second CR for a source that already has one — a duplicate Lock
+node, and every package on the cluster goes `Healthy=False`.
+
+Moving a kind cluster to this profile therefore means **rebuilding** it: a fresh
+cluster, then this profile, then the play (if at all) on top. Renaming CRs in
+place is not a migration path; see the next paragraph for why even a single
+rename has to delete the old CR in the same step.
+
 A rename in the helm repo is not a pure rename. The chart derives the
 DeploymentRuntimeConfig name, the `serviceAccountTemplate` and the
 ClusterRoleBinding subject from the provider's name, so renaming a provider that
