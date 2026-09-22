@@ -19,6 +19,13 @@
 # impossible here rather than merely unlikely, and why this list may name
 # a package that another package also pulls. Functions are the exception
 # and stay short: Compositions reference them by name in `functionRef`.
+#
+# A provider the catalog gives `env` or `resources` is preceded by its
+# DeploymentRuntimeConfig and carries a runtimeConfigRef to it. That is
+# not tuning for its own sake: at the image defaults an upjet provider
+# re-runs terraform per resource per poll, and on u26-kind3 that held the
+# node at load 8 and cost ~3950 control-plane restarts in 39 days, because
+# a saturated API server misses lease renewals.
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
