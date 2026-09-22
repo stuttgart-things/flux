@@ -1,6 +1,6 @@
 # GENERATED -- DO NOT EDIT.
 #
-# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.6.0, profile `machinery`.
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.7.0, profile `machinery`.
 # Regenerate: python3 hack/gen-crossplane-profile.py
 #
 # This is the same list `ManagementPlane` installs, so a cluster built by
@@ -34,12 +34,41 @@ metadata:
 spec:
   package: xpkg.crossplane.io/crossplane-contrib/provider-helm:v1.4.0
 ---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: upbound-provider-opentofu
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+            - name: package-runtime
+              env:
+                - name: CROSSPLANE_OPENTOFU_PROVIDER_POLL
+                  value: 1h
+                - name: CROSSPLANE_OPENTOFU_PROVIDER_SYNC
+                  value: 6h
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
   name: upbound-provider-opentofu
 spec:
   package: xpkg.upbound.io/upbound/provider-opentofu:v1.1.6
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1beta1
+    kind: DeploymentRuntimeConfig
+    name: upbound-provider-opentofu
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
@@ -56,11 +85,75 @@ spec:
   package: ghcr.io/stuttgart-things/provider-clusterbook-xpkg:v0.4.2
 ---
 apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: crossplane-contrib-provider-kubernetes
+spec:
+  package: xpkg.crossplane.io/crossplane-contrib/provider-kubernetes:v1.2.1
+---
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: valkiriaaquaticamendi-provider-proxmox-bpg
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+            - name: package-runtime
+              env:
+                - name: PROVIDER_POLL
+                  value: 1h
+                - name: PROVIDER_SYNC
+                  value: 6h
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: "2"
+                  memory: 2Gi
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: valkiriaaquaticamendi-provider-proxmox-bpg
+spec:
+  package: xpkg.upbound.io/valkiriaaquaticamendi/provider-proxmox-bpg:v1.18.0
+  runtimeConfigRef:
+    apiVersion: pkg.crossplane.io/v1beta1
+    kind: DeploymentRuntimeConfig
+    name: valkiriaaquaticamendi-provider-proxmox-bpg
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: upbound-provider-vault
+spec:
+  package: xpkg.upbound.io/upbound/provider-vault:v4.0.4
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: vshn-provider-minio
+spec:
+  package: ghcr.io/vshn/provider-minio:v0.4.5
+---
+apiVersion: pkg.crossplane.io/v1
 kind: Function
 metadata:
   name: function-kcl
 spec:
   package: xpkg.upbound.io/crossplane-contrib/function-kcl:v0.12.2
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: crossplane-contrib-function-kcl
+spec:
+  package: xpkg.crossplane.io/crossplane-contrib/function-kcl:v0.12.2
 ---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: Function
@@ -91,32 +184,39 @@ spec:
   package: xpkg.upbound.io/crossplane-contrib/function-patch-and-transform:v0.10.9
 ---
 apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: crossplane-contrib-function-patch-and-transform
+spec:
+  package: xpkg.crossplane.io/crossplane-contrib/function-patch-and-transform:v0.10.9
+---
+apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-platform
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/platform:v0.7.2
+  package: ghcr.io/stuttgart-things/crossplane-configurations/platform:v0.8.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-cluster
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster:v0.11.5
+  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster:v0.11.10
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-vspherevm
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/vspherevm:v0.11.0
+  package: ghcr.io/stuttgart-things/crossplane-configurations/vspherevm:v0.12.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-proxmoxvm
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/proxmoxvm:v0.15.0
+  package: ghcr.io/stuttgart-things/crossplane-configurations/proxmoxvm:v0.16.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -173,6 +273,13 @@ metadata:
   name: stuttgart-things-crossplane-configurations-volume-claim
 spec:
   package: ghcr.io/stuttgart-things/crossplane-configurations/volume-claim:v0.1.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: stuttgart-things-crossplane-configurations-minio
+spec:
+  package: ghcr.io/stuttgart-things/crossplane-configurations/minio:v0.1.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration

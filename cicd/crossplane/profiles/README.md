@@ -85,9 +85,14 @@ function in `functionRef`, so renaming one breaks every Composition that uses
 it. A function therefore keeps a short name and lives with a dependsOn-derived
 twin beside it — which is safe only as long as the two differ in **source**.
 `function-kcl` sits on `xpkg.upbound.io` and its twin on `xpkg.crossplane.io`
-for exactly that reason, and the versions are held apart too: the revision name
-comes from the digest, so the same version on both mirrors is the same revision
-suffix and therefore one node twice (cicd-test4, catalog 0.5.0).
+for exactly that reason. Since catalog 0.7.0 the twins are pinned too
+(`crossplane-contrib-function-kcl`, `crossplane-contrib-function-patch-and-transform`),
+under exactly the derived name and on exactly the dependsOn registry, so they
+are the dependsOn node and not a third one. Each runs the same version as its
+short sibling. machinery-kind5 runs function-kcl v0.12.2 on both mirrors, with
+the same digest suffix, and both are Healthy. So "same digest = one node" does
+not by itself explain the cicd-test4 incident (catalog 0.5.0), and the catalog
+keeps function-kcl at v0.12.2 until that incident is understood.
 
 ### Who still owes it
 
