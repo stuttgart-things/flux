@@ -59,6 +59,93 @@ A cluster cannot express that: there is one `CROSSPLANE_PROFILE` and one set of
 Kustomizations following it. That is the reason the profile is a variable rather
 than a second component.
 
+## The CR naming convention
+
+**Providers and Configurations carry the name Crossplane itself derives from the
+package path. Functions stay short.** That is the rule, it is a *fleet* rule
+rather than a rule of this directory, and #506 is what happens when only one
+repository follows it.
+
+```
+ghcr.io/stuttgart-things/crossplane-configurations/platform
+  -> stuttgart-things-crossplane-configurations-platform
+xpkg.upbound.io/upbound/provider-opentofu
+  -> upbound-provider-opentofu
+```
+
+The derived name is the one the package manager would create for a package it
+installs as somebody's `dependsOn`. Use it, and an explicit CR and a pulled one
+are the **same** Lock node. Use a short name, and they are two nodes for one
+source — which takes every package on the cluster to `Healthy=False` at once
+while `Installed` stays True and the pods keep running
+(crossplane-configurations#247).
+
+Functions are the exception and it is not a free one: Compositions name a
+function in `functionRef`, so renaming one breaks every Composition that uses
+it. A function therefore keeps a short name and lives with a dependsOn-derived
+twin beside it — which is safe only as long as the two differ in **source**.
+`function-kcl` sits on `xpkg.upbound.io` and its twin on `xpkg.crossplane.io`
+for exactly that reason. Since catalog 0.7.0 the twins are pinned too
+(`crossplane-contrib-function-kcl`, `crossplane-contrib-function-patch-and-transform`),
+under exactly the derived name and on exactly the dependsOn registry, so they
+are the dependsOn node and not a third one. Each runs the same version as its
+short sibling. machinery-kind5 runs function-kcl v0.12.2 on both mirrors, with
+the same digest suffix, and both are Healthy. So "same digest = one node" does
+not by itself explain the cicd-test4 incident (catalog 0.5.0), and the catalog
+keeps function-kcl at v0.12.2 until that incident is understood.
+
+### Who still owes it
+
+The catalog and this directory are consistent. The other two places that install
+packages onto a machinery cluster are not, and until they are, running the
+`sthings.container.kind_machinery` play over a Flux-built cluster (or the
+reverse) creates the duplicate above:
+
+| Where | today | should be |
+|---|---|---|
+| `helm` `cicd/crossplane-providers.yaml.gotmpl` | `provider-opentofu` | `upbound-provider-opentofu` |
+| ″ | `provider-kubeconfig` | `stuttgart-things-provider-kubeconfig-xpkg` |
+| `helm` `cicd/crossplane-config.yaml.gotmpl` | `namespace`, `volume-claim` | the derived names, or drop them (this profile carries both) |
+| `ansible` `kind_machinery.yaml`, `provider_packages` | `provider-clusterbook` | `stuttgart-things-provider-clusterbook-xpkg` |
+
+Nothing else is outstanding. `crossplane-contrib-provider-helm`,
+`crossplane-contrib-provider-kubernetes`,
+`valkiriaaquaticamendi-provider-proxmox-bpg`, `vshn-provider-minio` and
+`upbound-provider-vault` are already derived names on both sides, and the play's
+*Install Configuration packages* task resolves an existing CR **by source**
+before applying, so every entry in its `machinery_packages` / `platform_packages`
+adopts the long-named CR on its own.
+
+That adoption only works in one direction: the play run over a Flux-built
+cluster. It does not help the reverse.
+
+### Never layer this profile over an existing kind machinery cluster
+
+A kind machinery cluster built by the play carries its root Configurations and
+three providers under **short** names. machinery-kind5 (2026-09-22) has
+`cluster`, `platform`, `proxmoxvm`, `vspherevm`, `minio`, `namespace`,
+`volume-claim`, … next to `provider-opentofu`, `provider-kubeconfig` and
+`provider-clusterbook`. This profile applies the same sources under their
+derived names. Nothing on the Flux side resolves by source, so every one of
+those becomes a second CR for a source that already has one — a duplicate Lock
+node, and every package on the cluster goes `Healthy=False`.
+
+Moving a kind cluster to this profile therefore means **rebuilding** it: a fresh
+cluster, then this profile, then the play (if at all) on top. Renaming CRs in
+place is not a migration path; see the next paragraph for why even a single
+rename has to delete the old CR in the same step.
+
+A rename in the helm repo is not a pure rename. The chart derives the
+DeploymentRuntimeConfig name, the `serviceAccountTemplate` and the
+ClusterRoleBinding subject from the provider's name, so renaming a provider that
+has `rbac`, `env` or `resources` moves its pod identity — and the old Provider CR
+has to go in the same step, or the rename *is* the duplicate it was meant to
+remove.
+
+`hack/check-crossplane-deps.py` holds the convention per profile in its `NAMING`
+map (`machinery: "derived"`, `cicd-platform: "short"`) and applies a different
+rule set to each. A new profile that is not in that map is silently unchecked.
+
 ## Why the package lists are so short
 
 Everything reachable through another package's `dependsOn` is deliberately
@@ -114,6 +201,19 @@ To move a version, move the catalog. Read its comments first: several pins are
 dependency floors or deliberate reverts, and at least one (`cluster`) must never
 be lowered, because `kubectl apply` walks a Configuration backwards without
 complaint.
+
+Package identity and version are not all the catalog may own. A provider it
+gives `env` or `resources` is rendered here as a `DeploymentRuntimeConfig` plus
+a `runtimeConfigRef` on the Provider — the same two fields, and the same emitted
+shape, as the play's chart, because a cluster built either way has to be the
+same cluster. The generator names every field it renders and every field it
+deliberately does not (`RENDERED` / `IGNORED`), and **aborts** on one it has
+never heard of rather than dropping it: a catalog that grows past the generator
+is the same drift as a hand-maintained copy, only harder to see. `clusterRole`
+is the interesting "deliberately not" — the play binds it per provider, this
+profile binds cluster-admin to the whole `system:serviceaccounts:` group in
+`configs/preconditions.yaml`, and doing both would be one real grant and a
+handful of decorative ones.
 
 There is no `platform_enabled` split here, and that follows the catalog rather
 than the play: `platform` and `cluster` are both in the one `machinery` list,

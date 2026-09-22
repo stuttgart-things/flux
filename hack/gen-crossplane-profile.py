@@ -36,6 +36,11 @@ cluster can override is not a fleet fact any more, and the whole point of the
 catalog is that every management cluster runs the same set. Override at the
 catalog, in one PR, for everyone.
 
+WHICH CATALOG FIELDS ARE RENDERED is declared, not implied -- see RENDERED and
+IGNORED. A field the catalog grows and this file does not know aborts the run
+rather than being dropped: a profile that silently ignores half of what the
+catalog says is the same drift as a hand-maintained copy, only harder to see.
+
 Usage:
     python3 hack/gen-crossplane-profile.py            # write
     python3 hack/gen-crossplane-profile.py --check    # verify, exit 1 on drift
@@ -57,7 +62,7 @@ CATALOG = "ghcr.io/stuttgart-things/xplane-crossplane-catalog"
 # regenerated in the same PR, which is what turns "the catalog moved" into a
 # reviewable list of package versions instead of a one-line number change.
 # renovate: datasource=docker depName=ghcr.io/stuttgart-things/xplane-crossplane-catalog
-CATALOG_VERSION = "0.6.0"
+CATALOG_VERSION = "0.7.0"
 PROFILE = "machinery"
 
 OUT = ROOT / "cicd/crossplane/profiles" / PROFILE
@@ -108,6 +113,12 @@ def doc(body, indent=0):
     out = []
     for k, v in body.items():
         if isinstance(v, dict):
+            if not v:
+                # `{}`, not a bare `key:`. The latter parses as null, and a
+                # DeploymentRuntimeConfig's deploymentTemplate.spec.selector is
+                # a required object -- null there is rejected by the API server.
+                out.append(f"{pad}{k}: {{}}")
+                continue
             out.append(f"{pad}{k}:")
             out.append(doc(v, indent + 1))
         elif isinstance(v, list):
@@ -126,6 +137,10 @@ def doc(body, indent=0):
     return "\n".join(x for x in out if x)
 
 
+YAML_WORDS = {"true", "false", "yes", "no", "on", "off", "y", "n",
+              "null", "~"}
+
+
 def scalar(v):
     if isinstance(v, bool):
         return "true" if v else "false"
@@ -137,13 +152,88 @@ def scalar(v):
         return "|\n" + body
     # Quote anything YAML would otherwise retype. A chart version like 2.3.3 is
     # safe unquoted, 2.3 would become a float.
-    if s == "" or s[0] in "&*!%@`{[|>#'\"" or s in ("true", "false", "null", "~"):
+    # The word list is YAML 1.1's, case-insensitively: sigs.k8s.io/yaml reads
+    # `value: True`, `on` or `no` as a bool, and an env value that arrives as a
+    # bool is rejected. ": " and " #" would end the scalar early.
+    if (s == "" or s[0] in "&*!%@`{[|>#'\"-?:," or s[-1] in " :"
+            or s.lower() in YAML_WORDS or ": " in s or " #" in s):
         return json.dumps(s)
     try:
         float(s)
         return json.dumps(s)
     except ValueError:
         return s
+
+
+# Catalog fields this generator RENDERS, and the ones it deliberately does not.
+# Anything outside both sets aborts the run: the catalog is the source of truth
+# and a field it grew that lands here unnoticed is silent drift in the one
+# direction this generator exists to prevent -- the profile would keep
+# rendering, `--check` would keep passing, and the cluster would be missing
+# whatever the new field says.
+#
+# NOT rendered, each for its own reason:
+#
+#   pulls        documentation of the dependency graph, asserted in the catalog
+#                and checked there. Nothing to apply.
+#   providerCrd  a thing to WAIT for, which is the play's execution model. Flux
+#                waits through a Kustomization's healthCheckExprs instead, in
+#                the cluster folder -- see stuttgart-things#3136.
+#   clusterRole  the play binds it per provider, to a ServiceAccount the chart
+#                pins by name. This profile does not: configs/preconditions.yaml
+#                binds cluster-admin to the GROUP
+#                system:serviceaccounts:crossplane-system, which covers every
+#                provider without depending on an SA name that carries the
+#                package-revision hash. Emitting per-provider bindings here
+#                would be one real grant and N decorative ones.
+RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources"}
+IGNORED = {"pulls", "providerCrd", "clusterRole"}
+
+
+def env_value(v):
+    """A catalog env value as the string a container env var has to be.
+
+    Not str(): that turns a KCL `True` into "True", where the YAML convention
+    for the same flag is "true". scalar() quotes either spelling.
+    """
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
+
+
+def runtime_doc(p):
+    """The DeploymentRuntimeConfig for a provider that pins env or resources.
+
+    Shape-identical to what the play's chart emits from the same two fields
+    (stuttgart-things/helm, cicd/values/crossplane-providers.values.yaml.gotmpl)
+    -- a cluster built either way has to be the same cluster, and this is the
+    object that decides how hard its providers hit the API server.
+
+    NO serviceAccountTemplate, unlike that chart. It pins the SA name only
+    because its ClusterRoleBinding names the SA; here the binding is
+    group-scoped (see IGNORED above), so letting Crossplane derive the SA is
+    both fine and one less thing to keep level.
+    """
+    container = {"name": "package-runtime"}
+    if p.get("env"):
+        # env, not args: args in a DeploymentRuntimeConfig REPLACE the image's
+        # own arguments instead of adding to them.
+        # env_value(), so a catalog value written bare (`PROVIDER_POLL = 3600`,
+        # `DEBUG = True`) still renders as a quoted string -- a container env
+        # value has to be one and the API server rejects a number or a bool.
+        container["env"] = [{"name": k, "value": env_value(v)}
+                            for k, v in sorted(p["env"].items())]
+    if p.get("resources"):
+        container["resources"] = p["resources"]
+    return doc({
+        "apiVersion": "pkg.crossplane.io/v1beta1",
+        "kind": "DeploymentRuntimeConfig",
+        "metadata": {"name": p["name"]},
+        "spec": {"deploymentTemplate": {"spec": {
+            "selector": {},
+            "template": {"spec": {"containers": [container]}},
+        }}},
+    })
 
 
 def package_docs(packages):
@@ -153,12 +243,33 @@ def package_docs(packages):
         for p in packages:
             if p["kind"] != kind:
                 continue
+            unknown = sorted(set(p) - RENDERED - IGNORED)
+            if unknown:
+                sys.exit(f"{p['name']}: catalog field(s) {', '.join(unknown)} "
+                         f"are not rendered by this generator. The catalog "
+                         f"moved ahead of it -- teach it the field (and say in "
+                         f"RENDERED/IGNORED which one it is) before bumping "
+                         f"CATALOG_VERSION.")
             body = {
                 "apiVersion": p.get("apiVersion") or "pkg.crossplane.io/v1",
                 "kind": kind,
                 "metadata": {"name": p["name"]},
                 "spec": {"package": p["package"]},
             }
+            if p.get("env") or p.get("resources"):
+                if kind != "Provider":
+                    sys.exit(f"{p['name']}: env/resources are a provider "
+                             f"runtime setting, and this is a {kind}.")
+                # The DRC sits next to its Provider for the reader. Apply order
+                # is not decided here -- kustomize and the kustomize-controller
+                # sort by kind -- and a Provider whose runtimeConfigRef is not
+                # there yet only retries.
+                out.append(runtime_doc(p))
+                body["spec"]["runtimeConfigRef"] = {
+                    "apiVersion": "pkg.crossplane.io/v1beta1",
+                    "kind": "DeploymentRuntimeConfig",
+                    "name": p["name"],
+                }
             out.append(doc(body))
     return out
 
@@ -181,6 +292,13 @@ def render(data):
         + "# impossible here rather than merely unlikely, and why this list may name\n"
         + "# a package that another package also pulls. Functions are the exception\n"
         + "# and stay short: Compositions reference them by name in `functionRef`.\n"
+        + "#\n"
+        + "# A provider the catalog gives `env` or `resources` is preceded by its\n"
+        + "# DeploymentRuntimeConfig and carries a runtimeConfigRef to it. That is\n"
+        + "# not tuning for its own sake: at the image defaults an upjet provider\n"
+        + "# re-runs terraform per resource per poll, and on u26-kind3 that held the\n"
+        + "# node at load 8 and cost ~3950 control-plane restarts in 39 days, because\n"
+        + "# a saturated API server misses lease renewals.\n"
         + "---\n"
         + "\n---\n".join(package_docs(data["packages"]))
         + "\n"
