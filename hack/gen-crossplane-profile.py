@@ -137,6 +137,10 @@ def doc(body, indent=0):
     return "\n".join(x for x in out if x)
 
 
+YAML_WORDS = {"true", "false", "yes", "no", "on", "off", "y", "n",
+              "null", "~"}
+
+
 def scalar(v):
     if isinstance(v, bool):
         return "true" if v else "false"
@@ -148,7 +152,11 @@ def scalar(v):
         return "|\n" + body
     # Quote anything YAML would otherwise retype. A chart version like 2.3.3 is
     # safe unquoted, 2.3 would become a float.
-    if s == "" or s[0] in "&*!%@`{[|>#'\"" or s in ("true", "false", "null", "~"):
+    # The word list is YAML 1.1's, case-insensitively: sigs.k8s.io/yaml reads
+    # `value: True`, `on` or `no` as a bool, and an env value that arrives as a
+    # bool is rejected. ": " and " #" would end the scalar early.
+    if (s == "" or s[0] in "&*!%@`{[|>#'\"-?:," or s[-1] in " :"
+            or s.lower() in YAML_WORDS or ": " in s or " #" in s):
         return json.dumps(s)
     try:
         float(s)
@@ -182,6 +190,17 @@ RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources"}
 IGNORED = {"pulls", "providerCrd", "clusterRole"}
 
 
+def env_value(v):
+    """A catalog env value as the string a container env var has to be.
+
+    Not str(): that turns a KCL `True` into "True", where the YAML convention
+    for the same flag is "true". scalar() quotes either spelling.
+    """
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    return str(v)
+
+
 def runtime_doc(p):
     """The DeploymentRuntimeConfig for a provider that pins env or resources.
 
@@ -199,10 +218,10 @@ def runtime_doc(p):
     if p.get("env"):
         # env, not args: args in a DeploymentRuntimeConfig REPLACE the image's
         # own arguments instead of adding to them.
-        # str(), so a catalog value written bare (`PROVIDER_POLL = 3600`)
-        # still renders quoted -- a container env value has to be a string and
-        # the API server rejects a number there.
-        container["env"] = [{"name": k, "value": str(v)}
+        # env_value(), so a catalog value written bare (`PROVIDER_POLL = 3600`,
+        # `DEBUG = True`) still renders as a quoted string -- a container env
+        # value has to be one and the API server rejects a number or a bool.
+        container["env"] = [{"name": k, "value": env_value(v)}
                             for k, v in sorted(p["env"].items())]
     if p.get("resources"):
         container["resources"] = p["resources"]
@@ -241,10 +260,10 @@ def package_docs(packages):
                 if kind != "Provider":
                     sys.exit(f"{p['name']}: env/resources are a provider "
                              f"runtime setting, and this is a {kind}.")
-                # The DRC goes FIRST. Both land in one kustomize pass, and a
-                # Provider whose runtimeConfigRef names an object that is not
-                # there yet reports the miss before it retries -- noise in the
-                # events of every fresh cluster, for nothing.
+                # The DRC sits next to its Provider for the reader. Apply order
+                # is not decided here -- kustomize and the kustomize-controller
+                # sort by kind -- and a Provider whose runtimeConfigRef is not
+                # there yet only retries.
                 out.append(runtime_doc(p))
                 body["spec"]["runtimeConfigRef"] = {
                     "apiVersion": "pkg.crossplane.io/v1beta1",
