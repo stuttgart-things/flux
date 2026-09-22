@@ -97,27 +97,42 @@ keeps function-kcl at v0.12.2 until that incident is understood.
 ### Who still owes it
 
 The catalog and this directory are consistent. The other two places that install
-packages onto a machinery cluster are not, and until they are, running the
-`sthings.container.kind_machinery` play over a Flux-built cluster (or the
-reverse) creates the duplicate above:
+packages onto a machinery cluster have moved part of the way (2026-09-22):
 
-| Where | today | should be |
+| Where | CR names | since |
 |---|---|---|
-| `helm` `cicd/crossplane-providers.yaml.gotmpl` | `provider-opentofu` | `upbound-provider-opentofu` |
-| ″ | `provider-kubeconfig` | `stuttgart-things-provider-kubeconfig-xpkg` |
-| `helm` `cicd/crossplane-config.yaml.gotmpl` | `namespace`, `volume-claim` | the derived names, or drop them (this profile carries both) |
-| `ansible` `kind_machinery.yaml`, `provider_packages` | `provider-clusterbook` | `stuttgart-things-provider-clusterbook-xpkg` |
+| `helm` `cicd/crossplane-providers.yaml.gotmpl`, `cicd/crossplane-config.yaml.gotmpl` | derived **with `derivedNames=true`**, short without it (the default) | helm#165 |
+| `ansible` `kind_machinery` (both plays) | derived for the helmfile packages above and for `provider_packages`, on **fresh** clusters | ansible#1258 |
+| ″ `machinery_packages` / `platform_packages` | still **short**: `cluster`, `platform`, `proxmoxvm`, `vspherevm`, `minio`, `harvester-vm`, `packer-build`, `packer-release`, `cluster-backup`, `scheduled-run`, `tofu-run`, `capability`, `argocd-cluster` | open |
 
-Nothing else is outstanding. `crossplane-contrib-provider-helm`,
-`crossplane-contrib-provider-kubernetes`,
+Opt-in in helm because four consumers apply those helmfiles from `main`, with
+no check in front of them (`ansible` `plays/kind-machinery-test.yaml`,
+platform-engineering-showcase, `stuttgart-things` dev3-kind). A rename on a
+live cluster is destructive either way: helm deletes the old CR, and a
+Provider/Configuration takes its CRDs/XRDs and everything on them with it, or
+both names coexist as a duplicate Lock node.
+
+So the play sets `derivedNames=true` only after a preflight. Any
+Provider/Configuration whose **source** is one of the renamed packages under
+another name stops the run before anything is touched: "cluster predates the
+rename — rebuild, or migrate by hand". machinery-kind4 and -kind5 predate it.
+They get no package updates through the play until they are rebuilt (one
+Backstage run). That stop is intended.
+
+Verified by a Backstage `machinery-smoke` build with the new collection
+(stuttgart-things#3141): 48/48 packages Healthy, identical to kind5 apart from
+the five renamed CRs and the p&t twin at v0.10.9.
+
+`crossplane-contrib-provider-helm`, `crossplane-contrib-provider-kubernetes`,
 `valkiriaaquaticamendi-provider-proxmox-bpg`, `vshn-provider-minio` and
-`upbound-provider-vault` are already derived names on both sides, and the play's
-*Install Configuration packages* task resolves an existing CR **by source**
-before applying, so every entry in its `machinery_packages` / `platform_packages`
-adopts the long-named CR on its own.
+`upbound-provider-vault` are derived names on both sides. The play's *Install
+Configuration packages* task resolves an existing CR **by source** before
+applying, so its short-named entries adopt a long-named CR that is already
+there.
 
 That adoption only works in one direction: the play run over a Flux-built
-cluster. It does not help the reverse.
+cluster. It does not help the reverse, and because of the open row above even a
+**freshly** play-built cluster is not one this profile can be layered over.
 
 ### Never layer this profile over an existing kind machinery cluster
 
@@ -129,6 +144,9 @@ three providers under **short** names. machinery-kind5 (2026-09-22) has
 derived names. Nothing on the Flux side resolves by source, so every one of
 those becomes a second CR for a source that already has one — a duplicate Lock
 node, and every package on the cluster goes `Healthy=False`.
+
+This holds for a freshly play-built cluster too, as long as
+`machinery_packages` / `platform_packages` use short names (see the table above).
 
 Moving a kind cluster to this profile therefore means **rebuilding** it: a fresh
 cluster, then this profile, then the play (if at all) on top. Renaming CRs in
