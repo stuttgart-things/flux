@@ -1,3 +1,10 @@
+# [1.77.0](https://github.com/stuttgart-things/flux/compare/v1.76.4...v1.77.0) (2026-09-22)
+
+
+### Features
+
+* **crossplane:** render provider runtime config, state the CR naming convention ([#507](https://github.com/stuttgart-things/flux/issues/507)) ([fe44581](https://github.com/stuttgart-things/flux/commit/fe44581292c93ee742864aa18fdaf9c5624cd77c)), closes [#506](https://github.com/stuttgart-things/flux/issues/506) [#506](https://github.com/stuttgart-things/flux/issues/506) [#506](https://github.com/stuttgart-things/flux/issues/506) [stuttgart-things/stuttgart-things#3136](https://github.com/stuttgart-things/stuttgart-things/issues/3136) [#506](https://github.com/stuttgart-things/flux/issues/506) [#506](https://github.com/stuttgart-things/flux/issues/506) [stuttgart-things/stuttgart-things#3136](https://github.com/stuttgart-things/stuttgart-things/issues/3136) [stuttgart-things/kcl#297](https://github.com/stuttgart-things/kcl/issues/297) [#506](https://github.com/stuttgart-things/flux/issues/506)
+
 ## [1.76.4](https://github.com/stuttgart-things/flux/compare/v1.76.3...v1.76.4) (2026-09-22)
 
 
