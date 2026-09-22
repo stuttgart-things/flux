@@ -1,3 +1,10 @@
+## [1.76.4](https://github.com/stuttgart-things/flux/compare/v1.76.3...v1.76.4) (2026-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 wled-mock to v1.2.0 ([#505](https://github.com/stuttgart-things/flux/issues/505)) ([7fb8915](https://github.com/stuttgart-things/flux/commit/7fb89157d9f048718830525bbc44c5b9da920c02))
+
 ## [1.76.3](https://github.com/stuttgart-things/flux/compare/v1.76.2...v1.76.3) (2026-09-22)
 
 
