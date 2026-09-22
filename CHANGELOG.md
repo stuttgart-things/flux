@@ -1,3 +1,16 @@
+## [1.76.3](https://github.com/stuttgart-things/flux/compare/v1.76.2...v1.76.3) (2026-09-22)
+
+
+### Bug Fixes
+
+* **deps:** update homerun2 core-catcher to v1.0.6 ([#502](https://github.com/stuttgart-things/flux/issues/502)) ([9782f7a](https://github.com/stuttgart-things/flux/commit/9782f7a331c73fdb20d77bba0577ff424ba3a2da))
+* **deps:** update homerun2 git-pitcher to v1.0.6 ([#497](https://github.com/stuttgart-things/flux/issues/497)) ([2e079b2](https://github.com/stuttgart-things/flux/commit/2e079b2b3d162b1895c19b047caf05030620d27d))
+* **deps:** update homerun2 k8s-pitcher to v1.0.5 ([#498](https://github.com/stuttgart-things/flux/issues/498)) ([725b04c](https://github.com/stuttgart-things/flux/commit/725b04c164de83d39b157210204eafb0bdd0ef0f))
+* **deps:** update homerun2 led-catcher to v0.12.0 ([#499](https://github.com/stuttgart-things/flux/issues/499)) ([9702f74](https://github.com/stuttgart-things/flux/commit/9702f7435bb19af220e83f79e60c848a1f2f1bed))
+* **deps:** update homerun2 light-catcher to v1.2.0 ([#500](https://github.com/stuttgart-things/flux/issues/500)) ([1ec75d0](https://github.com/stuttgart-things/flux/commit/1ec75d00486bf253f5f38125b545195c2e0b3ff3))
+* **deps:** update homerun2 omni-pitcher to v2.3.3 ([#503](https://github.com/stuttgart-things/flux/issues/503)) ([4d50b34](https://github.com/stuttgart-things/flux/commit/4d50b3434e9891b85ac75e59a8dc5238d9ee3f70))
+* **deps:** update homerun2 scout to v0.11.6 ([#504](https://github.com/stuttgart-things/flux/issues/504)) ([a7ba8a3](https://github.com/stuttgart-things/flux/commit/a7ba8a3934a7dc668bab1c49651d20fce03de9de))
+
 ## [1.76.2](https://github.com/stuttgart-things/flux/compare/v1.76.1...v1.76.2) (2026-09-21)
 
 
