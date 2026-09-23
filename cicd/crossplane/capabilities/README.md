@@ -23,9 +23,18 @@ deliberately not in the profile. The rule is stated at its source in
 ```
 components/   vspherevm  proxmoxvm  ansible-run  harvester-vm
 sets/         labda-vsphere  labul-proxmox  harvester-demo
+              labda-vsphere-labul-proxmox   (two environments, see below)
 ```
 
-A **set** is one environment's worth of capabilities. The consumer names it:
+A **set** is one environment's worth of capabilities -- except
+`labda-vsphere-labul-proxmox`, which is two: a machinery cluster sits in LabDA
+and builds the app clusters on LabUL Proxmox. Both live in one set rather than
+two Kustomizations because both would own `ansible-run` and fight over it every
+reconcile. `CROSSPLANE_CAPABILITY_ENVIRONMENT` still selects ONE environment --
+`labda` there -- and the set patches proxmoxvm's release name and `environment`
+to `labul` literally, because that chart ships `environments.labul` only.
+
+The consumer names the set:
 
 ```yaml
 path: ./cicd/crossplane/capabilities/sets/${CROSSPLANE_CAPABILITY_SET}

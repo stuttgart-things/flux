@@ -13,6 +13,9 @@
 #   labda-vsphere    vSphere in LabDA        vspherevm  + ansible-run
 #   labul-proxmox    Proxmox in LabUL        proxmoxvm  + ansible-run
 #   harvester-demo   the Harvester demo lab  harvester-vm + ansible-run
+#   labda-vsphere-labul-proxmox   a MACHINERY cluster: it lives in LabDA and
+#                                 builds the app clusters on LabUL Proxmox
+#                                 (vspherevm + proxmoxvm + ansible-run)
 #
 # A cluster CAN carry more than one hypervisor -- seed-labda-1 builds on vSphere
 # in LabDA and Proxmox in LabUL at once -- and that is a set of its own rather
