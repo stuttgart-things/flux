@@ -1,3 +1,10 @@
+# [1.79.0](https://github.com/stuttgart-things/flux/compare/v1.78.0...v1.79.0) (2026-09-23)
+
+
+### Features
+
+* **crossplane:** catalog 0.9.0 — a provider may name a runtime config it does not own ([#512](https://github.com/stuttgart-things/flux/issues/512)) ([c7d2aa3](https://github.com/stuttgart-things/flux/commit/c7d2aa36283a67f6959980b9c10d039413a2b5f8))
+
 # [1.78.0](https://github.com/stuttgart-things/flux/compare/v1.77.1...v1.78.0) (2026-09-23)
 
 
