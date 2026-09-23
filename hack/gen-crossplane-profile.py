@@ -62,7 +62,7 @@ CATALOG = "ghcr.io/stuttgart-things/xplane-crossplane-catalog"
 # regenerated in the same PR, which is what turns "the catalog moved" into a
 # reviewable list of package versions instead of a one-line number change.
 # renovate: datasource=docker depName=ghcr.io/stuttgart-things/xplane-crossplane-catalog
-CATALOG_VERSION = "0.8.0"
+CATALOG_VERSION = "0.9.0"
 PROFILE = "machinery"
 
 OUT = ROOT / "cicd/crossplane/profiles" / PROFILE
@@ -186,7 +186,8 @@ def scalar(v):
 #                provider without depending on an SA name that carries the
 #                package-revision hash. Emitting per-provider bindings here
 #                would be one real grant and N decorative ones.
-RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources"}
+RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources",
+            "runtimeConfig"}
 IGNORED = {"pulls", "providerCrd", "clusterRole"}
 
 
@@ -256,10 +257,19 @@ def package_docs(packages):
                 "metadata": {"name": p["name"]},
                 "spec": {"package": p["package"]},
             }
+            external = p.get("runtimeConfig")
             if p.get("env") or p.get("resources"):
                 if kind != "Provider":
                     sys.exit(f"{p['name']}: env/resources are a provider "
                              f"runtime setting, and this is a {kind}.")
+                if external:
+                    sys.exit(f"{p['name']}: the catalog sets runtimeConfig "
+                             f"({external}) AND env/resources. A Provider has "
+                             f"exactly one runtimeConfigRef, so these two "
+                             f"cannot both apply -- put the env and resources "
+                             f"into whatever ships {external}, or drop "
+                             f"runtimeConfig and let this generator own the "
+                             f"DeploymentRuntimeConfig.")
                 # The DRC sits next to its Provider for the reader. Apply order
                 # is not decided here -- kustomize and the kustomize-controller
                 # sort by kind -- and a Provider whose runtimeConfigRef is not
@@ -269,6 +279,27 @@ def package_docs(packages):
                     "apiVersion": "pkg.crossplane.io/v1beta1",
                     "kind": "DeploymentRuntimeConfig",
                     "name": p["name"],
+                }
+            elif external:
+                # A DeploymentRuntimeConfig this profile does NOT create: the
+                # catalog names one that something else on the cluster ships.
+                # provider-kubeconfig is the case -- its CA mount comes from
+                # the provider-kubeconfig-vault chart, which cannot also own a
+                # field on a CR the package manager created.
+                #
+                # So this reference is a CONTRACT, and an unkept one is
+                # visible: a Provider pointed at a config that is not on the
+                # cluster does not start. That is the right failure -- the
+                # alternative, leaving the reference out, gives a provider that
+                # runs and fails every login on an unknown certificate
+                # authority instead.
+                if kind != "Provider":
+                    sys.exit(f"{p['name']}: runtimeConfig is a provider "
+                             f"runtime setting, and this is a {kind}.")
+                body["spec"]["runtimeConfigRef"] = {
+                    "apiVersion": "pkg.crossplane.io/v1beta1",
+                    "kind": "DeploymentRuntimeConfig",
+                    "name": external,
                 }
             out.append(doc(body))
     return out
