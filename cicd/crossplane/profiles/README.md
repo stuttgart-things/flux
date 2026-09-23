@@ -84,15 +84,27 @@ Functions are the exception and it is not a free one: Compositions name a
 function in `functionRef`, so renaming one breaks every Composition that uses
 it. A function therefore keeps a short name and lives with a dependsOn-derived
 twin beside it — which is safe only as long as the two differ in **source**.
-`function-kcl` sits on `xpkg.upbound.io` and its twin on `xpkg.crossplane.io`
-for exactly that reason. Since catalog 0.7.0 the twins are pinned too
-(`crossplane-contrib-function-kcl`, `crossplane-contrib-function-patch-and-transform`),
-under exactly the derived name and on exactly the dependsOn registry, so they
-are the dependsOn node and not a third one. Each runs the same version as its
-short sibling. machinery-kind5 runs function-kcl v0.12.2 on both mirrors, with
-the same digest suffix, and both are Healthy. So "same digest = one node" does
-not by itself explain the cicd-test4 incident (catalog 0.5.0), and the catalog
-keeps function-kcl at v0.12.2 until that incident is understood.
+Since catalog **0.8.0** that applies to all five: every short Function sits on
+`xpkg.upbound.io` and every twin on `xpkg.crossplane.io`, the registry the
+`dependsOn` entries name, under exactly the derived name — so a twin is the
+dependsOn node rather than a third one, and all five twins are pinned instead
+of floating.
+
+The versions may match. machinery-kind5 runs `function-kcl` v0.12.2 on both
+mirrors, same digest, both Healthy, because the names *and* the sources differ.
+What must never match is the **source**, and 0.8.0 exists because it did:
+`function-auto-ready`, `-go-templating` and `-environment-configs` were on
+`xpkg.crossplane.io` next to their twins. On a kind cluster that never showed —
+the play installs the functions **before** the Configurations, so the resolver
+finds the short CR by source and creates no twin at all. This profile applies
+the whole list in one pass, the twin appears first, and the short name then
+lands on a source that already has one: on `machinery` (2026-09-22) the Lock
+held `…/function-go-templating` twice and **all 51 packages** went
+`Healthy=False`. Same list, different install order.
+
+`function-kcl` additionally stays at v0.12.2 until the cicd-test4 incident
+(catalog 0.5.0) is understood; "same digest = one node" is not what explains
+it.
 
 ### Who still owes it
 
