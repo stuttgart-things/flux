@@ -1,3 +1,10 @@
+# [1.78.0](https://github.com/stuttgart-things/flux/compare/v1.77.1...v1.78.0) (2026-09-23)
+
+
+### Features
+
+* **capabilities:** set labda-vsphere-labul-proxmox for machinery clusters ([#511](https://github.com/stuttgart-things/flux/issues/511)) ([d2ef231](https://github.com/stuttgart-things/flux/commit/d2ef2310a26c7ee6c4209d8fea812ff0fc260898)), closes [stuttgart-things#3136](https://github.com/stuttgart-things/issues/3136) [#3065](https://github.com/stuttgart-things/flux/issues/3065)
+
 ## [1.77.1](https://github.com/stuttgart-things/flux/compare/v1.77.0...v1.77.1) (2026-09-23)
 
 
