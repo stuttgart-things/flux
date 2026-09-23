@@ -1,0 +1,34 @@
+---
+# LabDA / vSphere AND LabUL / Proxmox -- the shape of a MACHINERY cluster: it
+# lives in LabDA and builds there, and it builds the app clusters on LabUL
+# Proxmox (stuttgart-things#3136, #3065).
+#
+# TWO ENVIRONMENTS IN ONE SET, which is why this is a set of its own rather
+# than two Kustomizations: both would own `ansible-run` and fight over it on
+# every reconcile (see the README beside this directory).
+#
+# `CROSSPLANE_CAPABILITY_ENVIRONMENT` stays `labda` for vspherevm and
+# ansible-run. proxmoxvm cannot follow it -- the chart ships `environments.labul`
+# only -- so the patch below pins its release name and its `environment` value
+# to `labul` literally. The patch runs at BUILD time, before Flux substitutes
+# variables, hence the regex target: at that point the name in the release is
+# still `proxmoxvm-${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labul}`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources: []
+components:
+  - ../../components/vspherevm
+  - ../../components/proxmoxvm
+  - ../../components/ansible-run
+
+patches:
+  - target:
+      kind: HelmRelease
+      name: 'proxmoxvm-.*'
+    patch: |
+      - op: replace
+        path: /metadata/name
+        value: proxmoxvm-labul
+      - op: replace
+        path: /spec/values/environment
+        value: labul
