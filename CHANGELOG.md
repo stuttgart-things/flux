@@ -1,3 +1,10 @@
+## [1.77.1](https://github.com/stuttgart-things/flux/compare/v1.77.0...v1.77.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* **crossplane:** machinery profile from catalog 0.8.0 (functions off their twin's mirror) ([#510](https://github.com/stuttgart-things/flux/issues/510)) ([5119b07](https://github.com/stuttgart-things/flux/commit/5119b0771c27cf768cf42d4b3a02d3cff6dbe4ab)), closes [stuttgart-things/kcl#299](https://github.com/stuttgart-things/kcl/issues/299) [#506](https://github.com/stuttgart-things/flux/issues/506) [stuttgart-things/stuttgart-things#3147](https://github.com/stuttgart-things/stuttgart-things/issues/3147)
+
 # [1.77.0](https://github.com/stuttgart-things/flux/compare/v1.76.4...v1.77.0) (2026-09-22)
 
 
