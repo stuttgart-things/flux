@@ -18,6 +18,16 @@
 # embedded helm-controller. On any other distribution this Kustomization fails
 # with "no matches for kind" and CoreDNS is untouched -- loud, and harmless.
 #
+# BOTH BLOCKS SERVE STALE. When an upstream stops answering -- the uplink
+# drops, the router reboots -- CoreDNS keeps answering from its cache for up to
+# COREDNS_SERVE_STALE (default 1h) instead of handing every pod an i/o timeout.
+# Measured on harvester#252: ghcr.io and github.com timed out for 18 minutes
+# straight during an uplink outage, and a Flux GitRepository failed with
+# `server misbehaving` until it was reconciled by hand. Refresh mode is `immediate`, the plugin's default: an
+# expired entry is answered from cache at most once while it is refetched in
+# the background. `verify` would ask upstream first and only fall back after
+# the forward timeout (5s), which is exactly when glibc's resolver gives up.
+#
 # ROLLING THIS OUT IS NOT FREE ON A SINGLE-NODE CLUSTER. The replacement CoreDNS
 # pod cannot be co-scheduled (pod anti-affinity), so there is a DNS gap of
 # roughly a minute while it rolls. Ship it with the cluster rather than adding
@@ -46,12 +56,15 @@ spec:
           # hack/check-substitute-strings.py before this ever shipped.
           - name: cache
             parameters: 30
+            configBlock: |-
+              serve_stale ${COREDNS_SERVE_STALE:-1h}
           - name: forward
             parameters: . ${COREDNS_ZONE_SERVER:-0.0.0.0}
-      # ---- the chart default, verbatim ----------------------------------
+      # ---- the chart default, verbatim but for serve_stale --------------
       # Do not "tidy" this. It is a copy of rke2-coredns's values.yaml and its
       # only job is to survive the list replacement above. clusterDomain is not
       # here because the chart template injects it into the kubernetes plugin.
+      # The one deliberate difference is the cache plugin's serve_stale.
       - zones:
           - zone: .
             use_tcp: true
@@ -74,6 +87,8 @@ spec:
             parameters: . /etc/resolv.conf
           - name: cache
             parameters: 30
+            configBlock: |-
+              serve_stale ${COREDNS_SERVE_STALE:-1h}
           - name: loop
           - name: reload
           - name: loadbalance
