@@ -20,7 +20,12 @@
 #
 # BOTH BLOCKS SERVE STALE. When an upstream stops answering -- the uplink
 # drops, the router reboots -- CoreDNS keeps answering from its cache for up to
-# COREDNS_SERVE_STALE (default 1h) instead of handing every pod an i/o timeout.
+# COREDNS_SERVE_STALE (default 24h) instead of handing every pod an i/o timeout.
+# 24h, not 1h: the window counts from EXPIRY, so it has to outlast the longest
+# gap between two lookups of a name that matters -- HelmRepositories at
+# interval 12h/24h, chart pulls, the first image pull after a quiet spell. With
+# 1h those were already evicted from the stale window when the uplink dropped,
+# and they are exactly the names that failed (ghcr.io).
 # Measured on harvester#252: ghcr.io and github.com timed out for 18 minutes
 # straight during an uplink outage, and a Flux GitRepository failed with
 # `server misbehaving` until it was reconciled by hand. Refresh mode is `immediate`, the plugin's default: an
@@ -57,7 +62,7 @@ spec:
           - name: cache
             parameters: 30
             configBlock: |-
-              serve_stale ${COREDNS_SERVE_STALE:-1h}
+              serve_stale ${COREDNS_SERVE_STALE:-24h}
           - name: forward
             parameters: . ${COREDNS_ZONE_SERVER:-0.0.0.0}
       # ---- the chart default, verbatim but for serve_stale --------------
@@ -88,7 +93,7 @@ spec:
           - name: cache
             parameters: 30
             configBlock: |-
-              serve_stale ${COREDNS_SERVE_STALE:-1h}
+              serve_stale ${COREDNS_SERVE_STALE:-24h}
           - name: loop
           - name: reload
           - name: loadbalance

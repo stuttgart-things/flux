@@ -78,7 +78,7 @@ Four things worth knowing before selecting it:
   CoreDNS, and the replacement pod cannot be co-scheduled with the one it
   replaces -- about a minute without cluster DNS.
 - **It also changes the default block.** Both server blocks get `serve_stale`,
-  so CoreDNS answers from cache for up to `COREDNS_SERVE_STALE` (default `1h`)
+  so CoreDNS answers from cache for up to `COREDNS_SERVE_STALE` (default `24h`)
   while an upstream is unreachable, instead of handing every pod an
   `i/o timeout`. Written with its unit (`30m`, `2h`); a bare number fails the
   parent Kustomization.
