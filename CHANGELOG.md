@@ -1,3 +1,10 @@
+## [1.80.1](https://github.com/stuttgart-things/flux/compare/v1.80.0...v1.80.1) (2026-09-24)
+
+
+### Bug Fixes
+
+* **coredns:** serve stale answers while the upstream is unreachable ([#515](https://github.com/stuttgart-things/flux/issues/515)) ([b4d7689](https://github.com/stuttgart-things/flux/commit/b4d76896644a313a2bd432c43bbf6daef2e5d80c)), closes [stuttgart-things/harvester#252](https://github.com/stuttgart-things/harvester/issues/252)
+
 # [1.80.0](https://github.com/stuttgart-things/flux/compare/v1.79.0...v1.80.0) (2026-09-24)
 
 
