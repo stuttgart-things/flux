@@ -1,3 +1,10 @@
+# [1.80.0](https://github.com/stuttgart-things/flux/compare/v1.79.0...v1.80.0) (2026-09-24)
+
+
+### Features
+
+* **crossplane:** catalog 0.10.0 — provider-minio gets its runtime config ([#513](https://github.com/stuttgart-things/flux/issues/513)) ([7d2489c](https://github.com/stuttgart-things/flux/commit/7d2489cd0d88e9dc3cbf3ef6d8d51bd485c88d08))
+
 # [1.79.0](https://github.com/stuttgart-things/flux/compare/v1.78.0...v1.79.0) (2026-09-23)
 
 
