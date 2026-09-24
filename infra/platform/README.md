@@ -66,7 +66,7 @@ COREDNS_ZONE: "4sthings.tiab.ssc.sva.de"     # no trailing dot, the base adds it
 COREDNS_ZONE_SERVER: "10.100.136.115"
 ```
 
-Three things worth knowing before selecting it:
+Four things worth knowing before selecting it:
 
 - **Fixing the node is not enough.** kubelet points CoreDNS at
   `/run/systemd/resolve/resolv.conf`, the flat file that lists every server and
@@ -77,6 +77,11 @@ Three things worth knowing before selecting it:
 - **Ship it with the cluster.** Adding it to a running single-node cluster rolls
   CoreDNS, and the replacement pod cannot be co-scheduled with the one it
   replaces -- about a minute without cluster DNS.
+- **It also changes the default block.** Both server blocks get `serve_stale`,
+  so CoreDNS answers from cache for up to `COREDNS_SERVE_STALE` (default `24h`)
+  while an upstream is unreachable, instead of handing every pod an
+  `i/o timeout`. Written with its unit (`30m`, `2h`); a bare number fails the
+  parent Kustomization.
 
 Unset, it forwards `unset.invalid.` to `0.0.0.0`: visible in the Corefile and
 verified not to touch `cluster.local`, service discovery or upstream DNS, which

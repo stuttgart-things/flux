@@ -55,3 +55,7 @@ spec:
       # REQUIRED, both of them. Written WITHOUT a trailing dot; the base adds it.
       COREDNS_ZONE: "${COREDNS_ZONE:-unset.invalid}"
       COREDNS_ZONE_SERVER: "${COREDNS_ZONE_SERVER:-0.0.0.0}"
+      # How long CoreDNS keeps answering from cache once an upstream stops
+      # answering, in both server blocks. A Go duration WITH its unit: a bare
+      # number would resolve to an int and fail the parent Kustomization.
+      COREDNS_SERVE_STALE: "${COREDNS_SERVE_STALE:-24h}"
