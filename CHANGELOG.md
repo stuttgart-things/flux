@@ -1,3 +1,10 @@
+## [1.86.1](https://github.com/stuttgart-things/flux/compare/v1.86.0...v1.86.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **tabletennis:** roll schmetterpause when its ConfigMap or Secrets change ([#540](https://github.com/stuttgart-things/flux/issues/540)) ([59a837f](https://github.com/stuttgart-things/flux/commit/59a837f3a72aec1512c4e0681e78a3463e916402))
+
 # [1.86.0](https://github.com/stuttgart-things/flux/compare/v1.85.0...v1.86.0) (2026-09-25)
 
 
