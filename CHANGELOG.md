@@ -1,3 +1,10 @@
+## [1.82.1](https://github.com/stuttgart-things/flux/compare/v1.82.0...v1.82.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **homerun2:** the smoke test waits for the bumped version before it passes ([#529](https://github.com/stuttgart-things/flux/issues/529)) ([9657b9d](https://github.com/stuttgart-things/flux/commit/9657b9d29bb391688d34a53e44ddf61002a6af50)), closes [#432](https://github.com/stuttgart-things/flux/issues/432) [#432](https://github.com/stuttgart-things/flux/issues/432)
+
 # [1.82.0](https://github.com/stuttgart-things/flux/compare/v1.81.0...v1.82.0) (2026-09-25)
 
 
