@@ -36,7 +36,15 @@ patches:
       group: kustomize.toolkit.fluxcd.io
       kind: Kustomization
       name: schmetterpause
-    patch: |
+    patch: | # pragma: allowlist secret
+      # ESO ONLY. The token goes into the base's ExternalSecret, which the
+      # sops credential mode deletes -- there this patch would target nothing
+      # and deliver nothing, with nothing turning red. So it refuses to build
+      # there instead. The sops counterpart is ../schmetterpause-scoreboard-sops
+      # (flux#526).
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: eso
       - op: add
         path: /spec/patches/-
         value:

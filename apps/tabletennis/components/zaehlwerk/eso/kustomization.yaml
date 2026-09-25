@@ -30,3 +30,17 @@ patches:
               secretStoreRef:
                 kind: ClusterSecretStore
                 name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
+  # Which credential mode this build is in, for the components that only work
+  # in one of them: they test this annotation and fail the build on the wrong
+  # one instead of delivering nothing (flux#526).
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      metadata:
+        name: zaehlwerk
+        annotations:
+          tabletennis.stuttgart-things.com/credentials: eso

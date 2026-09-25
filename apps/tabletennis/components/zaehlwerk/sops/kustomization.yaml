@@ -6,9 +6,9 @@
 #   ZAEHLWERK_OMNI_PITCHER_TOKEN   the panel's token for omni-pitcher
 #   ZAEHLWERK_REDIS_PASSWORD
 #
-# ESO-ONLY TODAY: zaehlwerk-handover-on adds SCHMETTERPAUSE_TOKEN to the
-# ExternalSecret this deletes, so selected together with this it delivers
-# nothing -- and zaehlwerk's log is the only place that says so.
+# With the handover, add ../../zaehlwerk-handover-sops rather than -on: -on
+# writes its token into the ExternalSecret this deletes, and refuses to build
+# here (flux#526).
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
@@ -33,3 +33,17 @@ patches:
             metadata:
               name: zaehlwerk-panel
             $patch: delete
+  # Which credential mode this build is in, for the components that only work
+  # in one of them: they test this annotation and fail the build on the wrong
+  # one instead of delivering nothing (flux#526).
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      metadata:
+        name: zaehlwerk
+        annotations:
+          tabletennis.stuttgart-things.com/credentials: sops
