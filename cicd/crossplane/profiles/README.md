@@ -109,13 +109,13 @@ it.
 ### Who still owes it
 
 The catalog and this directory are consistent. The other two places that install
-packages onto a machinery cluster have moved part of the way (2026-09-22):
+packages onto a machinery cluster have followed (2026-09-22):
 
 | Where | CR names | since |
 |---|---|---|
 | `helm` `cicd/crossplane-providers.yaml.gotmpl`, `cicd/crossplane-config.yaml.gotmpl` | derived **with `derivedNames=true`**, short without it (the default) | helm#165 |
 | `ansible` `kind_machinery` (both plays) | derived for the helmfile packages above and for `provider_packages`, on **fresh** clusters | ansible#1258 |
-| ″ `machinery_packages` / `platform_packages` | still **short**: `cluster`, `platform`, `proxmoxvm`, `vspherevm`, `minio`, `harvester-vm`, `packer-build`, `packer-release`, `cluster-backup`, `scheduled-run`, `tofu-run`, `capability`, `argocd-cluster` | open |
+| ″ `machinery_packages` / `platform_packages` | derived for all 13 root Configurations (`cluster` → `stuttgart-things-crossplane-configurations-cluster`, …) on **fresh** clusters; an existing short-named CR is adopted by source, not renamed | ansible#1261 |
 
 Opt-in in helm because four consumers apply those helmfiles from `main`, with
 no check in front of them (`ansible` `plays/kind-machinery-test.yaml`,
@@ -143,8 +143,12 @@ applying, so its short-named entries adopt a long-named CR that is already
 there.
 
 That adoption only works in one direction: the play run over a Flux-built
-cluster. It does not help the reverse, and because of the open row above even a
-**freshly** play-built cluster is not one this profile can be layered over.
+cluster. It does not help the reverse. Since ansible#1261 a **freshly**
+play-built cluster carries the derived names throughout, so this profile should
+layer over one cleanly -- not yet verified by a build: the check is
+`kubectl get configuration.pkg` showing 13 long names and no duplicates. A
+cluster built before 2026-09-22 keeps its short names (the play adopts, it does
+not rename) and falls under the next section.
 
 ### Never layer this profile over an existing kind machinery cluster
 
@@ -157,8 +161,9 @@ derived names. Nothing on the Flux side resolves by source, so every one of
 those becomes a second CR for a source that already has one — a duplicate Lock
 node, and every package on the cluster goes `Healthy=False`.
 
-This holds for a freshly play-built cluster too, as long as
-`machinery_packages` / `platform_packages` use short names (see the table above).
+It holds for every play-built cluster from before ansible#1258 / #1261
+(2026-09-22): those keep their short names, since the play adopts an existing CR
+by source rather than renaming it.
 
 Moving a kind cluster to this profile therefore means **rebuilding** it: a fresh
 cluster, then this profile, then the play (if at all) on top. Renaming CRs in
