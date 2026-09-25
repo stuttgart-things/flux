@@ -1,0 +1,70 @@
+---
+# homerun2-notification-catcher → ./apps/homerun2/profiles/platform-notification-catcher
+#
+# A notification-catcher on a bundle cluster: reads homerun2 streams in this
+# cluster's Redis and posts what its routing file selects to Teams. Credentials
+# from the store only (components/notification-catcher/eso): redis-password and
+# teams-webhook-url in ${HOMERUN2_SECRET_PATH}.
+#
+# DEFAULT: TABLE TENNIS RESULTS. Stream `tabletennis`, one output that posts a
+# won match and nothing else (notify-tabletennis-results, #431), and DRY RUN ON:
+# the catcher logs "dry-run: would send ..." until
+# HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN is `off`. Watch
+#   kubectl -n homerun2 logs deploy/homerun2-notification-catcher
+# over one real match first.
+#
+# REQUIRES ../homerun2, and teams-webhook-url written to the store BEFORE this
+# is selected: ESO fails the whole ExternalSecret over a missing property, and
+# the catcher cannot start without the -secrets Secret -- in dry run too, since
+# an empty ${TEAMS_WEBHOOK_URL} in the routing file is fatal at start.
+#
+# A new instance does NOT post the stream's history: from
+# homerun2-notification-catcher v3.0.2, a new consumer group starts at `$`
+# (only messages pitched after it exists). An existing group keeps its place.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-notification-catcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  # Redis and the ClusterSecretStore come with homerun2.
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_NOTIFICATION_CATCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-notification-catcher
+  components:
+    # Where messages go: the routing file. One variant today.
+    - ../../components/notification-catcher/notify-${HOMERUN2_NOTIFICATION_CATCHER_ROUTING:-tabletennis-results}
+    # on (default) or off. A component, not a value: DRY_RUN is a bool, and a
+    # bool cannot pass through postBuild.substitute -- see dry-run-on.
+    - ../../components/notification-catcher/dry-run-${HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN:-on}
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      HOMERUN2_NOTIFICATION_CATCHER_TEAMS_WEBHOOK_PROPERTY: "${HOMERUN2_NOTIFICATION_CATCHER_TEAMS_WEBHOOK_PROPERTY:-teams-webhook-url}"
+      # The stream(s) the routing file is written for. zaehlwerk's results
+      # arrive on `tabletennis` (omni-pitcher routes system tabletennis there).
+      #
+      # passthrough-override: the component's messages,alerts default is the
+      # platform-sthings catcher's (git PRs and Grafana alerts); this bundle
+      # component exists for the table tennis results.
+      HOMERUN2_NOTIFICATION_CATCHER_STREAMS: "${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:-tabletennis}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.0.2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.0.2}"

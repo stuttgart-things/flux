@@ -1,0 +1,50 @@
+---
+# notification-catcher: credentials substituted from the consumer's
+# substituteFrom Secret -- HOMERUN2_REDIS_PASSWORD_B64 and TEAMS_WEBHOOK_URL.
+# The mode platform-sthings uses through profiles/base; ../eso is the
+# alternative.
+#
+# UNLIKE the other homerun2 components' sops/, these stay patches on the BASE's
+# Secrets inside the child Kustomization, rather than plain Secrets next to it.
+# That is exactly what release.yaml did before the eso/sops split, so a cluster
+# on profiles/base renders the same objects as before and no Secret changes
+# hands on a running catcher. The patches go into the child's spec.patches
+# because the Secrets come from the OCI base at runtime.
+#
+# If TEAMS_WEBHOOK_URL is not provided by substituteFrom, the catcher fails
+# startup: an empty ${VAR} in its routing file is fatal by design (silent
+# misconfiguration is the worst failure mode for a dispatch service).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-notification-catcher
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-redis
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-redis
+            data:
+              password: ${HOMERUN2_REDIS_PASSWORD_B64}
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-secrets
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-secrets
+            stringData:
+              TEAMS_WEBHOOK_URL: ${TEAMS_WEBHOOK_URL}

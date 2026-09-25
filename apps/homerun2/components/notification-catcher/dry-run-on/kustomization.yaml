@@ -1,0 +1,13 @@
+---
+# dry-run-on -- the catcher logs "dry-run: would send ..." instead of posting:
+# the default, and the first-reconcile guard. Selected through
+# HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN (default on). Empty on purpose:
+# release.yaml's DRY_RUN already defaults to "true".
+#
+# A component rather than a substituted value because DRY_RUN is a bool, and a
+# bool cannot pass through postBuild.substitute: kustomize drops the quotes and
+# the typed patch fails the whole parent (hack/check-substitute-strings.py).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []`, not nothing: kustomize refuses an empty kustomization.yaml.
+patches: []

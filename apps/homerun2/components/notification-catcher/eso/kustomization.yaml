@@ -1,0 +1,48 @@
+---
+# notification-catcher: credentials from a ClusterSecretStore, so nothing
+# credential-shaped passes through Flux -- the webhook URL included. The entry
+# is ${HOMERUN2_SECRET_PATH}: property redis-password, like every other homerun2
+# component, and ${HOMERUN2_NOTIFICATION_CATCHER_TEAMS_WEBHOOK_PROPERTY}
+# (default teams-webhook-url) for the Teams output.
+#
+# ORDER MATTERS. Write teams-webhook-url into the entry BEFORE selecting this:
+# ESO fails the whole ExternalSecret over a missing property, the -secrets
+# Secret never appears, and the pod sits in CreateContainerConfigError. The
+# check is `kubectl -n homerun2 get externalsecret`.
+#
+# The base ships both Secrets as placeholders; the child deletes them, so the
+# ExternalSecrets are their only writer.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-notification-catcher
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-redis
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-redis
+            $patch: delete
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-notification-catcher-secrets
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-notification-catcher-secrets
+            $patch: delete

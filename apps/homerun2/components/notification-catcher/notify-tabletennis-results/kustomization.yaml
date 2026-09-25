@@ -1,0 +1,17 @@
+---
+# notify-tabletennis-results -- the routing file for a catcher that posts table
+# tennis RESULTS to Teams: one output, match_won only, never a point (#431).
+#
+# Pair it with REDIS_STREAMS=tabletennis (HOMERUN2_NOTIFICATION_CATCHER_STREAMS):
+# zaehlwerk pitches through omni-pitcher, which routes system tabletennis onto
+# that stream. zaehlwerk v0.3.0+ tags every transition, so a won match is
+# recognised by its tag rather than by any wording.
+#
+# The card, from the catcher's internal/notify/teams.go:
+#   title  WIN 2:0 (the panel's 10-character form)
+#   body   <a> 2 : 0 <b> -- <winner> wins
+#   facts  severity, system, author zaehlwerk, tags, time
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - notify.yaml

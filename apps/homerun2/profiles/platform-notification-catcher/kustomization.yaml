@@ -1,0 +1,12 @@
+---
+# notification-catcher on top of profiles/platform (bundle component
+# homerun2-notification-catcher), credentials from the store. No route: it is
+# a pure consumer.
+#
+# The routing file and the dry-run switch are chosen by the bundle component
+# (notify-*, dry-run-*), not here, so this path serves any routing.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/notification-catcher
+  - ../../components/notification-catcher/eso
