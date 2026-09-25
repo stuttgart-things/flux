@@ -1,3 +1,10 @@
+# [1.86.0](https://github.com/stuttgart-things/flux/compare/v1.85.0...v1.86.0) (2026-09-25)
+
+
+### Features
+
+* **tabletennis:** schmetterpause v0.14.0 and zaehlwerk v0.6.0, an observer keeps score ([#537](https://github.com/stuttgart-things/flux/issues/537)) ([99c257b](https://github.com/stuttgart-things/flux/commit/99c257b568c201547d0bbbf9fd6d2f4c4f023af4)), closes [#431](https://github.com/stuttgart-things/flux/issues/431)
+
 # [1.85.0](https://github.com/stuttgart-things/flux/compare/v1.84.0...v1.85.0) (2026-09-25)
 
 
