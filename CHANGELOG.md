@@ -1,3 +1,10 @@
+# [1.85.0](https://github.com/stuttgart-things/flux/compare/v1.84.0...v1.85.0) (2026-09-25)
+
+
+### Features
+
+* **backup-freshness:** a second probe, in the other lab ([#3039](https://github.com/stuttgart-things/flux/issues/3039)) ([#536](https://github.com/stuttgart-things/flux/issues/536)) ([d67468c](https://github.com/stuttgart-things/flux/commit/d67468c7c86e5a2a4a3b6a5eaaf81d8e478d1ec0)), closes [stuttgart-things#3193](https://github.com/stuttgart-things/issues/3193)
+
 # [1.84.0](https://github.com/stuttgart-things/flux/compare/v1.83.0...v1.84.0) (2026-09-25)
 
 
