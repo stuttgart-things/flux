@@ -14,6 +14,9 @@ spec:
   prune: true
   wait: true
   targetNamespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  # Credentials are not patched here: the base's ExternalSecret is pointed at
+  # the store by ./eso, or replaced with a plain Secret by ./sops -- a profile
+  # selects one of the two.
   patches:
     # parentRefs is a list on a CRD: kustomize replaces it rather than merging,
     # so every field is repeated here, sectionName included.
@@ -32,18 +35,6 @@ spec:
               sectionName: https
           hostnames:
             - ${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}
-    - target:
-        kind: ExternalSecret
-        name: zaehlwerk-panel
-      patch: |
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: zaehlwerk-panel
-        spec:
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
     # No panel unless a cluster asks for one, and the only form of "none" that
     # zaehlwerk accepts is the variable being UNSET: it tests
     # `os.Getenv("OMNI_PITCHER_URL") != ""`, so any non-empty sentinel would be

@@ -1,0 +1,35 @@
+---
+# zaehlwerk: credentials as a plain Secret substituted from the consumer's
+# substituteFrom Secret. profiles/sops selects this; ../eso is the alternative.
+#
+# Only a cluster with a panel sets anything -- see secrets.yaml:
+#   ZAEHLWERK_OMNI_PITCHER_TOKEN   the panel's token for omni-pitcher
+#   ZAEHLWERK_REDIS_PASSWORD
+#
+# ESO-ONLY TODAY: zaehlwerk-handover-on adds SCHMETTERPAUSE_TOKEN to the
+# ExternalSecret this deletes, so selected together with this it delivers
+# nothing -- and zaehlwerk's log is the only place that says so.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml
+patches:
+  # Deleted rather than left unsynced: without ESO its CRD is missing and the
+  # dry-run fails the whole zaehlwerk Kustomization. See ../../schmetterpause/sops.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: zaehlwerk-panel
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: zaehlwerk-panel
+            $patch: delete

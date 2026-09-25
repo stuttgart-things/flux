@@ -6,6 +6,12 @@
 # its live tab exists. A cluster that wants one almost always wants both.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+#
+# Credentials from a ClusterSecretStore (eso/). profiles/sops is the same pair
+# with plain Secrets instead. The credential components come AFTER the apps:
+# they patch the Flux Kustomizations the apps create.
 components:
   - ../../components/schmetterpause
   - ../../components/zaehlwerk
+  - ../../components/schmetterpause/eso
+  - ../../components/zaehlwerk/eso
