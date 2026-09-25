@@ -1,3 +1,10 @@
+# [1.84.0](https://github.com/stuttgart-things/flux/compare/v1.83.0...v1.84.0) (2026-09-25)
+
+
+### Features
+
+* **homerun2:** notification-catcher on bundle clusters, table tennis results to Teams ([#532](https://github.com/stuttgart-things/flux/issues/532)) ([ae2389f](https://github.com/stuttgart-things/flux/commit/ae2389f115cfe6e01761fc43952459348c0b6d5e)), closes [43/#44](https://github.com/stuttgart-things/flux/issues/44) [#431](https://github.com/stuttgart-things/flux/issues/431)
+
 # [1.83.0](https://github.com/stuttgart-things/flux/compare/v1.82.1...v1.83.0) (2026-09-25)
 
 
