@@ -1,3 +1,10 @@
+## [1.80.3](https://github.com/stuttgart-things/flux/compare/v1.80.2...v1.80.3) (2026-09-25)
+
+
+### Bug Fixes
+
+* **crossplane-capabilities:** pass the harvester-demo variables through to the child ([#520](https://github.com/stuttgart-things/flux/issues/520)) ([912fb33](https://github.com/stuttgart-things/flux/commit/912fb33f4435945aa6c9f7899e37388f8807076b)), closes [#514](https://github.com/stuttgart-things/flux/issues/514)
+
 ## [1.80.2](https://github.com/stuttgart-things/flux/compare/v1.80.1...v1.80.2) (2026-09-25)
 
 
