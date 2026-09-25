@@ -1,0 +1,156 @@
+---
+# A SECOND backup-freshness probe, deliberately in the other lab.
+#
+# The first one runs on `machinery` in LabDA (stuttgart-things#3193) and checks
+# both ends of the cross-lab backup chain. It cannot report its own death: if
+# machinery stops, nothing runs and nothing is said, and silence is exactly what
+# a broken backup looks like. That gap is the last open item in
+# stuttgart-things#3039.
+#
+# This closes it without a heartbeat and without an inbound endpoint. It asks
+# the same question from LabUL -- "is there anything younger than MAX_AGE in the
+# DESTINATION bucket?" -- and the answer already covers machinery: if machinery
+# is down, nothing new arrives there, and this probe sees it without ever having
+# heard of machinery.
+#
+# WHY NOT A PUSHGATEWAY, which was the first design. A Pushgateway has no
+# authentication. Published through the gateway it would be writable by anyone
+# on the network, and the damaging write is not junk -- it is a FORGED fresh
+# heartbeat, which silently switches the dead-man's switch off. A watchdog that
+# can be put to sleep from outside is worse than none, because it is trusted.
+# Reading a bucket needs no inbound endpoint at all.
+#
+# WHAT IT STILL DOES NOT COVER: this cluster dying. It is also the one carrying
+# alerts to Teams, so its death is silent too -- one level up, and only
+# something outside both labs closes that. Named, not papered over.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-freshness-watcher
+  namespace: ${BACKUP_FRESHNESS_NAMESPACE:-homerun2}
+data:
+  # EVERY bash reference below is written $${VAR}, not ${VAR}.
+  # Flux's postBuild substitutes ${VAR} at build time and replaces anything
+  # it does not know with an EMPTY string -- so an unescaped ${MAX_AGE} would
+  # reach the cluster blank and the probe would fail on a missing argument,
+  # quietly, in a CronJob nobody watches. $${VAR} emits a literal ${VAR}.
+  # Same convention as apps/backstage/pre-release.yaml.
+  probe.sh: |
+    set -euo pipefail
+
+    # 0 = something younger than MAX_AGE exists, 1 = nothing does,
+    # 2 = could not list at all. The third case is NOT "no backups" and must
+    # never be reported as one -- a credential or network fault would otherwise
+    # raise a false backup alarm, and a false alarm here costs trust in the one
+    # signal that is supposed to be trustworthy.
+    if ! out=$(rclone lsf --files-only --recursive \
+                 --max-age "$${MAX_AGE}" "dst:$${DEST_BUCKET}" 2>/tmp/rclone.err); then
+      echo "ERROR: cannot list dst:$${DEST_BUCKET}"
+      sed 's/^/    /' /tmp/rclone.err
+      echo "probe could not complete -- not pitching, letting the Job retry"
+      exit 1
+    fi
+
+    if [ -n "$${out}" ]; then
+      echo "OK: dst:$${DEST_BUCKET} has an object younger than $${MAX_AGE}"
+      exit 0
+    fi
+
+    SUMMARY="Backup stale: nothing newer than $${MAX_AGE} reached $${DEST_BUCKET} (checked from LabUL)"
+    DESC="$${SUMMARY}. This probe runs on the LabUL platform cluster and only reads the destination bucket, so it also fires when the machinery cluster itself is down and its own probe has gone quiet. Start there: is machinery up, and is the minio-backup-labul-labda CronJob running?"
+    echo "STALE: $${DESC}"
+
+    PAYLOAD=$(jq -n --arg s "$${SUMMARY}" --arg d "$${DESC}" \
+      --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      '{receiver:"backup-freshness-watcher", status:"firing",
+        title:$s, message:$d,
+        alerts:[{status:"firing",
+                 labels:{alertname:"BackupStaleFromLabUL", severity:"critical",
+                         job:"backup-freshness-watcher", cluster:"platform-sthings"},
+                 annotations:{summary:$s, description:$d}, startsAt:$t}]}')
+
+    # The token lives only in this array -- never on a command line, never in a
+    # log line. Do not add `set -x`.
+    AUTH=(-H "Authorization: Bearer $${WEBHOOK_TOKEN}")
+    if curl -sS --fail-with-body --max-time 20 \
+         -X POST "$${WEBHOOK_URL}" \
+         -H 'Content-Type: application/json' \
+         "$${AUTH[@]}" --data "$${PAYLOAD}"; then
+      echo; echo "alert pitched"
+      # 0 on purpose: the probe did its job and the alert is out. Exiting
+      # non-zero would spend the backoff re-sending an alert already delivered.
+      exit 0
+    fi
+    echo; echo "ERROR: could not deliver the alert -- retrying"
+    exit 1
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-freshness-watcher
+  namespace: ${BACKUP_FRESHNESS_NAMESPACE:-homerun2}
+spec:
+  # Hourly. The threshold is a day; checking more often cannot detect anything
+  # sooner, it only repeats an alert that is already firing.
+  schedule: "${BACKUP_FRESHNESS_SCHEDULE:-37 * * * *}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 7200
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: script
+              configMap:
+                name: backup-freshness-watcher
+                defaultMode: 0755
+            # trust-manager publishes this into every namespace; it carries the
+            # lab roots, which is what the destination MinIO presents.
+            - name: trust
+              configMap:
+                name: ${BACKUP_FRESHNESS_TRUST_BUNDLE:-cluster-trust-bundle}
+          containers:
+            - name: probe
+              # The SAME image and digest the machinery probe runs, on purpose:
+              # two probes that disagree because they run different code are
+              # worse than one.
+              image: ${BACKUP_FRESHNESS_IMAGE:-ghcr.io/stuttgart-things/sthings-mc-rclone@sha256:f590d62cb7b98cdcb46666a453c8c78b8ebc68c43c270d9a7f54c252a038a059}
+              command: ["/bin/bash", "/opt/probe/probe.sh"]
+              volumeMounts:
+                - {name: script, mountPath: /opt/probe, readOnly: true}
+                - {name: trust, mountPath: /etc/ssl/lab, readOnly: true}
+              env:
+                - {name: MAX_AGE, value: "${BACKUP_FRESHNESS_MAX_AGE:-26h}"}
+                - {name: DEST_BUCKET, value: "${BACKUP_FRESHNESS_DEST_BUCKET}"}
+                - {name: RCLONE_CA_CERT, value: /etc/ssl/lab/trust-bundle.pem}
+                - {name: RCLONE_CONFIG_DST_TYPE, value: s3}
+                - {name: RCLONE_CONFIG_DST_PROVIDER, value: Minio}
+                - {name: RCLONE_CONFIG_DST_ENDPOINT, value: "${BACKUP_FRESHNESS_DEST_ENDPOINT}"}
+                - {name: RCLONE_CONFIG_DST_REGION, value: us-east-1}
+                - name: RCLONE_CONFIG_DST_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BACKUP_FRESHNESS_SECRET:-minio-replication-labda-target}
+                      key: AWS_ACCESS_KEY_ID
+                - name: RCLONE_CONFIG_DST_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BACKUP_FRESHNESS_SECRET:-minio-replication-labda-target}
+                      key: AWS_SECRET_ACCESS_KEY
+                # In-cluster: the pitcher is a Service here, so this needs no
+                # gateway, no public hostname and no TLS of its own -- the same
+                # path this cluster's Alertmanager already uses.
+                - {name: WEBHOOK_URL, value: "${BACKUP_FRESHNESS_WEBHOOK_URL:-http://homerun2-omni-pitcher.homerun2.svc.cluster.local/pitch/grafana}"}
+                # NOT optional. A missing Secret leaves the pod in
+                # CreateContainerConfigError and the CronJob visibly never
+                # succeeds -- the right failure for a probe that cannot reach
+                # anyone, because the alternative looks like it is working.
+                - name: WEBHOOK_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: ${BACKUP_FRESHNESS_TOKEN_SECRET:-homerun2-omni-pitcher-token}
+                      key: auth-token
