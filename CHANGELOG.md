@@ -1,3 +1,10 @@
+## [1.80.4](https://github.com/stuttgart-things/flux/compare/v1.80.3...v1.80.4) (2026-09-25)
+
+
+### Bug Fixes
+
+* **tabletennis:** point schmetterpause's QR codes at its real hostname ([#527](https://github.com/stuttgart-things/flux/issues/527)) ([ec26eb4](https://github.com/stuttgart-things/flux/commit/ec26eb4fab4052460e6f23d2dcab9a14a8941d58)), closes [#525](https://github.com/stuttgart-things/flux/issues/525)
+
 ## [1.80.3](https://github.com/stuttgart-things/flux/compare/v1.80.2...v1.80.3) (2026-09-25)
 
 
