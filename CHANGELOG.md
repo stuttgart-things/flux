@@ -1,3 +1,10 @@
+# [1.83.0](https://github.com/stuttgart-things/flux/compare/v1.82.1...v1.83.0) (2026-09-25)
+
+
+### Features
+
+* **ci:** check that every substituteFrom Secret's keys are declared, and true ([#530](https://github.com/stuttgart-things/flux/issues/530)) ([205bcbd](https://github.com/stuttgart-things/flux/commit/205bcbddd918c0a48412b8182bf4b2aff49477e2)), closes [#334](https://github.com/stuttgart-things/flux/issues/334) [#334](https://github.com/stuttgart-things/flux/issues/334) [#331](https://github.com/stuttgart-things/flux/issues/331) [#331](https://github.com/stuttgart-things/flux/issues/331)
+
 ## [1.82.1](https://github.com/stuttgart-things/flux/compare/v1.82.0...v1.82.1) (2026-09-25)
 
 
