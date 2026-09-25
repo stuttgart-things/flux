@@ -23,7 +23,7 @@ spec:
     # exactly this shape. Without it the policy would silently stay at the
     # release it was last read at while the application moved on.
     # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
-    tag: ${SCHMETTERPAUSE_VERSION:-v0.13.0}
+    tag: ${SCHMETTERPAUSE_VERSION:-v0.14.0}
   # ONE FILE, AND THE EXCLUSION IS THE POINT. policy/tests holds kyverno test
   # fixtures -- pods.yaml among them, deliberately unsigned Pods -- and a Flux
   # Kustomization over a directory with no kustomization.yaml generates one from

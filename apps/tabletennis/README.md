@@ -163,6 +163,7 @@ kubectl -n schmetterpause get externalsecret schmetterpause-app
 |---|---|
 | the scoreboard | schmetterpause **v0.10.0+** — in v0.9.0 the handlers do not exist |
 | the handover | zaehlwerk **v0.5.0+** — earlier tags do not mount the trust-manager bundle, so every call over the HTTPRoute fails on the cluster CA while the pod looks healthy |
+| an observer keeping score | schmetterpause **v0.14.0+** (`GET /api/operators`, its ADR-0023) and zaehlwerk **v0.6.0+**, which offers observers in *Keeping score*. Either alone changes nothing: the older side falls back to the player list |
 | monitoring | schmetterpause **v0.8.0+** — the release that added the `metrics` container port |
 | the policy | schmetterpause **v0.9.0+**, and a Kyverno serving `policies.kyverno.io/v1` |
 
