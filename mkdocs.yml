@@ -31,8 +31,6 @@ nav:
       - Flux Web: apps/flux-web.md
       - Headlamp: apps/headlamp.md
       - Homepage: apps/homepage.md
-      - Homerun Base Stack: apps/homerun-base-stack.md
-      - Homerun IoT Stack: apps/homerun-iot-stack.md
       - Keycloak: apps/keycloak.md
       - MinIO: apps/minio.md
       - OpenLDAP: apps/openldap.md
