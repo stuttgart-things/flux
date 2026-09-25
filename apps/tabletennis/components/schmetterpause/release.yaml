@@ -83,3 +83,25 @@ spec:
               sectionName: http
           hostnames:
             - ${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}
+    # Stakater Reloader: roll schmetterpause when schmetterpause-config or one of
+    # its Secrets (schmetterpause-app, schmetterpause-db) changes. It reads them
+    # only at start, so on labda-dev-a both the scoreboard token (a new key in
+    # schmetterpause-app) and SP_BOOTSTRAP_ADMIN sat unused until a manual
+    # rollout restart -- /api/players stayed a 404 with the token already in the
+    # Secret. Same patch as zaehlwerk's. No-op on clusters without the Reloader
+    # controller (infra/reloader).
+    #
+    # A restart signs nobody out and loses nothing: the session key is in the
+    # Secret, the database is its own Cluster, and the migrate init container
+    # has nothing to do on an unchanged image. An ExternalSecret refresh that
+    # rewrites identical data does not change the hash Reloader compares.
+    - target:
+        kind: Deployment
+        name: schmetterpause
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: schmetterpause
+          annotations:
+            reloader.stakater.com/auto: "true"
