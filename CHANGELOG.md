@@ -1,3 +1,10 @@
+# [1.81.0](https://github.com/stuttgart-things/flux/compare/v1.80.4...v1.81.0) (2026-09-25)
+
+
+### Features
+
+* **tabletennis:** a sops path next to eso, profiles/sops ([#525](https://github.com/stuttgart-things/flux/issues/525)) ([6f9f436](https://github.com/stuttgart-things/flux/commit/6f9f436b4e2494f5b30a2e2211e73944a13bf8fc)), closes [#483](https://github.com/stuttgart-things/flux/issues/483)
+
 ## [1.80.4](https://github.com/stuttgart-things/flux/compare/v1.80.3...v1.80.4) (2026-09-25)
 
 
