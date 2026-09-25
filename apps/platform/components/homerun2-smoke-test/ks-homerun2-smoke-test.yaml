@@ -7,6 +7,12 @@
 # component version bump: the versions below land in the pod template. Add the optional
 # components' probes to HOMERUN2_SMOKE_PROBES when they are selected.
 #
+# The versions are also what the probes WAIT FOR. A bump re-runs the Job at
+# once, in parallel with the rollouts -- dependsOn cannot order it after the
+# optional components, since Flux has no optional dependency -- so each
+# in-cluster probe holds until its service reports the new version (flux#432).
+# See the Job's header for what that does and does not cover.
+#
 # REQUIRES ../homerun2, and waits on its homerun2-routes.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
