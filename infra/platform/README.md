@@ -343,10 +343,10 @@ bucket contents survive, which is the point of them being there.
 
 ## Components that need a Secret you must supply
 
-Seven components across the three bundles refuse to install without a Secret
+Eight components across the three bundles refuse to install without a Secret
 the cluster provides, via `substituteFrom` with `optional: false`:
-`minio`, `rancher`, `clusterbook` (apps), `argo-cd`, `kargo`, `dapr-workflows`
-(cicd) and `velero` (infra).
+`minio`, `rancher`, `clusterbook`, `backstage` (apps), `argo-cd`, `kargo`,
+`dapr-workflows` (cicd) and `velero` (infra).
 
 Each declares the keys it needs, on the line above its `substituteFrom` entry:
 
@@ -363,6 +363,18 @@ the component's rendered build references with **no default anywhere** and no
 entry in its own `substitute:` map — derived from `spec.path` **plus**
 `spec.components`, which is what the cluster actually builds.
 
+`hack/check-substitutefrom-keys.py` derives it on every PR and fails in both
+directions:
+* **undeclared**: the build needs a key the declaration does not name, so a
+  Secret built from the list leaves that value empty;
+* **stale**: the declaration names a key nothing reads any more.
+
+A new `optional: false` without a declaration fails too. The derivation follows
+Flux's own rules: `$${VAR}` is an escape and objects annotated
+`kustomize.toolkit.fluxcd.io/substitute: disabled` are not substituted at all.
+That is why Argo CD's plugin variables and Backstage's config placeholders do not
+count as keys.
+
 **`optional: false` guards the source, not the keys.** This is the part that
 reads like a guarantee and is not one. Flux fails the Kustomization when the
 Secret is *absent*. When the Secret *exists* but is missing one of these names,
@@ -372,8 +384,16 @@ the outcome each of those `optional: false` comments says it prevents. A
 empty bcrypt hash, and everything goes Ready.
 
 So the declaration is what a cluster-side preflight can check against before
-the component line is added; #331 tracks that check. Nothing in this repo's CI
-can see the cluster's Secret.
+the component line is added. That preflight belongs to the cluster repo, not
+here: nothing in this repo's CI can see a cluster's Secret.
+
+**A missing Secret fails only that component.** The Secret is resolved inside
+the child Kustomization's own build, and the parent only applies the child
+object (kustomize-controller, `kustomization_controller.go`, where `build` calls
+`SubstituteVariables`). So the child goes not-Ready and anything that
+`dependsOn` it waits. The siblings are unaffected. The wider failure, where the
+parent apply is rejected, is a non-string `substitute` value, which
+`hack/check-substitute-strings.py` guards.
 
 ## Migrating a cluster off per-component CRs
 

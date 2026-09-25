@@ -74,6 +74,11 @@ jobs:
       # cluster (#514). Opt-in per Kustomization via `# passthrough-complete:`.
       - name: Every variable a passthrough-complete path reads is passed
         run: python3 ./hack/check-passthrough-coverage.py
+      # Same renderer. Every substituteFrom with optional: false declares the
+      # keys its Secret must carry, and the declaration matches what the
+      # build reads -- a key the Secret lacks renders empty, silently (#331).
+      - name: Every substituteFrom Secret's keys are declared, and true
+        run: python3 ./hack/check-substitutefrom-keys.py
       # Reads no registry and renders nothing -- it only compares two
       # Kustomizations that already exist, so it is cheap and belongs before
       # anything that installs a tool.
