@@ -78,3 +78,28 @@ shorter (`storageClassName`, `namespace`, `networkName`, `imageId`) because
 harvester-vm renders a KubeVirt VirtualMachine through provider-kubernetes and
 registers no provider of its own — there is no hypervisor credential to fetch,
 only a kubeconfig to the Harvester cluster.
+
+Every value is a variable the parent Kustomization passes through, so a cluster
+sets it in its `cicd-platform` substitutes:
+
+| variable | default | |
+|---|---|---|
+| `CROSSPLANE_CAPABILITY_HARVESTER_ENVIRONMENT` | `default` | the EnvironmentConfig's selector label |
+| `CROSSPLANE_CAPABILITY_HARVESTER_PROVIDER_CONFIG` | `in-cluster` | provider-kubernetes config for the Harvester API |
+| `CROSSPLANE_CAPABILITY_HARVESTER_STORAGE_CLASS` | `harvester-longhorn` | on a lab Harvester, the image's `lh-<uuid>` class |
+| `CROSSPLANE_CAPABILITY_HARVESTER_NAMESPACE` | `vms` | |
+| `CROSSPLANE_CAPABILITY_HARVESTER_NETWORK` | `default/vms` | |
+| `CROSSPLANE_CAPABILITY_HARVESTER_IMAGE` | `default/image-ubuntu` | |
+
+The defaults only fit a Harvester that **is** the cluster. A management cluster
+building on a separate one has to set all of them — nothing reports a wrong one;
+the first sign is a VM whose PVC stays Pending.
+
+The set still carries `ansible-run`. Its SSH login comes from sops-git like
+everywhere else; `CROSSPLANE_CAPABILITY_ANSIBLE_SSH_BACKEND=none` drops that and
+the cluster supplies the `ansible-credentials` Secret in the tekton namespace
+itself. The `sops-git` Kustomization stays a dependency either way — it also
+owns the `stuttgart-things-charts` HelmRepository.
+
+A variable read under `components/` and missing from the parent's substitute
+list fails CI (`hack/check-passthrough-coverage.py`).

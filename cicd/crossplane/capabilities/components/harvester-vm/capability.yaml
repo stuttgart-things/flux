@@ -16,6 +16,16 @@
 # EnvironmentConfig below names `in-cluster`, which composes VMs onto the
 # cluster itself -- correct for a demo lab where Harvester IS the cluster, and
 # wrong the moment it is a separate one.
+#
+# EVERY VALUE BELOW IS PER CLUSTER and is passed through by the parent
+# Kustomization (cicd/platform/components/crossplane-capabilities). A variable
+# read here and not listed there renders its default on every cluster whatever
+# the cluster sets -- which is exactly what #514 was: `in-cluster`,
+# `harvester-longhorn` and `default/image-ubuntu` on a lab that has none of them,
+# and a PVC Pending behind an XR that looks applied. The defaults only suit a
+# Harvester that IS the cluster; on the lab Harvester the storage class is a
+# per-image `lh-<uuid>`. hack/check-passthrough-coverage.py fails CI when a new
+# variable here is not passed through.
 apiVersion: apiextensions.crossplane.io/v1beta1
 kind: EnvironmentConfig
 metadata:
@@ -23,7 +33,9 @@ metadata:
   labels:
     # Config-scoped, matched against an XR's spec.environmentConfig.
     # function-environment-configs requires EXACTLY ONE selector match.
-    harvester-vm.resources.stuttgart-things.com/environment: default
+    # Settable so a management cluster building on a SEPARATE Harvester can
+    # name that lab instead of `default` -- and must then select it by name.
+    harvester-vm.resources.stuttgart-things.com/environment: ${CROSSPLANE_CAPABILITY_HARVESTER_ENVIRONMENT:-default}
 data:
   providerConfigRef: ${CROSSPLANE_CAPABILITY_HARVESTER_PROVIDER_CONFIG:-in-cluster}
   storageClassName: ${CROSSPLANE_CAPABILITY_HARVESTER_STORAGE_CLASS:-harvester-longhorn}

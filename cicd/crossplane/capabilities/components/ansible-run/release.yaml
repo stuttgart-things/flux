@@ -41,7 +41,15 @@ spec:
     environmentConfig:
       storageClass: ${CROSSPLANE_CAPABILITY_STORAGE_CLASS:-openebs-hostpath}
     sshCredentials:
-      backend: sops-git
+      # sops-git reads secrets/ansible-credentials.enc.yaml from the
+      # GitRepository sops-git provides, independent of `environment`. `none`
+      # renders no credential object at all: the cluster supplies the
+      # `ansible-credentials` Secret in the tekton namespace itself (keys
+      # vm_ssh_*). Neither needs an `environments.<key>` block in the chart --
+      # only `eso` looks one up. The sops-git KUSTOMIZATION is still a
+      # dependency either way: it is where the stuttgart-things-charts
+      # HelmRepository comes from.
+      backend: ${CROSSPLANE_CAPABILITY_ANSIBLE_SSH_BACKEND:-sops-git}
       sopsGit:
         repositoryRef:
           name: ${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}
