@@ -1,0 +1,57 @@
+---
+# schmetterpause: credentials from a ClusterSecretStore. The base's two
+# ExternalSecrets (schmetterpause-app, schmetterpause-db) read the entry
+# `schmetterpause` from ${SECRET_STORE_NAME}. profiles/base selects this;
+# ../sops is the alternative for clusters without external-secrets.
+#
+# The patches go INTO the Flux Kustomization's spec.patches, not onto the
+# ExternalSecrets directly: those objects come from the OCI base, which Flux
+# pulls at runtime, so they are not in this kustomize build at all.
+#
+# The store is named per cluster (pattern vault-<cluster>) and is never
+# plain "vault" -- `kubectl get clustersecretstore` is the reliable source.
+#
+# The sentinel names TABLETENNIS_SECRET_STORE, not this component's own
+# variable: the platform component passes the value through with its own
+# default, and that copy wins. Naming the key a cluster actually sets is
+# what makes the failure message actionable.
+# Both secrets read from the same store; the base's `vault-cluster` is a
+# placeholder that resolves to nothing.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: schmetterpause-app
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: schmetterpause-app
+            spec:
+              secretStoreRef:
+                kind: ClusterSecretStore
+                name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: schmetterpause-db
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: schmetterpause-db
+            spec:
+              secretStoreRef:
+                kind: ClusterSecretStore
+                name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}

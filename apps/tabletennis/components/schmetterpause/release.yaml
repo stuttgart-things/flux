@@ -14,6 +14,9 @@ spec:
   prune: true
   wait: true
   targetNamespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  # Credentials are not patched here. The base's two ExternalSecrets are
+  # pointed at the store by ./eso, or replaced with plain Secrets by ./sops --
+  # a profile selects one of the two.
   patches:
     # The published base is deliberately environment-free: it names
     # `gateway`/`default` and `schmetterpause.cluster.example.com`, and an
@@ -60,36 +63,3 @@ spec:
               sectionName: http
           hostnames:
             - ${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}
-    # The store is named per cluster (pattern vault-<cluster>) and is never
-    # plain "vault" -- `kubectl get clustersecretstore` is the reliable source.
-    #
-    # The sentinel names TABLETENNIS_SECRET_STORE, not this component's own
-    # variable: the platform component passes the value through with its own
-    # default, and that copy wins. Naming the key a cluster actually sets is
-    # what makes the failure message actionable.
-    # Both secrets read from the same store; the base's `vault-cluster` is a
-    # placeholder that resolves to nothing.
-    - target:
-        kind: ExternalSecret
-        name: schmetterpause-app
-      patch: |
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: schmetterpause-app
-        spec:
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}
-    - target:
-        kind: ExternalSecret
-        name: schmetterpause-db
-      patch: |
-        apiVersion: external-secrets.io/v1
-        kind: ExternalSecret
-        metadata:
-          name: schmetterpause-db
-        spec:
-          secretStoreRef:
-            kind: ClusterSecretStore
-            name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}

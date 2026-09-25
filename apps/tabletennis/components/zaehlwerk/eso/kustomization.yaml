@@ -1,0 +1,32 @@
+---
+# zaehlwerk: credentials from a ClusterSecretStore. The base's ExternalSecret
+# zaehlwerk-panel reads the entry `zaehlwerk` from ${SECRET_STORE_NAME}.
+# profiles/base selects this; ../sops is the alternative for clusters without
+# external-secrets.
+#
+# Into the Flux Kustomization's spec.patches, for the same reason as
+# ../../schmetterpause/eso: the ExternalSecret comes from the OCI base at
+# runtime and is not in this build.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: zaehlwerk-panel
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: zaehlwerk-panel
+            spec:
+              secretStoreRef:
+                kind: ClusterSecretStore
+                name: ${SECRET_STORE_NAME:-set-TABLETENNIS_SECRET_STORE}

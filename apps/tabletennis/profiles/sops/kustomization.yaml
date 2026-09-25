@@ -1,0 +1,19 @@
+---
+# The pair as profiles/base deploys it, with plain Secrets instead of
+# ExternalSecrets: for clusters where Flux already decrypts SOPS and an
+# external-secrets controller, a ClusterSecretStore and an OpenBao auth mount
+# would exist only to deliver these few values -- an edge cluster, typically.
+#
+# Point a Flux Kustomization at this path with postBuild.substituteFrom naming
+# a SOPS-encrypted Secret that holds SCHMETTERPAUSE_SESSION_KEY and
+# SCHMETTERPAUSE_DB_PASSWORD (both required), plus ZAEHLWERK_OMNI_PITCHER_TOKEN
+# and ZAEHLWERK_REDIS_PASSWORD if zaehlwerk drives a panel. The same
+# Kustomization needs the cnpg-operator CRD and a Gateway before it can apply.
+# See the README.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/schmetterpause
+  - ../../components/zaehlwerk
+  - ../../components/schmetterpause/sops
+  - ../../components/zaehlwerk/sops

@@ -1,0 +1,56 @@
+---
+# schmetterpause: credentials as plain Secrets substituted from the consumer's
+# substituteFrom Secret (SOPS-encrypted in the cluster repo, decrypted by
+# Flux) -- no external-secrets controller, no ClusterSecretStore, no OpenBao
+# auth mount. profiles/sops selects this; ../eso is the alternative.
+#
+# REQUIRES, both without defaults on purpose -- see secrets.yaml:
+#   SCHMETTERPAUSE_SESSION_KEY    signs every player session, >= 32 characters
+#   SCHMETTERPAUSE_DB_PASSWORD    the database owner's password, URL-safe
+#
+# ESO-ONLY TODAY, two of the optional components:
+#   schmetterpause-scoreboard-on  adds its token to the app's ExternalSecret,
+#                                 which this deletes -- selected with this, it
+#                                 delivers nothing and nothing turns red
+#   schmetterpause-db-backup      ships an ExternalSecret of its own, which
+#                                 fails the dry-run on a cluster without ESO
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml
+patches:
+  # The base ships both ExternalSecrets, and they have to GO, not merely sit
+  # unsynced. On a cluster without ESO the externalsecrets.external-secrets.io
+  # CRD does not exist, so applying them fails the dry-run -- and a Flux
+  # Kustomization fails as a whole, taking the Deployment and the HTTPRoutes
+  # with it. Into spec.patches because the objects come from the OCI base at
+  # runtime and are not in this build.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: schmetterpause-app
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: schmetterpause-app
+            $patch: delete
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ExternalSecret
+            name: schmetterpause-db
+          patch: |
+            apiVersion: external-secrets.io/v1
+            kind: ExternalSecret
+            metadata:
+              name: schmetterpause-db
+            $patch: delete

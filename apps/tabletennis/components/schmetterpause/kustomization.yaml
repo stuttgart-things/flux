@@ -1,10 +1,12 @@
 ---
 # schmetterpause -- office table tennis matchmaking, league and tournaments.
 #
-# REQUIRES a Gateway (GATEWAY_NAME/GATEWAY_NAMESPACE), a resolvable DOMAIN, a
-# ClusterSecretStore named in SECRET_STORE_NAME holding the entry
-# `schmetterpause` (keys for the app and the database), and the CloudNativePG
-# operator for database.yaml.
+# REQUIRES a Gateway (GATEWAY_NAME/GATEWAY_NAMESPACE), a resolvable DOMAIN, the
+# CloudNativePG operator for database.yaml, and ONE of the two credential
+# components selected after this one:
+#   ./eso   a ClusterSecretStore in SECRET_STORE_NAME holding the entry
+#           `schmetterpause` (keys for the app and the database)
+#   ./sops  plain Secrets from substituted values
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

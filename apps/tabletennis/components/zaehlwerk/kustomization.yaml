@@ -2,7 +2,9 @@
 # zaehlwerk -- live scorekeeping for office table tennis.
 #
 # REQUIRES a Gateway (GATEWAY_NAME/GATEWAY_NAMESPACE), a resolvable DOMAIN, and
-# a ClusterSecretStore named in SECRET_STORE_NAME holding the entry `zaehlwerk`.
+# ONE of the two credential components selected after this one: ./eso (a
+# ClusterSecretStore in SECRET_STORE_NAME holding the entry `zaehlwerk`) or
+# ./sops (a plain Secret from substituted values).
 #
 # ONE REPLICA, AND THE UPSTREAM SCHEMA REFUSES MORE. The running match lives in
 # the process's memory and this service is its only writer, so a second pod

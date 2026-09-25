@@ -23,6 +23,65 @@ Never both.
     - ../components/tabletennis-backup
 ```
 
+### Without external-secrets (`profiles/sops`)
+
+`profiles/base` reads its credentials through ExternalSecrets
+(`components/<app>/eso`). `profiles/sops` is the same pair with plain Secrets
+instead (`components/<app>/sops`). Use it on clusters where Flux already
+decrypts SOPS and an external-secrets controller, a `ClusterSecretStore` and an
+OpenBao auth mount would exist only to deliver these few values. That is
+typically an edge cluster.
+
+It is not a bundle component: point a Kustomization of your own at it, with the
+values in a SOPS-encrypted Secret:
+
+```yaml
+spec:
+  path: ./apps/tabletennis/profiles/sops
+  dependsOn:
+    - name: cnpg-operator     # the Cluster CRD, else the dry-run fails the apply
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: tabletennis-secrets-subst
+    substitute:
+      DOMAIN: example.lab
+      GATEWAY_NAME: my-gateway
+```
+
+| Variable | Required | Notes |
+|---|---|---|
+| `SCHMETTERPAUSE_SESSION_KEY` | yes | ≥ 32 characters; `openssl rand -base64 32` |
+| `SCHMETTERPAUSE_DB_PASSWORD` | yes | goes into `SP_DATABASE_URL` as well, so URL-safe: `openssl rand -hex 32` |
+| `ZAEHLWERK_OMNI_PITCHER_TOKEN` | with a panel | sentinel default; zaehlwerk reads it only with a panel |
+| `ZAEHLWERK_REDIS_PASSWORD` | with a panel | as above |
+
+The database username is fixed at `schmetterpause`, the owner `database.yaml`
+bootstraps. `schmetterpause-db` is built with all three keys the ESO template
+produces (`username`, `password`, `SP_DATABASE_URL` with `?sslmode=require`) and
+the same `kubernetes.io/basic-auth` type.
+
+**An unset required value is not refused at apply.** For a Secret's
+`stringData`, the API server stores YAML null as `""`. The guard is
+schmetterpause itself, which refuses to serve with an empty or short session
+key. The pod does not come up and the Kustomization does not go Ready. There is
+no equivalent check on the password, so set it.
+
+**ESO-only today:** `schmetterpause-scoreboard-on` and `zaehlwerk-handover-on`
+add their token to ExternalSecrets that this profile deletes, so with it they
+deliver nothing. `schmetterpause-db-backup` ships an ExternalSecret of its own
+and fails the apply without ESO.
+
+**Moving a running cluster between the two:**
+
+* A Secret's type is immutable. A cluster whose `schmetterpause-db` was created
+  as `Opaque` (a hand-built setup, say) gets `conflict with
+  "kustomize-controller": .type` until that Secret is deleted once.
+* ESO owns the Secrets it writes. Going from `eso` to `sops` deletes the
+  ExternalSecrets, and the garbage collector takes their Secrets with them
+  until the next reconcile applies the plain ones again. Reconcile the
+  Kustomization by hand right after switching.
+
 ## Switches
 
 Each is a pair (or triple) of components, selected by name through a variable.
