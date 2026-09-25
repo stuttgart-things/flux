@@ -30,7 +30,11 @@
 #
 # CREDENTIALS COME FROM GIT. `secretStore.backend: sops-git` throughout, so this
 # needs the age key and the GitRepository from the infra layer -- hence the
-# dependency. The Vault-backed alternative would need a Kubernetes auth mount on
+# dependency. That dependency is HARD for every set, harvester-demo included:
+# the sops-git Kustomization also owns the stuttgart-things-charts HelmRepository
+# these releases pull from. What harvester-demo can drop is the ansible SSH
+# file: CROSSPLANE_CAPABILITY_ANSIBLE_SSH_BACKEND=none and the cluster supplies
+# the `ansible-credentials` Secret itself. The Vault-backed alternative would need a Kubernetes auth mount on
 # each of the three environments' Vaults, and for a cluster that is nobody's
 # managed cluster nothing creates those.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -64,12 +68,27 @@ spec:
     name: ${APPS_SOURCE:-flux-apps}
   path: ./cicd/crossplane/capabilities/sets/${CROSSPLANE_CAPABILITY_SET:-set-CROSSPLANE_CAPABILITY_SET}
   postBuild:
+    # passthrough-complete: every ${VAR} the sets read is listed here, so a
+    # cluster's cicd-platform substitute reaches them. A variable the child
+    # reads and this list omits renders its default whatever the cluster sets,
+    # and nothing reports it (#514). hack/check-passthrough-coverage.py holds
+    # this line to that.
     substitute:
       CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
       # Selects the placement block inside each chart. MUST agree with the set.
       CROSSPLANE_CAPABILITY_ENVIRONMENT: "${CROSSPLANE_CAPABILITY_ENVIRONMENT:-labda}"
       CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE: "${CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE:-tekton-ci}"
       CROSSPLANE_CAPABILITY_STORAGE_CLASS: "${CROSSPLANE_CAPABILITY_STORAGE_CLASS:-openebs-hostpath}"
+      # `none`: the cluster supplies the ansible-credentials Secret itself.
+      CROSSPLANE_CAPABILITY_ANSIBLE_SSH_BACKEND: "${CROSSPLANE_CAPABILITY_ANSIBLE_SSH_BACKEND:-sops-git}"
+      # harvester-demo only. The defaults suit a Harvester that IS this cluster;
+      # a management cluster building on a separate one sets all of them.
+      CROSSPLANE_CAPABILITY_HARVESTER_ENVIRONMENT: "${CROSSPLANE_CAPABILITY_HARVESTER_ENVIRONMENT:-default}"
+      CROSSPLANE_CAPABILITY_HARVESTER_PROVIDER_CONFIG: "${CROSSPLANE_CAPABILITY_HARVESTER_PROVIDER_CONFIG:-in-cluster}"
+      CROSSPLANE_CAPABILITY_HARVESTER_STORAGE_CLASS: "${CROSSPLANE_CAPABILITY_HARVESTER_STORAGE_CLASS:-harvester-longhorn}"
+      CROSSPLANE_CAPABILITY_HARVESTER_NAMESPACE: "${CROSSPLANE_CAPABILITY_HARVESTER_NAMESPACE:-vms}"
+      CROSSPLANE_CAPABILITY_HARVESTER_NETWORK: "${CROSSPLANE_CAPABILITY_HARVESTER_NETWORK:-default/vms}"
+      CROSSPLANE_CAPABILITY_HARVESTER_IMAGE: "${CROSSPLANE_CAPABILITY_HARVESTER_IMAGE:-default/image-ubuntu}"
       SOPS_GIT_REPOSITORY_NAME: "${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}"
       SOPS_GIT_AGE_SECRET: "${SOPS_GIT_AGE_SECRET:-sops-age-key}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm

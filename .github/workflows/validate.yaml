@@ -69,6 +69,11 @@ jobs:
       # target so a default reached through a component or a base counts.
       - name: Every pass-through default matches the path it threads into
         run: python3 ./hack/check-passthrough-defaults.py
+      # The other half of the step above: a variable the child READS and the
+      # Kustomization does not pass at all renders its default on every
+      # cluster (#514). Opt-in per Kustomization via `# passthrough-complete:`.
+      - name: Every variable a passthrough-complete path reads is passed
+        run: python3 ./hack/check-passthrough-coverage.py
       # Reads no registry and renders nothing -- it only compares two
       # Kustomizations that already exist, so it is cheap and belongs before
       # anything that installs a tool.
