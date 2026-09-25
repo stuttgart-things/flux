@@ -13,3 +13,4 @@ components:
   - ../../components/omni-pitcher/sops
   - ../../components/core-catcher/sops
   - ../../components/scout/sops
+  - ../../components/notification-catcher/sops

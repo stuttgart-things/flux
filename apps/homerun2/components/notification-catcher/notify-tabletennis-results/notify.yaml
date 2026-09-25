@@ -1,0 +1,34 @@
+---
+# The catcher mounts config.yaml from this ConfigMap (base Deployment, volume
+# notify-config) and resolves ${VAR} placeholders from its own environment at
+# start -- TEAMS_WEBHOOK_URL comes from the -secrets Secret it envFroms.
+#
+# $${TEAMS_WEBHOOK_URL}, doubled on purpose. This ConfigMap is applied by a
+# Flux Kustomization WITH postBuild, which would substitute a single
+# ${TEAMS_WEBHOOK_URL} itself -- into the URL, or into nothing -- and bake it
+# into a ConfigMap. `$$` is Flux's escape: it renders the literal
+# ${TEAMS_WEBHOOK_URL} for the catcher to fill. That keeps the URL out of every
+# Flux object while ${HOMERUN2_NAMESPACE} above still substitutes -- which
+# `kustomize.toolkit.fluxcd.io/substitute: disabled` would have prevented.
+#
+# Quoted, because a webhook URL carries `:`, `&`, `?` and `=`. Comments here are
+# safe: the catcher interpolates the parsed YAML tree, not the text
+# (homerun2-notification-catcher#24).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-notification-catcher-notify
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+data:
+  config.yaml: |
+    outputs:
+      # A won match, and nothing else: points, sets, corrections and undos
+      # carry other transition tags. Verified in dry-run against zaehlwerk
+      # v0.3.0 over one full match: fired once, on the WIN.
+      - name: teams-tabletennis-results
+        type: msteams
+        webhook_url: "$${TEAMS_WEBHOOK_URL}"
+        filters:
+          match:
+            system: tabletennis
+          tags_contain: [transition=match_won]

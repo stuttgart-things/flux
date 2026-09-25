@@ -1,57 +1,44 @@
-# homerun2/notification-catcher
+# notification-catcher
 
-Outbound dispatcher — reads the `messages` and `alerts` Redis streams and posts each message to Microsoft Teams (and any other configured webhook sink). Replacement for the in-cluster `prometheus-msteams` proxy: the Adaptive Card formatting and routing logic live in version-controlled Go code (see [`homerun2-notification-catcher`](https://github.com/stuttgart-things/homerun2-notification-catcher)).
+Reads homerun2 streams and posts what its routing file selects to Teams (and
+other webhooks). A pure consumer: no Service, no route.
 
-Pure consumer — no Service, no Ingress, no HTTPRoute.
+## Two ways to run it
 
-## Pipeline
+| | Credentials | Routing file | Used by |
+|---|---|---|---|
+| `profiles/base` (+ `sops/`) | `HOMERUN2_REDIS_PASSWORD_B64` and `TEAMS_WEBHOOK_URL` from the consumer's `substituteFrom` Secret | supplied by the cluster (`homerun2-notification-catcher-notify`) | platform-sthings: git PRs and Grafana alerts, streams `messages,alerts` |
+| bundle component `homerun2-notification-catcher` (+ `eso/`) | `redis-password` and `teams-webhook-url` in `${HOMERUN2_SECRET_PATH}`, through the ClusterSecretStore | a `notify-*` component, `tabletennis-results` by default | table tennis results, stream `tabletennis` (#431) |
 
-```
-Alertmanager ─▶ omni-pitcher /pitch/grafana ─▶ Redis stream "alerts"   ─┐
-git-pitcher  ──────────────────────────────▶ Redis stream "messages" ─┤
-                                                                       │
-                                                        notification-catcher
-                                                     │
-                                                ▶ MS Teams
-```
+## Table tennis results (bundle default)
 
-## Pattern
+Where it goes: the Teams channel behind `teams-webhook-url`. What goes there:
+**a won match, never a point.** The one output matches `system: tabletennis`
+and the tag `transition=match_won`, which zaehlwerk v0.3.0+ sets on the
+winning transition. The card title is the panel's form, e.g. `WIN 2:0`.
 
-OCIRepository + Flux Kustomization
+Turning it on, in order:
 
-- **Source:** `oci://ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize`
-- **Image:** `ghcr.io/stuttgart-things/homerun2-notification-catcher`
+1. Write `teams-webhook-url` (a Power Automate "post to channel" URL) into the
+   cluster's `${HOMERUN2_SECRET_PATH}` entry. Without it the ExternalSecret
+   fails and the catcher cannot start, not even in dry run.
+2. Select `../components/homerun2-notification-catcher`. It starts in **dry
+   run**: one real match must show exactly one line
+   `dry-run: would send … teams-tabletennis-results` in
+   `kubectl -n homerun2 logs deploy/homerun2-notification-catcher`.
+3. Set `HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: off`. The next match posts one
+   card.
 
-## Variables
+Turning it off: `HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on` stops the posting
+and keeps the catcher running; removing the component line removes it.
 
-| Variable | Default | Description |
-|---|---|---|
-| `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
-| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | OCI kustomize artifact version |
-| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | see `release.yaml` | Container image tag |
-| `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
-| `TEAMS_WEBHOOK_URL` | *(required)* | Power Automate webhook URL for the destination Teams channel |
-| `HOMERUN2_NOTIFICATION_CATCHER_STREAMS` | `messages,alerts` | Streams the catcher subscribes to (`REDIS_STREAMS`). Drop `alerts` and Alertmanager alerts reach nobody; drop `messages` and the git PR cards stop |
+A new instance does not post old results: from v3.0.2 a new consumer group
+starts at `$`, only messages pitched after it exists (upstream #43). A restart
+keeps its position.
 
-`TEAMS_WEBHOOK_URL` must be supplied via the parent stack's `substituteFrom: homerun2-secrets`.
+## Why the webhook is written `$${TEAMS_WEBHOOK_URL}`
 
-## Customizations
-
-- Sets the container image tag to `HOMERUN2_NOTIFICATION_CATCHER_VERSION`.
-- Patches the Redis password Secret with the cluster's `HOMERUN2_REDIS_PASSWORD_B64`.
-- Patches the env ConfigMap to point at `redis-stack.<namespace>.svc.cluster.local:6379` and subscribes to `HOMERUN2_NOTIFICATION_CATCHER_STREAMS`.
-- Patches the output-secrets Secret with `TEAMS_WEBHOOK_URL`.
-- **Defaults `DRY_RUN=true`** so the first reconciliation logs `dry-run: would send …` instead of posting to Teams. Flip it from the consuming Kustomization once routing is verified in `kubectl logs` by setting `postBuild.substitute.HOMERUN2_NOTIFICATION_CATCHER_DRYRUN: "false"`.
-
-## Routing config
-
-The catcher reads `/etc/notification-catcher/config.yaml` (a ConfigMap mounted by the kustomize base) at startup. Webhook URLs in that YAML are written as `${TEAMS_WEBHOOK_URL}` placeholders — resolved at runtime against the env var that comes from this Secret patch. The real URL never lands in plaintext in the ConfigMap. See [`homerun2-notification-catcher/docs/deployment.md`](https://github.com/stuttgart-things/homerun2-notification-catcher/blob/main/docs/deployment.md) for the two-layer secret design.
-
-## Adding more outputs
-
-To wire in a new sink that needs a secret env var (PagerDuty, Slack, …):
-
-1. Extend the kustomize-base profile in `homerun2-notification-catcher/tests/kcl-deploy-profile.yaml` with the additional `outputSecrets` key and the YAML output stanza.
-2. Add the secret value to `homerun2-secrets` (SOPS-encrypted) in the cluster repo.
-3. Add a patch here mapping the new key into the `<name>-secrets` Secret stringData (or extend the existing patch).
-4. Cut a new release of `homerun2-notification-catcher`; bump `HOMERUN2_NOTIFICATION_CATCHER_VERSION` here.
+The routing ConfigMap is applied by a Flux Kustomization with `postBuild`,
+which would substitute `${TEAMS_WEBHOOK_URL}` itself, baking the URL (or
+nothing) into a ConfigMap. `$$` is Flux's escape: the catcher receives the
+literal placeholder and fills it from its own environment at start.
