@@ -1,0 +1,47 @@
+---
+# zaehlwerk-handover-sops -- zaehlwerk-handover-on for the sops credential mode
+# (profiles/sops): a won match goes to schmetterpause's POST /api/results, with
+# the token in the plain Secret instead of the ExternalSecret that mode deletes.
+# SELECT schmetterpause-scoreboard-sops TOGETHER WITH THIS -- without it the
+# receiving surface does not exist and every finished match comes back 404.
+#
+# REQUIRES SCHMETTERPAUSE_SCOREBOARD_TOKEN (the value schmetterpause-scoreboard-sops
+# serves /api with -- one credential, read twice) and ZAEHLWERK v0.5.0 OR LATER
+# for the cluster CA; see zaehlwerk-handover-on.
+#
+# Unset, the token arrives as "" and zaehlwerk logs `authenticated=false` at
+# start: the handover is on, and every call is refused. There is no default,
+# for the reason given in schmetterpause-scoreboard-sops.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  # The URL, as zaehlwerk-handover-on sets it: into the child Kustomization's
+  # patches, because the ConfigMap comes from the OCI base at runtime.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/SCHMETTERPAUSE_URL
+              value: "${ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}}"
+  # The token, into the plain Secret that is in this build
+  # (../zaehlwerk/sops/secrets.yaml).
+  - target:
+      version: v1
+      kind: Secret
+      name: zaehlwerk-panel
+    patch: |
+      - op: add
+        path: /stringData/SCHMETTERPAUSE_TOKEN
+        value: ${SCHMETTERPAUSE_SCOREBOARD_TOKEN}

@@ -1,0 +1,41 @@
+---
+# schmetterpause-scoreboard-sops -- schmetterpause-scoreboard-on for the sops
+# credential mode (profiles/sops): the same /api/players and /api/results, with
+# the token in the plain Secret instead of the ExternalSecret that mode deletes.
+# Add it to the consumer's Kustomization as a component, together with
+# zaehlwerk-handover-sops -- the two ends of one feature, as with the ESO pair.
+#
+# REQUIRES SCHMETTERPAUSE_SCOREBOARD_TOKEN, and SCHMETTERPAUSE v0.10.0 OR
+# LATER. ONE credential: zaehlwerk-handover-sops sends the same value, so a
+# rotation is one change and the two ends cannot disagree.
+#
+# UNSET DOES NOT FAIL THE APPLY. A Secret's stringData stores YAML null as "",
+# and schmetterpause treats an empty token as "no /api" -- the routes are not
+# registered at all. The symptoms are the admin page showing the Zählwerk as not
+# configured, and zaehlwerk logging `authenticated=false` and 404s. There is no
+# default on purpose: a known token would open /api to anyone who reads this.
+# Generate it as `openssl rand -hex 32`: it is substituted into YAML unquoted.
+#
+# Guarded like the ESO pair: on a build that is not in the sops mode, the test
+# below fails it rather than writing a key into a Secret nobody applies.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+  # The Secret is in this build (../schmetterpause/sops/secrets.yaml), not in
+  # the OCI base, so it is patched directly -- no reaching into spec.patches.
+  - target:
+      version: v1
+      kind: Secret
+      name: schmetterpause-app
+    patch: |
+      - op: add
+        path: /stringData/SP_SCOREBOARD_TOKEN
+        value: ${SCHMETTERPAUSE_SCOREBOARD_TOKEN}

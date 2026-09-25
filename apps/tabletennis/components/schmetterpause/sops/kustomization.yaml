@@ -8,12 +8,9 @@
 #   SCHMETTERPAUSE_SESSION_KEY    signs every player session, >= 32 characters
 #   SCHMETTERPAUSE_DB_PASSWORD    the database owner's password, URL-safe
 #
-# ESO-ONLY TODAY, two of the optional components:
-#   schmetterpause-scoreboard-on  adds its token to the app's ExternalSecret,
-#                                 which this deletes -- selected with this, it
-#                                 delivers nothing and nothing turns red
-#   schmetterpause-db-backup      ships an ExternalSecret of its own, which
-#                                 fails the dry-run on a cluster without ESO
+# With the scoreboard, add ../../schmetterpause-scoreboard-sops rather than
+# -on: -on writes its token into the ExternalSecret this deletes, and refuses
+# to build here. schmetterpause-db-backup is ESO-only and refuses too (flux#526).
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
@@ -54,3 +51,17 @@ patches:
             metadata:
               name: schmetterpause-db
             $patch: delete
+  # Which credential mode this build is in, for the components that only work
+  # in one of them: they test this annotation and fail the build on the wrong
+  # one instead of delivering nothing (flux#526).
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      metadata:
+        name: schmetterpause
+        annotations:
+          tabletennis.stuttgart-things.com/credentials: sops

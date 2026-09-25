@@ -35,3 +35,20 @@ patches:
             isWALArchiver: true
             parameters:
               barmanObjectName: schmetterpause-db
+  # ESO ONLY: external-secret.yaml is an ExternalSecret, and in the sops
+  # credential mode there is no ESO -- its CRD is missing and the dry-run fails
+  # the whole apply with "no matches for kind ExternalSecret". This test fails
+  # the BUILD instead, naming this component and the credentials annotation, so
+  # the cause is in the error rather than behind it (flux#526).
+  #
+  # No sops counterpart yet. The CA bundle is the reason: the ExternalSecret
+  # copies trust-manager's cluster-trust-bundle ConfigMap into the Secret on
+  # every refresh, and a plain Secret cannot follow a ConfigMap.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: eso

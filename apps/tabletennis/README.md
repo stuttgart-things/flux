@@ -67,10 +67,39 @@ schmetterpause itself, which refuses to serve with an empty or short session
 key. The pod does not come up and the Kustomization does not go Ready. There is
 no equivalent check on the password, so set it.
 
-**ESO-only today:** `schmetterpause-scoreboard-on` and `zaehlwerk-handover-on`
-add their token to ExternalSecrets that this profile deletes, so with it they
-deliver nothing. `schmetterpause-db-backup` ships an ExternalSecret of its own
-and fails the apply without ESO.
+**The switches under sops.** `schmetterpause-scoreboard-on` and
+`zaehlwerk-handover-on` write their token into ExternalSecrets, which this
+profile deletes. So each has a sops counterpart that writes it into the plain
+Secret instead. Add both as components of your Kustomization:
+
+```yaml
+  components:
+    - ../../components/schmetterpause-scoreboard-sops
+    - ../../components/zaehlwerk-handover-sops
+```
+
+Both read one variable, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` (`openssl rand -hex
+32`). It has no default, because a known token would open `/api`. Unset, it
+arrives as `""`. schmetterpause then registers no `/api` at all, and zaehlwerk
+logs `authenticated=false`, so check both after enabling it.
+
+`schmetterpause-db-backup` has no sops counterpart. It needs ESO to copy
+trust-manager's CA bundle into its Secret on every refresh, and a plain Secret
+cannot follow a ConfigMap.
+
+**Picking the wrong variant fails the build.** The `eso/` and `sops/` components
+stamp the app Kustomizations with
+`tabletennis.stuttgart-things.com/credentials: eso|sops`. Every mode-specific
+component tests that annotation first, so a wrong pairing refuses to build and
+names itself in the error:
+
+```
+.../components/zaehlwerk-handover-on': testing value
+/metadata/annotations/tabletennis.stuttgart-things.com~1credentials failed
+```
+
+Before, the ESO switch under sops targeted an ExternalSecret that no longer
+existed and silently did nothing.
 
 **Moving a running cluster between the two:**
 
@@ -97,8 +126,8 @@ written down.
 | `TABLETENNIS_ZAEHLWERK_PANEL` | `off`, `homerun2` | `OMNI_PITCHER_URL` + `CATCHER_URL` — scores to the LED panel |
 | `TABLETENNIS_SCHMETTERPAUSE_MONITORING` | `off`, `on`, `backup` | PodMonitors and alert rules (`backup` adds the WAL/base-backup rules) |
 | `TABLETENNIS_SCHMETTERPAUSE_ADMIN` | `off`, `on` | `SP_BOOTSTRAP_ADMIN` — the display name that gets the admin flag at every start |
-| `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
-| `TABLETENNIS_ZAEHLWERK_HANDOVER` | `off`, `on` | `SCHMETTERPAUSE_URL` + `SCHMETTERPAUSE_TOKEN` — a won match reported into schmetterpause |
+| `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` (`sops` under `profiles/sops`) | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
+| `TABLETENNIS_ZAEHLWERK_HANDOVER` | `off`, `on` (`sops` under `profiles/sops`) | `SCHMETTERPAUSE_URL` + `SCHMETTERPAUSE_TOKEN` — a won match reported into schmetterpause |
 | `TABLETENNIS_SCHMETTERPAUSE_POLICY` | `off`, `on` | Kyverno's check on the application image's CI signature |
 
 ### The scoreboard and the handover are one feature
