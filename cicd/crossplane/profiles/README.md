@@ -250,6 +250,26 @@ profile binds cluster-admin to the whole `system:serviceaccounts:` group in
 `configs/preconditions.yaml`, and doing both would be one real grant and a
 handful of decorative ones.
 
+`upbound-provider-vault` is the heavy provider that deliberately gets **no**
+`env`/`resources` and runs on `runtimeConfigRef: default` (#522). Measured
+after the seeds moved their Vault auth to it (stuttgart-things#3063, #3085),
+from the provider's own `:8080/metrics`:
+
+| Cluster | vault MRs | CPU | Memory | API requests |
+|---|---|---|---|---|
+| labda-cicd-test4 | 0 | 54m | 187Mi | — |
+| labda-cicd-machinery-test5 | 0 | 51m | 189Mi | — |
+| machinery | 9 | 54m (37 min avg) | 249Mi | 0.65/s |
+| u26-kind3 | ~10 | 15m (8.8 day avg) | 189Mi | 0.58/s |
+
+Its cost is a flat baseline: ~7350 goroutines and ~0.6 GET/s with or without
+managed resources. The MR reconciles, which are the only thing `POLL`/`SYNC`
+change, were ~7.7k of ~443k API requests over the 8.8 days on u26-kind3. That
+is under 2%. Tuning would buy nothing, so the catalog keeps the upstream
+defaults. Revisit only if the MR count grows by an order of magnitude. Measure
+it the same way: `rest_client_requests_total`, `process_cpu_seconds_total` and
+`controller_runtime_reconcile_total` from the provider pod.
+
 There is no `platform_enabled` split here, and that follows the catalog rather
 than the play: `platform` and `cluster` are both in the one `machinery` list,
 because being a management cluster is what that profile IS. A pure VM builder
