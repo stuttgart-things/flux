@@ -30,7 +30,7 @@ Always generate a README with:
 4. A **KUSTOMIZATION EXAMPLE** section with a `kubectl apply` example showing the full Kustomization manifest including all `postBuild.substitute` variables with sensible example values
 5. If the app has optional sub-components, add separate sections for each
 
-Follow the pattern from existing READMEs (e.g., `homerun-base-stack/README.md`, `vault/README.md`).
+Follow the pattern from existing READMEs (e.g., `vault/README.md`).
 
 #### `kustomization.yaml`
 ```yaml

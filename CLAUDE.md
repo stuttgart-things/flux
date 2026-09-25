@@ -30,7 +30,6 @@ To list all available tasks: `task -l`
 apps/      # Application HelmReleases and OCI kustomizations
 infra/     # Infrastructure components (cert-manager, cilium, metallb, etc.)
 cicd/      # CI/CD tooling (crossplane, tekton)
-helmfiles/ # Legacy Helmfile definitions
 workflows/ # Kaeffken workflow templates for cluster provisioning
 ```
 
