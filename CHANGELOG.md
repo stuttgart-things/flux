@@ -1,3 +1,10 @@
+## [1.80.2](https://github.com/stuttgart-things/flux/compare/v1.80.1...v1.80.2) (2026-09-25)
+
+
+### Bug Fixes
+
+* **schmetterpause:** the backup alerts cannot stay firing on a flaky scrape ([#519](https://github.com/stuttgart-things/flux/issues/519)) ([a5ba9e9](https://github.com/stuttgart-things/flux/commit/a5ba9e97b6224e8e0d8db2ab4d78aa6899a0491b))
+
 ## [1.80.1](https://github.com/stuttgart-things/flux/compare/v1.80.0...v1.80.1) (2026-09-24)
 
 
