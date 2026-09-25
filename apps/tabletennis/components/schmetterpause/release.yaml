@@ -43,6 +43,26 @@ spec:
               sectionName: https
           hostnames:
             - ${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}
+    # The address the QR sheet points phones at. The base ships the same
+    # placeholder host as its routes (schmetterpause.cluster.example.com), so
+    # left alone every printed code leads to a host that does not exist, while
+    # the app itself looks healthy. labda-dev-a served exactly that.
+    #
+    # Set rather than removed. Unset, schmetterpause reads the address off the
+    # request, and behind the gateway that request no longer carries the
+    # public scheme and host: the gateway terminates TLS. That is the case
+    # upstream says to set it for (internal/config/config.go). Built from the
+    # same hostname the HTTPRoutes publish, so the two cannot disagree.
+    #
+    # ADDED, not replaced: `add` on an existing key replaces it, and it also
+    # works on a base version that leaves the key out.
+    - target:
+        kind: ConfigMap
+        name: schmetterpause-config
+      patch: |
+        - op: add
+          path: /data/SP_PUBLIC_BASE_URL
+          value: "https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}"
     - target:
         kind: HTTPRoute
         name: schmetterpause-redirect
