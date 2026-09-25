@@ -1,3 +1,10 @@
+# [1.82.0](https://github.com/stuttgart-things/flux/compare/v1.81.0...v1.82.0) (2026-09-25)
+
+
+### Features
+
+* **tabletennis:** scoreboard and handover under sops, and guards for the wrong mode ([#528](https://github.com/stuttgart-things/flux/issues/528)) ([31ef3b6](https://github.com/stuttgart-things/flux/commit/31ef3b630e9e848e1e160f8ade5bc0fe33a2eb8b)), closes [#526](https://github.com/stuttgart-things/flux/issues/526)
+
 # [1.81.0](https://github.com/stuttgart-things/flux/compare/v1.80.4...v1.81.0) (2026-09-25)
 
 
