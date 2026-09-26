@@ -1,3 +1,10 @@
+# [1.87.0](https://github.com/stuttgart-things/flux/compare/v1.86.1...v1.87.0) (2026-09-26)
+
+
+### Features
+
+* **tabletennis:** zaehlwerk v0.7.0, a single game on the scoring page ([#542](https://github.com/stuttgart-things/flux/issues/542)) ([ae2908d](https://github.com/stuttgart-things/flux/commit/ae2908dbb5800ac3d8c57c199b411ed774174ee3)), closes [zaehlwerk#51](https://github.com/zaehlwerk/issues/51)
+
 ## [1.86.1](https://github.com/stuttgart-things/flux/compare/v1.86.0...v1.86.1) (2026-09-25)
 
 
