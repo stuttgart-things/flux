@@ -61,3 +61,8 @@ spec:
                       value: "6379"
                     - name: LED_MODE
                       value: web
+                    # The web simulator's stream buttons, e.g.
+                    # "messages,tabletennis". Empty is the same as unset: the
+                    # configured stream as its only preset.
+                    - name: UI_STREAM_PRESETS
+                      value: "${HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS:=}"

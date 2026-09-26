@@ -1,0 +1,23 @@
+---
+# HTTPRoutes for profiles/sops, applied after it is Ready: the union of
+# base-routes, base-led-catcher-routes, base-light-catcher-routes,
+# base-demo-pitcher-routes and platform-config-viewer-routes.
+#
+# Separate from the profile for the reason every other *-routes profile here is:
+# Cilium resolves a route's backendRefs once, so a route applied beside the
+# Kustomization that later creates its Service serves HTTP 500 for good while
+# every Kustomization reports Ready.
+#
+# Substitutes DOMAIN, GATEWAY_NAME, GATEWAY_NAMESPACE, HOMERUN2_NAMESPACE and
+# the HOMERUN2_*_HOSTNAME names -- the same set the per-profile routes use.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/omni-pitcher/route
+  - ../../components/core-catcher/route
+  - ../../components/scout/route
+  - ../../components/led-catcher/route
+  - ../../components/light-catcher/route
+  - ../../components/wled-mock/route
+  - ../../components/demo-pitcher/route
+  - ../../components/config-viewer/route
