@@ -68,7 +68,7 @@ spec:
     substitute:
       CROSSPLANE_NAMESPACE: "${CROSSPLANE_NAMESPACE:-crossplane-system}"
       # renovate: datasource=helm depName=crossplane registryUrl=https://charts.crossplane.io/stable
-      CROSSPLANE_VERSION: "${CROSSPLANE_VERSION:-2.4.1}"
+      CROSSPLANE_VERSION: "${CROSSPLANE_VERSION:-2.4.2}"
       # SECOND COPIES of the defaults in cicd/crossplane/components/install/
       # release.yaml, and they win over them. A child Kustomization cannot
       # inherit a default -- an empty substitute value renders as YAML null and
