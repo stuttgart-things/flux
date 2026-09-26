@@ -1,3 +1,10 @@
+# [1.88.0](https://github.com/stuttgart-things/flux/compare/v1.87.0...v1.88.0) (2026-09-26)
+
+
+### Features
+
+* **homerun2:** profiles/sops, the whole sops stack as one profile ([#543](https://github.com/stuttgart-things/flux/issues/543)) ([69eb39f](https://github.com/stuttgart-things/flux/commit/69eb39f073edc10dd3287041f96d9d7f0808da31))
+
 # [1.87.0](https://github.com/stuttgart-things/flux/compare/v1.86.1...v1.87.0) (2026-09-26)
 
 
