@@ -1,0 +1,37 @@
+---
+# The whole sops stack in one profile: profiles/base plus every add-on that has
+# a sops/ variant (base-led-catcher, base-light-catcher, base-demo-pitcher) and
+# config-viewer, which needs no credentials at all.
+#
+# Before this, a cluster wanting all of it on the sops path pointed five Flux
+# Kustomizations at five profiles, each with the same source, namespace and
+# substituteFrom. The root is not the alternative: it drops
+# notification-catcher, adds k8s-pitcher and git-pitcher (the latter with a
+# GitHub token of its own), and applies the routes inline.
+#
+# Needs a substituteFrom Secret with HOMERUN2_REDIS_PASSWORD_B64,
+# HOMERUN2_OMNI_PITCHER_AUTH_TOKEN, HOMERUN2_SCOUT_AUTH_TOKEN and
+# TEAMS_WEBHOOK_URL -- exactly what profiles/base requires; the add-ons need
+# nothing beyond it. HTTPRoutes are in profiles/sops-routes; apply them from a
+# Kustomization that dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/redis-stack
+  - ../../components/omni-pitcher
+  - ../../components/core-catcher
+  - ../../components/notification-catcher
+  - ../../components/scout
+  - ../../components/led-catcher
+  - ../../components/light-catcher
+  - ../../components/wled-mock
+  - ../../components/demo-pitcher
+  - ../../components/config-viewer
+  - ../../components/redis-stack/sops
+  - ../../components/omni-pitcher/sops
+  - ../../components/core-catcher/sops
+  - ../../components/scout/sops
+  - ../../components/notification-catcher/sops
+  - ../../components/led-catcher/sops
+  - ../../components/light-catcher/sops
+  - ../../components/demo-pitcher/sops

@@ -54,6 +54,8 @@ Profiles provide pre-composed subsets of components for different deployment sce
 |---------|------------|----------|
 | `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
 | `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
+| `profiles/sops` | profiles/base + led-catcher, light-catcher, wled-mock, demo-pitcher, config-viewer | The whole stack on the sops path, as one Kustomization. Needs only the Secret keys `profiles/base` needs |
+| `profiles/sops-routes` | HTTPRoutes for all eight of them | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
 | *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
 
@@ -162,6 +164,7 @@ Shares the version variables above.
 |----------|---------|----------|---------|
 | `HOMERUN2_LED_CATCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+| `HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS` | *(empty)* | no | Comma-separated stream buttons in the web simulator, e.g. `messages,tabletennis`. Empty: only the configured stream |
 
 ### Git Pitcher
 
