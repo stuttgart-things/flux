@@ -51,4 +51,4 @@ spec:
     substitute:
       CNPG_NAMESPACE: "${CNPG_NAMESPACE:-cnpg-system}"
       # renovate: datasource=helm depName=cloudnative-pg registryUrl=https://cloudnative-pg.github.io/charts
-      CNPG_VERSION: "${CNPG_VERSION:-0.29.0}"
+      CNPG_VERSION: "${CNPG_VERSION:-0.29.1}"
