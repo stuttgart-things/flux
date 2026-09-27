@@ -10,6 +10,17 @@ spec:
       namespace: ${GATEWAY_NAMESPACE:-default}
   hostnames:
     - "${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}"
+  # Large image pushes need nothing here, unlike the Ingress's
+  # proxy-body-size: 0. Checked against the Cilium and Envoy sources, not on a
+  # cluster:
+  #   - Envoy streams a proxied request body and caps nothing.
+  #   - With no `timeouts` on a rule, Cilium sets max_stream_duration: 0 on the
+  #     Envoy route, which switches Envoy to its "new timeouts" path and skips
+  #     the 15s route-timeout default -- the global timeout stays 0 (none).
+  #   - What remains is the listener's 5-minute stream IDLE timeout, reset by
+  #     every chunk; the Ingress's nginx read timeout was 60s.
+  # Do not add `timeouts` to "fix" pushes: any value there drops
+  # max_stream_duration and makes that value the hard limit.
   rules:
     - matches:
         - path:
