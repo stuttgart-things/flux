@@ -1,0 +1,9 @@
+---
+# openldap
+#
+# Standalone: no Gateway, no Certificate. REQUIRES a real
+# OPENLDAP_STORAGE_CLASS and a Secret with the admin password.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-openldap.yaml

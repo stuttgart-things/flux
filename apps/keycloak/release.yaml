@@ -31,9 +31,25 @@ spec:
         value: DEBUG
       - name: KEYCLOAK_EXTRA_ARGS
         value: "--import-realm"
+    # bitnamilegacy, not bitnami: Bitnami withdrew the versioned tags from
+    # docker.io/bitnami in 2025, so the chart's own defaults
+    # (bitnami/keycloak:26.3.3-debian-12-r0, bitnami/postgresql:17.6.0-debian-12-r0)
+    # no longer pull. Same tags under bitnamilegacy -- and the chart refuses a
+    # non-bitnami repository unless allowInsecureImages is set. Same fix as
+    # apps/harbor.
+    image:
+      repository: bitnamilegacy/keycloak
+    keycloakConfigCli:
+      image:
+        repository: bitnamilegacy/keycloak-config-cli
+    postgresql:
+      image:
+        repository: bitnamilegacy/postgresql
     global:
       defaultStorageClass: ${STORAGE_CLASS}
       storageClass: ${STORAGE_CLASS}
+      security:
+        allowInsecureImages: true
     ingress:
       enabled: true
       ingressClassName: ${INGRESS_CLASS:-nginx}
