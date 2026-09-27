@@ -1,285 +1,166 @@
 # stuttgart-things/flux
 
-flux infra & app kustomizations
+Flux CD building blocks for stuttgart-things clusters: Kustomize bases and Helm
+releases for infrastructure, apps and CI/CD tooling, plus three **platform
+bundles** that let a cluster switch each one on with a single line.
 
-## FLUX BOOSTRAP
+This repo holds no cluster config. Clusters live in
+[`stuttgart-things/stuttgart-things`](https://github.com/stuttgart-things/stuttgart-things)
+and point at a tagged release of this repo.
 
-<details><summary>RENDER FLUX-INSTANCE w/ DAGGER</summary>
+📖 **Docs:** <https://stuttgart-things.github.io/flux/>
 
-```bash
-helmfile init --force
-helmfile apply -f git::https://github.com/stuttgart-things/helm.git@cicd/flux-operator.yaml.gotmpl \
---state-values-set version=0.28.0
+## Contents
+
+- [Repository layout](#repository-layout)
+- [Quick start](#quick-start)
+- [The platform bundles](#the-platform-bundles)
+- [Using a single component](#using-a-single-component)
+- [Releases and OCI artifacts](#releases-and-oci-artifacts)
+- [Bootstrapping Flux](#bootstrapping-flux)
+- [Secrets (SOPS)](#secrets-sops)
+- [Contributing](#contributing)
+
+## Repository layout
+
+```
+infra/       cluster infrastructure    cilium, cert-manager, openebs, velero, ...
+apps/        applications              openbao, harbor, backstage, keycloak, ...
+cicd/        delivery tooling          argo-cd, tekton, crossplane, dapr, kro, ...
+  */platform/  the bundle for that layer: root/ + one Component per tool
+hack/        CI checks (bundles, substitution, renovate annotations, image tags)
+docs/        the TechDocs / mkdocs site
 ```
 
-```bash
-dagger call -m github.com/stuttgart-things/dagger/kcl@v0.76.0 run \
---oci-source ghcr.io/stuttgart-things/kcl-flux-instance:0.3.3 \
---parameters" \
-name=flux, \
-namespace=flux-system, \
-gitUrl=https://github.com/stuttgart-things/stuttgart-things.git, \
-gitRef=refs/heads/main, \
-gitPath=clusters/labda/edge/xplane, \
-pullSecret=git-token-auth, \
-renderSecrets=true, \
-gitUsername=patrick-hermann-sva, \
-gitPassword=$GITHUB_TOKEN, \
-sopsAgeKey=$SOPS_AGE_KEY, \
-version=2.4" \
-export --path ./flux-instance.yaml
-```
+Every component directory is a self-contained Kustomize base: a
+`requirements.yaml` (namespace + Helm/OCI source), a `release.yaml` (the
+HelmRelease, or a Flux Kustomization over an OCI artifact), and optional
+`pre-release.yaml`, `post-release.yaml` and `httproute.yaml`. All configurable
+values are Flux substitutions of the form `${VAR:-default}`.
 
-</details>
+## Quick start
 
-<details><summary>GITHUB SCM + FLUX OPERATOR</summary>
+**1. Point Flux at a release of this repo.** Infra components read the source
+`flux-infra`, apps and cicd components `flux-apps`. Both are this repo, usually
+at the same tag:
 
-```bash
-# INSTALL OPERATOR
-helm upgrade --install flux-operator \
-oci://ghcr.io/controlplaneio-fluxcd/charts/flux-operator \
---namespace flux-system \
---create-namespace \
---version 0.24.0
-```
-
-#### GH SECRET
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Secret
+```yaml
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
 metadata:
-  name: git-token-auth
+  name: flux-infra          # and a second one named flux-apps
   namespace: flux-system
-type: Opaque
-stringData:
-  username: $GITHUB_USER
-  password: $GITHUB_TOKEN
-EOF
-```
-
-#### SOPS SECRET
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sops-age
-  namespace: flux-system
-type: Opaque
-stringData:
-  age.agekey: AGE-SECRET-KEY-1QY#...
-EOF
-```
-
-#### FLUX-INSTANCE
-
-```bash
-kubectl apply -f - <<EOF
----
-apiVersion: fluxcd.controlplane.io/v1
-kind: FluxInstance
-metadata:
-  name: flux
-  namespace: flux-system
-  annotations:
-    fluxcd.controlplane.io/reconcileEvery: "1h"
-    fluxcd.controlplane.io/reconcileTimeout: "5m"
 spec:
-  distribution:
-    version: "2.x"
-    registry: "ghcr.io/fluxcd"
-    artifact: "oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests"
+  interval: 1h
+  url: https://github.com/stuttgart-things/flux.git
+  ref:
+    tag: v1.94.0            # pin a release; see the Releases page
+```
+
+**2. Select components from a bundle.** One Kustomization per layer. Each line
+under `components` deploys one tool; removing the line prunes it again.
+
+```yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-platform
+  namespace: flux-system
+spec:
+  interval: 1h
+  timeout: 5m
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-infra
+  path: ./infra/platform/root
   components:
-    - source-controller
-    - kustomize-controller
-    - helm-controller
-    - notification-controller
-    - image-reflector-controller
-    - image-automation-controller
-  cluster:
-    type: kubernetes
-    multitenant: false
-    networkPolicy: true
-    domain: "cluster.local"
-  kustomize:
-    patches:
-      - patch: |
-          - op: add
-            path: /spec/decryption
-            value:
-              provider: sops
-              secretRef:
-                name: sops-age
-        target:
-          group: kustomize.toolkit.fluxcd.io
-          version: v1
-          kind: Kustomization
-      - target:
-          kind: Deployment
-          name: "(kustomize-controller|helm-controller)"
-        patch: |
-          - op: add
-            path: /spec/template/spec/containers/0/args/-
-            value: --concurrent=10
-          - op: add
-            path: /spec/template/spec/containers/0/args/-
-            value: --requeue-dependency=5s
-  sync:
-    kind: GitRepository
-    url: https://github.com/stuttgart-things/stuttgart-things.git
-    ref: refs/heads/main
-    path: clusters/labda/vsphere/sthings-runner
-    pullSecret: git-token-auth
-EOF
+    - ../components/cilium-lb
+    - ../components/cilium-gateway
+    - ../components/cert-manager-install
+    - ../components/openebs
+  postBuild:
+    substitute:
+      INFRA_DOMAIN: lab.example.com
+      CILIUM_LB_IP_START: "10.0.0.200"
+      CILIUM_LB_IP_STOP: "10.0.0.210"
 ```
 
-</details>
+`apps-platform` (`./apps/platform/root`) and `cicd-platform`
+(`./cicd/platform/root`) work the same way. All three read the same
+`INFRA_DOMAIN`, `INFRA_GATEWAY_NAME` and `INFRA_GATEWAY_NAMESPACE`, so a cluster
+can keep them in one ConfigMap and `substituteFrom` it into every bundle.
 
-<details><summary>GITHUB SCM + FLUX CLI</summary>
+## The platform bundles
 
-```bash
-# BOOTSTRAP GITHUB
-export KUBECONFIG=<KUBECONFIG>
-export GITHUB_TOKEN=<TOKEN>
+| Bundle | Path | Components | What it covers |
+|---|---|---|---|
+| [`infra/platform`](infra/platform) | `./infra/platform/root` | 24 | Cilium LB + Gateway, cert-manager + issuers, trust-manager, storage (openebs, nfs-csi), monitoring (prometheus, kube-prometheus-stack), external-secrets, SOPS, velero, CloudNativePG, reloader, flux-web, headlamp |
+| [`apps/platform`](apps/platform) | `./apps/platform/root` | 25 | openbao, vault, harbor, keycloak, openldap, backstage, minio, redis-stack, rancher, vcluster, clusterbook, homepage, uptime-kuma, homerun2, tabletennis, ... |
+| [`cicd/platform`](cicd/platform) | `./cicd/platform/root` | 16 | argo-cd, argo-rollouts, kargo, tekton, crossplane (+ profiles, capabilities), kro, dapr, claim-machinery-api, machinery-registry-api, komoplane, clusterbook-operator |
 
-flux bootstrap github \
---owner=stuttgart-things \
---repository=stuttgart-things \
---path=clusters/dev-cluster
-```
+Worth knowing before selecting anything:
 
-</details>
+- **Dependencies cross bundles.** Many components `dependsOn` something in
+  another bundle (most routes need `cilium-gateway`). A missing dependency is
+  not an error: the component waits on "dependency not ready" forever.
+- **Some components need a Secret you supply.** They use `substituteFrom` with
+  `optional: false`, and the required keys are listed in each component's
+  `# substituteFrom-keys:` comment.
+- **Placeholders are loud on purpose.** Values that have no sensible default
+  (StorageClass, domain) default to `set-<VAR>` / `*.invalid`, so a forgotten
+  one fails visibly instead of half-working.
 
-## ADD GITREPOSITORY
+Each bundle README lists every component, what it requires and its
+per-component gotchas.
 
-<details><summary>FLUX APPS REPO (KUBECTL)</summary>
+## Using a single component
 
-```bash
-kubectl apply -f - <<EOF
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-apps
-  namespace: flux-system
-spec:
-  interval: 1m0s
-  ref:
-    tag: v1.0.0
-  url: https://github.com/stuttgart-things/flux.git
-EOF
-```
+Without a bundle, point a Kustomization straight at a component and fill its
+variables yourself. Each component's README lists them, and `task get-variables`
+extracts them from any folder.
 
-</details>
-
-## ADD KUSTOMIZATIONS
-
-<details><summary>ADD w/ KUBECTL (TESTING)</summary>
-
-```bash
-kubectl apply -f - <<EOF
----
+```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: tekton
+  name: redis-stack
   namespace: flux-system
 spec:
   interval: 1h
-  retryInterval: 1m
-  timeout: 5m
+  prune: true
+  wait: true
   sourceRef:
     kind: GitRepository
     name: flux-apps
-  path: ./apps/tekton
-  prune: true
-  wait: true
+  path: ./apps/redis-stack
   postBuild:
     substitute:
-      TEKTON_NAMESPACE: tekton-pipelines
-      TEKTON_PIPELINE_NAMESPACE: tektoncd
-      TEKTON_VERSION: v0.60.4
-EOF
+      REDIS_STACK_STORAGE_CLASS: openebs-hostpath
+    substituteFrom:
+      - kind: Secret
+        name: redis-stack-secrets   # REDIS_STACK_PASSWORD
 ```
 
-</details>
+## Releases and OCI artifacts
 
-<details><summary>ADD w/ GIT</summary>
+Every merge to `main` runs the [`Release`](.github/workflows/release.yaml)
+workflow:
 
-* Create (single or --- seperated) yaml-files on cluster Folder (e.g. clusters/dev-cluster)
-* Examples:
+1. **semantic-release** cuts a `vX.Y.Z` tag and a GitHub Release from the
+   commit messages (`feat:` → minor, `fix:` → patch). Release notes live on the
+   [Releases page](https://github.com/stuttgart-things/flux/releases);
+   `CHANGELOG.md` is frozen at v1.89.0.
+2. Each **changed** `apps/*`, `infra/*` and `cicd/*` component is pushed as a
+   Flux OCI artifact to `oci://ghcr.io/stuttgart-things/flux/<layer>/<name>`,
+   tagged with the release version and `latest`. Unchanged components keep
+   their older tags, so a component's newest version tag is the release that
+   last touched it, not necessarily the repo's newest release.
+
+Consume an artifact instead of the Git repo:
 
 ```yaml
-# cat clusters/dev-cluster/app-repo.yaml
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: flux-apps
-  namespace: flux-system
-spec:
-  interval: 1m0s
-  ref:
-    tag: v1.0.0
-  url: https://github.com/stuttgart-things/flux.git
-```
-
-```yaml
-# cat clusters/dev-cluster/apps.yaml
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: tekton
-  namespace: flux-system
-spec:
-  interval: 1h
-  retryInterval: 1m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-apps
-  path: ./apps/tekton
-  prune: true
-  wait: true
-  postBuild:
-    substitute:
-      TEKTON_NAMESPACE: tekton-pipelines
-      TEKTON_PIPELINE_NAMESPACE: tektoncd
-      TEKTON_VERSION: v0.60.4
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: crossplane
-  namespace: flux-system
-#.....
-```
-
-</details>
-
-## OCI ARTIFACTS
-
-On every merge to `main` the `Release` workflow (`.github/workflows/release.yaml`)
-cuts a SemVer tag via semantic-release and publishes each **changed** `apps/*`
-and `infra/*` component as a Flux OCI artifact to ghcr.io. This lets consumers
-point an `OCIRepository` at a versioned artifact instead of a `GitRepository`.
-
-* **Naming:** `oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>`
-  (e.g. `flux/apps/vault`, `flux/infra/cert-manager`)
-* **Tags:** the release version (e.g. `v1.17.0`) **and** the rolling `latest`
-* Only changed components get the new version tag; unchanged components keep
-  their existing tags (their content — and therefore `latest` — is unchanged)
-
-<details><summary>CONSUME AS OCIREPOSITORY</summary>
-
-```bash
-kubectl apply -f - <<EOF
----
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
@@ -289,116 +170,73 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/flux/apps/vault
   ref:
-    tag: v1.17.0   # or: latest
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
-kind: Kustomization
-metadata:
-  name: vault
-  namespace: flux-system
-spec:
-  interval: 1h
-  retryInterval: 1m
-  timeout: 5m
-  sourceRef:
-    kind: OCIRepository
-    name: vault
-  prune: true
-  wait: true
-  postBuild:
-    substitute:
-      VAULT_NAMESPACE: vault
-EOF
+    tag: latest   # or a version this component was published at:
+                  # skopeo list-tags docker://ghcr.io/stuttgart-things/flux/apps/vault
 ```
 
-</details>
+Re-publish everything (for example to seed the registry):
+`gh workflow run release.yaml --ref main -f push-all=true`.
 
-<details><summary>BACKFILL / RE-PUSH ALL ARTIFACTS (manual)</summary>
+## Bootstrapping Flux
 
-The workflow has a `workflow_dispatch` trigger with a `push-all` input (default
-`true`) that publishes **all** components at the current release version — for
-seeding the registry or forcing a re-push. No new release is cut on manual
-dispatch; the version tag is taken from the latest existing git tag.
+The cluster needs Flux, a Git credential and, for SOPS, the age key. Three
+documented ways:
 
-```bash
-# Push every apps/* and infra/* component (backfill)
-gh workflow run release.yaml --ref main -f push-all=true
-```
+| Method | When | Guide |
+|---|---|---|
+| Flux Operator + `FluxInstance` | the default for our clusters | [docs/bootstrap/flux-operator.md](docs/bootstrap/flux-operator.md) |
+| `flux bootstrap github` | quick tests | [docs/bootstrap/flux-cli.md](docs/bootstrap/flux-cli.md) |
+| Dagger + KCL blueprint | automated provisioning | [docs/bootstrap/blueprints.md](docs/bootstrap/blueprints.md) |
 
-</details>
+SOPS decryption is enabled by a kustomize-controller patch on the
+`FluxInstance` that points every Kustomization at the `sops-age` Secret in
+`flux-system`. See [docs/bootstrap/sops-secrets.md](docs/bootstrap/sops-secrets.md).
 
-## DEV
+## Secrets (SOPS)
 
-<details><summary>GENERATE KUST</summary>
-
-```bash
-k2n gen \
---examples-dirs "/home/sthings/projects/apps/flux/apps,/home/sthings/projects/apps/helm/cicd" \
---usecase flux \
---instruction "transfer helmfile from tekton to a flux tekton kustomization"
-```
-
-</details>
-
-## SOPS ENCRYPTION
-
-<details><summary>ENCRYPT/DECRYPT WITH DAGGER SOPS MODULE</summary>
-
-### Encrypt
+Encrypt and decrypt with the Dagger SOPS module and an age key:
 
 ```bash
-# Set your AGE public key (from ~/.sops.yaml)
-export AGE_PUBLIC_KEY="age19vgzvmpt9tdlcsu8rzaacj397yz8gguz38nsmuy6eeelt5vjsyms542xtm" # pragma: allowlist secret
-
-# Encrypt a secret file
+# encrypt
+export AGE_PUBLIC_KEY="age1..."
 dagger call -m github.com/stuttgart-things/dagger/sops encrypt \
-  --age-key="env:AGE_PUBLIC_KEY" \
-  --plaintext-file="./secret.yaml" \
-  --file-extension="yaml" \
-  export --path="./secret.enc.yaml"
+  --age-key="env:AGE_PUBLIC_KEY" --plaintext-file="./secret.yaml" \
+  --file-extension="yaml" export --path="./secret.enc.yaml"
+
+# decrypt
+export SOPS_AGE_KEY="AGE-SECRET-KEY-1..."
+dagger call -m github.com/stuttgart-things/dagger/sops decrypt \
+  --age-key="env:SOPS_AGE_KEY" --encrypted-file="./secret.enc.yaml" contents
 ```
 
-### Decrypt
+In-cluster alternatives are also bundle components: `external-secrets` (Vault)
+and `sops-secrets-operator` (`SopsSecret` resources).
+
+## Contributing
+
+- **Adding a component:** see [docs/development/adding-components.md](docs/development/adding-components.md)
+  and [conventions.md](docs/development/conventions.md). Prefer Gateway API
+  `HTTPRoute` over Ingress.
+- **Chart versions** that use `${VAR:-x}` need a `# renovate:` annotation on the
+  line above, otherwise Renovate silently never updates them.
+- **Commits** follow the Angular convention (`feat:`, `fix:`, `docs:`, ...);
+  they decide the next version.
+- **Pull requests** must pass `Chart version annotations`, `Image tags resolve`
+  and `Renovate config` (enforced on `main`). `Bundle components` runs the
+  bundle checks under [`hack/`](hack) as well.
+
+Useful tasks ([go-task](https://taskfile.dev), `task -l` for all):
 
 ```bash
-# Set your AGE private key
-export SOPS_AGE_KEY="AGE-SECRET-KEY-1..."
-
-# Decrypt and view contents
-dagger call -m github.com/stuttgart-things/dagger/sops decrypt \
-  --age-key="env:SOPS_AGE_KEY" \
-  --encrypted-file="./secret.enc.yaml" \
-  contents
-
-# Decrypt and export to file
-dagger call -m github.com/stuttgart-things/dagger/sops decrypt \
-  --age-key="env:SOPS_AGE_KEY" \
-  --encrypted-file="./secret.enc.yaml" \
-  export --path="./secret.dec.yaml"
+task get-variables       # list ${VAR:-default} variables of a component
+task check-renovate      # every substituted chart version is annotated
+task verify-image-tags   # every substituted image tag exists
+task preview-renovate    # dry-run Renovate against the working tree
+pre-commit run --files <changed files>
 ```
 
-</details>
+`CLAUDE.md` holds the longer background on CI, releases and Renovate.
 
-## LICENSE
+## License
 
-<details><summary><b>APACHE 2.0</b></summary>
-
-Copyright 2023 patrick hermann.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-</details>
-
-Author Information
-------------------
-Patrick Hermann, stuttgart-things 11/2024
+Apache 2.0, see [LICENSE](LICENSE). © 2023 Patrick Hermann, stuttgart-things.
