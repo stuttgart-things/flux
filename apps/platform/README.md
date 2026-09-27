@@ -15,6 +15,7 @@ apps/platform/
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
+    ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
     └── vcluster/    → ./apps/vcluster
@@ -44,7 +45,8 @@ how a platform delivers things. A consumer that selected
 
 ## Every app here needs a Secret you must supply
 
-`rancher`, `minio`, `backstage`, `redis-stack`, `keycloak` and `openldap` use
+`rancher`, `minio`, `backstage`, `redis-stack`, `harbor`, `keycloak` and
+`openldap` use
 `substituteFrom` with `optional: false`. That is on purpose: left optional, Flux proceeds with the
 variables unset and installs a MinIO with an empty admin password, and reports
 success.

@@ -1,0 +1,10 @@
+---
+# The Harbor UI/API route alone, as a Component so a Flux Kustomization can
+# select it with spec.components. The project-proxy wildcard route is NOT
+# here: it points at a Service only components/project-proxy creates, and a
+# route to a missing backend is a Gateway answering 500 for a hostname the
+# cluster publishes.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml
