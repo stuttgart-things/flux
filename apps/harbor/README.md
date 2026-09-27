@@ -10,7 +10,9 @@ harbor/
 ├── requirements.yaml           # Namespace + HelmRepositories (Bitnami + OCI)
 ├── pre-release.yaml            # cert-manager Certificate (incl. wildcard for proxy)
 ├── release.yaml                # Harbor HelmRelease
+├── httproute/                  # Both Gateway API routes (Harbor + project-proxy wildcard)
 └── components/
+    ├── httproute/              # Component: the Harbor route alone (used by apps/platform)
     └── project-proxy/          # Optional: harbor-project-proxy for mirror access
         ├── kustomization.yaml
         ├── requirements.yaml   # HelmRepository for harbor-project-proxy (OCI)
