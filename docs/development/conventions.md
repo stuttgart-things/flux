@@ -83,7 +83,7 @@ spec:
   # ...
 ```
 
-Examples: cert-manager's ClusterIssuer, MetalLB's IPAddressPool, NFS CSI's StorageClasses.
+Examples: cert-manager's ClusterIssuer, Cilium's LoadBalancer IP pool, NFS CSI's StorageClasses.
 
 ## Gateway API over Ingress
 

@@ -41,8 +41,6 @@ nav:
       - Overview: infra/index.md
       - cert-manager: infra/cert-manager.md
       - Cilium: infra/cilium.md
-      - ingress-nginx: infra/ingress-nginx.md
-      - MetalLB: infra/metallb.md
       - NFS CSI Driver: infra/nfs-csi.md
       - OpenEBS: infra/openebs.md
       - Prometheus: infra/prometheus.md
