@@ -1,0 +1,32 @@
+---
+# Where rag-postgres's WAL and base backups go, for the Barman Cloud plugin
+# (apps/cnpg-barman-cloud). Replaces the Cluster's in-tree
+# spec.backup.barmanObjectStore, which CloudNativePG removes in 1.31.
+#
+# Same bucket, endpoint and credentials as before, and serverName still
+# defaults to the Cluster's name -- so the objects keep landing under
+# s3://<bucket>/rag-postgres/ and a cluster migrating from the in-tree
+# setting continues the same archive.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: rag-postgres
+  namespace: ${BACKSTAGE_NAMESPACE:-portal}
+  labels:
+    backup: backstage-rag-postgres
+spec:
+  retentionPolicy: "${RAG_BACKUP_RETENTION:-7d}"
+  configuration:
+    destinationPath: s3://${RAG_S3_BUCKET:-backstage-rag-backups}/
+    endpointURL: ${RAG_S3_ENDPOINT:-https://artifacts.${INGRESS_DOMAIN}}
+    s3Credentials:
+      accessKeyId:
+        name: rag-postgres-s3-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: rag-postgres-s3-creds
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip

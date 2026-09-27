@@ -6,6 +6,9 @@
 # database. Everything it renders needs something else first:
 #
 #   cnpg-operator                  the postgresql.cnpg.io Cluster CRD
+#   cnpg-barman-cloud              the backup plugin and its ObjectStore CRD;
+#                                  without the plugin the Cluster's WAL
+#                                  archiving fails, in its status only
 #   backstage                      owns the namespace everything lands in
 #   external-secrets-vault-store   two ExternalSecrets; applied before their
 #                                  store exists they sit in SecretSyncedError
@@ -28,6 +31,7 @@ metadata:
 spec:
   dependsOn:
     - name: cnpg-operator
+    - name: cnpg-barman-cloud
     - name: backstage
     - name: external-secrets-vault-store
     - name: velero
@@ -74,6 +78,8 @@ spec:
       INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
       RAG_S3_BUCKET: "${RAG_S3_BUCKET:-backstage-rag-backups}"
       RAG_BACKUP_RETENTION: "${RAG_BACKUP_RETENTION:-7d}"
+      # Six fields, seconds first (CloudNativePG, not cron).
+      RAG_BACKUP_SCHEDULE: "${RAG_BACKUP_SCHEDULE:-0 0 2 * * *}"
       VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
       VELERO_BSL: "${RAG_VELERO_BSL:-default}"
       RAG_VELERO_CRON: "${RAG_VELERO_CRON:-0 1 * * *}"

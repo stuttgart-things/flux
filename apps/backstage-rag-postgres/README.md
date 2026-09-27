@@ -18,8 +18,12 @@ Into `${BACKSTAGE_NAMESPACE}` (default `portal`):
    - `rag-postgres-s3-creds` — MinIO `ACCESS_KEY_ID`/`SECRET_ACCESS_KEY` for backups
 2. **cluster.yaml** — the CNPG `Cluster` (`rag-postgres`): 1 instance, custom
    pgvector image, `backstage_rag` DB owned by `rag`, `CREATE EXTENSION vector`,
-   5Gi storage, and WAL/base backups to MinIO via `barmanObjectStore`.
-3. **backup.yaml** — a Velero `Schedule` backing up the Kubernetes objects
+   5Gi storage, and WAL archiving to MinIO through the Barman Cloud plugin.
+3. **object-store.yaml** — the Barman Cloud `ObjectStore` (`rag-postgres`):
+   bucket, endpoint, S3 credentials, retention.
+4. **scheduled-backup.yaml** — a daily base backup (`method: plugin`), plus one
+   immediately on creation.
+5. **backup.yaml** — a Velero `Schedule` backing up the Kubernetes objects
    (Cluster CR + the two ExternalSecrets, selected by label
    `backup=backstage-rag-postgres`). Database *contents* are covered by CNPG's
    own S3 backup; this covers the K8s *objects* for full DR.
@@ -27,6 +31,8 @@ Into `${BACKSTAGE_NAMESPACE}` (default `portal`):
 ## Prerequisites
 
 - [`apps/cnpg-operator`](../cnpg-operator) reconciled (provides the CNPG CRDs)
+- [`apps/cnpg-barman-cloud`](../cnpg-barman-cloud) reconciled (the backup plugin
+  and its `ObjectStore` CRD)
 - [`infra/external-secrets`](../../infra/external-secrets) — ESO controller **and**
   a Vault-backed `ClusterSecretStore` (default name `vault-cluster`)
 - A reachable MinIO and a pre-created backup bucket (see [Backups](#backups))
@@ -51,6 +57,7 @@ Run `task get-variables` in this folder for the full list. Key ones:
 | `RAG_S3_BUCKET` | `backstage-rag-backups` | Backup bucket |
 | `RAG_S3_ENDPOINT` | `https://artifacts.${INGRESS_DOMAIN}` | MinIO S3 endpoint |
 | `RAG_BACKUP_RETENTION` | `7d` | CNPG backup retention |
+| `RAG_BACKUP_SCHEDULE` | `0 0 2 * * *` | Base backup schedule (six fields, seconds first) |
 | `VELERO_NAMESPACE` | `velero` | Namespace for the `Schedule` |
 | `RAG_VELERO_CRON` | `0 1 * * *` | Velero schedule (daily 01:00) |
 | `RAG_VELERO_TTL` | `168h0m0s` | Velero retention (7 days) |
@@ -85,7 +92,8 @@ or add an `imagePullSecret` to the namespace and reference it via
 
 ## Backups
 
-CNPG writes WAL + base backups to MinIO via `barmanObjectStore`. Pre-create the
+CNPG writes WAL + base backups to MinIO through the
+[Barman Cloud plugin](../cnpg-barman-cloud). Pre-create the
 bucket and a bucket-scoped user (same approach as
 [`infra/velero/README.md`](../../infra/velero/README.md)):
 
@@ -174,12 +182,25 @@ spec:
       source: rag-postgres
   externalClusters:
     - name: rag-postgres
-      barmanObjectStore:
-        destinationPath: s3://backstage-rag-backups/
-        endpointURL: https://artifacts.<INGRESS_DOMAIN>
-        s3Credentials:
-          accessKeyId:    { name: rag-postgres-s3-creds, key: ACCESS_KEY_ID }
-          secretAccessKey: { name: rag-postgres-s3-creds, key: SECRET_ACCESS_KEY }
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: rag-postgres   # the ObjectStore in object-store.yaml
+          serverName: rag-postgres
 ```
+
+Do not give the recovered Cluster a WAL archiver pointing at the same
+`serverName`: two clusters archiving into one path corrupt each other's
+timeline. See
+[`schmetterpause-db-backup`](../tabletennis/components/schmetterpause-db-backup/README.md)
+for a full worked recovery.
+
+### Migrating from the in-tree `barmanObjectStore`
+
+Clusters deployed before this change archived through
+`spec.backup.barmanObjectStore`. Applying this version swaps that for the
+plugin with the **same** bucket, endpoint, credentials and `serverName`, so the
+archive continues in place. Deploy `apps/cnpg-barman-cloud` first — without the
+plugin, WAL archiving stops and only the Cluster's status says so.
 
 See the [CNPG recovery docs](https://cloudnative-pg.io/documentation/current/recovery/).
