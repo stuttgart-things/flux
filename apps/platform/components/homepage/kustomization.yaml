@@ -1,0 +1,9 @@
+---
+# homepage
+#
+# REQUIRES cilium-gateway from the infra bundle, and a `homepage-config`
+# ConfigMap the cluster supplies (see ks-homepage.yaml).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homepage.yaml

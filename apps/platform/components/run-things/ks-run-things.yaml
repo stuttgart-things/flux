@@ -1,0 +1,47 @@
+---
+# run-things → ./apps/run-things
+#
+# dependsOn cilium-gateway: the base replaces the app's own HTTPRoute with one
+# on the cluster Gateway, and a route whose parent Gateway does not exist yet
+# is never programmed. No Certificate -- it is published on the Gateway's
+# wildcard.
+#
+# The base is an OCIRepository plus a Flux Kustomization of its own, so what
+# this waits for is that inner Kustomization reporting Ready.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: run-things
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${RUN_THINGS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/run-things
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      RUN_THINGS_HOSTNAME: "${RUN_THINGS_HOSTNAME:-run-things}"
+      RUN_THINGS_NAMESPACE: "${RUN_THINGS_NAMESPACE:-run-things}"
+      # RUN_THINGS_VERSION is deliberately NOT threaded. The base uses it for
+      # both the -kustomize artifact tag and the image tag, and renovate keeps
+      # that one default current; a copy here would win and pin both silently.
+      #
+      # Which portal config the app serves. The base's default is one lab's;
+      # threaded so a cluster has a line to write.
+      RUN_THINGS_CONFIG_NAME: "${RUN_THINGS_CONFIG_NAME:-portal-labul}"

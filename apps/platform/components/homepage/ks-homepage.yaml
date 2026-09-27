@@ -1,0 +1,49 @@
+---
+# homepage → ./apps/homepage
+#
+# dependsOn cilium-gateway: the chart renders its own HTTPRoute (route.main),
+# and a route whose parent Gateway does not exist yet is accepted, reports
+# nothing, and is simply never programmed. No Certificate -- it is published on
+# the Gateway's wildcard. So no httproute component is needed either.
+#
+# REQUIRES a ConfigMap `homepage-config` in HOMEPAGE_NAMESPACE, with the keys
+# services.yaml, settings.yaml, bookmarks.yaml, widgets.yaml and
+# kubernetes.yaml. It is dashboard content, which is cluster data, so neither
+# the base nor this component ships it. Without it the pod never leaves
+# ContainerCreating and this Kustomization times out.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homepage
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMEPAGE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homepage
+  postBuild:
+    substitute:
+      # The bundle-wide names, mapped onto the base's own -- the base is also
+      # used stand-alone, so the rename happens here.
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # The base has no default: an unset HOSTNAME renders `.<domain>` as both
+      # the route hostname and the only allowed Host header.
+      HOSTNAME: "${HOMEPAGE_HOSTNAME:-home}"
+      HOMEPAGE_NAMESPACE: "${HOMEPAGE_NAMESPACE:-homepage}"
+      # renovate: datasource=docker depName=ghcr.io/m0nsterrr/helm-charts/homepage
+      HOMEPAGE_VERSION: "${HOMEPAGE_VERSION:-5.4.0}"

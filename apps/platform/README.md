@@ -18,6 +18,12 @@ apps/platform/
     ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
+    ├── backstage-rag-postgres/ → ./apps/backstage-rag-postgres
+    │                  (requires backstage, cnpg-operator, velero, the ESO vault store)
+    ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
+    ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
+    ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
+    ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
     └── vcluster/    → ./apps/vcluster
 ```
 
@@ -43,7 +49,7 @@ the wrapper was here, and ArgoCD is not an app a platform happens to run, it is
 how a platform delivers things. A consumer that selected
 `../components/argo-cd` has to repoint that line.
 
-## Every app here needs a Secret you must supply
+## The apps that need a Secret you must supply
 
 `rancher`, `minio`, `backstage`, `redis-stack`, `harbor`, `keycloak` and
 `openldap` use
@@ -78,6 +84,24 @@ which also turns the chart's Ingress off. That is more than a route: with no
 Ingress the chart stops setting `KC_HOSTNAME`, and Keycloak 26 then refuses to
 start, so the component sets it — plus `proxyHeaders: xforwarded`, without
 which every redirect is `http://` behind a TLS-terminating Gateway.
+
+## Things the cluster supplies that no component ships
+
+None of these is substituted, so no check sees them missing. Each one leaves a
+pod stuck while the objects around it apply cleanly:
+
+- **homepage** mounts a `homepage-config` ConfigMap (services, settings,
+  bookmarks, widgets, kubernetes) in `HOMEPAGE_NAMESPACE`. Dashboard content is
+  cluster data. Without it: ContainerCreating.
+- **clusterscope** reads `username`/`password` from a `git-sync-auth` Secret in
+  `CLUSTERSCOPE_NAMESPACE`, with no `optional` — dummy values for a public
+  repo. Without it: CreateContainerConfigError. `CLUSTERSCOPE_GIT_REPO` is
+  required as well.
+- **backstage-rag-postgres** reads two entries from the ESO store's KV mount —
+  `backstage-rag-postgres` (`username`, `password`) and
+  `backstage-rag-postgres-s3` (`access_key`, `secret_key`) — and needs
+  `RAG_PG_STORAGE_CLASS`, `RAG_S3_ENDPOINT` and a pre-created bucket. Its paths
+  are relative to the store's mount, not the base's `kv/data/...` form.
 
 ## backstage needs an image tag and a GitHub OAuth app
 
