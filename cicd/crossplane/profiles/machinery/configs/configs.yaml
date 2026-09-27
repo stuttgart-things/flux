@@ -231,7 +231,7 @@ kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-cluster
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster:v0.11.10
+  package: ghcr.io/stuttgart-things/crossplane-configurations/cluster:v0.12.1
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
