@@ -72,11 +72,16 @@ default points at `redis-stack.homerun2-flux.svc.cluster.local`, another
 cluster's — which is why the component overrides it with a `.invalid` sentinel
 instead: failing at deploy time beats failing at the first workflow.
 
-`apps/dapr` does carry a `redis-stack` component, and it is deliberately not
-wired here. Its container scripts escape most shell variables as `$${VAR}` but
-leave `$HOSTNAME` and `$REDISPORT` bare, and Flux's substitution expands a bare
-`$VAR` too — so the sentinel would come up with an empty replica-announce-ip
-and an empty port, and report Ready. Fix that escaping before selecting it.
+`apps/dapr` does carry a `redis-stack` component; it is not wired here yet.
+Its container scripts are safe to select: they escape most shell variables as
+`$${VAR}` and leave a few bare (`$HOSTNAME`, `$REDISPORT`), and Flux's
+substitution only ever touches the braced `${VAR}` form — a bare `$VAR` passes
+through to the pod untouched. `flux envsubst` shows it:
+
+```console
+$ echo '$HOSTNAME ${HOSTNAME} $${HOSTNAME}' | HOSTNAME=foo flux envsubst
+$HOSTNAME foo ${HOSTNAME}
+```
 
 ## Tekton's profile and its dashboard travel together
 

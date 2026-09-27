@@ -83,6 +83,8 @@ All configurable values use Flux's `postBuild.substitute` pattern with the synta
 
 Run `task get-variables` to extract all variables and their defaults from any app folder.
 
+Only the braced `${VAR}` form is substituted; a bare `$VAR` (e.g. in an embedded shell script) passes through untouched, and `$${VAR}` is the escape that yields a literal `${VAR}`. Check with `echo '...' | flux envsubst` rather than assuming — #325 was filed on the opposite assumption.
+
 ## Commit Convention
 
 Uses Angular commit convention for semantic-release (configured in `.releaserc`). Format: `type: description`
