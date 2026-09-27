@@ -1,0 +1,9 @@
+---
+# clusterscope
+#
+# REQUIRES cilium-gateway from the infra bundle, CLUSTERSCOPE_GIT_REPO, and a
+# `git-sync-auth` Secret in the clusterscope namespace.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-clusterscope.yaml

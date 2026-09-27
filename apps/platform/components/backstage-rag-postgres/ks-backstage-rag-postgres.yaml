@@ -1,0 +1,97 @@
+---
+# Backstage RAG Postgres (CNPG + pgvector, for the RAG-AI plugin)
+# → ./apps/backstage-rag-postgres
+#
+# Optional second Postgres beside backstage; it does not touch Backstage's own
+# database. Everything it renders needs something else first:
+#
+#   cnpg-operator                  the postgresql.cnpg.io Cluster CRD
+#   backstage                      owns the namespace everything lands in
+#   external-secrets-vault-store   two ExternalSecrets; applied before their
+#                                  store exists they sit in SecretSyncedError
+#                                  while this Kustomization looks healthy
+#   velero                         the velero.io Schedule CRD
+#
+# REQUIRES in the store's KV mount:
+#   <RAG_ESO_CREDS_PATH>   username, password        (the DB owner)
+#   <RAG_ESO_S3_PATH>      access_key, secret_key    (bucket-scoped S3 user)
+# and the pgvector image pushed to GHCR (see the base's README).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backstage-rag-postgres
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cnpg-operator
+    - name: backstage
+    - name: external-secrets-vault-store
+    - name: velero
+  interval: 1h
+  retryInterval: 1m
+  # initdb on a fresh PVC, behind two ExternalSecrets that have to sync first.
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${BACKSTAGE_RAG_POSTGRES_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/backstage-rag-postgres
+  postBuild:
+    substitute:
+      # Same variable and default as the backstage component: this lands in
+      # Backstage's namespace, not one of its own.
+      BACKSTAGE_NAMESPACE: "${BACKSTAGE_NAMESPACE:-portal}"
+      # REQUIRED.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing -- the instance PVC stays Pending -- so the placeholder is
+      # the louder failure.
+      STORAGE_CLASS: "${RAG_PG_STORAGE_CLASS:-set-RAG_PG_STORAGE_CLASS}"
+      RAG_PG_STORAGE_SIZE: "${RAG_PG_STORAGE_SIZE:-5Gi}"
+      # RAG_PG_INSTANCES and RAG_PG_IMAGE_TAG are deliberately NOT threaded: both
+      # resolve to ints (1, 16), and postBuild.substitute is map[string]string --
+      # the API server rejects the typed patch and fails apps-platform with every
+      # sibling. The base's defaults stand.
+      RAG_PG_DATABASE: "${RAG_PG_DATABASE:-backstage_rag}"
+      RAG_PG_OWNER: "${RAG_PG_OWNER:-rag}"
+
+      # ---- backups ------------------------------------------------------
+      # REQUIRED.
+      # passthrough-override: the base derives `https://artifacts.<domain>`, one
+      # lab's MinIO. WAL archiving to an endpoint that does not answer fails
+      # only in the Cluster's status, so the placeholder names what to set.
+      RAG_S3_ENDPOINT: "${RAG_S3_ENDPOINT:-https://set-RAG_S3_ENDPOINT.invalid}"
+      # Read only by the base's nested default for RAG_S3_ENDPOINT above -- which
+      # this Kustomization always sets -- but with StrictPostBuildSubstitutions on,
+      # envsubst still fails on the unset inner variable.
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      RAG_S3_BUCKET: "${RAG_S3_BUCKET:-backstage-rag-backups}"
+      RAG_BACKUP_RETENTION: "${RAG_BACKUP_RETENTION:-7d}"
+      VELERO_NAMESPACE: "${VELERO_NAMESPACE:-velero}"
+      VELERO_BSL: "${RAG_VELERO_BSL:-default}"
+      RAG_VELERO_CRON: "${RAG_VELERO_CRON:-0 1 * * *}"
+      RAG_VELERO_TTL: "${RAG_VELERO_TTL:-168h0m0s}"
+
+      # ---- ExternalSecrets ----------------------------------------------
+      # passthrough-override: the base names `vault-cluster`, which exists on no
+      # cluster in this fleet. ESO_STORE_NAME is the variable the
+      # external-secrets-vault-store component names its store by, so one line
+      # on the cluster sets both.
+      RAG_ESO_STORE_NAME: "${ESO_STORE_NAME:-vault}"
+      RAG_ESO_STORE_KIND: "${RAG_ESO_STORE_KIND:-ClusterSecretStore}"
+      RAG_ESO_REFRESH_INTERVAL: "${RAG_ESO_REFRESH_INTERVAL:-1h}"
+      # passthrough-override: the base's `kv/data/<ns>/...` is a full API path.
+      # The bundle's store is mounted on its KV path (ESO_STORE_KV_PATH) and
+      # resolves keys relative to it, like every other ExternalSecret in these
+      # bundles -- the full path would be read as <mount>/kv/data/... and find
+      # nothing.
+      RAG_ESO_CREDS_PATH: "${RAG_ESO_CREDS_PATH:-backstage-rag-postgres}"
+      # passthrough-override: same reason as RAG_ESO_CREDS_PATH above.
+      RAG_ESO_S3_PATH: "${RAG_ESO_S3_PATH:-backstage-rag-postgres-s3}"

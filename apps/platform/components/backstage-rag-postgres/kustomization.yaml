@@ -1,0 +1,10 @@
+---
+# backstage-rag-postgres
+#
+# REQUIRES backstage (for its namespace), cnpg-operator, velero and the ESO
+# vault store from the infra bundle, a real RAG_PG_STORAGE_CLASS, an S3
+# endpoint and bucket, and two Vault entries.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-backstage-rag-postgres.yaml

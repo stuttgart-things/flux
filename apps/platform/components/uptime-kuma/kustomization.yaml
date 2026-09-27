@@ -1,0 +1,9 @@
+---
+# uptime-kuma
+#
+# REQUIRES cilium-gateway and trust-manager from the infra bundle, and a real
+# UPTIME_KUMA_STORAGE_CLASS.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-uptime-kuma.yaml

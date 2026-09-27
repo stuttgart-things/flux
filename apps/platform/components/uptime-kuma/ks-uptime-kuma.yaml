@@ -1,0 +1,54 @@
+---
+# Uptime Kuma → ./apps/uptime-kuma
+#
+# dependsOn cilium-gateway for the HTTPRoute, and trust-manager: the pod mounts
+# the `cluster-trust-bundle` ConfigMap trust-manager distributes to every
+# namespace, so that monitors can check internal-CA endpoints. Before that
+# ConfigMap exists the pod sits in ContainerCreating.
+#
+# The base's setup-job.yaml (admin account + monitors) is not listed in its
+# kustomization.yaml, so it is not deployed here either.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: uptime-kuma
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: trust-manager
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${UPTIME_KUMA_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/uptime-kuma
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # The base has no default: an unset HOSTNAME renders `.<domain>`.
+      HOSTNAME: "${UPTIME_KUMA_HOSTNAME:-uptime}"
+      UPTIME_KUMA_NAMESPACE: "${UPTIME_KUMA_NAMESPACE:-uptime-kuma}"
+      # renovate: datasource=helm depName=uptime-kuma registryUrl=https://dirsigler.github.io/uptime-kuma-helm
+      UPTIME_KUMA_VERSION: "${UPTIME_KUMA_VERSION:-4.2.0}"
+      # REQUIRED. A PVC that never binds leaves the pod Pending while the
+      # HelmRelease reports installed.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing, so the placeholder is the louder failure.
+      UPTIME_KUMA_STORAGE_CLASS: "${UPTIME_KUMA_STORAGE_CLASS:-set-UPTIME_KUMA_STORAGE_CLASS}"
+      UPTIME_KUMA_STORAGE_SIZE: "${UPTIME_KUMA_STORAGE_SIZE:-4Gi}"
+      # Same variable and default as the trust-manager component, so a cluster
+      # that renames the key sets it once for both.
+      TRUST_BUNDLE_TARGET_KEY: "${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}"

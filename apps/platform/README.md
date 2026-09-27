@@ -15,6 +15,12 @@ apps/platform/
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
+    ├── backstage-rag-postgres/ → ./apps/backstage-rag-postgres
+    │                  (requires backstage, cnpg-operator, velero, the ESO vault store)
+    ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
+    ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
+    ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
+    ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
     └── vcluster/    → ./apps/vcluster
 ```
 
@@ -40,7 +46,7 @@ the wrapper was here, and ArgoCD is not an app a platform happens to run, it is
 how a platform delivers things. A consumer that selected
 `../components/argo-cd` has to repoint that line.
 
-## Every app here needs a Secret you must supply
+## The apps that need a Secret you must supply
 
 `rancher`, `minio`, `backstage` and `redis-stack` use `substituteFrom` with
 `optional: false`. That is on purpose: left optional, Flux proceeds with the
@@ -57,6 +63,24 @@ reports installed. The password comes from `REDIS_STACK_PASSWORD` in
 
 This is a general-purpose Redis. `homerun2` and `dapr-workflows` each deploy
 their own from a copy of the same base and do not use it.
+
+## Things the cluster supplies that no component ships
+
+None of these is substituted, so no check sees them missing. Each one leaves a
+pod stuck while the objects around it apply cleanly:
+
+- **homepage** mounts a `homepage-config` ConfigMap (services, settings,
+  bookmarks, widgets, kubernetes) in `HOMEPAGE_NAMESPACE`. Dashboard content is
+  cluster data. Without it: ContainerCreating.
+- **clusterscope** reads `username`/`password` from a `git-sync-auth` Secret in
+  `CLUSTERSCOPE_NAMESPACE`, with no `optional` — dummy values for a public
+  repo. Without it: CreateContainerConfigError. `CLUSTERSCOPE_GIT_REPO` is
+  required as well.
+- **backstage-rag-postgres** reads two entries from the ESO store's KV mount —
+  `backstage-rag-postgres` (`username`, `password`) and
+  `backstage-rag-postgres-s3` (`access_key`, `secret_key`) — and needs
+  `RAG_PG_STORAGE_CLASS`, `RAG_S3_ENDPOINT` and a pre-created bucket. Its paths
+  are relative to the store's mount, not the base's `kv/data/...` form.
 
 ## backstage needs an image tag and a GitHub OAuth app
 

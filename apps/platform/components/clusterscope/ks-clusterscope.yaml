@@ -1,0 +1,55 @@
+---
+# clusterscope → ./apps/clusterscope
+#
+# dependsOn cilium-gateway for the HTTPRoute the base provides in place of the
+# app's own. No Certificate -- it is published on the Gateway's wildcard.
+#
+# The base is an OCIRepository plus a Flux Kustomization (`clusterscope-deploy`)
+# of its own, so what this waits for is that inner Kustomization reporting
+# Ready.
+#
+# REQUIRES a Secret `git-sync-auth` (keys `username`, `password`) in
+# CLUSTERSCOPE_NAMESPACE. The git-sync sidecar reads both without `optional`,
+# so a missing Secret is CreateContainerConfigError -- even for a public repo,
+# where dummy values will do.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: clusterscope
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CLUSTERSCOPE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/clusterscope
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${CLUSTERSCOPE_HOSTNAME:-clusterscope}"
+      CLUSTERSCOPE_NAMESPACE: "${CLUSTERSCOPE_NAMESPACE:-clusterscope}"
+      # CLUSTERSCOPE_VERSION is deliberately NOT threaded: its default lives in
+      # the base, where renovate keeps it current, and a copy here would win and
+      # pin it silently.
+      #
+      # REQUIRED. The repository clusterscope renders -- the base has no
+      # default, and an empty --repo= makes git-sync exit at start.
+      GIT_SYNC_REPO: "${CLUSTERSCOPE_GIT_REPO:-https://set-CLUSTERSCOPE_GIT_REPO.invalid}"
+      GIT_SYNC_BRANCH: "${CLUSTERSCOPE_GIT_BRANCH:-main}"
+      GIT_SYNC_DIR: "${CLUSTERSCOPE_GIT_SYNC_DIR:-/data/repo/clusters}"
+      GIT_SYNC_AUTH_SECRET: "${CLUSTERSCOPE_GIT_SYNC_AUTH_SECRET:-git-sync-auth}"
+      CLUSTERSCOPE_TECH: "${CLUSTERSCOPE_TECH:-flux}"
