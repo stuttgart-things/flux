@@ -46,7 +46,7 @@ footer (optional)
 | Type | Version Bump | Example |
 |---|---|---|
 | `feat` | Minor (0.x.0) | `feat: add prometheus component` |
-| `fix` | Patch (0.0.x) | `fix: correct metallb IP range variable` |
+| `fix` | Patch (0.0.x) | `fix: correct cilium L2 announcement variable` |
 | `chore` | None | `chore: update renovate config` |
 | `docs` | None | `docs: add vault README` |
 | `refactor` | None | `refactor: simplify cert-manager kustomization` |

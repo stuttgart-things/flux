@@ -10,7 +10,7 @@ Consumers point a Flux `GitRepository` at this repo (by tag or branch), then cre
 
 ```
 apps/      # Application HelmReleases and OCI kustomizations
-infra/     # Infrastructure components (cert-manager, cilium, metallb, etc.)
+infra/     # Infrastructure components (cert-manager, cilium, openebs, etc.)
 cicd/      # CI/CD tooling (crossplane, tekton)
 helmfiles/ # Legacy Helmfile definitions
 workflows/ # Kaeffken workflow templates for cluster provisioning
