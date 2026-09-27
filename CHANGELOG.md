@@ -1,3 +1,10 @@
+# [1.89.0](https://github.com/stuttgart-things/flux/compare/v1.88.0...v1.89.0) (2026-09-27)
+
+
+### Features
+
+* **apps-platform:** redis-stack as a selectable component ([#549](https://github.com/stuttgart-things/flux/issues/549)) ([ecffca4](https://github.com/stuttgart-things/flux/commit/ecffca49ad223d494e0e619cba999cb30a342cb3)), closes [#325](https://github.com/stuttgart-things/flux/issues/325)
+
 # [1.88.0](https://github.com/stuttgart-things/flux/compare/v1.87.0...v1.88.0) (2026-09-26)
 
 
