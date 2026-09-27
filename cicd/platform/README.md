@@ -19,7 +19,7 @@ cicd/platform/
     ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)
     ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
     ├── dapr/                 → ./apps/dapr/root       (control plane only)
-    ├── dapr-workflows/       → ./apps/dapr/workflow-secrets  (needs dapr, a Redis + a Secret)
+    ├── dapr-workflows/       → ./apps/dapr/workflow-secrets  (needs dapr + external-secrets; brings its own Redis)
     ├── dapr-workflows-trigger/ → ./apps/dapr/root     (the BackstageTemplateRun RGD; needs kro + dapr-workflows)
     ├── komoplane/            → ./cicd/komoplane       (needs crossplane + cilium-gateway)
     ├── claim-machinery-api/  → ./apps/claim-machinery-api    (needs cilium-gateway)
@@ -64,19 +64,18 @@ Left optional, Flux substitutes empty strings and installs an ArgoCD nobody can
 log into, or a workflow runtime holding a GitHub token that is present, empty
 and silently unauthorized — reporting success either way.
 
-## dapr-workflows has no Redis
+## dapr-workflows brings its own Redis
 
-It needs one and this bundle does not deploy one, so
-`DAPR_WORKFLOWS_REDIS_HOST` has to name a Redis that exists. The base's own
-default points at `redis-stack.homerun2-flux.svc.cluster.local`, another
-cluster's — which is why the component overrides it with a `.invalid` sentinel
-instead: failing at deploy time beats failing at the first workflow.
+The same Kustomization selects `apps/dapr`'s `redis-stack` and `redis-auth`
+components, and `DAPR_WORKFLOWS_REDIS_HOST` defaults to that Redis
+(`redis-stack.dapr-redis:6379`). Its password is the `redis_password` field of
+the same Vault entry as the two API tokens, so the chart's copy and the Dapr
+component's copy cannot drift apart.
 
-`apps/dapr` does carry a `redis-stack` component; it is not wired here yet.
-Its container scripts are safe to select: they escape most shell variables as
-`$${VAR}` and leave a few bare (`$HOSTNAME`, `$REDISPORT`), and Flux's
-substitution only ever touches the braced `${VAR}` form — a bare `$VAR` passes
-through to the pod untouched. `flux envsubst` shows it:
+The chart's start scripts leave some shell variables bare (`$HOSTNAME`,
+`$REDISPORT`). That is fine: Flux's substitution only ever touches the braced
+`${VAR}` form, and a bare `$VAR` passes through to the pod untouched (#325).
+`flux envsubst` shows it:
 
 ```console
 $ echo '$HOSTNAME ${HOSTNAME} $${HOSTNAME}' | HOSTNAME=foo flux envsubst
