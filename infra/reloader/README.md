@@ -17,8 +17,8 @@ metadata:
     # configmap.reloader.stakater.com/reload: "my-config"
 ```
 
-`apps/backstage` already carries `reloader.stakater.com/auto: "true"` on its
-Deployment.
+`apps/backstage` and `infra/velero` (Deployment and node-agent DaemonSet)
+already carry `reloader.stakater.com/auto: "true"`.
 
 ## Consume
 

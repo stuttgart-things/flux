@@ -141,6 +141,16 @@ When `VELERO_SSL_CERT_DIR` is unset (default empty), Go treats the env var as no
 
 > **Note:** `SSL_CERT_DIR` _replaces_ Go's default CA directory list — your trust-manager Bundle must include `useDefaultCAs: true` if you also need public CAs (e.g. for AWS S3 over the public internet).
 
+## Credential rotation
+
+The AWS plugin reads the S3 credentials from `cloud-credentials` once, at pod
+start. The Deployment and the node-agent DaemonSet carry
+`reloader.stakater.com/auto: "true"`, so with [`infra/reloader`](../reloader)
+running (the `reloader` component in `infra/platform`) a rotated key, or a
+changed trust bundle, rolls them automatically. Without Reloader the annotation
+does nothing: restart by hand with
+`kubectl -n velero rollout restart deploy/velero`.
+
 ## ServiceMonitor (Prometheus scraping)
 
 Setting `VELERO_SERVICE_MONITOR_ENABLED=true` makes the chart render a `monitoring.coreos.com/v1` `ServiceMonitor` resource. That CRD is **not** part of the standalone `prometheus` Helm chart — it ships with [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) or a standalone install of the [prometheus-operator](https://github.com/prometheus-operator/prometheus-operator).

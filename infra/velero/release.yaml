@@ -18,6 +18,20 @@ spec:
         namespace: ${VELERO_NAMESPACE:-velero}
       interval: 12h
   values:
+    # Roll velero (and node-agent) when cloud-credentials or the trust bundle
+    # changes. The AWS plugin reads its S3 credentials once, at startup, so a
+    # rotated key otherwise keeps failing backups against the OLD one until
+    # somebody restarts the pod (#125). Inert without infra/reloader.
+    #
+    # A literal "true", not a ${VAR:-true}: kustomize drops the quotes on a
+    # substitution that does not look like a bool, envsubst then produces a
+    # bare true, and an annotation value that is not a string fails the
+    # Helm install.
+    annotations:
+      reloader.stakater.com/auto: "true"
+    nodeAgent:
+      annotations:
+        reloader.stakater.com/auto: "true"
     initContainers:
       - name: velero-plugin-for-aws
         image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.14.3}
