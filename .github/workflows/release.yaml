@@ -4,7 +4,8 @@
 # On every push to main:
 #   1. release  – semantic-release cuts a SemVer tag + GitHub Release from the
 #                 Conventional Commit history (feat -> minor, fix -> patch,
-#                 BREAKING -> major) and updates CHANGELOG.md.
+#                 BREAKING -> major). It pushes nothing to main: the notes
+#                 live on the GitHub Release (#215).
 #   2. plan     – resolves the version tag to publish and computes which
 #                 apps/* and infra/* components changed in this merge.
 #   3. push     – packages each CHANGED component directory as a Flux OCI
@@ -52,7 +53,7 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # create tags + releases, push CHANGELOG
+      contents: write        # create tags + releases
       issues: write          # semantic-release success/fail comments
       pull-requests: write   # semantic-release PR comments
     outputs:
@@ -62,32 +63,21 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0     # full history so commit-analyzer sees every commit
-          # Leave the checkout token out of .git/config so the push below uses
-          # RELEASE_TOKEN rather than the job's GITHUB_TOKEN.
-          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
 
-      # @semantic-release/git pushes the CHANGELOG commit straight to main. The
-      # ruleset on main requires status checks, and GITHUB_TOKEN cannot bypass
-      # it: bypass_actors only accepts an Integration that belongs to the owner
-      # organization, and org-level rulesets need GitHub Team. A PAT belonging to
-      # a repository admin does bypass it, since admins are in the bypass list.
-      #
-      # Falls back to GITHUB_TOKEN so the workflow still runs where RELEASE_TOKEN
-      # is absent — that combination cannot push once the ruleset is enforcing.
+      # Creates the tag and the GitHub Release only -- no CHANGELOG commit.
+      # The ruleset on main requires status checks and GITHUB_TOKEN cannot
+      # bypass it (bypass_actors only accepts an Integration of the owner org;
+      # org rulesets need GitHub Team). Tags are not subject to the branch rule,
+      # so not pushing to main is what lets the gate enforce without a PAT (#215).
       - name: semantic-release
         id: semantic
         uses: cycjimmy/semantic-release-action@v6.0.0
-        with:
-          # Plugins not bundled by the action but referenced in .releaserc
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   plan:
     name: plan OCI push
