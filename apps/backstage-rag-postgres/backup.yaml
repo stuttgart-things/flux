@@ -1,6 +1,6 @@
 ---
 # Velero Schedule for the RAG Postgres Kubernetes objects (Cluster CR, Secrets,
-# PVCs, ...). CNPG's barmanObjectStore (cluster.yaml) backs up the database
+# PVCs, ...). CNPG's Barman Cloud plugin (object-store.yaml) backs up the database
 # *contents* to MinIO; this backs up the K8s *objects* so a full restore is
 # possible. Selects only resources labelled backup=backstage-rag-postgres in
 # the Backstage namespace.

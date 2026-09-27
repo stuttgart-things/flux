@@ -1,8 +1,9 @@
 ---
 # CloudNativePG Cluster dedicated to the Backstage RAG-AI plugin. Single
 # instance (PoC — no HA), pgvector enabled, base/WAL backups to MinIO.
-# Requires apps/cnpg-operator and the rag-postgres-creds / rag-postgres-s3-creds
-# ExternalSecrets (external-secret.yaml) to exist first.
+# Requires apps/cnpg-operator, apps/cnpg-barman-cloud (the backup plugin) and
+# the rag-postgres-creds / rag-postgres-s3-creds ExternalSecrets
+# (external-secret.yaml) to exist first.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -43,22 +44,12 @@ spec:
       cpu: ${RAG_PG_CPU_LIMIT:-1}
       memory: ${RAG_PG_MEMORY_LIMIT:-1Gi}
 
-  # WAL + base backups straight to our MinIO via Barman Cloud. The Velero
-  # Schedule in backup.yaml covers the Kubernetes objects; this covers the
-  # database contents — together they give full DR.
-  backup:
-    retentionPolicy: ${RAG_BACKUP_RETENTION:-7d}
-    barmanObjectStore:
-      destinationPath: s3://${RAG_S3_BUCKET:-backstage-rag-backups}/
-      endpointURL: ${RAG_S3_ENDPOINT:-https://artifacts.${INGRESS_DOMAIN}}
-      s3Credentials:
-        accessKeyId:
-          name: rag-postgres-s3-creds
-          key: ACCESS_KEY_ID
-        secretAccessKey:
-          name: rag-postgres-s3-creds
-          key: SECRET_ACCESS_KEY
-      wal:
-        compression: gzip
-      data:
-        compression: gzip
+  # WAL archiving through the Barman Cloud plugin, into the ObjectStore in
+  # object-store.yaml; scheduled-backup.yaml takes the daily base backup. The
+  # Velero Schedule in backup.yaml covers the Kubernetes objects; this covers
+  # the database contents -- together they give full DR.
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: rag-postgres
