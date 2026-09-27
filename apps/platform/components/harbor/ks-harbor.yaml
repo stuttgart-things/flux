@@ -1,0 +1,80 @@
+---
+# Harbor → ./apps/harbor + components/httproute
+#
+# dependsOn cilium-gateway for the route, and cert-manager-install because the
+# base renders a Certificate through the sthings-cluster chart: applied before
+# cert-manager's webhook is serving, that fails the Helm install, and a failed
+# HelmRelease goes Stalled rather than retrying (see minio beside this).
+#
+# The chart still renders its own Ingress (exposureType ingress, class nginx).
+# On a Gateway cluster nothing serves that class, so it sits unused -- the
+# HTTPRoute goes to harbor-core / harbor-portal directly, which is what the
+# ingress exposure type exposes.
+#
+# The project-proxy (wildcard *.harbor.<domain> mirror access) is NOT part of
+# this component. It is a separate HelmRelease with its own route; see
+# apps/harbor/README.md.
+#
+# REQUIRES a StorageClass that exists here, and a Secret with
+# HARBOR_ADMIN_PASSWORD.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: harbor
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${HARBOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/harbor
+  components:
+    - ./components/httproute
+  postBuild:
+    substitute:
+      HARBOR_NAMESPACE: "${HARBOR_NAMESPACE:-harbor}"
+      # THREADED so a cluster can pin it; the default is the base's own and
+      # renovate moves both copies in one PR.
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/harbor
+      HARBOR_VERSION: "${HARBOR_VERSION:-27.0.3}"
+      HARBOR_HOSTNAME: "${HARBOR_HOSTNAME:-harbor}"
+      HARBOR_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      ISSUER_NAME: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
+      ISSUER_KIND: "${APPS_CLUSTER_ISSUER_KIND:-ClusterIssuer}"
+      # REQUIRED. A PVC that never binds leaves the pods Pending while the
+      # HelmRelease reports installed.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing, so the placeholder is the louder failure.
+      STORAGE_CLASS: "${HARBOR_STORAGE_CLASS:-set-HARBOR_STORAGE_CLASS}"
+      HARBOR_PV_SIZE_REGISTRY: "${HARBOR_PV_SIZE_REGISTRY:-12Gi}"
+      HARBOR_PV_SIZE_TRIVY: "${HARBOR_PV_SIZE_TRIVY:-5Gi}"
+      HARBOR_PV_SIZE_JOBSERVICE: "${HARBOR_PV_SIZE_JOBSERVICE:-1Gi}"
+      # HARBOR_PERSISTENCE_ENABLED is NOT passed through: it resolves to a bool,
+      # and postBuild.substitute is map[string]string -- the API server rejects
+      # the typed patch and fails apps-platform with every sibling. The base's
+      # default (true) applies.
+    substituteFrom:
+      # substituteFrom-keys: HARBOR_ADMIN_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all:
+      # a Harbor whose admin password is empty, reporting Ready. See #331.
+      - kind: Secret
+        name: ${HARBOR_SECRET:-harbor-secrets}
+        optional: false

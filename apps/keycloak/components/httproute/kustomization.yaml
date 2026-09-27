@@ -1,0 +1,31 @@
+---
+# Opt-in: serve keycloak through a Gateway API HTTPRoute instead of the chart's
+# Ingress. A consumer of ./apps/keycloak without this component is unchanged.
+#
+# Turning the Ingress off is not enough on its own. The chart only sets
+# KC_HOSTNAME and KC_HOSTNAME_STRICT inside `if ingress.enabled`, and Keycloak
+# 26 defaults to hostname-strict with no hostname -- it refuses to start. So
+# the hostname is set here explicitly, and proxyHeaders tells Keycloak the
+# Gateway terminated TLS; without it every redirect it builds is http:// and
+# the admin console fails on mixed content.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      kind: HelmRelease
+      name: keycloak-deployment
+    patch: |-
+      - op: replace
+        path: /spec/values/ingress/enabled
+        value: false
+      - op: add
+        path: /spec/values/proxyHeaders
+        value: xforwarded
+      - op: add
+        path: /spec/values/extraEnvVars/-
+        value:
+          name: KC_HOSTNAME
+          value: https://${INGRESS_HOSTNAME:-keycloak}.${INGRESS_DOMAIN}

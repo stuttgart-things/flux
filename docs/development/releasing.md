@@ -1,15 +1,14 @@
 # Releasing
 
-This repository uses [semantic-release](https://semantic-release.gitbook.io/) with the Angular commit convention to automate versioning and changelog generation.
+This repository uses [semantic-release](https://semantic-release.gitbook.io/) with the Angular commit convention to automate versioning and release notes.
 
 ## How It Works
 
 1. Commits on `main` are analyzed by `@semantic-release/commit-analyzer`
 2. Version is determined by commit type (`feat:` = minor, `fix:` = patch)
 3. Release notes are generated from commit messages
-4. `CHANGELOG.md` is updated
-5. A GitHub release is created
-6. A Git tag is pushed in `v${version}` format
+4. A GitHub release is created with those notes
+5. A Git tag is pushed in `v${version}` format
 
 ## Release Process
 

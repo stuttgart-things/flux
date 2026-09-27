@@ -1,0 +1,57 @@
+---
+# OpenLDAP (openldap-stack-ha) → ./apps/openldap
+#
+# No dependsOn: the base renders no Certificate and no route -- it serves LDAP
+# on a ClusterIP Service, `openldap.<namespace>:389`, which is what a
+# Keycloak user federation points at. Nothing wires that federation; it is
+# realm configuration, done in Keycloak.
+#
+# REQUIRES a StorageClass that exists here, and a Secret with ADMIN_PASSWORD
+# (ADMIN_USER is optional and defaults to `admin`).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openldap
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${OPENLDAP_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/openldap
+  postBuild:
+    substitute:
+      OPENLDAP_NAMESPACE: "${OPENLDAP_NAMESPACE:-openldap}"
+      # THREADED so a cluster can pin it; the default is the base's own and
+      # renovate moves both copies in one PR.
+      # renovate: datasource=helm depName=openldap-stack-ha registryUrl=https://jp-gouin.github.io/helm-openldap
+      OPENLDAP_VERSION: "${OPENLDAP_VERSION:-4.3.3}"
+      SERVICE_TYPE: "${OPENLDAP_SERVICE_TYPE:-ClusterIP}"
+      # REQUIRED. The base has no default at all; a PVC that never binds leaves
+      # the pod Pending while the HelmRelease reports installed.
+      STORAGE_CLASS: "${OPENLDAP_STORAGE_CLASS:-set-OPENLDAP_STORAGE_CLASS}"
+      STORAGE_SIZE: "${OPENLDAP_STORAGE_SIZE:-8Gi}"
+      # REPLICAS, and the *_ENABLED / ENABLE_* switches, are NOT passed
+      # through: they resolve to an int or a bool, and postBuild.substitute is
+      # map[string]string -- the API server rejects the typed patch and fails
+      # apps-platform with every sibling. The base's defaults apply: one
+      # replica, no replication, persistence on, plain LDAP only.
+    substituteFrom:
+      # substituteFrom-keys: ADMIN_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all:
+      # a directory with an empty admin password, reporting Ready. See #331.
+      - kind: Secret
+        name: ${OPENLDAP_SECRET:-openldap-secrets}
+        optional: false

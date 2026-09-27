@@ -1,3 +1,7 @@
+> **Frozen at v1.89.0.** Release notes for later versions are on
+> [GitHub Releases](https://github.com/stuttgart-things/flux/releases) — the release
+> job no longer commits to `main`, so the required checks can be enforced (#215).
+
 # [1.89.0](https://github.com/stuttgart-things/flux/compare/v1.88.0...v1.89.0) (2026-09-27)
 
 
