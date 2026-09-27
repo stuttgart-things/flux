@@ -8,6 +8,7 @@ Application HelmReleases and OCI kustomizations.
 |---|---|---|---|
 | [Argo CD](argo-cd.md) | HelmRepository | `argo-cd` | `7.7.14` |
 | [Claim Machinery API](claim-machinery-api.md) | OCIRepository | `claim-machinery-api-kustomize` | `v0.5.6` |
+| [Machinery Registry API](machinery-registry-api.md) | OCIRepository | `machinery-registry-api-kustomize` | `v1.0.0` |
 | [Clusterbook](clusterbook.md) | HelmRepository (OCI) | `clusterbook` | `v1.3.1-chart` |
 | [Flux Web](flux-web.md) | HelmRepository (OCI) | `flux-operator` | `0.43.0` |
 | [Headlamp](headlamp.md) | HelmRepository | `headlamp` | `0.40.0` |

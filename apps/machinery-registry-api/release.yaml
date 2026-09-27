@@ -1,0 +1,68 @@
+---
+# machinery-registry-api: a read-only REST API over the claim inventory
+# (claims/registry.yaml in a GitHub repo), polled every SYNC_INTERVAL.
+# Backstage's RegistryClaimPicker reads it through the /machinery-registry
+# proxy (apps/backstage, CLAIM_MACHINERY_REGISTRY_URL).
+#
+# The manifests are the app's own KCL module, released as an OCI artifact
+# beside the image -- same pattern as apps/claim-machinery-api.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-registry-api
+  namespace: ${MACHINERY_REGISTRY_API_NAMESPACE:-machinery-registry}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: machinery-registry-api-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${MACHINERY_REGISTRY_API_NAMESPACE:-machinery-registry}
+  patches:
+    # The artifact ships its own Namespace, named after the profile it was
+    # rendered with. requirements.yaml owns the namespace here, so a cluster
+    # that renames it does not also get a stray, empty `machinery-registry`.
+    - target:
+        kind: Namespace
+      patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: machinery-registry
+        $patch: delete
+    - target:
+        kind: Deployment
+        name: machinery-registry-api
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery-registry-api
+          annotations:
+            # Rolls on a change to the ConfigMap below (another registry
+            # source). Inert without infra/reloader.
+            reloader.stakater.com/auto: "true"
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery-registry-api
+                  image: ghcr.io/stuttgart-things/machinery-registry-api:${MACHINERY_REGISTRY_API_VERSION:-v1.0.0}
+    # Where the claim inventory is read from. The repo must be public, or
+    # carry GITHUB_TOKEN in the app's Secret -- this base provides none.
+    - target:
+        kind: ConfigMap
+        name: machinery-registry-api
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: machinery-registry-api
+        data:
+          REGISTRY_REPO: "${MACHINERY_REGISTRY_REPO:-stuttgart-things/harvester}"
+          REGISTRY_PATH: "${MACHINERY_REGISTRY_PATH:-claims/registry.yaml}"
+          REGISTRY_BRANCH: "${MACHINERY_REGISTRY_BRANCH:-main}"
+          SYNC_INTERVAL: "${MACHINERY_REGISTRY_SYNC_INTERVAL:-60s}"

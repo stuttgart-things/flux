@@ -1,0 +1,68 @@
+---
+# machinery-registry-api -- read-only claim inventory → ./apps/machinery-registry-api
+#
+# Beside claim-machinery-api, for the same reason: a front-end onto the claim
+# workflow, not an app a platform happens to run. Backstage reaches it through
+# its /machinery-registry proxy; without this component that proxy points at a
+# host nothing serves, and the RegistryClaimPicker fails with a fetch error
+# (flux#169).
+#
+# dependsOn cilium-gateway only. It needs no crossplane: it reads a YAML file
+# from GitHub and serves it.
+#
+# THE INVENTORY IS READ AT RUNTIME from GitHub (MACHINERY_REGISTRY_REPO /
+# _PATH / _BRANCH), polled every SYNC_INTERVAL -- not from this repo and not
+# from the OCI artifact. The repo must be public; a private one needs a
+# GITHUB_TOKEN this component does not provide.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-registry-api
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  # An OCIRepository and a second Kustomization, and wait: true holds until the
+  # inner one has pulled and applied the artifact -- as claim-machinery-api.
+  timeout: 10m
+  force: false
+  prune: true
+  # Off switch. suspend STOPS RECONCILING, it does not uninstall.
+  suspend: ${MACHINERY_REGISTRY_API_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/machinery-registry-api
+  postBuild:
+    substitute:
+      MACHINERY_REGISTRY_API_NAMESPACE: "${MACHINERY_REGISTRY_API_NAMESPACE:-machinery-registry}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-registry-api
+      MACHINERY_REGISTRY_API_VERSION: "${MACHINERY_REGISTRY_API_VERSION:-v1.0.0}"
+      FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
+
+      # ---- the claim inventory ------------------------------------------
+      MACHINERY_REGISTRY_REPO: "${MACHINERY_REGISTRY_REPO:-stuttgart-things/harvester}"
+      MACHINERY_REGISTRY_PATH: "${MACHINERY_REGISTRY_PATH:-claims/registry.yaml}"
+      MACHINERY_REGISTRY_BRANCH: "${MACHINERY_REGISTRY_BRANCH:-main}"
+      MACHINERY_REGISTRY_SYNC_INTERVAL: "${MACHINERY_REGISTRY_SYNC_INTERVAL:-60s}"
+
+      # ---- HTTPRoute ----------------------------------------------------
+      # GATEWAY_NAME, HOSTNAME and DOMAIN have no default in the base; unset,
+      # the route renders an empty parentRef and a hostname of "." and the API
+      # server rejects it. HOSTNAME is exposed under a component-scoped name,
+      # like CLAIM_MACHINERY_API_HOSTNAME.
+      #
+      # The default is what apps/backstage's CLAIM_MACHINERY_REGISTRY_URL
+      # defaults to, so selecting both on one cluster wires them with no
+      # override. Change one, change the other.
+      HOSTNAME: "${MACHINERY_REGISTRY_API_HOSTNAME:-machinery-registry-api}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

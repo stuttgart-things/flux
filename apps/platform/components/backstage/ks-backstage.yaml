@@ -52,6 +52,19 @@ spec:
 
       BACKSTAGE_NAMESPACE: "${BACKSTAGE_NAMESPACE:-portal}"
 
+      # ---- the claim APIs behind Backstage's two proxies ------------------
+      # Both are cicd/platform components; these defaults are the hosts those
+      # components serve, so selecting them beside backstage wires the proxies
+      # with no override. A cluster that renames either host sets the
+      # matching *_HOSTNAME once and both sides follow.
+      # passthrough-override: the base's `claim-api.<domain>` is a host no
+      # bundle serves; claim-machinery-api's route is
+      # ${CLAIM_MACHINERY_API_HOSTNAME:-claim-machinery-api}.<domain>.
+      BACKSTAGE_CLAIM_MACHINERY_API_URL: "${BACKSTAGE_CLAIM_MACHINERY_API_URL:-https://${CLAIM_MACHINERY_API_HOSTNAME:-claim-machinery-api}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}}"
+      # passthrough-override: same host as machinery-registry-api's route, but
+      # built from its HOSTNAME variable rather than the base's literal.
+      BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL: "${BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL:-https://${MACHINERY_REGISTRY_API_HOSTNAME:-machinery-registry-api}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}}"
+
       # REQUIRED.
       # passthrough-override: the base names `nfs4-csi`, which exists in one lab
       # and nowhere else. A StorageClass that is merely absent binds nothing and

@@ -120,8 +120,11 @@ spec:
           APP_BASE_URL: https://backstage.${DOMAIN}
           BACKEND_BASE_URL: https://backstage.${DOMAIN}
           CORS_ORIGIN: https://backstage.${DOMAIN}
-          CLAIM_MACHINERY_API_URL: https://claim-api.${DOMAIN}
-          CLAIM_MACHINERY_REGISTRY_URL: https://registry-api.${DOMAIN}
+          # Targets of the /claim-machinery and /machinery-registry proxies.
+          # Overridable, because the hosts are decided by whoever deploys
+          # those two APIs, not by this chart.
+          CLAIM_MACHINERY_API_URL: ${BACKSTAGE_CLAIM_MACHINERY_API_URL:-https://claim-api.${DOMAIN}}
+          CLAIM_MACHINERY_REGISTRY_URL: ${BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL:-https://machinery-registry-api.${DOMAIN}}
           AUTH_ENVIRONMENT: development
           GITHUB_TOKEN: ${BACKSTAGE_GITHUB_TOKEN}
           GITHUB_CLIENT_ID: ${BACKSTAGE_GITHUB_CLIENT_ID}

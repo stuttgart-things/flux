@@ -1,0 +1,7 @@
+---
+# Opt-in: machinery-registry-api -- the claim inventory Backstage's
+# RegistryClaimPicker reads.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-machinery-registry-api.yaml
