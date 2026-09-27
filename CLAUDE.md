@@ -154,8 +154,11 @@ Run `pre-commit run --all-files` to validate before pushing. Active checks: trai
 The workflow calls the scripts directly rather than going through `task`. The Taskfile includes a remote Taskfile, which `task` refuses to load unattended (`not trusted by user`, exit 104) unless given `--yes` — and that would mean trusting a network-fetched Taskfile on every CI run. The `task` targets call the same scripts, so local and CI run identical code.
 
 `Bundle components` also runs on every PR but is **not** required: its crossplane
-package step (`hack/check-crossplane-deps.py`) queries the xpkg registries and has
-hung for 10+ minutes on several runs. Make it required once that step has a timeout.
+package step (`hack/check-crossplane-deps.py`) pulls ~40 packages from the xpkg
+registries. It used to hang for 10+ minutes on a stalled registry call; each
+`skopeo copy` now has a 120s timeout with one retry, and the step has
+`timeout-minutes: 15`. A registry outage therefore turns it red rather than
+pending — which is why it is still not a required check.
 
 ### Why the release pushes nothing to `main`
 

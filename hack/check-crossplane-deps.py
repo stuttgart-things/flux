@@ -44,6 +44,7 @@ Two rules, one per failure:
      tidying and takes the cluster down.
 """
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -144,16 +145,44 @@ def shipped(files):
     return out
 
 
+# Per registry call, not per run. A stalled xpkg registry connection used to
+# hang this step until the job's 6h limit -- several PR runs sat "pending" for
+# 10+ minutes while every other step had passed. A healthy fetch takes seconds,
+# a large provider image well under a minute.
+FETCH_TIMEOUT = 120
+FETCH_ATTEMPTS = 2
+
+
+def fetch(ref, dest):
+    """skopeo copy with a hard timeout; one retry, since a stall is transient."""
+    for attempt in range(1, FETCH_ATTEMPTS + 1):
+        shutil.rmtree(dest, ignore_errors=True)
+        try:
+            r = subprocess.run(
+                ["skopeo", "--command-timeout", f"{FETCH_TIMEOUT}s", "copy",
+                 "--quiet", f"docker://{ref}", f"dir:{dest}"],
+                capture_output=True, text=True, timeout=FETCH_TIMEOUT + 15)
+        except subprocess.TimeoutExpired:
+            print(f"note: {ref}: no answer in {FETCH_TIMEOUT}s "
+                  f"(attempt {attempt}/{FETCH_ATTEMPTS})", file=sys.stderr)
+            continue
+        if r.returncode == 0:
+            return True
+        if "timeout" in r.stderr.lower() or "deadline" in r.stderr.lower():
+            print(f"note: {ref}: timed out (attempt {attempt}/{FETCH_ATTEMPTS})",
+                  file=sys.stderr)
+            continue
+        return False
+    return False
+
+
 def dependencies(src, ver, cache):
     """dependsOn of a published package, read out of its OCI artifact."""
     ref = f"{src}:{ver}"
     if ref in cache:
         return cache[ref]
     with tempfile.TemporaryDirectory() as tmp:
-        r = subprocess.run(
-            ["skopeo", "copy", "--quiet", f"docker://{ref}", f"dir:{tmp}/p"],
-            capture_output=True, text=True)
-        if r.returncode != 0:
+        if not fetch(ref, f"{tmp}/p"):
             cache[ref] = None
             return None
         deps = []
