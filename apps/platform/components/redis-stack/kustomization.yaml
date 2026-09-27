@@ -1,0 +1,9 @@
+---
+# redis-stack
+#
+# Standalone: no Gateway (it publishes no UI), no Certificate. REQUIRES a real
+# REDIS_STACK_STORAGE_CLASS and a Secret with the password.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-redis-stack.yaml

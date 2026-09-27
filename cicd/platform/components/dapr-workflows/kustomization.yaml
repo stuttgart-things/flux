@@ -1,7 +1,8 @@
 ---
 # dapr-workflows — the Backstage template-execution runtime on top of Dapr.
 #
-# REQUIRES dapr, a reachable Redis, and a Secret with two API tokens.
+# REQUIRES dapr and external-secrets (a Vault entry with two API tokens and
+# the Redis password). Deploys its own Redis.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

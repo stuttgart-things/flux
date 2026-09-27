@@ -1,0 +1,61 @@
+---
+# Redis Stack (redis + sentinel, with the search/json/timeseries/bloom modules)
+# → ./apps/redis-stack
+#
+# No dependsOn: the base renders no Certificate and no route, so there is
+# nothing in the infra bundle for it to wait on.
+#
+# Its start scripts leave some shell variables bare ($HOSTNAME, $REDISPORT).
+# That is fine: Flux only substitutes the braced ${VAR} form (#325).
+#
+# REQUIRES a StorageClass that exists here, and a Secret with
+# REDIS_STACK_PASSWORD.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: redis-stack
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${REDIS_STACK_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/redis-stack
+  postBuild:
+    substitute:
+      REDIS_STACK_NAMESPACE: "${REDIS_STACK_NAMESPACE:-redis-stack}"
+      # THREADED so a cluster can pin it; the default is the base's own and
+      # renovate moves both copies in one PR.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/redis/redis
+      REDIS_STACK_VERSION: "${REDIS_STACK_VERSION:-22.0.7}"
+      REDIS_STACK_SERVICE_TYPE: "${REDIS_STACK_SERVICE_TYPE:-ClusterIP}"
+      # REQUIRED. A PVC that never binds leaves the pods Pending while the
+      # HelmRelease reports installed.
+      # passthrough-override: the base names `standard`, which no cluster in
+      # this fleet has. A StorageClass that is merely absent binds nothing and
+      # says nothing, so the placeholder is the louder failure.
+      REDIS_STACK_STORAGE_CLASS: "${REDIS_STACK_STORAGE_CLASS:-set-REDIS_STACK_STORAGE_CLASS}"
+      REDIS_STACK_STORAGE_SIZE: "${REDIS_STACK_STORAGE_SIZE:-8Gi}"
+      # REDIS_STACK_PERSISTENCE_ENABLED is NOT passed through: it resolves to a
+      # bool, and postBuild.substitute is map[string]string -- the API server
+      # rejects the typed patch and fails apps-platform with every sibling.
+      # The base's default (true) applies.
+    substituteFrom:
+      # substituteFrom-keys: REDIS_STACK_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all:
+      # a Redis with an empty password, reporting Ready. See #331.
+      - kind: Secret
+        name: ${REDIS_STACK_SECRET:-redis-stack-secrets}
+        optional: false

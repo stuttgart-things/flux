@@ -14,6 +14,7 @@ apps/platform/
     ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret)
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
+    ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
     └── vcluster/    → ./apps/vcluster
 ```
 
@@ -41,9 +42,21 @@ how a platform delivers things. A consumer that selected
 
 ## Every app here needs a Secret you must supply
 
-`rancher`, `minio` and `backstage` use `substituteFrom` with `optional: false`.
-That is on purpose: left optional, Flux proceeds with the variables unset and
-installs a MinIO with an empty admin password, and reports success.
+`rancher`, `minio`, `backstage` and `redis-stack` use `substituteFrom` with
+`optional: false`. That is on purpose: left optional, Flux proceeds with the
+variables unset and installs a MinIO with an empty admin password, and reports
+success.
+
+## redis-stack needs a StorageClass
+
+`REDIS_STACK_STORAGE_CLASS` defaults to a `set-REDIS_STACK_STORAGE_CLASS`
+placeholder rather than the base's `standard`, which no cluster in this fleet
+has: a missing StorageClass leaves the PVCs Pending while the HelmRelease
+reports installed. The password comes from `REDIS_STACK_PASSWORD` in
+`${REDIS_STACK_SECRET:-redis-stack-secrets}`.
+
+This is a general-purpose Redis. `homerun2` and `dapr-workflows` each deploy
+their own from a copy of the same base and do not use it.
 
 ## backstage needs an image tag and a GitHub OAuth app
 
