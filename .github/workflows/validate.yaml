@@ -113,7 +113,11 @@ jobs:
       # reports itself unverifiable rather than failing.
       - name: Install skopeo
         run: sudo apt-get update -qq && sudo apt-get install -y -qq skopeo
+      # Backstop for the per-call timeout inside the script: ~40 fetches at
+      # up to 2x120s each could still run long, and a hung step otherwise
+      # holds the job until GitHub's 6h limit.
       - name: No duplicate or cross-registry crossplane package node
+        timeout-minutes: 15
         run: python3 ./hack/check-crossplane-deps.py
 
   renovate:
