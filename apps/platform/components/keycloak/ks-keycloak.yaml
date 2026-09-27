@@ -1,0 +1,64 @@
+---
+# Keycloak → ./apps/keycloak + components/httproute
+#
+# dependsOn cilium-gateway for the HTTPRoute, and cert-manager-install: the
+# base renders a Certificate through the sthings-cluster chart, and one applied
+# before cert-manager's webhook is serving fails the Helm install outright --
+# a Stalled HelmRelease that does not retry on its own (see minio).
+#
+# The httproute component turns the chart's Ingress off and sets the hostname
+# and proxy headers Keycloak needs behind a TLS-terminating Gateway.
+#
+# REQUIRES a StorageClass that exists here (the bundled PostgreSQL's PVC), and
+# a Secret with ADMIN_USER / ADMIN_PASSWORD.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${KEYCLOAK_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/keycloak
+  components:
+    - ./components/httproute
+  postBuild:
+    substitute:
+      KEYCLOAK_NAMESPACE: "${KEYCLOAK_NAMESPACE:-keycloak}"
+      # THREADED so a cluster can pin it; the default is the base's own and
+      # renovate moves both copies in one PR.
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/keycloak
+      KEYCLOAK_VERSION: "${KEYCLOAK_VERSION:-25.2.0}"
+      # REQUIRED. The base has no default at all; a PVC that never binds leaves
+      # PostgreSQL Pending and Keycloak crash-looping on its DB connection.
+      STORAGE_CLASS: "${KEYCLOAK_STORAGE_CLASS:-set-KEYCLOAK_STORAGE_CLASS}"
+      CLUSTER_ISSUER: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
+      INGRESS_HOSTNAME: "${KEYCLOAK_HOSTNAME:-keycloak}"
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+    substituteFrom:
+      # substituteFrom-keys: ADMIN_PASSWORD, ADMIN_USER
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # Secret that exists but is missing one of the names below produces
+      # exactly the outcome the paragraph above warns about. See #331.
+      - kind: Secret
+        name: ${KEYCLOAK_SECRET:-keycloak-secrets}
+        optional: false

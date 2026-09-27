@@ -15,6 +15,8 @@ apps/platform/
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
+    ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
+    ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
     └── vcluster/    → ./apps/vcluster
 ```
 
@@ -42,8 +44,8 @@ how a platform delivers things. A consumer that selected
 
 ## Every app here needs a Secret you must supply
 
-`rancher`, `minio`, `backstage` and `redis-stack` use `substituteFrom` with
-`optional: false`. That is on purpose: left optional, Flux proceeds with the
+`rancher`, `minio`, `backstage`, `redis-stack`, `keycloak` and `openldap` use
+`substituteFrom` with `optional: false`. That is on purpose: left optional, Flux proceeds with the
 variables unset and installs a MinIO with an empty admin password, and reports
 success.
 
@@ -57,6 +59,23 @@ reports installed. The password comes from `REDIS_STACK_PASSWORD` in
 
 This is a general-purpose Redis. `homerun2` and `dapr-workflows` each deploy
 their own from a copy of the same base and do not use it.
+
+## keycloak and openldap are selected together, but not wired together
+
+Both are standalone: selecting `openldap` beside `keycloak` gives you a
+directory at `ldap://openldap.openldap:389` and a Keycloak that does not know
+about it. The user federation is realm configuration, done in Keycloak.
+
+Their Secrets carry the same key names (`ADMIN_USER`, `ADMIN_PASSWORD`) — the
+bases share them — so they are two Secrets, `keycloak-secrets` and
+`openldap-secrets`, not one. Keycloak needs both keys; openldap only
+`ADMIN_PASSWORD` (the user defaults to `admin`).
+
+Keycloak runs behind the Gateway through `apps/keycloak/components/httproute`,
+which also turns the chart's Ingress off. That is more than a route: with no
+Ingress the chart stops setting `KC_HOSTNAME`, and Keycloak 26 then refuses to
+start, so the component sets it — plus `proxyHeaders: xforwarded`, without
+which every redirect is `http://` behind a TLS-terminating Gateway.
 
 ## backstage needs an image tag and a GitHub OAuth app
 

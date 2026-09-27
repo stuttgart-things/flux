@@ -1,0 +1,9 @@
+---
+# keycloak
+#
+# REQUIRES cilium-gateway and cert-manager-install from the infra bundle, a
+# real KEYCLOAK_STORAGE_CLASS, and a Secret with the admin credentials.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-keycloak.yaml
