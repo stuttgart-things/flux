@@ -132,6 +132,7 @@ Version defaults are not repeated in these tables. Each component pins them in `
 |----------|---------|----------|---------|
 | `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_PROFILE_CM` | `homerun2-light-catcher-profile` | no | ConfigMap name containing the profile (effects and WLED endpoints); the default drives the wled-mock |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Light Catcher (tabletennis)
