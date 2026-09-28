@@ -63,6 +63,33 @@ spec:
             parameters: 30
             configBlock: |-
               serve_stale ${COREDNS_SERVE_STALE:-24h}
+          # OPT-IN: answer one record type in this zone ourselves, with an
+          # empty NOERROR (NODATA), instead of passing the upstream's answer
+          # through. Set COREDNS_ZONE_NODATA_TYPE=AAAA where the zone's server
+          # answers AAAA with NXDOMAIN for names that DO have an A record --
+          # the DD-WRT dnsmasq of the Harvester lab does exactly that for its
+          # `*.platform.sthings.lab` wildcard. glibc and Go shrug it off, but
+          # musl (every Alpine image) reads an NXDOMAIN on either half of its
+          # A+AAAA pair as "the name does not exist": the Ansible pod that
+          # writes a kubeconfig to openbao.platform.sthings.lab failed with
+          # `Name does not resolve` while the cluster's Go controllers resolved
+          # the same name fine (harvester#265). Reproduced and fixed with
+          # CoreDNS 1.12.1 against that router and python:3.12-alpine.
+          #
+          # Only for zones with no IPv6 at all: every AAAA in the zone comes
+          # back empty. A names that do not exist still get NXDOMAIN on A, so
+          # "not found" still means not found.
+          #
+          # The default HINFO is a type nobody asks a lab zone for, and that
+          # has no HINFO records anyway, so the plugin stays in place as a no-op
+          # (verified: AAAA passes through unchanged). A substitution cannot add
+          # or drop a list entry, so off has to be a value rather than an
+          # absence. Not NULL: YAML reads that as null, and postBuild.substitute
+          # takes strings only (hack/check-substitute-strings.py).
+          - name: template
+            parameters: ANY ${COREDNS_ZONE_NODATA_TYPE:-HINFO}
+            configBlock: |-
+              rcode NOERROR
           - name: forward
             parameters: . ${COREDNS_ZONE_SERVER:-0.0.0.0}
       # ---- the chart default, verbatim but for serve_stale --------------
