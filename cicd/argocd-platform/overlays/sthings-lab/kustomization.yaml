@@ -27,3 +27,4 @@ components:
   - ../../components/storage    # storage platform stack
   - ../../components/kind       # kind platform stack
   - ../../components/homerun2   # homerun2 event bus, per-component opt-ins
+  - ../../components/tabletennis # schmetterpause + zaehlwerk (needs homerun2)
