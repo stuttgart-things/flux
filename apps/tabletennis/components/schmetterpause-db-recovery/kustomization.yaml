@@ -1,0 +1,50 @@
+---
+# schmetterpause-db-recovery -- bootstrap schmetterpause-db from a Barman Cloud
+# archive instead of an empty initdb. Credential-mode agnostic: works beside
+# schmetterpause/sops and schmetterpause/eso alike.
+#
+# `bootstrap` is read ONCE, when the Cluster is created. Adding this component
+# to a running Cluster changes nothing (the CNPG webhook allows the edit and
+# the operator ignores it); the recovery happens when the Cluster is deleted
+# and Flux re-creates it. That deletes the PVC and the data on it -- the
+# procedure is in README.md. Removing the component afterwards is equally
+# inert.
+#
+# The Cluster keeps its fixed name, database and owner (see
+# ../schmetterpause/database.yaml): the DSN the application reads names them.
+# `secret` makes the operator set the owner's password from schmetterpause-db
+# after recovery, so the application logs in with THIS cluster's password,
+# not the one the archive was written with.
+#
+# NEVER combine with a WAL archiver on the same bucket and serverName: the
+# plugin refuses to archive into a non-empty path ("Expected empty archive"),
+# the Cluster fails its checks and ends up unrecoverable. schmetterpause-db-
+# backup-sops takes SCHMETTERPAUSE_BACKUP_SERVER_NAME for exactly this.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - object-store.yaml
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+      name: schmetterpause-db
+    patch: |
+      - op: replace
+        path: /spec/bootstrap
+        value:
+          recovery:
+            source: origin
+            database: schmetterpause
+            owner: schmetterpause
+            secret:
+              name: schmetterpause-db
+      - op: add
+        path: /spec/externalClusters
+        value:
+          - name: origin
+            plugin:
+              name: barman-cloud.cloudnative-pg.io
+              parameters:
+                barmanObjectName: schmetterpause-db-origin
+                serverName: ${SCHMETTERPAUSE_RECOVERY_SERVER_NAME:-schmetterpause-db}
