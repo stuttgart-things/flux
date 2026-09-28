@@ -59,3 +59,7 @@ spec:
       # answering, in both server blocks. A Go duration WITH its unit: a bare
       # number would resolve to an int and fail the parent Kustomization.
       COREDNS_SERVE_STALE: "${COREDNS_SERVE_STALE:-24h}"
+      # Opt-in: a record type this zone answers with an empty NOERROR itself.
+      # AAAA for a zone whose server answers AAAA with NXDOMAIN (breaks musl);
+      # the default HINFO is a no-op. See the base's helmchartconfig.yaml.
+      COREDNS_ZONE_NODATA_TYPE: "${COREDNS_ZONE_NODATA_TYPE:-HINFO}"

@@ -297,6 +297,7 @@ Bundle-level names (they map onto differently-named base variables):
 | `COREDNS_ZONE` | `unset.invalid` | coredns-lab-zone `zones[0].zone` |
 | `COREDNS_ZONE_SERVER` | `0.0.0.0` | coredns-lab-zone `forward` target |
 | `COREDNS_CHART_NAME` | `rke2-coredns` | the HelmChart it configures (`coredns` on k3s) |
+| `COREDNS_ZONE_NODATA_TYPE` | `HINFO` (no-op) | coredns-lab-zone: a record type the zone answers with an empty NOERROR itself; `AAAA` where the zone's server answers AAAA with NXDOMAIN (musl then fails the whole lookup) |
 | `VELERO_BUCKET` | *(required)* | the S3 bucket backups are written to |
 | `VELERO_S3_ENDPOINT` | *(required)* | S3 / MinIO endpoint URL |
 | `VELERO_SECRET` | `velero-s3-credentials` | Secret holding `VELERO_S3_ACCESS_KEY` / `VELERO_S3_SECRET_KEY` |
