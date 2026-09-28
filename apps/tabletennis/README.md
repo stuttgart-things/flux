@@ -83,9 +83,15 @@ Both read one variable, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` (`openssl rand -hex
 arrives as `""`. schmetterpause then registers no `/api` at all, and zaehlwerk
 logs `authenticated=false`, so check both after enabling it.
 
-`schmetterpause-db-backup` has no sops counterpart. It needs ESO to copy
-trust-manager's CA bundle into its Secret on every refresh, and a plain Secret
-cannot follow a ConfigMap.
+`schmetterpause-db-backup` needs ESO to copy trust-manager's CA bundle into
+its Secret on every refresh. Its sops counterpart,
+`schmetterpause-db-backup-sops`, takes a Secret the cluster repo ships, CA
+included -- which then has to be re-encrypted by hand when that CA changes. It
+also takes `SCHMETTERPAUSE_BACKUP_SERVER_NAME`, for archiving beside another
+cluster's backups in one bucket.
+
+`schmetterpause-db-recovery` bootstraps the database from such an archive
+instead of `initdb`. It creates no credentials and works with either variant.
 
 **Picking the wrong variant fails the build.** The `eso/` and `sops/` components
 stamp the app Kustomizations with

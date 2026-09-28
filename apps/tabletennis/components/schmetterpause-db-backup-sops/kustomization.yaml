@@ -1,0 +1,41 @@
+---
+# schmetterpause-db-backup-sops -- continuous WAL archiving and a daily base
+# backup for schmetterpause-db, with credentials the caller supplies: a Secret
+# `schmetterpause-db-backup` (ACCESS_KEY_ID, ACCESS_SECRET_KEY,
+# trust-bundle.pem) in the namespace, typically SOPS-encrypted in the cluster
+# repo. ../schmetterpause-db-backup is the same for ESO and stays unchanged.
+#
+# SCHMETTERPAUSE_BACKUP_SERVER_NAME is the path under the bucket. It defaults
+# to the Cluster's name, schmetterpause-db. Set it whenever another cluster's
+# archive lives in the same bucket under that name -- most of all after a
+# recovery from it (../schmetterpause-db-recovery): archiving into a
+# non-empty path is refused and leaves the Cluster unrecoverable.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - object-store.yaml
+  - scheduled-backup.yaml
+patches:
+  - target:
+      group: postgresql.cnpg.io
+      kind: Cluster
+      name: schmetterpause-db
+    patch: |
+      - op: add
+        path: /spec/plugins
+        value:
+          - name: barman-cloud.cloudnative-pg.io
+            isWALArchiver: true
+            parameters:
+              barmanObjectName: schmetterpause-db
+              serverName: ${SCHMETTERPAUSE_BACKUP_SERVER_NAME:-schmetterpause-db}
+  # Mode-specific: refuses to build beside schmetterpause/eso (see the
+  # tabletennis README, "Picking the wrong variant fails the build").
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops

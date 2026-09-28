@@ -1,0 +1,33 @@
+---
+# The archive schmetterpause-db is recovered FROM -- read-only by
+# construction: no retentionPolicy (a recovering Cluster never prunes someone
+# else's backups) and no Cluster archives into it (see kustomization.yaml).
+#
+# Credentials and CA come from a Secret this component does not create, so it
+# works with either credential mode: under sops the cluster repo ships it,
+# under ESO an ExternalSecret beside it does. Keys: ACCESS_KEY_ID,
+# ACCESS_SECRET_KEY, trust-bundle.pem -- the same as schmetterpause-db-backup's,
+# so one Secret can serve both.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: schmetterpause-db-origin
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+spec:
+  configuration:
+    destinationPath: s3://${SCHMETTERPAUSE_RECOVERY_BUCKET:-set-SCHMETTERPAUSE_RECOVERY_BUCKET}/
+    endpointURL: ${SCHMETTERPAUSE_RECOVERY_S3_ENDPOINT:-https://set-SCHMETTERPAUSE_RECOVERY_S3_ENDPOINT.invalid}
+    endpointCA:
+      name: ${SCHMETTERPAUSE_RECOVERY_SECRET:-schmetterpause-db-backup}
+      key: trust-bundle.pem
+    s3Credentials:
+      accessKeyId:
+        name: ${SCHMETTERPAUSE_RECOVERY_SECRET:-schmetterpause-db-backup}
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: ${SCHMETTERPAUSE_RECOVERY_SECRET:-schmetterpause-db-backup}
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip
