@@ -1,0 +1,13 @@
+---
+# Opt-in platform: tabletennis (argocd-catalog ./platforms/tabletennis)
+#
+# Installs the `tabletennis-platform` ApplicationSet (schmetterpause, zaehlwerk
+# and the light-catcher, as one Application per cluster). It matches a cluster
+# Secret with `tabletennis-platform: "true"`, a clusterbook allocation-ip and
+# `tabletennis-platform.stuttgart-things.com/secrets-config: "true"`. CHECK
+# before enabling it on a management cluster which cluster Secrets already
+# carry those labels -- they start deploying on the first reconcile.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-platform-tabletennis.yaml

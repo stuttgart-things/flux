@@ -1,0 +1,14 @@
+---
+# Opt-in platform: homerun2 (argocd-catalog ./platforms/homerun2)
+#
+# Installs the `homerun2-platform` ApplicationSet. It matches a cluster Secret
+# with `homerun2-platform: "true"`, a clusterbook allocation-ip and
+# `homerun2-platform.stuttgart-things.com/secrets-config: "true"`; which
+# homerun2 components run is decided per cluster by `homerun2-platform/<c>`
+# labels (argocd platforms/homerun2/README.md). CHECK before enabling it on a
+# management cluster which cluster Secrets already carry those labels -- they
+# start deploying on the first reconcile.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-platform-homerun2.yaml
