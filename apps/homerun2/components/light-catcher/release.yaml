@@ -61,7 +61,28 @@ spec:
         metadata:
           name: homerun2-light-catcher-redis
         $patch: delete
-    # Override Redis connection and WLED endpoint
+    # The profile -- which effect, on which WLED -- is the caller's to supply.
+    # Unset, the Deployment mounts the base's own ConfigMap, whose rules all
+    # point at the wled-mock. Set it to a ConfigMap the cluster repo ships
+    # (key profile.yaml) to drive a real device. The base ConfigMap stays in
+    # place either way, it is just no longer mounted. The catcher reads the
+    # profile once at startup: after changing the ConfigMap, restart the pod.
+    - target:
+        kind: Deployment
+        name: homerun2-light-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-light-catcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: profile
+                  configMap:
+                    name: ${HOMERUN2_LIGHT_CATCHER_PROFILE_CM:-homerun2-light-catcher-profile}
+    # Override Redis connection
     - target:
         kind: Deployment
         name: homerun2-light-catcher
