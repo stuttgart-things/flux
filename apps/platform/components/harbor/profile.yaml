@@ -25,5 +25,6 @@ spec:
   secrets:
     - name: harbor-secrets
       data:
-        # alnum: apps/harbor/release.yaml substitutes it unquoted.
+        # alnum: the release quotes it, but the chart may still put it into a
+        # URL, env var or config file where ! # % would need escaping.
         HARBOR_ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }

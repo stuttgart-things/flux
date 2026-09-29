@@ -69,8 +69,10 @@ SOPS-encrypted Secret in `flux-system`
 
 `hack/check-app-profiles.py` keeps each profile true to its component in both
 directions: the vars the component reads, `required: true` for every `set-...`
-placeholder, and exactly the keys of `# substituteFrom-keys:`. Generated passwords are
-`alnum`, because the releases substitute them unquoted.
+placeholder, and exactly the keys of `# substituteFrom-keys:`. The releases quote
+the substituted credentials, so any generated value renders as a string; the
+profiles still generate `alnum`, because a chart may put the value somewhere
+`! # %` would need escaping.
 `hack/vet-app-profiles.sh` checks the values themselves (generate types, ref
 syntax, unknown fields) with `kcl vet` against the
 [`app-profile`](https://github.com/stuttgart-things/kcl/tree/main/models/app-profile)
