@@ -1,0 +1,29 @@
+---
+# AppProfile: what a cluster sets for harbor, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: harbor
+spec:
+  bundle: apps-platform
+  component: ../components/harbor
+  vars:
+    HARBOR_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    HARBOR_HOSTNAME: {}
+    HARBOR_NAMESPACE: {}
+    HARBOR_VERSION: {}
+    HARBOR_SUSPEND: {}
+    HARBOR_PV_SIZE_REGISTRY: {}
+    HARBOR_PV_SIZE_TRIVY: {}
+    HARBOR_PV_SIZE_JOBSERVICE: {}
+    APPS_CLUSTER_ISSUER: {}
+    APPS_CLUSTER_ISSUER_KIND: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: harbor-secrets
+      data:
+        # alnum: apps/harbor/release.yaml substitutes it unquoted.
+        HARBOR_ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }

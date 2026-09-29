@@ -79,6 +79,12 @@ jobs:
       # build reads -- a key the Secret lacks renders empty, silently (#331).
       - name: Every substituteFrom Secret's keys are declared, and true
         run: python3 ./hack/check-substitutefrom-keys.py
+      # Builds on the step above: an AppProfile (components/<app>/profile.yaml)
+      # tells a cluster-side renderer which vars it may set and which Secret
+      # keys to generate. Checked against the component in both directions, so
+      # a profile cannot ship a key nothing reads or leave one empty.
+      - name: Every AppProfile matches its component
+        run: python3 ./hack/check-app-profiles.py
       # Reads no registry and renders nothing -- it only compares two
       # Kustomizations that already exist, so it is cheap and belongs before
       # anything that installs a tool.
@@ -107,6 +113,12 @@ jobs:
           kcl --version
       - name: The machinery profile matches the catalog it is generated from
         run: python3 ./hack/gen-crossplane-profile.py --check
+      # The other half of "Every AppProfile matches its component": that step
+      # compares vars and keys with the component, this one the values --
+      # generate types, ref syntax, unknown fields -- against the app-profile
+      # KCL schema that blueprints' render-cluster-apps reads profiles with.
+      - name: Every AppProfile has the shape the app-profile schema allows
+        run: ./hack/vet-app-profiles.sh
       # skopeo, because the crossplane packages' dependsOn lives inside the OCI
       # artifact and the xpkg registries do not answer the anonymous manifest
       # request verify-image-tags.py knows how to make. Without it the check

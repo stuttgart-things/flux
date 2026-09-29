@@ -57,6 +57,25 @@ how a platform delivers things. A consumer that selected
 variables unset and installs a MinIO with an empty admin password, and reports
 success.
 
+### AppProfiles: generating that Secret instead of writing it
+
+`keycloak`, `harbor` and `minio` carry a `profile.yaml` next to their `ks-*.yaml`.
+It lists the vars a cluster may set for the app, which of them are required, and
+the Secret with its keys and how each value is made (generated, referenced from
+SOPS or Vault, or literal). blueprints' `render-cluster-apps` reads it and renders
+both the bundle's `spec.components` and `postBuild.substitute`, and the
+SOPS-encrypted Secret in `flux-system`
+([stuttgart-things/blueprints#206](https://github.com/stuttgart-things/blueprints/issues/206)).
+
+`hack/check-app-profiles.py` keeps each profile true to its component in both
+directions: the vars the component reads, `required: true` for every `set-...`
+placeholder, and exactly the keys of `# substituteFrom-keys:`. Generated passwords are
+`alnum`, because the releases substitute them unquoted.
+`hack/vet-app-profiles.sh` checks the values themselves (generate types, ref
+syntax, unknown fields) with `kcl vet` against the
+[`app-profile`](https://github.com/stuttgart-things/kcl/tree/main/models/app-profile)
+KCL schema.
+
 ## redis-stack needs a StorageClass
 
 `REDIS_STACK_STORAGE_CLASS` defaults to a `set-REDIS_STACK_STORAGE_CLASS`
