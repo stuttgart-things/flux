@@ -22,7 +22,6 @@ spec:
     - name: keycloak-secrets
       data:
         ADMIN_USER: admin
-        # alnum, not password: apps/keycloak/release.yaml substitutes it
-        # unquoted, and a leading ! # or % would make it a YAML tag, comment
-        # or directive.
+        # alnum: the release quotes it, but the chart may still put it into a
+        # URL, env var or config file where ! # % would need escaping.
         ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }

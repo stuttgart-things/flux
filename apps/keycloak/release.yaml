@@ -21,8 +21,8 @@ spec:
       interval: 12h
   values:
     auth:
-      adminUser: ${ADMIN_USER}
-      adminPassword: ${ADMIN_PASSWORD} # Change this for security
+      adminUser: "${ADMIN_USER}"
+      adminPassword: "${ADMIN_PASSWORD}" # quoted: a generated password may start with ! # or %
     proxy: edge # Useful for running Keycloak behind an Ingress or LoadBalancer
     service:
       type: ClusterIP # Change to LoadBalancer if needed

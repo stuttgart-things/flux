@@ -25,5 +25,6 @@ spec:
     - name: minio-secrets
       data:
         MINIO_ADMIN_USER: admin
-        # alnum: apps/minio/release.yaml substitutes it unquoted.
+        # alnum: the release quotes it, but the chart may still put it into a
+        # URL, env var or config file where ! # % would need escaping.
         MINIO_ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }

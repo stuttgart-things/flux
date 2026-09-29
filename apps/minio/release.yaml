@@ -33,8 +33,8 @@ spec:
       enabled: true
       allowExternal: true
     auth:
-      rootUser: ${MINIO_ADMIN_USER}
-      rootPassword: ${MINIO_ADMIN_PASSWORD}
+      rootUser: "${MINIO_ADMIN_USER}"
+      rootPassword: "${MINIO_ADMIN_PASSWORD}"
     ingress:
       enabled: ${MINIO_INGRESS_ENABLED:-false}
       ingressClassName: ${MINIO_INGRESS_CLASS:-nginx}
