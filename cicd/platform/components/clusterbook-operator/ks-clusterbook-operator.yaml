@@ -60,7 +60,7 @@ spec:
       # and it wins over it -- bump both together. A third copy lives in
       # cicd/argocd-platform/base/ks-clusterbook-operator.yaml.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook-operator
-      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.20.0}"
+      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.21.0}"
       # Nothing else is threaded ON PURPOSE: the argocd-platform Kustomization
       # rendering this same path threads exactly these two, and
       # check-shared-path-wiring.py fails the build if they diverge. The base's
