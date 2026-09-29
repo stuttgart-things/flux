@@ -79,6 +79,12 @@ jobs:
       # build reads -- a key the Secret lacks renders empty, silently (#331).
       - name: Every substituteFrom Secret's keys are declared, and true
         run: python3 ./hack/check-substitutefrom-keys.py
+      # Builds on the step above: an AppProfile (components/<app>/profile.yaml)
+      # tells a cluster-side renderer which vars it may set and which Secret
+      # keys to generate. Checked against the component in both directions, so
+      # a profile cannot ship a key nothing reads or leave one empty.
+      - name: Every AppProfile matches its component
+        run: python3 ./hack/check-app-profiles.py
       # Reads no registry and renders nothing -- it only compares two
       # Kustomizations that already exist, so it is cheap and belongs before
       # anything that installs a tool.

@@ -1,0 +1,28 @@
+---
+# AppProfile: what a cluster sets for keycloak, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: keycloak
+spec:
+  bundle: apps-platform
+  component: ../components/keycloak
+  vars:
+    KEYCLOAK_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    KEYCLOAK_HOSTNAME: {}
+    KEYCLOAK_NAMESPACE: {}
+    KEYCLOAK_VERSION: {}
+    KEYCLOAK_SUSPEND: {}
+    APPS_CLUSTER_ISSUER: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: keycloak-secrets
+      data:
+        ADMIN_USER: admin
+        # alnum, not password: apps/keycloak/release.yaml substitutes it
+        # unquoted, and a leading ! # or % would make it a YAML tag, comment
+        # or directive.
+        ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }

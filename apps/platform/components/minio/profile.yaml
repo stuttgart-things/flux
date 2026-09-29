@@ -1,0 +1,29 @@
+---
+# AppProfile: what a cluster sets for minio, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: minio
+spec:
+  bundle: apps-platform
+  component: ../components/minio
+  vars:
+    MINIO_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    MINIO_HOSTNAME_API: {}
+    MINIO_HOSTNAME_CONSOLE: {}
+    MINIO_NAMESPACE: {}
+    MINIO_VERSION: {}
+    MINIO_SUSPEND: {}
+    MINIO_STORAGE_SIZE: {}
+    MINIO_INGRESS_CLASS: {}
+    APPS_CLUSTER_ISSUER: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: minio-secrets
+      data:
+        MINIO_ADMIN_USER: admin
+        # alnum: apps/minio/release.yaml substitutes it unquoted.
+        MINIO_ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }
