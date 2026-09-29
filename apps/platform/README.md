@@ -71,6 +71,10 @@ SOPS-encrypted Secret in `flux-system`
 directions: the vars the component reads, `required: true` for every `set-...`
 placeholder, and exactly the keys of `# substituteFrom-keys:`. Generated passwords are
 `alnum`, because the releases substitute them unquoted.
+`hack/vet-app-profiles.sh` checks the values themselves (generate types, ref
+syntax, unknown fields) with `kcl vet` against the
+[`app-profile`](https://github.com/stuttgart-things/kcl/tree/main/models/app-profile)
+KCL schema.
 
 ## redis-stack needs a StorageClass
 

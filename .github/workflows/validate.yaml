@@ -113,6 +113,12 @@ jobs:
           kcl --version
       - name: The machinery profile matches the catalog it is generated from
         run: python3 ./hack/gen-crossplane-profile.py --check
+      # The other half of "Every AppProfile matches its component": that step
+      # compares vars and keys with the component, this one the values --
+      # generate types, ref syntax, unknown fields -- against the app-profile
+      # KCL schema that blueprints' render-cluster-apps reads profiles with.
+      - name: Every AppProfile has the shape the app-profile schema allows
+        run: ./hack/vet-app-profiles.sh
       # skopeo, because the crossplane packages' dependsOn lives inside the OCI
       # artifact and the xpkg registries do not answer the anonymous manifest
       # request verify-image-tags.py knows how to make. Without it the check
