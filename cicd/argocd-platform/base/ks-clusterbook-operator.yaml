@@ -28,4 +28,4 @@ spec:
       # and it wins over it. It said v0.19.0 while the base said v0.20.0, so
       # this bundle silently installed the older operator. Bump both together.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/clusterbook-operator
-      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.20.0}"
+      CLUSTERBOOK_OPERATOR_VERSION: "${CLUSTERBOOK_OPERATOR_VERSION:-v0.21.0}"
