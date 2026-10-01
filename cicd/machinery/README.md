@@ -171,7 +171,37 @@ What a working route answers with, and what each failure means:
 The certificate is the Gateway's wildcard certificate (`wildcard-machinery-tls`
 on the machinery cluster). If the client does not trust the issuing CA, pass
 `-cacert <ca.pem>` (grpcurl) or `--ca-cert` (machinery-client); `-insecure` /
-`--tls-skip-verify` only for a quick look.
+`--tls-skip-verify` only for a quick look. The issuer is the lab CA
+(`tiab.labda.sva.de`), so a container image does **not** trust it out of the
+box -- mount the CA into the client.
+
+### The Gateway must negotiate HTTP/2 (ALPN)
+
+gRPC clients on grpc-go >= 1.67 (machinery-client, any current Go worker)
+abort the TLS handshake when the listener negotiates no ALPN:
+
+```
+credentials: cannot check peer: missing selected ALPN property
+```
+
+That is a **Cilium install** setting, not a Gateway API or Flux one:
+`gatewayAPI.enableAlpn` (and `enableAppProtocol`). Clusters built with
+`sthings.rke` get it from stuttgart-things/deploy-configure-rke `2026.10.01`
+on; `machinery` has it since 2026-10-01 (Cilium helm revision 4). Check a
+listener:
+
+```bash
+echo | openssl s_client -connect machinery-grpc.<domain>:443 \
+  -servername machinery-grpc.<domain> -alpn h2 2>/dev/null | grep -i alpn
+# ALPN protocol: h2      <- ok
+# No ALPN negotiated     <- current gRPC clients fail
+```
+
+**A green grpcurl proves nothing here**: grpcurl builds on older grpc-go
+(e.g. 1.61) do not enforce ALPN and connect anyway. Test with
+`machinery-client`, or check ALPN with openssl as above.
+`GRPC_ENFORCE_ALPN_ENABLED=false` in the client is the escape hatch, not a
+fix -- grpc-go will drop it.
 
 ## Note: PipelineRuns re-appearing daily
 
