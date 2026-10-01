@@ -110,7 +110,10 @@ DIVERGENT = {
                         "control-plane. Each carries components and variables "
                         "the other must not have. dapr-workflows-trigger is a "
                         "third: only template-execution-trigger, the kro RGD, "
-                        "split out so clusters without kro can run the worker.",
+                        "split out so clusters without kro can run the worker. "
+                        "cluster-build-watch and cluster-build-watch-trigger are "
+                        "two more: the build-watch worker (on dapr-workflows' "
+                        "Redis) and its kro RGD.",
 }
 
 

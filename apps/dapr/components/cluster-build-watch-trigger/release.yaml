@@ -1,0 +1,17 @@
+---
+# The kro RGD for ClusterBuildWatch: a CR becomes the input ConfigMap and a
+# Job that starts the workflow on the worker's sidecar. Needs kro.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-cluster-build-watch-trigger
+  namespace: ${DAPR_CBW_NAMESPACE:-cluster-build-watch}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: dapr-cluster-build-watch-trigger
+  prune: true
+  wait: true

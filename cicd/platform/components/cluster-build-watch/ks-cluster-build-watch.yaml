@@ -1,0 +1,74 @@
+---
+# cluster-build-watch -> ./apps/dapr/root + components/cluster-build-watch
+#
+# Rides on dapr-workflows: same Redis (redis-stack in dapr-redis), same
+# substituteFrom Secret for its password. Hence dependsOn dapr-workflows, which
+# also brings the Dapr control plane through its own dependsOn.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-build-watch
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: dapr-workflows
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CLUSTER_BUILD_WATCH_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/cluster-build-watch
+  postBuild:
+    substitute:
+      DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
+      DAPR_CBW_VERSION: "${CLUSTER_BUILD_WATCH_VERSION:-2338624484dd}"
+      DAPR_CBW_REDIS_HOST: "${CLUSTER_BUILD_WATCH_REDIS_HOST:-redis-stack.dapr-redis:6379}"
+    substituteFrom:
+      # substituteFrom-keys: REDIS_PASSWORD
+      - kind: Secret
+        name: ${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}
+        optional: false
+---
+# The kro RGD, split out like dapr-workflows-trigger: a cluster without kro
+# can still run the worker (and start watches through the Dapr API directly).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-build-watch-trigger
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: kro
+    - name: cluster-build-watch
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${CLUSTER_BUILD_WATCH_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/cluster-build-watch-trigger
+  postBuild:
+    substitute:
+      DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
+      DAPR_CBW_TRIGGER_TAG: "${CLUSTER_BUILD_WATCH_TRIGGER_TAG:-2338624484dd-trigger}"
