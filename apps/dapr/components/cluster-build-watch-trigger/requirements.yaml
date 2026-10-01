@@ -1,0 +1,11 @@
+---
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: dapr-cluster-build-watch-trigger
+  namespace: ${DAPR_CBW_NAMESPACE:-cluster-build-watch}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/dapr-cluster-build-watch-kustomize
+  ref:
+    tag: ${DAPR_CBW_TRIGGER_TAG:-2338624484dd-trigger}

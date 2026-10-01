@@ -1,0 +1,58 @@
+---
+# cluster-build-watch worker (stuttgart-things/dapr-workflows,
+# workflows/cluster-build-watch): watches a cluster build -- GitOps sync, then
+# the ClusterStack's stages to Ready -- and reports stages, stuck stages and the
+# result. Reads its observations from a kube API or from machinery over gRPC.
+#
+# The artifact is rendered by the KCL deploy and already carries what the e2e
+# run on cicd-machinery-test5 needed (dapr-workflows#50): the sidecar listening
+# on 0.0.0.0 for the kro trigger Job, and the trust-manager bundle mounted as
+# SSL_CERT_FILE. Patched here: the Redis host (cluster-specific) and the two
+# placeholder Secrets, which secrets.yaml provides instead.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: dapr-cluster-build-watch
+  namespace: ${DAPR_CBW_NAMESPACE:-cluster-build-watch}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: dapr-cluster-build-watch-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${DAPR_CBW_NAMESPACE:-cluster-build-watch}
+  patches:
+    - target:
+        kind: Secret
+        name: redis-password
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: redis-password
+        $patch: delete
+    - target:
+        kind: Secret
+        name: notify-webhooks
+      patch: |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: notify-webhooks
+        $patch: delete
+    - target:
+        group: dapr.io
+        kind: Component
+        name: statestore
+      # `test` first: if the KCL ever reorders the metadata list, the build
+      # fails here instead of overwriting another field with the Redis host.
+      patch: |
+        - op: test
+          path: /spec/metadata/0/name
+          value: redisHost
+        - op: replace
+          path: /spec/metadata/0/value
+          value: ${DAPR_CBW_REDIS_HOST:-redis-stack.dapr-redis:6379}
