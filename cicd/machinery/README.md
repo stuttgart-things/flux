@@ -122,14 +122,56 @@ Gateway API rules. It is opt-in because it exposes the API beyond the cluster
 **without authentication** — machinery's `auth.enabled` is not set in
 `watch-config.yaml` yet. Everything it serves is read-only status.
 
+### Testing it
+
+There is nothing to see in a **browser**: the route only matches
+`resourceservice.ResourceService` calls over HTTP/2, so a page request
+matches no rule. The dashboard stays on the HTTPRoute hostname.
+
+machinery registers **no gRPC reflection**, so `grpcurl list` fails; hand it
+the proto. Take the proto from the release the cluster runs -- with an older
+one, grpcurl drops the fields it does not know (`conditions`, `generation`,
+...) **without any warning**, and the response simply looks shorter.
+
 ```bash
-grpcurl machinery-grpc.<domain>:443 list
-grpcurl -d '{"kind":"ClusterStack","name":"app-dev","namespace":"default"}' \
-  machinery-grpc.<domain>:443 resourceservice.ResourceService/GetResourceDetail
+# in a checkout of stuttgart-things/machinery at the deployed tag
+H=machinery-grpc.machinery.4sthings.tiab.ssc.sva.de:443
+P="-import-path resourceservice -proto resource_service.proto"
+
+grpcurl $P -d '{"kind":"ClusterStack"}' $H resourceservice.ResourceService/GetResources
+grpcurl $P -d '{"kind":"ClusterStack","name":"app-dev","namespace":"default"}' \
+  $H resourceservice.ResourceService/GetResourceDetail
+grpcurl $P -d '{"kind":"Kustomization","name":"machinery-xrs","namespace":"flux-system"}' \
+  $H resourceservice.ResourceService/GetResourceDetail
+grpcurl $P -d '{"kind":"ClusterStack"}' $H resourceservice.ResourceService/WatchResources
 ```
 
-The certificate is the Gateway's wildcard certificate, so the client has to
-trust the issuing CA.
+Or with `machinery-client` from the machinery release -- it defaults to
+plaintext, so switch TLS on:
+
+```bash
+export MACHINERY_SERVER=machinery-grpc.machinery.4sthings.tiab.ssc.sva.de:443
+export MACHINERY_INSECURE=false
+machinery-client list  --kind=ClusterStack
+machinery-client get   --kind=ClusterStack --name=app-dev --namespace=default
+machinery-client watch --kind=ClusterStack
+```
+
+What a working route answers with, and what each failure means:
+
+| Call | Expected |
+|---|---|
+| `GetResourceDetail` on an existing object | JSON with `ready`, `infoFields`, `conditions`, `generation`, `creationTimestamp` |
+| an unknown name | `NotFound` |
+| a kind not in `watch-config.yaml` | `InvalidArgument` (lists the valid kinds) |
+| a configured kind whose CRD the cluster lacks | `Unavailable` |
+| the same call with `-plaintext` on `:80` | `Unimplemented` -- the route is bound to `https` only, by design |
+| `grpc.health.v1.Health/Check` through the Gateway | not routed (the rule matches `ResourceService` only); use `GetResources` as the reachability probe |
+
+The certificate is the Gateway's wildcard certificate (`wildcard-machinery-tls`
+on the machinery cluster). If the client does not trust the issuing CA, pass
+`-cacert <ca.pem>` (grpcurl) or `--ca-cert` (machinery-client); `-insecure` /
+`--tls-skip-verify` only for a quick look.
 
 ## Note: PipelineRuns re-appearing daily
 
