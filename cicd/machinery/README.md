@@ -25,7 +25,7 @@ spec:
   postBuild:
     substitute:
       MACHINERY_NAMESPACE: machinery
-      MACHINERY_VERSION: v1.13.4
+      MACHINERY_VERSION: v1.14.0
       MACHINERY_HOSTNAME: machinery
       # NOTE: this path no longer carries the HTTPRoute -- it lives in
       # ./cicd/machinery/httproute and needs a SECOND Kustomization that
@@ -44,7 +44,7 @@ EOF
 | Variable | Default | Description |
 |---|---|---|
 | `MACHINERY_NAMESPACE` | `machinery` | Target namespace |
-| `MACHINERY_VERSION` | `v1.13.4` | Image + kustomize OCI tag — **keep the `v`** |
+| `MACHINERY_VERSION` | `v1.14.0` | Image + kustomize OCI tag — **keep the `v`** |
 | `MACHINERY_HOSTNAME` | `machinery` | HTTPRoute hostname prefix |
 | `MACHINERY_GRPC_HOSTNAME` | `machinery-grpc` | GRPCRoute hostname prefix (`./grpcroute` only) |
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
