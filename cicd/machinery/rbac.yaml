@@ -31,6 +31,13 @@ rules:
       - resources.stuttgart-things.com
     resources: ["*"]
     verbs: ["get", "list", "watch"]
+  # Flux Kustomizations, so a client can tell whether an order in git has been
+  # applied yet (status.lastAppliedRevision) -- the first checkpoint of
+  # cluster-build-watch in stuttgart-things/dapr-workflows.
+  - apiGroups:
+      - kustomize.toolkit.fluxcd.io
+    resources: ["kustomizations"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

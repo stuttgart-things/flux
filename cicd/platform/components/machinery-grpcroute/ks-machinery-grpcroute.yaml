@@ -1,0 +1,41 @@
+---
+# machinery-grpcroute -> ./cicd/machinery/grpcroute
+#
+# OPT-IN, a component of its own rather than part of `machinery`: it exposes
+# the gRPC API beyond the cluster, without auth for now, and only a cluster
+# whose machinery is read from elsewhere needs that. Three clusters select
+# `machinery`; today only the `machinery` cluster is read remotely.
+#
+# Requires `machinery` (dependsOn below, checked at PR time by
+# check-cluster-components.py) and a Gateway with an `https` listener --
+# `cilium-gateway` in the infra layer.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-grpcroute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: machinery
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery/grpcroute
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      MACHINERY_GRPC_HOSTNAME: "${MACHINERY_GRPC_HOSTNAME:-machinery-grpc}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

@@ -50,7 +50,19 @@ data:
             { "label": "Distribution", "path": "status.share.clusterType" },
             { "label": "Version",      "path": "status.share.serverVersion" },
             { "label": "CNI",          "path": "status.share.cniOwnership" },
-            { "label": "Provider",     "path": "spec.provider" }
+            { "label": "Provider",     "path": "spec.provider" },
+            { "label": "Stage",        "path": "status.stage" },
+            { "label": "StatusReady",  "path": "status.ready" }
+          ]
+        },
+        "Kustomization": {
+          "group": "kustomize.toolkit.fluxcd.io",
+          "version": "v1",
+          "resource": "kustomizations",
+          "infoFields": [
+            { "label": "Revision",  "path": "status.lastAppliedRevision" },
+            { "label": "Attempted", "path": "status.lastAttemptedRevision" },
+            { "label": "Path",      "path": "spec.path" }
           ]
         },
         "Platform": {

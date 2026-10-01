@@ -1,0 +1,33 @@
+---
+# machinery's gRPC API (ResourceService on :50051) through the cluster Gateway,
+# for clients on OTHER clusters -- e.g. dapr-workflows' cluster-build-watch.
+#
+# Its OWN hostname, not the dashboard's: an HTTPRoute and a GRPCRoute claiming
+# the same hostname on one listener conflict under the Gateway API rules.
+#
+# Bound to the `https` listener only (sectionName), so gRPC is TLS-terminated
+# at the Gateway with the wildcard certificate and never offered as plaintext
+# on :80.
+#
+# NO AUTHENTICATION YET. machinery's bearer-token auth (`auth.enabled`) is not
+# switched on in watch-config.yaml, so anyone who reaches the Gateway can read
+# what the dashboard shows. Everything it serves is read-only status.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: machinery
+  namespace: ${MACHINERY_NAMESPACE:-machinery}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+      sectionName: https
+  hostnames:
+    - ${MACHINERY_GRPC_HOSTNAME:-machinery-grpc}.${DOMAIN}
+  rules:
+    - matches:
+        - method:
+            service: resourceservice.ResourceService
+      backendRefs:
+        - name: machinery
+          port: 50051

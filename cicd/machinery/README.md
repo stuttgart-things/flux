@@ -46,6 +46,7 @@ EOF
 | `MACHINERY_NAMESPACE` | `machinery` | Target namespace |
 | `MACHINERY_VERSION` | `v1.13.4` | Image + kustomize OCI tag — **keep the `v`** |
 | `MACHINERY_HOSTNAME` | `machinery` | HTTPRoute hostname prefix |
+| `MACHINERY_GRPC_HOSTNAME` | `machinery-grpc` | GRPCRoute hostname prefix (`./grpcroute` only) |
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
 | `DOMAIN` | *(required)* | Domain suffix for HTTPRoute hostname |
@@ -58,7 +59,8 @@ The kinds and fields come from `config.json` in the `machinery-watch-config` Con
 
 | kind | shown |
 |---|---|
-| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP |
+| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP; `Stage` and `StatusReady` (`status.ready`) also as info fields, so a gRPC client gets them as keys instead of parsing `connection_details` |
+| `Kustomization` | Flux: last applied and attempted revision, path — whether an order in git has reached the cluster yet |
 | `Platform` | `readyComponents` / `componentCount`, so `3 / 4` is visible without opening the YAML |
 | `XIPReservation` | reservation status, FQDN, addresses |
 | `VaultK8sAuth` | Vault address and cluster (its status is empty today, so Ready comes from conditions) |
@@ -97,7 +99,8 @@ User "system:serviceaccount:machinery:machinery" cannot list resource
 
 The grant is read-only (`get`, `list`, `watch`) and cluster-scoped, because the
 XRs are. It covers both groups this fleet uses, `config.stuttgart-things.com`
-and `resources.stuttgart-things.com`.
+and `resources.stuttgart-things.com`, plus `kustomizations` in
+`kustomize.toolkit.fluxcd.io`.
 
 **Adding a kind to `watch-config.yaml` means adding its group here, in the same
 commit.** That is the point of the two files being neighbours.
@@ -107,7 +110,26 @@ commit.** That is the point of the two files being neighbours.
 | Endpoint | Description |
 |---|---|
 | `https://<hostname>.<domain>/` | HTMX dashboard |
-| `<hostname>.<domain>:50051` | gRPC API |
+| `machinery.<namespace>.svc:50051` | gRPC API, in-cluster, plaintext |
+| `<grpc-hostname>.<domain>:443` | gRPC API through the Gateway, TLS — only with the `machinery-grpcroute` component |
+
+## gRPC from another cluster
+
+The `machinery-grpcroute` component of the cicd-platform bundle adds a
+`GRPCRoute` (`./grpcroute`) on the Gateway's `https` listener, with its own
+hostname: an HTTPRoute and a GRPCRoute on the same hostname conflict under the
+Gateway API rules. It is opt-in because it exposes the API beyond the cluster
+**without authentication** — machinery's `auth.enabled` is not set in
+`watch-config.yaml` yet. Everything it serves is read-only status.
+
+```bash
+grpcurl machinery-grpc.<domain>:443 list
+grpcurl -d '{"kind":"ClusterStack","name":"app-dev","namespace":"default"}' \
+  machinery-grpc.<domain>:443 resourceservice.ResourceService/GetResourceDetail
+```
+
+The certificate is the Gateway's wildcard certificate, so the client has to
+trust the issuing CA.
 
 ## Note: PipelineRuns re-appearing daily
 
