@@ -1,0 +1,8 @@
+---
+# The gRPC route on its own, for the same reason as ../httproute: Cilium
+# resolves a route's backendRefs once, so it has to be applied after the
+# nested Kustomization has created the `machinery` Service.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - grpcroute.yaml
