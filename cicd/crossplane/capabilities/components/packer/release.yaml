@@ -1,0 +1,47 @@
+---
+# The packer capability: what a cluster needs to RUN PackerBuild and
+# PackerRelease XRs -- the EnvironmentConfigs packer-build-defaults,
+# packer-release-defaults (LabUL Proxmox) and packer-release-labda (LabDA
+# vSphere), and the lab CA bundle packer-ca-certs in the pipeline namespace.
+#
+# NO CONFIGURATIONS. configuration.install is false on purpose: the profile
+# (cicd/crossplane/profiles/<p>/configs) already installs packer-build and
+# packer-release under their DERIVED names
+# (stuttgart-things-crossplane-configurations-packer-*). The chart would add a
+# second pair named packer-build / packer-release for the same packages, and
+# the two revisions would fight over one XRD. The version pin lives in the KCL
+# catalog (xplane-crossplane-catalog), nowhere else.
+#
+# NO CREDENTIALS either. The chart only NAMES them; the cluster supplies them
+# (on machinery: machinery-fleet-state/sops-secrets.yaml in stuttgart-things):
+#   tekton-ci  vault, vault-infra, vault-labda, packer-git-basicauth,
+#              config-repo-pr-token
+#   default    proxmox-tfvars, vsphere-tfvars-labda
+#
+# ONE RELEASE FOR BOTH LABS, unlike vspherevm/proxmoxvm: the EnvironmentConfigs
+# carry no credentials, and a single LabDA PackerRelease reads
+# packer-release-labda together with packer-build-defaults, so both
+# environments must exist on the cluster anyway.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: packer
+  namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: packer
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/packer
+      version: ${CROSSPLANE_CAPABILITY_PACKER_CHART_VERSION:-0.2.0}
+      sourceRef:
+        kind: HelmRepository
+        name: stuttgart-things-charts
+        namespace: ${CROSSPLANE_NAMESPACE:-crossplane-system}
+      interval: 12h
+  values:
+    namespace: ${CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE:-tekton-ci}
+    configuration:
+      install: false
+    caCerts:
+      namespace: ${CROSSPLANE_CAPABILITY_TEKTON_NAMESPACE:-tekton-ci}

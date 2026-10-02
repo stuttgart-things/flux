@@ -21,7 +21,7 @@ deliberately not in the profile. The rule is stated at its source in
 ## One directory per set
 
 ```
-components/   vspherevm  proxmoxvm  ansible-run  harvester-vm
+components/   vspherevm  proxmoxvm  ansible-run  harvester-vm  packer
 sets/         labda-vsphere  labul-proxmox  harvester-demo
               labda-vsphere-labul-proxmox   (two environments, see below)
 ```
