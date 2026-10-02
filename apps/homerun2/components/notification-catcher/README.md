@@ -36,6 +36,20 @@ A new instance does not post old results: from v3.0.2 a new consumer group
 starts at `$`, only messages pitched after it exists (upstream #43). A restart
 keeps its position.
 
+## Cluster builds too (`tabletennis-results-and-cluster-builds`)
+
+The same results output, unchanged, plus `teams-cluster-build-watch`: every
+checkpoint cluster-build-watch's homerun sink pitches (`match: {system:
+cluster-build-watch}`, no severity floor) on the same webhook. The sink pitches
+onto homerun2's default stream, so the catcher reads both:
+
+```yaml
+HOMERUN2_NOTIFICATION_CATCHER_ROUTING: tabletennis-results-and-cluster-builds
+HOMERUN2_NOTIFICATION_CATCHER_STREAMS: tabletennis,messages
+```
+
+Dry run applies to both outputs alike (stuttgart-things/dapr-workflows#49).
+
 ## Why the webhook is written `$${TEAMS_WEBHOOK_URL}`
 
 The routing ConfigMap is applied by a Flux Kustomization with `postBuild`,
