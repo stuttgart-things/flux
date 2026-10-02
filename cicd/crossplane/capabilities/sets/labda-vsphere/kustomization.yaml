@@ -12,3 +12,4 @@ resources: []
 components:
   - ../../components/vspherevm
   - ../../components/ansible-run
+  - ../../components/packer
