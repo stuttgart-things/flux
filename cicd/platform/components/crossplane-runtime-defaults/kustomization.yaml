@@ -1,0 +1,9 @@
+---
+# crossplane-runtime-defaults -- the two DeploymentRuntimeConfigs the machinery
+# profile references, for a cluster that has no machinery fleet state.
+#
+# OPT-IN, and NOT for `machinery` itself: see ks-crossplane-runtime-defaults.yaml.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-crossplane-runtime-defaults.yaml

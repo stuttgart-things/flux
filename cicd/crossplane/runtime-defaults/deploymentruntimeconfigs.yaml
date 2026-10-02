@@ -1,0 +1,109 @@
+---
+# The two DeploymentRuntimeConfigs the machinery profile REFERENCES and does not
+# define (profiles/machinery/configs/configs.yaml, `runtimeConfigRef` on
+# stuttgart-things-provider-kubeconfig-xpkg and vshn-provider-minio). Without
+# them both Providers sit at
+#
+#   Healthy=False: DeploymentRuntimeConfig "provider-..." not found
+#
+# for good -- measured on cicd-machinery-test5 and cicd-test4 (stuttgart-things
+# #3374). Nothing else goes red: crossplane-configs only health-checks
+# Configurations.
+#
+# SAME SHAPE as the owners on the machinery cluster, so a provider pod comes up
+# the same either way. Only the CA SOURCE differs: there it is the Secret
+# crossplane-system/vault-pki-ca (rendered by the provider-kubeconfig-vault
+# chart), here it is trust-manager's ConfigMap. `items` maps the key onto
+# `ca.crt`, so the in-pod path is IDENTICAL to the fleet-state one
+# (/etc/ssl/lab/ca.crt).
+#
+# THE CONTENTS ARE NOT THE SAME. The chart's bundle carries three lab roots;
+# trust-manager's carries the public roots plus THIS cluster's own CAs. On the
+# LabDA cicd clusters (checked on test5 and test4, 2026-10-02) that is
+# tiab.labda.sva.de only -- labul.sva.de and infra.sthings-vsphere.labul.sva.de
+# are NOT in it. Enough for the providers to be Healthy and to reach LabDA
+# endpoints; a LabUL Vault or MinIO would still fail x509 from here.
+#
+# NOT `optional: true` on the ConfigMap. A provider without the lab CA starts
+# and then fails every TLS handshake with "x509: certificate signed by unknown
+# authority", which reads like a credential problem. A missing ConfigMap
+# instead keeps the pod in ContainerCreating with an event naming it.
+#
+# DO NOT SELECT THIS ON `machinery` (or any cluster that installs the
+# provider-kubeconfig-vault chart): the DRCs there are owned by the fleet state
+# and the Helm release. Two owners on one object rewrite each other every
+# reconcile, and whichever wins decides which CA the provider sees.
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-kubeconfig
+spec:
+  # Kept from the chart (crossplane/platform/baseline/provider-kubeconfig-vault):
+  # it pins the SA name so the chart's RBAC keeps applying across provider
+  # upgrades. Nothing here binds that SA -- the profile's preconditions.yaml
+  # binds the whole crossplane-system SA group -- but the same name on both
+  # paths means switching a cluster to the fleet-state owner later does not
+  # rename the provider's ServiceAccount under it.
+  serviceAccountTemplate:
+    metadata:
+      name: provider-kubeconfig
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+            - name: package-runtime
+              env:
+                # What the provider actually reads: it builds its Vault client
+                # with api.DefaultConfig(), and that takes the CA from
+                # VAULT_CACERT. The chart sets exactly this.
+                - name: VAULT_CACERT
+                  value: /etc/ssl/lab/ca.crt
+                # And the process-wide Go trust store, for any other TLS peer it
+                # talks to. SSL_CERT_FILE REPLACES the system roots; that is fine
+                # here because trust-manager's bundle carries the public roots
+                # as well as the lab ones.
+                - name: SSL_CERT_FILE
+                  value: /etc/ssl/lab/ca.crt
+              volumeMounts:
+                - name: lab-ca
+                  mountPath: /etc/ssl/lab
+                  readOnly: true
+          volumes:
+            - name: lab-ca
+              configMap:
+                name: ${CROSSPLANE_RUNTIME_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+                items:
+                  - key: ${CROSSPLANE_RUNTIME_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                    path: ca.crt
+---
+# provider-minio: its ProviderConfig has `minioURL` and `credentials` and no CA
+# field, so the trust can only come from the pod -- SSL_CERT_FILE, exactly as
+# machinery-fleet-state/provider-minio-runtime.yaml does it.
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: provider-minio
+spec:
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        spec:
+          containers:
+            - name: package-runtime
+              env:
+                - name: SSL_CERT_FILE
+                  value: /etc/ssl/lab/ca.crt
+              volumeMounts:
+                - name: lab-ca
+                  mountPath: /etc/ssl/lab
+                  readOnly: true
+          volumes:
+            - name: lab-ca
+              configMap:
+                name: ${CROSSPLANE_RUNTIME_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+                items:
+                  - key: ${CROSSPLANE_RUNTIME_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                    path: ca.crt
