@@ -1,0 +1,13 @@
+---
+# cluster-build-watch-machinery-auth-off -- the worker calls machinery without
+# a token: the default. Selected through CLUSTER_BUILD_WATCH_MACHINERY_AUTH
+# (default off) by both cluster-build-watch variants in cicd/platform.
+#
+# Empty on purpose: the worker sends no Authorization header unless
+# MACHINERY_AUTH_TOKEN(_FILE) is set, so "off" renders the worker exactly as
+# without this switch.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []` rather than nothing: kustomize refuses an empty kustomization
+# ("kustomization.yaml is empty"), see tabletennis' *-off components.
+patches: []

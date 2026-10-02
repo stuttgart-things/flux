@@ -100,6 +100,28 @@ MUST_MATCH = {
         },
         "extra_components_allowed": {"../../components/schmetterpause-db-backup"},
     },
+    "./cicd/machinery": {
+        "why": "machinery-auth is the machinery component with its gRPC "
+               "bearer-token auth switched on -- same image, watch set and "
+               "RBAC, and a cluster switching between the two must keep its "
+               "namespace and version",
+        # The auth variant's own: the config.json member, and where its
+        # ExternalSecret reads the token.
+        "extra_allowed": {
+            "MACHINERY_AUTH_CONFIG",
+            "MACHINERY_AUTH_ESO_STORE",
+            "MACHINERY_AUTH_ESO_STORE_KIND",
+            "MACHINERY_AUTH_ESO_REFRESH_INTERVAL",
+            "MACHINERY_AUTH_TOKEN_PATH",
+            "MACHINERY_AUTH_TOKEN_PROPERTY",
+        },
+        "extra_components_allowed": {"./auth"},
+    },
+    "./cicd/machinery/httproute": {
+        "why": "machinery-auth carries the dashboard route of the machinery "
+               "component unchanged -- auth is a gRPC matter, the route is not",
+        "extra_allowed": set(),
+    },
 }
 
 # Rendered more than once ON PURPOSE, and not comparable.
@@ -115,7 +137,8 @@ DIVERGENT = {
                         "two more: the build-watch worker (on dapr-workflows' "
                         "Redis) and its kro RGD. cluster-build-watch-homerun "
                         "is an alternative of cluster-build-watch that adds "
-                        "the homerun2 sink.",
+                        "the homerun2 sink. Both carry the same on/off switch "
+                        "for the worker's machinery gRPC token.",
 }
 
 

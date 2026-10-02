@@ -1,0 +1,63 @@
+---
+# machinery's gRPC bearer-token auth, switched ON -- selected by the cicd
+# component machinery-auth (an alternative of `machinery`), never by hand.
+#
+# What it adds to ./cicd/machinery:
+#   * the ExternalSecret machinery-auth-token (external-secret.yaml);
+#   * a patch on the nested Kustomization that mounts that Secret into the
+#     machinery container at /var/run/machinery-auth/token.
+# The third piece is not here: the `"auth": {...}` member of config.json comes
+# in through MACHINERY_AUTH_CONFIG, which only the machinery-auth variant sets
+# (kustomize cannot patch inside the JSON string; see ../watch-config.yaml).
+#
+# WHAT AUTH COVERS (machinery v1.14.0, auth.go): every ResourceService RPC on
+# :50051, through the GRPCRoute AND in-cluster -- an in-cluster plaintext
+# client needs the token too. /grpc.health.v1.Health/* stays anonymous, and
+# the HTMX dashboard calls the server in-process, so it is not affected.
+#
+# The token is read ONCE, at start. A rotated Secret takes effect with the
+# next pod; the patch below changes the pod template, so switching this on
+# rolls the Deployment by itself.
+#
+# The volume is NOT optional, on purpose. machinery with auth.enabled and no
+# token exits at start. With a required volume a missing Secret instead holds
+# the NEW pod in ContainerCreating, the old one (no auth) keeps serving, and
+# the ExternalSecret's Ready condition fails the machinery Kustomization --
+# loud, and no outage.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: machinery
+    patch: |  # pragma: allowlist secret -- secretName below names a Secret, holds none
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: machinery
+          patch: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: machinery
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: machinery
+                      volumeMounts:
+                        - name: machinery-auth-token
+                          mountPath: /var/run/machinery-auth
+                          readOnly: true
+                  volumes:
+                    - name: machinery-auth-token
+                      secret:
+                        secretName: machinery-auth-token
+                        items:
+                          - key: token
+                            path: token

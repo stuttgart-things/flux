@@ -1,0 +1,104 @@
+---
+# machinery WITH gRPC bearer-token auth -> ./cicd/machinery + ./auth
+#
+# The same two Kustomizations as ../machinery, under the same names, so a
+# cluster switches by swapping the component line and nothing is pruned and
+# re-created. KEEP THEM IN STEP with that file (hack/check-shared-path-wiring.py
+# compares them); the only differences are the `auth` component and the
+# variables it reads.
+#
+# Why a variant and not an on/off variable: the switch is one member of
+# config.json in the shared watch-config ConfigMap, and kustomize cannot patch
+# inside a string. MACHINERY_AUTH_CONFIG is empty in the base, so every
+# cluster selecting plain `machinery` renders exactly as before; only this
+# Kustomization sets it. A substitute value may not be empty (it would render
+# as null), so ../machinery cannot carry it with an "off" default.
+#
+# WHAT IS ON YOU, IN THIS ORDER (stuttgart-things/dapr-workflows#49):
+#   1. EVERY gRPC client of this machinery has the token BEFORE you select
+#      this -- the server answers Unauthenticated to anything without it, in-
+#      cluster plaintext calls included. Sending a token to a server WITHOUT
+#      auth is harmless (no interceptor reads the header), so clients go first.
+#   2. The token in the cluster's Vault, <mount>/machinery-grpc  token,
+#      generated from apps/cicd-defaults:machinery_grpc_token by
+#      hack/gen-cluster-secrets.py in stuttgart-things. Missing, the new pod
+#      waits in ContainerCreating, the old one keeps serving without auth, and
+#      this Kustomization reports the ExternalSecret not Ready.
+#   3. MACHINERY_AUTH_ESO_STORE: the cluster's ClusterSecretStore (the
+#      infra layer's ESO_STORE_NAME, e.g. vault-machinery).
+#
+# Not covered by auth: /grpc.health.v1.Health/* and the HTMX dashboard (it
+# calls the server in-process). The HTTPRoute is unchanged.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery
+  components:
+    - ./auth
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.14.0}"
+
+      # ---- gRPC auth ----
+      # The config.json member that turns the check on; tokenFile is where
+      # ./auth mounts the Secret. Leading space and trailing comma because it
+      # lands between "httpPort" and "resources" in ../../machinery/watch-config.yaml.
+      MACHINERY_AUTH_CONFIG: ' "auth": {"enabled": true, "tokenFile": "/var/run/machinery-auth/token"},'
+      MACHINERY_AUTH_ESO_STORE: "${MACHINERY_AUTH_ESO_STORE:-set-MACHINERY_AUTH_ESO_STORE}"
+      MACHINERY_AUTH_ESO_STORE_KIND: "${MACHINERY_AUTH_ESO_STORE_KIND:-ClusterSecretStore}"
+      MACHINERY_AUTH_ESO_REFRESH_INTERVAL: "${MACHINERY_AUTH_ESO_REFRESH_INTERVAL:-1h}"
+      # Shared with the clients' ExternalSecret -- change both or neither.
+      MACHINERY_AUTH_TOKEN_PATH: "${MACHINERY_AUTH_TOKEN_PATH:-machinery-grpc}"
+      MACHINERY_AUTH_TOKEN_PROPERTY: "${MACHINERY_AUTH_TOKEN_PROPERTY:-token}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: machinery
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery/httproute
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      MACHINERY_HOSTNAME: "${MACHINERY_HOSTNAME:-machinery}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

@@ -56,6 +56,10 @@ spec:
   components:
     - ../components/cluster-build-watch
     - ../components/cluster-build-watch-homerun
+    # machinery gRPC bearer token for the worker: off (default) or on --
+    # see ../components/cluster-build-watch-machinery-auth-on. Client side of
+    # the cicd component machinery-auth; switch this on FIRST.
+    - ../components/cluster-build-watch-machinery-auth-${CLUSTER_BUILD_WATCH_MACHINERY_AUTH:-off}
   postBuild:
     substitute:
       DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
@@ -75,6 +79,12 @@ spec:
       DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
       DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
       DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
+
+      # ---- machinery gRPC token (only read with ..._MACHINERY_AUTH: on) ----
+      # Same Vault entry/property as the server's (cicd component
+      # machinery-auth) -- change both or neither.
+      DAPR_CBW_MACHINERY_TOKEN_PATH: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PATH:-machinery-grpc}"
+      DAPR_CBW_MACHINERY_TOKEN_PROPERTY: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PROPERTY:-token}"
     substituteFrom:
       # substituteFrom-keys: REDIS_PASSWORD
       - kind: Secret

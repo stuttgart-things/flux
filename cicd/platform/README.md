@@ -17,6 +17,7 @@ cicd/platform/
     ├── crossplane-runtime-defaults/ → ./cicd/crossplane/runtime-defaults  (machinery profile WITHOUT fleet state only)
     ├── kro/                  → ./cicd/kro
     ├── machinery/            → ./cicd/machinery       (needs crossplane-configs)
+    ├── machinery-auth/       → ./cicd/machinery + auth (alternative of machinery: gRPC bearer-token auth ON)
     ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)
     ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
     ├── dapr/                 → ./apps/dapr/root       (control plane only)

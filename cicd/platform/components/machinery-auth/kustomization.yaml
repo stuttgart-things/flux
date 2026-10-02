@@ -1,0 +1,8 @@
+---
+# Opt-in: machinery-auth -- machinery with its gRPC bearer-token auth ON.
+# An ALTERNATIVE to ../machinery, not an add-on: select one of the two.
+# bundle-alternative-of: machinery
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-machinery-auth.yaml
