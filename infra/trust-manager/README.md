@@ -68,6 +68,29 @@ EOF
 2. **Release** (`release.yaml`) installs trust-manager via the jetstack Helm chart
 3. **Post-release** (`post-release.yaml`) uses `sthings-cluster` to create a `Bundle` that merges the default public CA trust store with the cluster CA from `cluster-ca-secret`, distributing a combined `trust-bundle.pem` ConfigMap to all namespaces
 
+### Extra CAs (optional)
+
+`cluster-trust-bundle` also picks up every ConfigMap in the trust namespace
+labelled `trust.stuttgart-things.com/cluster-trust-bundle: "true"` (key
+`ca.crt`). Nothing matching is fine: trust-manager skips a selector source
+that selects nothing, so clusters without such a ConfigMap keep the same
+bundle. A cluster that needs a foreign CA (e.g. a LabDA cluster calling a
+LabUL service) ships the ConfigMap from its own cluster directory:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: labul-ca
+  namespace: cert-manager
+  labels:
+    trust.stuttgart-things.com/cluster-trust-bundle: "true"
+data:
+  ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    ...
+```
+
 ## Claims CLI
 
 ```bash

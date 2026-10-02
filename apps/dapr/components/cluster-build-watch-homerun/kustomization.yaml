@@ -1,0 +1,70 @@
+---
+# Opt-in add-on to ../cluster-build-watch: the worker's homerun2 sink.
+#
+# REQUIRES ../cluster-build-watch EARLIER in the same spec.components list --
+# the patch below targets the Flux Kustomization that component renders, and
+# kustomize fails the build when a patch target does not exist.
+#
+# Selected through cicd/platform/components/cluster-build-watch-homerun, an
+# alternative of cluster-build-watch, not by hand.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+patches:
+  # Wires the sink into the worker Deployment of the RELEASED artifact. That
+  # artifact is rendered from deploy/main.k of a dapr-workflows release, which
+  # has no homerun options until dapr-workflows#51 is released, and even then
+  # the release pipeline renders without them. Patching here works with any
+  # tag; an image without the sink simply ignores the two variables.
+  #
+  # The token volume is optional: a missing or unsynced Secret must not keep
+  # the worker -- and with it the status ConfigMap and every other sink --
+  # from starting. The sink then reports "read HOMERUN_AUTH_TOKEN_FILE" into
+  # the workflow's custom status, and the ExternalSecret's own Ready
+  # condition fails this Kustomization's health check. kubelet fills an
+  # optional Secret volume once the Secret appears; no restart needed.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: dapr-cluster-build-watch
+    patch: |  # pragma: allowlist secret -- secretName below names a Secret, holds none
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: cluster-build-watch
+          # `test` first, as for the statestore patch: if the KCL ever
+          # reorders the containers, the build fails here instead of
+          # wiring another container.
+          patch: |
+            - op: test
+              path: /spec/template/spec/containers/0/name
+              value: workflow
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: HOMERUN_PITCH_URL
+                value: "${DAPR_CBW_HOMERUN_PITCH_URL:-https://omni.platform.sthings-vsphere.labul.sva.de/pitch}"
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: HOMERUN_AUTH_TOKEN_FILE
+                value: /var/run/secrets/homerun/token
+            - op: add
+              path: /spec/template/spec/containers/0/volumeMounts/-
+              value:
+                name: homerun-token
+                mountPath: /var/run/secrets/homerun
+                readOnly: true
+            - op: add
+              path: /spec/template/spec/volumes/-
+              value:
+                name: homerun-token
+                secret:
+                  secretName: homerun-pitcher-token
+                  optional: true
+                  items:
+                    - key: token
+                      path: token
