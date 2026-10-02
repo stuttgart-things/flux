@@ -33,7 +33,7 @@ spec:
     spec:
       chart: packer
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/packer
-      version: ${CROSSPLANE_CAPABILITY_PACKER_CHART_VERSION:-0.2.0}
+      version: ${CROSSPLANE_CAPABILITY_PACKER_CHART_VERSION:-0.3.0}
       sourceRef:
         kind: HelmRepository
         name: stuttgart-things-charts
