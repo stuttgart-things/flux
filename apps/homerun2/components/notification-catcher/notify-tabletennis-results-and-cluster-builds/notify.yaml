@@ -1,0 +1,33 @@
+---
+# Same ConfigMap as notify-tabletennis-results (the catcher mounts
+# homerun2-notification-catcher-notify); select one variant, never both.
+#
+# $${TEAMS_WEBHOOK_URL}, doubled on purpose -- see notify-tabletennis-results:
+# `$$` is Flux's postBuild escape, so the catcher receives the literal
+# ${TEAMS_WEBHOOK_URL} and fills it from its own environment at start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-notification-catcher-notify
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+data:
+  config.yaml: |
+    outputs:
+      # A won match, and nothing else -- identical to
+      # notify-tabletennis-results; keep the two in step.
+      - name: teams-tabletennis-results
+        type: msteams
+        webhook_url: "$${TEAMS_WEBHOOK_URL}"
+        filters:
+          match:
+            system: tabletennis
+          tags_contain: [transition=match_won]
+      # cluster-build-watch's homerun sink: author and system are both
+      # cluster-build-watch; every checkpoint, no severity floor, so a
+      # Ready build gets its card as well as a failed or hanging one.
+      - name: teams-cluster-build-watch
+        type: msteams
+        webhook_url: "$${TEAMS_WEBHOOK_URL}"
+        filters:
+          match:
+            system: cluster-build-watch

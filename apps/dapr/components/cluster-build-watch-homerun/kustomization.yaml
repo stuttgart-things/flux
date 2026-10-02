@@ -46,7 +46,7 @@ patches:
               path: /spec/template/spec/containers/0/env/-
               value:
                 name: HOMERUN_PITCH_URL
-                value: "${DAPR_CBW_HOMERUN_PITCH_URL:-https://omni.platform.sthings-vsphere.labul.sva.de/pitch}"
+                value: "${DAPR_CBW_HOMERUN_PITCH_URL:-https://omni-pitcher.labda-dev-a.4sthings.tiab.ssc.sva.de/pitch}"
             - op: add
               path: /spec/template/spec/containers/0/env/-
               value:

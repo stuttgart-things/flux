@@ -1,0 +1,19 @@
+---
+# notify-tabletennis-results-and-cluster-builds -- notify-tabletennis-results
+# plus the cards of cluster-build-watch (stuttgart-things/dapr-workflows#49).
+#
+# Pair it with REDIS_STREAMS=tabletennis,messages
+# (HOMERUN2_NOTIFICATION_CATCHER_STREAMS):
+#   * tabletennis -- zaehlwerk's results, as in notify-tabletennis-results.
+#   * messages    -- homerun2's default stream. cluster-build-watch's homerun
+#                    sink pitches there (no routing rule in omni-pitcher), so
+#                    the LED and light catchers react too.
+#
+# Two outputs, each with its own filter, both on the one ${TEAMS_WEBHOOK_URL}:
+#   teams-tabletennis-results   unchanged from notify-tabletennis-results
+#   teams-cluster-build-watch   every checkpoint of a watched build (system
+#                               cluster-build-watch), all severities
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - notify.yaml

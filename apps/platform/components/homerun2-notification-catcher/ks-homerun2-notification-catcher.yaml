@@ -46,7 +46,12 @@ spec:
     name: ${APPS_SOURCE:-flux-apps}
   path: ./apps/homerun2/profiles/platform-notification-catcher
   components:
-    # Where messages go: the routing file. One variant today.
+    # Where messages go: the routing file, a notify-* directory of
+    # components/notification-catcher:
+    #   tabletennis-results                     streams: tabletennis
+    #   tabletennis-results-and-cluster-builds  streams: tabletennis,messages
+    #     (adds cluster-build-watch's cards, dapr-workflows#49)
+    # Set HOMERUN2_NOTIFICATION_CATCHER_STREAMS to match the variant.
     - ../../components/notification-catcher/notify-${HOMERUN2_NOTIFICATION_CATCHER_ROUTING:-tabletennis-results}
     # on (default) or off. A component, not a value: DRY_RUN is a bool, and a
     # bool cannot pass through postBuild.substitute -- see dry-run-on.
