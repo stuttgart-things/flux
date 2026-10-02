@@ -34,22 +34,6 @@ spec:
             - secret:
                 name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
                 key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
-            # Extra CAs a cluster opts into: every ConfigMap in the trust
-            # namespace carrying this label adds its `ca.crt`. Unlike the two
-            # secret sources above this one is OPTIONAL -- a selector that
-            # matches nothing is a no-op in trust-manager (logged, not an
-            # error; checked in v0.22.0 and v0.25.0 source), so clusters
-            # without such a ConfigMap render exactly the bundle they had.
-            # First user: cicd-machinery-test5 trusting the LabUL CA for
-            # homerun2's omni-pitcher on platform-sthings
-            # (stuttgart-things/dapr-workflows#49). The ConfigMap comes from
-            # the cluster's own repo, not from here: which foreign CA a
-            # cluster trusts is a cluster fact.
-            - configMap:
-                selector:
-                  matchLabels:
-                    trust.stuttgart-things.com/cluster-trust-bundle: "true"
-                key: ca.crt
           target:
             configMap:
               key: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
