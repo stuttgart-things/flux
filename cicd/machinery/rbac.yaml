@@ -38,6 +38,13 @@ rules:
       - kustomize.toolkit.fluxcd.io
     resources: ["kustomizations"]
     verbs: ["get", "list", "watch"]
+  # Argo CD Applications, for the Argo checkpoint of cluster-build-watch
+  # (Synced + Healthy per generated Application). Applications only: AppProjects
+  # and ApplicationSets are not in the watch set, and Rollouts share the group.
+  - apiGroups:
+      - argoproj.io
+    resources: ["applications"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

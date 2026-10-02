@@ -29,6 +29,23 @@
 # show a blank column for whichever kind you are looking at. Array indexing is deliberately absent — the
 # renderer does not support it (examples/configs/README.md in
 # stuttgart-things/machinery); slice-valued paths are flattened instead.
+#
+# Application (Argo CD) is here for the Argo checkpoint of cluster-build-watch
+# (stuttgart-things/dapr-workflows#49): after a ClusterStack is ready, wait
+# until the Applications generated for the new cluster are Synced + Healthy.
+# Generated Applications carry NO cluster label; the handle is `spec.project`
+# (the cluster-projects AppSet creates one AppProject per cluster, named after
+# it), hence `Project`. machinery cannot filter by field, so the client lists
+# the kind and filters on that info field itself. Paths verified against
+# platform-sthings (LabUL, 160 Applications, 2026-10-02): all single-source,
+# so `Revisions` (multi-source) is empty there and simply absent from the
+# response. machinery's own `ready` is useless for this kind -- an Application
+# has no Ready condition, only Error/Warning ones -- so Sync and Health are
+# what a client reads. On a cluster without Argo CD the kind is not served and
+# machinery keeps re-probing it every 30 s; nothing else changes.
+#
+# ArgoRegister on ClusterStack (spec.rancher.argocd.register) is what tells
+# that client whether to wait for Argo at all.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -59,7 +76,23 @@ data:
             { "label": "CNI",          "path": "status.share.cniOwnership" },
             { "label": "Provider",     "path": "spec.provider" },
             { "label": "Stage",        "path": "status.stage" },
-            { "label": "StatusReady",  "path": "status.ready" }
+            { "label": "StatusReady",  "path": "status.ready" },
+            { "label": "ArgoRegister", "path": "spec.rancher.argocd.register" }
+          ]
+        },
+        "Application": {
+          "group": "argoproj.io",
+          "version": "v1alpha1",
+          "resource": "applications",
+          "infoFields": [
+            { "label": "Project",     "path": "spec.project" },
+            { "label": "Sync",        "path": "status.sync.status" },
+            { "label": "Health",      "path": "status.health.status" },
+            { "label": "Operation",   "path": "status.operationState.phase" },
+            { "label": "Revision",    "path": "status.sync.revision" },
+            { "label": "Revisions",   "path": "status.sync.revisions" },
+            { "label": "Destination", "path": "spec.destination.name" },
+            { "label": "Server",      "path": "spec.destination.server" }
           ]
         },
         "Kustomization": {

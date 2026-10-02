@@ -1,0 +1,10 @@
+---
+# Opt-in: machinery-argocd -- machinery on an Argo CD cluster WITHOUT Crossplane.
+# The same child Kustomizations as ../machinery (same names, same path), but it
+# waits on argo-cd instead of crossplane-configs. An ALTERNATIVE, not an
+# add-on: select one of the two. machinery-grpcroute works with either.
+# bundle-alternative-of: machinery
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-machinery-argocd.yaml
