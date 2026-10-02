@@ -102,6 +102,44 @@ lands on a source that already has one: on `machinery` (2026-09-22) the Lock
 held `…/function-go-templating` twice and **all 51 packages** went
 `Healthy=False`. Same list, different install order.
 
+**A cluster built before 0.8.0 does not heal by taking the new profile.** The
+Lock keys an entry by revision name, and that name is the CR name plus the
+package digest. The digest of `function-go-templating:v0.12.4` is the same on
+both mirrors. So moving the short CR from `xpkg.crossplane.io` to
+`xpkg.upbound.io` keeps the revision `function-go-templating-8bc402f209ce`.
+The package manager finds an entry with that name and leaves it alone, so the
+entry still carries the old `xpkg.crossplane.io` source. The twin then adds
+the same source a second time. Every revision on the cluster fails with
+`cannot initialize dependency graph … node … already exists`, the stale entry's
+own revision included. That revision cannot rewrite its entry, because the
+graph is built before anything is written.
+
+cicd-machinery-test5 (built 2026-09-07 on catalog 0.5.x) has been stuck this
+way since v1.77.1: `crossplane-configs` never got past v1.76.2
+(stuttgart-things#3374). All three moved Functions were stale there, not only
+the one the error names. The first one to reach the Lock blocks the other two.
+
+Before a profile tag that moves a mirror reaches an existing cluster, and again
+when one is stuck, compare each active revision's image with its Lock entry
+(read only):
+
+```bash
+kubectl get lock lock -o json > /tmp/lock.json
+kubectl get functionrevisions,providerrevisions,configurationrevisions -o json \
+  | jq -r --slurpfile L /tmp/lock.json '.items[]
+      | select(.spec.desiredState=="Active")
+      | .metadata.name as $n | (.spec.image|sub(":[^:]*$";"")) as $src
+      | ($L[0].packages[] | select(.name==$n) | .source) as $ls
+      | select($ls != $src) | "STALE \($n): lock=\($ls) revision=\($src)"'
+```
+
+The fix is to remove the stale entries from `lock/lock`, all of them in one
+patch. The active revisions then add themselves again with the right source.
+crossplane-configurations' CLAUDE.md has the recovery. Deleting the twin does
+not help: Flux re-creates it and the collision comes back. Deleting the short
+Function should also work, but every Composition that names it in
+`functionRef` then has no function until Flux re-creates it.
+
 `function-kcl` additionally stays at v0.12.2 until the cicd-test4 incident
 (catalog 0.5.0) is understood; "same digest = one node" is not what explains
 it.
