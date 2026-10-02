@@ -113,7 +113,9 @@ DIVERGENT = {
                         "split out so clusters without kro can run the worker. "
                         "cluster-build-watch and cluster-build-watch-trigger are "
                         "two more: the build-watch worker (on dapr-workflows' "
-                        "Redis) and its kro RGD.",
+                        "Redis) and its kro RGD. cluster-build-watch-homerun "
+                        "is an alternative of cluster-build-watch that adds "
+                        "the homerun2 sink.",
 }
 
 

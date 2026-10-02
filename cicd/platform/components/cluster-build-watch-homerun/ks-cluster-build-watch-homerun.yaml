@@ -1,0 +1,108 @@
+---
+# cluster-build-watch WITH the homerun2 sink -> ./apps/dapr/root +
+# components/cluster-build-watch + components/cluster-build-watch-homerun
+#
+# The same two Kustomizations as ../cluster-build-watch, under the same names,
+# so a cluster switches by swapping the component line and nothing is pruned
+# and re-created. KEEP THEM IN STEP with that file; the only differences are
+# the extra component and the variables it reads.
+#
+# What the sink does (stuttgart-things/dapr-workflows#49): every checkpoint
+# is pitched as a homerun.Message to omni-pitcher, stream `messages` (no
+# routing rule, so the LED and light catchers react too). Teams gets its card
+# from homerun2's notification-catcher (match system: cluster-build-watch),
+# so DAPR_CBW_TEAMS_WEBHOOK_URL stays unset here -- both would post twice.
+#
+# WHAT IS ON YOU:
+#   * the token in the cluster's Vault, next to dapr-workflows' secrets:
+#       <mount>/dapr-workflows   homerun_auth_token
+#     A missing property leaves the ExternalSecret SecretSyncedError and this
+#     Kustomization unhealthy; the worker still runs, without the sink.
+#   * a worker image that HAS the sink (dapr-workflows#51 or later) via
+#     CLUSTER_BUILD_WATCH_VERSION. An older image ignores the variables.
+#   * trust in the pitcher's certificate. The worker verifies TLS against the
+#     trust-manager bundle; for the LabUL default URL the LabUL CA has to be a
+#     source of cluster-trust-bundle (see infra/trust-manager, extra CAs).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-build-watch
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: dapr-workflows
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CLUSTER_BUILD_WATCH_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/cluster-build-watch
+    - ../components/cluster-build-watch-homerun
+  postBuild:
+    substitute:
+      DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
+      DAPR_CBW_VERSION: "${CLUSTER_BUILD_WATCH_VERSION:-2338624484dd}"
+      DAPR_CBW_REDIS_HOST: "${CLUSTER_BUILD_WATCH_REDIS_HOST:-redis-stack.dapr-redis:6379}"
+
+      # ---- homerun2 sink ----
+      # omni-pitcher on LabUL platform-sthings, the only one there is.
+      DAPR_CBW_HOMERUN_PITCH_URL: "${CLUSTER_BUILD_WATCH_HOMERUN_PITCH_URL:-https://omni.platform.sthings-vsphere.labul.sva.de/pitch}"
+      DAPR_CBW_HOMERUN_TOKEN_PROPERTY: "${CLUSTER_BUILD_WATCH_HOMERUN_TOKEN_PROPERTY:-homerun_auth_token}"
+      # Same store and Vault entry as dapr-workflows (ks-dapr-workflows.yaml),
+      # read through the same cluster variables, so one KV entry holds every
+      # dapr secret of the cluster.
+      # passthrough-override: the bundle name wins on purpose, so the message
+      # names DAPR_WORKFLOWS_ESO_STORE -- the key a cluster actually sets.
+      DAPR_ESO_STORE_NAME: "${DAPR_WORKFLOWS_ESO_STORE:-set-DAPR_WORKFLOWS_ESO_STORE}"
+      DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
+      DAPR_ESO_SECRET_PATH: "${DAPR_WORKFLOWS_ESO_SECRET_PATH:-dapr-workflows}"
+      DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
+    substituteFrom:
+      # substituteFrom-keys: REDIS_PASSWORD
+      - kind: Secret
+        name: ${DAPR_WORKFLOWS_SECRET:-dapr-workflows-secrets}
+        optional: false
+---
+# The kro RGD, split out like dapr-workflows-trigger: a cluster without kro
+# can still run the worker (and start watches through the Dapr API directly).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cluster-build-watch-trigger
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: kro
+    - name: cluster-build-watch
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${CLUSTER_BUILD_WATCH_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/dapr/root
+  components:
+    - ../components/cluster-build-watch-trigger
+  postBuild:
+    substitute:
+      DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
+      DAPR_CBW_TRIGGER_TAG: "${CLUSTER_BUILD_WATCH_TRIGGER_TAG:-2338624484dd-trigger}"
