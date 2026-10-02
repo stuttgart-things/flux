@@ -147,5 +147,20 @@ jobs:
       # npx rather than the renovate/renovate image the lint-renovate task uses:
       # several GB of pull for a single validation is not worth it in CI.
       # Validating against @latest is intentional — that is what Mend Cloud runs.
+      #
+      # FALLBACK to the image only when npx cannot even INSTALL renovate. On
+      # 2026-10-02 `npm install renovate` (any version, npm 11 and 12, node 24)
+      # exited 1 in idealTree without printing a reason -- every PR in this repo
+      # went red on a config nobody had touched. A validation FAILURE never
+      # falls back: npx installed fine and found a real problem, so that exit
+      # stands. The two are told apart by whether the validator binary ran.
       - name: Validate renovate.json
-        run: npx --yes --package renovate@latest renovate-config-validator renovate.json
+        run: |
+          set -u
+          if npm exec --yes --package renovate@latest -- true >/dev/null 2>&1; then
+            npx --yes --package renovate@latest renovate-config-validator renovate.json
+          else
+            echo "::warning::npm could not install renovate@latest -- validating with the container image instead"
+            docker run --rm -v "${PWD}/renovate.json":/tmp/renovate.json:ro \
+              ghcr.io/renovatebot/renovate:latest renovate-config-validator /tmp/renovate.json
+          fi

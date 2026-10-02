@@ -12,3 +12,4 @@ resources: []
 components:
   - ../../components/proxmoxvm
   - ../../components/ansible-run
+  - ../../components/packer
