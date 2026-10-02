@@ -20,6 +20,33 @@ spec:
   # selects one of the two. The routing file (-notify ConfigMap) is not in the
   # base at all: the cluster supplies it, or a notify-* component does.
   patches:
+    # Roll the pod when its config changes. The catcher reads its config ONCE,
+    # at start: envFrom (-env: REDIS_STREAMS ...), the mounted routing file
+    # (-notify) and the Secrets. Flux updates those objects in place, and an
+    # updated ConfigMap does not change the pod template -- so the old config
+    # kept running until a manual `rollout restart` (labda-dev-a, 2026-10-02,
+    # after stuttgart-things#3379; dapr-workflows#49).
+    #
+    # Reloader rather than a content hash in the pod template: the config comes
+    # from three renderers -- the OCI base's -env ConfigMap patched in THIS
+    # Kustomization at apply time, the notify-* components in the parent build,
+    # and caller-supplied ConfigMaps from the cluster repo (platform-sthings'
+    # -notify) -- and no single kustomize build sees all of them. Reloader
+    # watches the live objects, whoever wrote them, Secrets included.
+    #
+    # REQUIRES Reloader on the cluster (infra/reloader, bundle component
+    # infra/platform/components/reloader). Without it this annotation does
+    # nothing and a config change still needs a manual rollout restart.
+    - target:
+        kind: Deployment
+        name: homerun2-notification-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-notification-catcher
+          annotations:
+            reloader.stakater.com/auto: "true"
     # Container image tag — pinned via the cluster's substitution Secret.
     - target:
         kind: Deployment

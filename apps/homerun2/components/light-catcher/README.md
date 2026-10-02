@@ -26,5 +26,5 @@ OCIRepository + Flux Kustomization
 ## Customizations
 
 - Removes upstream Ingress and HTTPRoute, provides custom Gateway API HTTPRoute
-- Mounts the profile from `HOMERUN2_LIGHT_CATCHER_PROFILE_CM`: the base's own ConfigMap (all rules on the wled-mock) unless the caller names one of its own. The catcher reads it at startup only -- restart the pod after changing it
+- Mounts the profile from `HOMERUN2_LIGHT_CATCHER_PROFILE_CM`: the base's own ConfigMap (all rules on the wled-mock) unless the caller names one of its own. The catcher reads it at startup only; the Deployment's `reloader.stakater.com/auto` rolls the pod on a change where Reloader runs -- elsewhere restart it by hand
 - Injects Redis credentials and connection (`redis-stack.homerun2.svc.cluster.local:6379`)
