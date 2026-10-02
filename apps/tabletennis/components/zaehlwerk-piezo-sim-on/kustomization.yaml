@@ -1,0 +1,28 @@
+---
+# zaehlwerk-piezo-sim-on -- the piezo board simulator next to zaehlwerk
+# (zaehlwerk tools/chain-mock, image zaehlwerk-piezo). Selected with
+# TABLETENNIS_ZAEHLWERK_PIEZO_SIM: on.
+#
+# It waits, like the real board, until a match is started on zaehlwerk's
+# scoring page, then plays it through POST /ingest/piezo -- rallies, the
+# deliberate duplicates, delta-0 events and undos -- and waits for the next. It
+# never starts a match itself.
+#
+# A WON MATCH IS HANDED OVER LIKE ANY OTHER. With the handover and the
+# scoreboard on, every simulated match lands in this cluster's league (pending,
+# schmetterpause ADR-0015). For demo and test clusters, not one whose league
+# counts.
+#
+# REQUIRES ZAEHLWERK v0.8.0 OR LATER, for the image and for GET /matches/current,
+# which the board joins through. Against an older zaehlwerk it starts and waits
+# forever ("no match running"). The image version is its own variable
+# (ZAEHLWERK_PIEZO_VERSION) because the board image only exists from v0.8.0 on,
+# while ZAEHLWERK_VERSION's default is older.
+#
+# A plain Deployment in zaehlwerk's namespace, applied by this layer itself:
+# the Namespace comes from components/zaehlwerk in the same apply, and zaehlwerk
+# answers by its Service name.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - deployment.yaml

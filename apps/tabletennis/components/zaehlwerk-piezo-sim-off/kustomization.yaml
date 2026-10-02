@@ -1,0 +1,8 @@
+---
+# zaehlwerk-piezo-sim-off -- no board simulator: the default.
+# Selected through TABLETENNIS_ZAEHLWERK_PIEZO_SIM (default off). Empty on
+# purpose; `patches: []` because kustomize refuses an empty kustomization.yaml
+# (see zaehlwerk-panel-off).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches: []
