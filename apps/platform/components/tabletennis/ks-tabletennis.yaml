@@ -67,6 +67,7 @@ spec:
     # the monitoring variants -- without the Kyverno CRDs the dry-run would
     # reject it. Note this repository ships no Kyverno; see the component.
     - ../../components/schmetterpause-policy-${TABLETENNIS_SCHMETTERPAUSE_POLICY:-off}
+    - ../../components/zaehlwerk-piezo-sim-${TABLETENNIS_ZAEHLWERK_PIEZO_SIM:-off}
   postBuild:
     substitute:
       # INFRA_DOMAIN / INFRA_GATEWAY_* are what infra/platform already reads, so
@@ -94,6 +95,8 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
       ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.9.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      ZAEHLWERK_PIEZO_VERSION: "${TABLETENNIS_ZAEHLWERK_PIEZO_VERSION:-v0.9.0}"
+      ZAEHLWERK_PIEZO_PACE: "${TABLETENNIS_ZAEHLWERK_PIEZO_PACE:-1s}"
       # No safe default exists. The store is named per cluster (vault-<cluster>)
       # and guessing wrong points ESO at another cluster's secrets, which reads
       # as "the Secret never appears". The sentinel names the variable a cluster
