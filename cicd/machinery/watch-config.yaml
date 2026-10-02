@@ -12,6 +12,13 @@
 # be offered as an environment variable, and `config.json` is not a valid env
 # var name, so the kubelet skips it with a warning on every start.
 #
+# ONE SUBSTITUTION, ON PURPOSE: MACHINERY_AUTH_CONFIG, right after "httpPort".
+# Empty by default, so every cluster renders this document byte for byte as
+# before. Only the machinery-auth variant of the cicd component sets it -- to
+# the `"auth": {...},` member that switches machinery's bearer-token check on
+# (see ./auth). A variable rather than a patch because kustomize cannot patch
+# INSIDE a string, and a second copy of this JSON would drift from the first.
+#
 # Field paths verified against a live cluster (u26-rke2-1 via kind3, 2026-08-15;
 # the VM and AnsibleRun kinds 2026-08-17), not derived from the XRD schemas —
 # and for these three that is not a formality: both VM XRDs declare
@@ -34,7 +41,7 @@ data:
   config.json: |
     {
       "port": 50051,
-      "httpPort": 8080,
+      "httpPort": 8080,${MACHINERY_AUTH_CONFIG:-}
       "resources": {
         "ClusterStack": {
           "group": "config.stuttgart-things.com",

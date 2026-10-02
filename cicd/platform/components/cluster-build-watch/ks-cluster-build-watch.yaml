@@ -29,11 +29,29 @@ spec:
   path: ./apps/dapr/root
   components:
     - ../components/cluster-build-watch
+    # machinery gRPC bearer token for the worker: off (default) or on --
+    # see ../components/cluster-build-watch-machinery-auth-on. Client side of
+    # the cicd component machinery-auth; switch this on FIRST.
+    - ../components/cluster-build-watch-machinery-auth-${CLUSTER_BUILD_WATCH_MACHINERY_AUTH:-off}
   postBuild:
     substitute:
       DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
       DAPR_CBW_VERSION: "${CLUSTER_BUILD_WATCH_VERSION:-2338624484dd}"
       DAPR_CBW_REDIS_HOST: "${CLUSTER_BUILD_WATCH_REDIS_HOST:-redis-stack.dapr-redis:6379}"
+
+      # ---- machinery gRPC token (only read with ..._MACHINERY_AUTH: on) ----
+      # Same Vault entry/property as the server's (cicd component
+      # machinery-auth) -- change both or neither.
+      DAPR_CBW_MACHINERY_TOKEN_PATH: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PATH:-machinery-grpc}"
+      DAPR_CBW_MACHINERY_TOKEN_PROPERTY: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PROPERTY:-token}"
+      # Same store and Vault entry as dapr-workflows (ks-dapr-workflows.yaml),
+      # read through the same cluster variables. Read only by the
+      # machinery-auth-on switch above.
+      # passthrough-override: the bundle name wins on purpose, so the message
+      # names DAPR_WORKFLOWS_ESO_STORE -- the key a cluster actually sets.
+      DAPR_ESO_STORE_NAME: "${DAPR_WORKFLOWS_ESO_STORE:-set-DAPR_WORKFLOWS_ESO_STORE}"
+      DAPR_ESO_STORE_KIND: "${DAPR_WORKFLOWS_ESO_STORE_KIND:-ClusterSecretStore}"
+      DAPR_ESO_REFRESH_INTERVAL: "${DAPR_WORKFLOWS_ESO_REFRESH_INTERVAL:-1h}"
     substituteFrom:
       # substituteFrom-keys: REDIS_PASSWORD
       - kind: Secret

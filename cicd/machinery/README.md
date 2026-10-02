@@ -119,8 +119,43 @@ The `machinery-grpcroute` component of the cicd-platform bundle adds a
 `GRPCRoute` (`./grpcroute`) on the Gateway's `https` listener, with its own
 hostname: an HTTPRoute and a GRPCRoute on the same hostname conflict under the
 Gateway API rules. It is opt-in because it exposes the API beyond the cluster
-**without authentication** — machinery's `auth.enabled` is not set in
-`watch-config.yaml` yet. Everything it serves is read-only status.
+— **without authentication** unless the cluster selects `machinery-auth` (next
+section). Everything it serves is read-only status.
+
+## gRPC auth (opt-in per cluster)
+
+machinery (v1.14.0) can require `authorization: Bearer <token>` on every
+ResourceService call (`auth.enabled` in `config.json`). A cluster switches it
+on by selecting the cicd component **`machinery-auth` instead of `machinery`**
+— an alternative with the same two Kustomizations under the same names, plus:
+
+| piece | where |
+|---|---|
+| `"auth": {"enabled": true, "tokenFile": "/var/run/machinery-auth/token"}` in `config.json` | `MACHINERY_AUTH_CONFIG`, substituted into [`watch-config.yaml`](watch-config.yaml); empty everywhere else, so plain `machinery` renders byte-identical |
+| ExternalSecret `machinery-auth-token` (`<mount>/machinery-grpc` → `token`) | [`auth/external-secret.yaml`](auth/external-secret.yaml) |
+| Secret mounted at `/var/run/machinery-auth` (required volume) | patch in [`auth/kustomization.yaml`](auth/kustomization.yaml) |
+
+Cluster variables: `MACHINERY_AUTH_ESO_STORE` (required — the ClusterSecretStore,
+e.g. `vault-machinery`), `MACHINERY_AUTH_ESO_STORE_KIND`,
+`MACHINERY_AUTH_TOKEN_PATH` (`machinery-grpc`), `MACHINERY_AUTH_TOKEN_PROPERTY`
+(`token`), `MACHINERY_AUTH_ESO_REFRESH_INTERVAL`.
+
+What auth covers: **every** ResourceService RPC on `:50051` — through the
+GRPCRoute *and* in-cluster plaintext. Not covered: `/grpc.health.v1.Health/*`
+(the kubelet's gRPC probes keep working) and the HTMX dashboard, which calls
+the server in-process.
+
+**Clients first.** machinery without auth installs no interceptor, so a client
+that already sends a token is unaffected; machinery with auth rejects every
+client that does not. So: give every client the token, then switch the server.
+`cluster-build-watch` gets it with `CLUSTER_BUILD_WATCH_MACHINERY_AUTH: on`
+(it reads the same Vault entry, `machinery-grpc` / `token`). `machinery-client`
+and grpcurl take it as `--token` / `-H 'authorization: Bearer …'`.
+
+The token is read once, at start: a rotated value needs a new pod
+(`kubectl -n machinery rollout restart deploy/machinery`). Without the Secret,
+the new pod waits in ContainerCreating, the old one keeps serving, and the
+`machinery` Kustomization reports the ExternalSecret not Ready.
 
 ### Testing it
 

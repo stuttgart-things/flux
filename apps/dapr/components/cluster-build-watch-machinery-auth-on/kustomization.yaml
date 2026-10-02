@@ -1,0 +1,73 @@
+---
+# cluster-build-watch-machinery-auth-on -- the worker sends a bearer token to
+# machinery's gRPC API (machinery `auth.enabled`; flux cicd component
+# machinery-auth on the server side). Selected with
+# CLUSTER_BUILD_WATCH_MACHINERY_AUTH: on.
+#
+# REQUIRES ../cluster-build-watch EARLIER in the same spec.components list --
+# the patch below targets the Flux Kustomization that component renders.
+#
+# CLIENT FIRST. Switch this on BEFORE the server enforces auth: machinery
+# without auth installs no interceptor, so the header is ignored there
+# (machinery v1.14.0 main.go/auth.go), and the server can then be switched
+# without a single failed call.
+#
+# The worker sends the token ONLY over TLS (machinery.server through the
+# Gateway); a `plaintext: true` source never carries it (dapr-workflows
+# workflows/cluster-build-watch/machinery.go).
+#
+# ORDER MATTERS on this side too: write the Vault property FIRST. The worker
+# reads MACHINERY_AUTH_TOKEN_FILE on every call and treats an unreadable file
+# as an error, not as "no auth" -- so while the Secret is missing, every
+# machinery-sourced watch fails with "read MACHINERY_AUTH_TOKEN_FILE" (kube-
+# sourced watches are unaffected). The volume is optional so the worker still
+# starts and kubelet fills it once ESO has synced; the ExternalSecret's Ready
+# condition fails this Kustomization meanwhile.
+#
+# Same mount path and Secret key as dapr-workflows' deploy/main.k option
+# -D machineryTokenSecret, so a release rendered with it and this patch agree
+# on what the worker reads. Do not use both: the volume would be added twice.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: dapr-cluster-build-watch
+    patch: |  # pragma: allowlist secret -- secretName below names a Secret, holds none
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: cluster-build-watch
+          # `test` first, as for the statestore and homerun patches: if the
+          # KCL ever reorders the containers, the build fails here instead of
+          # wiring another container.
+          patch: |
+            - op: test
+              path: /spec/template/spec/containers/0/name
+              value: workflow
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: MACHINERY_AUTH_TOKEN_FILE
+                value: /var/run/secrets/machinery/token
+            - op: add
+              path: /spec/template/spec/containers/0/volumeMounts/-
+              value:
+                name: machinery-token
+                mountPath: /var/run/secrets/machinery
+                readOnly: true
+            - op: add
+              path: /spec/template/spec/volumes/-
+              value:
+                name: machinery-token
+                secret:
+                  secretName: machinery-auth-token
+                  optional: true
+                  items:
+                    - key: token
+                      path: token

@@ -2,7 +2,8 @@
 # machinery-grpcroute -> ./cicd/machinery/grpcroute
 #
 # OPT-IN, a component of its own rather than part of `machinery`: it exposes
-# the gRPC API beyond the cluster, without auth for now, and only a cluster
+# the gRPC API beyond the cluster -- without auth unless the cluster selects
+# the `machinery-auth` variant instead of `machinery` -- and only a cluster
 # whose machinery is read from elsewhere needs that. Three clusters select
 # `machinery`; today only the `machinery` cluster is read remotely.
 #

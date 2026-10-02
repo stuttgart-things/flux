@@ -9,9 +9,11 @@
 # at the Gateway with the wildcard certificate and never offered as plaintext
 # on :80.
 #
-# NO AUTHENTICATION YET. machinery's bearer-token auth (`auth.enabled`) is not
-# switched on in watch-config.yaml, so anyone who reaches the Gateway can read
-# what the dashboard shows. Everything it serves is read-only status.
+# AUTHENTICATION IS THE CLUSTER'S CHOICE. With the plain `machinery` component
+# machinery's bearer-token auth (`auth.enabled`) is off, so anyone who reaches
+# the Gateway can read what the dashboard shows (read-only status). Select the
+# `machinery-auth` variant instead to require `authorization: Bearer <token>`
+# on every ResourceService call -- see ../README.md "gRPC auth".
 apiVersion: gateway.networking.k8s.io/v1
 kind: GRPCRoute
 metadata:
