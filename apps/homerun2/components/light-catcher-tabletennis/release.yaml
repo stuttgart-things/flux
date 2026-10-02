@@ -15,6 +15,20 @@ spec:
   wait: true
   targetNamespace: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE:-homerun2-tabletennis}
   patches:
+    # Roll the pod when a referenced ConfigMap/Secret changes: the catcher
+    # reads its config at start only. REQUIRES Reloader on the cluster
+    # (infra/reloader) -- without it this does nothing. See the same patch in
+    # ../notification-catcher/release.yaml for why Reloader, not a hash.
+    - target:
+        kind: Deployment
+        name: homerun2-light-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-light-catcher
+          annotations:
+            reloader.stakater.com/auto: "true"
     # The base's HTTPRoute -- ./route brings one with this instance's hostname.
     - target:
         kind: HTTPRoute

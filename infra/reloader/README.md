@@ -17,8 +17,10 @@ metadata:
     # configmap.reloader.stakater.com/reload: "my-config"
 ```
 
-`apps/backstage` and `infra/velero` (Deployment and node-agent DaemonSet)
-already carry `reloader.stakater.com/auto: "true"`.
+`apps/backstage`, `infra/velero` (Deployment and node-agent DaemonSet) and the
+homerun2 catchers (`apps/homerun2/components/{notification,core,led,light}-catcher`,
+`light-catcher-tabletennis`) carry `reloader.stakater.com/auto: "true"`. They
+read their config at start only, so a cluster running them needs this.
 
 ## Consume
 

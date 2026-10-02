@@ -50,6 +50,25 @@ HOMERUN2_NOTIFICATION_CATCHER_STREAMS: tabletennis,messages
 
 Dry run applies to both outputs alike (stuttgart-things/dapr-workflows#49).
 
+## Config changes roll the pod -- where Reloader runs
+
+The catcher reads `REDIS_STREAMS` (`-env`), the routing file (`-notify`) and
+its Secrets once, at start. Flux updates them in place, which by itself does
+not restart anything: on labda-dev-a the pod ran an hour on the old routing
+after stuttgart-things#3379 (dapr-workflows#49). The Deployment therefore
+carries `reloader.stakater.com/auto: "true"`; Reloader rolls it whenever any
+of those objects changes.
+
+**Requires Reloader** (`infra/reloader`, bundle component
+`infra/platform/components/reloader`) -- without it the annotation is inert.
+Check with `kubectl get deploy -n reloader`.
+
+A hash in the pod template (configMapGenerator, or a substituted checksum) was
+not an option: the `-env` ConfigMap comes from the OCI base and is patched
+inside the child Kustomization at apply time, `-notify` from a `notify-*`
+component in the parent build -- or from the cluster repo (platform-sthings) --
+so no single kustomize build sees all of them.
+
 ## Why the webhook is written `$${TEAMS_WEBHOOK_URL}`
 
 The routing ConfigMap is applied by a Flux Kustomization with `postBuild`,
