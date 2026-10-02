@@ -1,0 +1,9 @@
+---
+# FALLBACK DeploymentRuntimeConfigs for a machinery-profile cluster that has NO
+# machinery fleet state. A build root of its own -- the bundle component
+# cicd/platform/components/crossplane-runtime-defaults points a Flux
+# Kustomization's spec.path here directly. See README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deploymentruntimeconfigs.yaml

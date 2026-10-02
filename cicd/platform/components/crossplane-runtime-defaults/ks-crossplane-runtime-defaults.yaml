@@ -1,0 +1,76 @@
+---
+# CROSSPLANE RUNTIME DEFAULTS -> ./cicd/crossplane/runtime-defaults
+#
+# The machinery profile is generated from the KCL catalog, and the catalog
+# gives two providers a `runtimeConfig` it does NOT ship:
+#
+#   stuttgart-things-provider-kubeconfig-xpkg -> DeploymentRuntimeConfig provider-kubeconfig
+#   vshn-provider-minio                       -> DeploymentRuntimeConfig provider-minio
+#
+# That is a contract with the cluster (hack/gen-crossplane-profile.py, the
+# `external` branch): on the `machinery` cluster the fleet state keeps it --
+# provider-minio-runtime.yaml, and the provider-kubeconfig-vault Helm release,
+# which renders provider-kubeconfig together with its CA Secret. A cluster that
+# runs the profile WITHOUT that fleet state (cicd-machinery-test5, cicd-test4)
+# has both providers Healthy=False forever (stuttgart-things#3374). This
+# component keeps the contract for those: same DRC names, same container, same
+# in-pod CA path, but the CA comes from trust-manager's ConfigMap in the
+# crossplane namespace instead of the vault-pki-ca Secret nobody creates there.
+#
+# OWNERSHIP SPLIT -- select this OR have the fleet state, never both:
+#
+#   cluster                         who owns provider-kubeconfig / provider-minio
+#   machinery (fleet state)         Helm release provider-kubeconfig-vault / fleet-state Kustomization
+#   machinery profile, no fleet st. THIS component
+#   cicd-platform profile           nobody -- no Provider references them
+#
+# Two owners on one object rewrite each other every reconcile, and the winner
+# decides which CA the provider pod mounts. Moving a cluster ONTO a fleet state
+# means removing this component first (prune deletes the DRCs; the providers go
+# Healthy=False until the new owner has applied them) -- not adding the second
+# owner alongside. stuttgart-things' hack/check-cluster-components.py fails a
+# cluster that selects this and also has a <cluster>-fleet-state directory.
+#
+# dependsOn `crossplane` only: a DeploymentRuntimeConfig is a CRD crossplane CORE
+# installs, so the install Kustomization being Ready (wait: true) is all it
+# needs. Depending on crossplane-configs instead would be later than necessary --
+# the providers it installs would first come up without their config.
+#
+# The ConfigMap is NOT a dependsOn: it comes from the infra layer's
+# trust-manager Bundle, and a DRC applies fine without it. If it is missing the
+# provider pod waits in ContainerCreating with an event naming it, which is the
+# visible failure, not a silent one.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: crossplane-runtime-defaults
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Follows the crossplane component's switch, like the configs: runtime
+  # configs without crossplane are meaningless.
+  suspend: ${CROSSPLANE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/crossplane/runtime-defaults
+  postBuild:
+    # passthrough-complete: every ${VAR} the child reads is listed here.
+    substitute:
+      # trust-manager's ConfigMap, in the namespace the provider pods run in
+      # (a pod can only mount a ConfigMap from its own namespace). Defaults
+      # match infra/platform/components/trust-manager: TRUST_BUNDLE_NAME and
+      # TRUST_BUNDLE_TARGET_KEY.
+      CROSSPLANE_RUNTIME_TRUST_BUNDLE_CONFIGMAP: "${CROSSPLANE_RUNTIME_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
+      CROSSPLANE_RUNTIME_TRUST_BUNDLE_KEY: "${CROSSPLANE_RUNTIME_TRUST_BUNDLE_KEY:-trust-bundle.pem}"

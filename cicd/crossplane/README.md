@@ -19,9 +19,12 @@ cicd/crossplane/
 │   ├── functions/         composition functions (cicd-platform only)
 │   ├── configs/           the crossplane/* Configuration packages
 │   └── provider-configs/  one `in-cluster` ClusterProviderConfig per provider
-└── profiles/
-    ├── cicd-platform/     install/  configs/  provider-configs/
-    └── machinery/         install/  configs/  provider-configs/   (generated)
+├── profiles/
+│   ├── cicd-platform/     install/  configs/  provider-configs/
+│   └── machinery/         install/  configs/  provider-configs/   (generated)
+├── capabilities/          per-cluster ClusterProviderConfigs, credentials, placement
+└── runtime-defaults/      the two DRCs the machinery profile references, for a
+                           cluster WITHOUT machinery fleet state (opt-in)
 ```
 
 Every profile directory has the same three roots, and the bundle's
