@@ -19,7 +19,7 @@ spec:
     spec:
       chart: vspherevm
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm
-      version: ${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.12.6}
+      version: ${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.13.0}
       sourceRef:
         kind: HelmRepository
         name: stuttgart-things-charts

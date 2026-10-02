@@ -92,9 +92,9 @@ spec:
       SOPS_GIT_REPOSITORY_NAME: "${SOPS_GIT_REPOSITORY_NAME:-sops-secrets}"
       SOPS_GIT_AGE_SECRET: "${SOPS_GIT_AGE_SECRET:-sops-age-key}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm
-      CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.12.6}"
+      CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/proxmoxvm
-      CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.12.0}"
+      CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/ansible
       CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION: "${CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION:-0.9.10}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/packer
