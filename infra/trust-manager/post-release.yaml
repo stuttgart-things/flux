@@ -34,6 +34,16 @@ spec:
             - secret:
                 name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
                 key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
+            # OPT-IN: one more CA to trust, e.g. the other lab's Vault PKI root
+            # for a cluster that talks to services there. A substitution cannot
+            # add or drop a list entry, so "off" has to be a value rather than
+            # an absence: unset, this points at the cluster CA again, which
+            # trust-manager de-duplicates -- the bundle stays byte-identical.
+            # Not an empty or missing Secret: a missing source puts the whole
+            # Bundle in error, it is not skipped.
+            - secret:
+                name: ${TRUST_BUNDLE_EXTRA_CA_SECRET:-${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}}
+                key: ${TRUST_BUNDLE_EXTRA_CA_KEY:-${TRUST_BUNDLE_CA_KEY:-ca.crt}}
           target:
             configMap:
               key: ${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}
