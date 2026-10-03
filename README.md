@@ -157,6 +157,14 @@ workflow:
    tagged with the release version and `latest`. Unchanged components keep
    their older tags, so a component's newest version tag is the release that
    last touched it, not necessarily the repo's newest release.
+3. The **whole repo** is pushed as one artifact,
+   `oci://ghcr.io/stuttgart-things/flux/repo`, tagged with the release version
+   and `latest`. It is pushed on every release, whether or not a component
+   changed. A push to `main` that cuts no release (only `chore:`/`docs:`
+   commits) does not re-push it, so a pinned `repo:vX.Y.Z` never changes
+   under a cluster. Left out: `.git`, `.github/`, `.claude/`, `docs/`,
+   `tests/`, `hack/`, `memory/` and every `*.md`. Nothing a kustomization
+   reads is in that list.
 
 Consume an artifact instead of the Git repo:
 
@@ -174,7 +182,73 @@ spec:
                   # skopeo list-tags docker://ghcr.io/stuttgart-things/flux/apps/vault
 ```
 
-Re-publish everything (for example to seed the registry):
+### Consuming a bundle from `flux/repo`
+
+A per-component artifact cannot serve the platform bundles. Each child
+Kustomization a bundle renders uses a path from the repo root
+(`./infra/cert-manager/components/install`), and some cross layers
+(`infra-platform` → `./apps/cnpg-operator`). `flux/repo` holds the whole
+tree, so a bundle reads from it the same way it reads from Git:
+
+```yaml
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: flux-repo
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/flux/repo
+  ref:
+    tag: vX.Y.Z   # pin a release; `latest` follows main
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infra-platform
+  namespace: flux-system
+spec:
+  interval: 1h
+  prune: true
+  wait: true
+  sourceRef:
+    kind: OCIRepository
+    name: flux-repo
+  path: ./infra/platform/root
+  components:
+    - ../components/cilium-lb
+    - ../components/cert-manager-install
+  postBuild:
+    substitute:
+      FLUX_SOURCE: flux-repo        # APPS_SOURCE for apps/ and cicd/platform
+  # The children name their source with ${FLUX_SOURCE}, but their kind is
+  # GitRepository. Switch it for every child the bundle renders:
+  patches:
+    - target:
+        group: kustomize.toolkit.fluxcd.io
+        kind: Kustomization
+      patch: |
+        - op: replace
+          path: /spec/sourceRef/kind
+          value: OCIRepository
+```
+
+The patch is applied to the bundle's rendered output, before Flux creates
+the children, so it reaches each child's `sourceRef`. The children then read
+the same artifact as the bundle, and infra and apps can be pinned to one
+version. `apps/platform` and `cicd/platform` work the same way with
+`path: ./apps/platform/root` / `./cicd/platform/root` and `APPS_SOURCE`.
+
+`cicd/platform`'s `argocd-platform` component also creates its own
+`GitRepository` for the Argo CD catalog. The patch above does not change it,
+so that component still needs Git access.
+
+To list the published versions, run
+`skopeo list-tags docker://ghcr.io/stuttgart-things/flux/repo`.
+
+Re-publish everything, including `flux/repo` (for example to seed the
+registry or backfill a tag):
 `gh workflow run release.yaml --ref main -f push-all=true`.
 
 ## Bootstrapping Flux
