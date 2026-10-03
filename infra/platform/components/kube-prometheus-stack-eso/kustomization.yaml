@@ -1,0 +1,8 @@
+---
+# Opt-in: kube-prometheus-stack-eso -- kube-prometheus-stack with Alertmanager's
+# webhook token read from a ClusterSecretStore.
+# bundle-alternative-of: kube-prometheus-stack
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-kube-prometheus-stack-eso.yaml

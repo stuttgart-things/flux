@@ -1,21 +1,17 @@
 ---
-# Prometheus + Alertmanager + Grafana + node-exporter + kube-state-metrics,
-# as one chart → ./infra/kube-prometheus-stack
+# kube-prometheus-stack with Alertmanager's webhook token read from a
+# ClusterSecretStore (opt-in) → ./infra/kube-prometheus-stack
+#   + ./components/alertmanager-webhook-token
 #
-# dependsOn cilium-gateway: the base renders Grafana's HTTPRoute against that
-# Gateway, so the Gateway API CRDs and the Gateway object must exist first.
-# Flux has no optional dependency — select cilium-gateway alongside this, or
-# this Kustomization waits on "dependency not ready" forever.
+# Same child Kustomization, same name, as the kube-prometheus-stack component:
+# select ONE of the two. Everything the base threads is threaded here the same
+# way (check-shared-path-wiring.py), plus the ESO store and entry.
 #
-# NOT expressible as a dependsOn: Prometheus asks for a PVC. The chart's own
-# default StorageClass name is nfs4-csi, which exists only on clusters that
-# selected the nfs-csi component; everywhere else the default below has to be
-# corrected or the Prometheus StatefulSet sits Pending on an unbound claim
-# while this Kustomization reports its Helm release installed.
-#
-# This is the heavier sibling of `prometheus` (server + HTTPRoute only).
-# Selecting BOTH gives two Prometheis scraping the same cluster into the same
-# namespace by default — pick one, or give them separate namespaces.
+# For clusters without their own homerun2: set KPS_ALERTMANAGER_WEBHOOK_URL to a
+# pitcher they can reach, and put that pitcher's token at
+# <store>/<KPS_ESO_SECRET_PATH>:<KPS_ESO_TOKEN_PROPERTY>. Without the Secret the
+# Alertmanager pod cannot mount it and sits in ContainerCreating -- loud, unlike the base's
+# `changeme`, which delivers nothing and says nothing.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -28,6 +24,7 @@ metadata:
 spec:
   dependsOn:
     - name: cilium-gateway
+    - name: external-secrets-vault-store
   interval: 1h
   retryInterval: 1m
   # 15m, not the bundle's usual 5m: this chart installs the prometheus-operator
@@ -43,6 +40,8 @@ spec:
     kind: GitRepository
     name: ${FLUX_SOURCE:-flux-infra}
   path: ./infra/kube-prometheus-stack
+  components:
+    - ./components/alertmanager-webhook-token
   postBuild:
     substitute:
       KPS_NAMESPACE: "${KPS_NAMESPACE:-monitoring}"
@@ -83,3 +82,8 @@ spec:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: "${HOMERUN2_OMNI_PITCHER_AUTH_TOKEN:-changeme}"
       KPS_ALERTMANAGER_WEBHOOK_URL: "${KPS_ALERTMANAGER_WEBHOOK_URL:-http://homerun2-omni-pitcher.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local/pitch/grafana}"
+      KPS_ESO_SECRET_STORE_NAME: "${KPS_ESO_SECRET_STORE_NAME:-set-KPS_ESO_SECRET_STORE_NAME}"
+      KPS_ESO_SECRET_STORE_KIND: "${KPS_ESO_SECRET_STORE_KIND:-ClusterSecretStore}"
+      KPS_ESO_SECRET_PATH: "${KPS_ESO_SECRET_PATH:-alertmanager-webhook}"
+      KPS_ESO_TOKEN_PROPERTY: "${KPS_ESO_TOKEN_PROPERTY:-token}"
+      KPS_ESO_REFRESH_INTERVAL: "${KPS_ESO_REFRESH_INTERVAL:-1h}"

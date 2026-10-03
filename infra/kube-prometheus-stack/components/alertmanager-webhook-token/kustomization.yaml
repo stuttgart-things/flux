@@ -1,0 +1,30 @@
+---
+# The receiver authenticates with a token FILE from an ESO-made Secret instead
+# of the substituted HOMERUN2_OMNI_PITCHER_AUTH_TOKEN. Applied by the
+# kube-prometheus-stack-eso component (infra/platform/components).
+#
+# The patch addresses the receiver by index; the `test` op pins index 1 to the
+# `msteams` receiver, so reordering release.yaml fails this build instead of
+# silently patching the wrong receiver.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      kind: HelmRelease
+      name: kube-prometheus-stack
+    patch: |  # pragma: allowlist secret -- names a Secret and a file path, holds none
+      - op: test
+        path: /spec/values/alertmanager/config/receivers/1/name
+        value: msteams
+      - op: replace
+        path: /spec/values/alertmanager/config/receivers/1/webhook_configs/0/http_config/authorization
+        value:
+          type: Bearer
+          credentials_file: /etc/alertmanager/secrets/alertmanager-webhook-token/token
+      - op: add
+        path: /spec/values/alertmanager/alertmanagerSpec/secrets
+        value:
+          - alertmanager-webhook-token

@@ -28,6 +28,7 @@ infra/platform/
     ├── openebs/                  → ./infra/openebs
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
+    ├── kube-prometheus-stack-eso/ → ./infra/kube-prometheus-stack           (instead of kube-prometheus-stack; webhook token via external-secrets-vault-store)
     ├── external-secrets/         → ./infra/external-secrets/components/install
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
@@ -148,6 +149,7 @@ the same list:
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
+| `kube-prometheus-stack-eso` | `cilium-gateway`, `external-secrets-vault-store` |
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
