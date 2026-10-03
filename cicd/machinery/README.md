@@ -59,8 +59,9 @@ The kinds and fields come from `config.json` in the `machinery-watch-config` Con
 
 | kind | shown |
 |---|---|
-| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP; `Stage` and `StatusReady` (`status.ready`) also as info fields, so a gRPC client gets them as keys instead of parsing `connection_details` |
+| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP; `Stage`, `StatusReady` (`status.ready`) and `ArgoRegister` (`spec.rancher.argocd.register`) also as info fields, so a gRPC client gets them as keys instead of parsing `connection_details` |
 | `Kustomization` | Flux: last applied and attempted revision, path — whether an order in git has reached the cluster yet |
+| `Application` | Argo CD: project, sync and health status, last operation phase, revision(s), destination name/server — for the Argo checkpoint of cluster-build-watch (`Project` is the per-cluster AppProject; generated Applications carry no cluster label). Not served on clusters without Argo CD, which machinery tolerates (re-probed every 30 s) |
 | `Platform` | `readyComponents` / `componentCount`, so `3 / 4` is visible without opening the YAML |
 | `XIPReservation` | reservation status, FQDN, addresses |
 | `VaultK8sAuth` | Vault address and cluster (its status is empty today, so Ready comes from conditions) |
@@ -100,7 +101,7 @@ User "system:serviceaccount:machinery:machinery" cannot list resource
 The grant is read-only (`get`, `list`, `watch`) and cluster-scoped, because the
 XRs are. It covers both groups this fleet uses, `config.stuttgart-things.com`
 and `resources.stuttgart-things.com`, plus `kustomizations` in
-`kustomize.toolkit.fluxcd.io`.
+`kustomize.toolkit.fluxcd.io` and `applications` in `argoproj.io`.
 
 **Adding a kind to `watch-config.yaml` means adding its group here, in the same
 commit.** That is the point of the two files being neighbours.

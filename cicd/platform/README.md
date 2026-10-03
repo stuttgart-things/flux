@@ -18,6 +18,7 @@ cicd/platform/
     ├── kro/                  → ./cicd/kro
     ├── machinery/            → ./cicd/machinery       (needs crossplane-configs)
     ├── machinery-auth/       → ./cicd/machinery + auth (alternative of machinery: gRPC bearer-token auth ON)
+    ├── machinery-argocd/     → ./cicd/machinery       (alternative: needs argo-cd instead, for Argo CD clusters without Crossplane)
     ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)
     ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
     ├── dapr/                 → ./apps/dapr/root       (control plane only)
@@ -141,6 +142,16 @@ holds them in step: thread a variable in one and CI fails until it is threaded
 in the other, because Flux does not inherit `postBuild.substitute` and a
 cluster setting a value only one of them names silently gets the other's
 default.
+
+## machinery on an Argo CD cluster: `machinery-argocd`
+
+`machinery` waits on `crossplane-configs`, because on a Crossplane cluster it
+is a dashboard over claims. An Argo CD platform cluster has no Crossplane, and
+what machinery reads there is the `Application` kind of the shared watch set
+(the Argo checkpoint of cluster-build-watch, stuttgart-things/dapr-workflows#49).
+`machinery-argocd` is the same pair of child Kustomizations under the same
+names, `machinery` and `machinery-httproute`, waiting on `argo-cd` instead.
+Select one of the two, never both; `machinery-grpcroute` works with either.
 
 ## Upgrading a Crossplane Configuration is not a version bump
 

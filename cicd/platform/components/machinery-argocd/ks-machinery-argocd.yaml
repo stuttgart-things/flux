@@ -1,0 +1,78 @@
+---
+# machinery-argocd -> ./cicd/machinery, waiting on argo-cd
+#
+# The ../machinery component dependsOn crossplane-configs, because there
+# machinery is a dashboard over Crossplane claims and nothing else -- without
+# the stuttgart-things Configurations it serves an empty table. An Argo CD
+# platform cluster (sthings-platform, platform-sthings) has no Crossplane and
+# should not get one just to satisfy that edge: what machinery reads there is
+# the `Application` kind of the shared watch set, for the Argo checkpoint of
+# cluster-build-watch (stuttgart-things/dapr-workflows#49).
+#
+# So this is the same pair of child Kustomizations under the SAME NAMES --
+# `machinery` and `machinery-httproute` -- with the dependency swapped for
+# argo-cd. Same names on purpose: machinery-grpcroute (dependsOn machinery)
+# works unchanged, and selecting both variants is one object defined twice,
+# which kustomize rejects at build time.
+#
+# The Crossplane kinds of the watch set are simply not served on such a
+# cluster; machinery logs that once and re-probes them every 30 s.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: argo-cd
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.14.0}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: machinery
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery/httproute
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      MACHINERY_HOSTNAME: "${MACHINERY_HOSTNAME:-machinery}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
