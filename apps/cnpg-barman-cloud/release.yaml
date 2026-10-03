@@ -25,7 +25,7 @@ spec:
     spec:
       chart: plugin-barman-cloud
       # renovate: datasource=helm depName=plugin-barman-cloud registryUrl=https://cloudnative-pg.github.io/charts
-      version: ${CNPG_BARMAN_CLOUD_VERSION:-0.8.0}
+      version: ${CNPG_BARMAN_CLOUD_VERSION:-0.8.1}
       sourceRef:
         kind: HelmRepository
         name: cloudnative-pg
