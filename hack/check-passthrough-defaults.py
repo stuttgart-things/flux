@@ -61,7 +61,6 @@ KS_API = "kustomize.toolkit.fluxcd.io"
 # (found 2026-09-01, rolling out flux#349). Roughly eighty threads in this repo
 # rename on the way through; they were all invisible.
 SELF = re.compile(r'^\$\{([A-Z0-9_]+):-(.*)\}$', re.S)
-ANY = re.compile(r'\$\{([A-Z0-9_]+):-([^}]*)\}')
 
 _cache = {}
 
@@ -156,7 +155,25 @@ def paths_for(path):
 
 
 def defaults_for(text, name):
-    return {m.group(2) for m in ANY.finditer(text) if m.group(1) == name}
+    """Every default `${name:-...}` carries in text. Brace-aware, because a
+    default may itself hold a `${...}` (envsubst resolves nested defaults):
+    `[^}]*` would cut `${URL:-http://x.${NS:-ns}.svc/p}` off after `ns`."""
+    out, start = set(), 0
+    head = "${" + name + ":-"
+    while (i := text.find(head, start)) != -1:
+        j, depth = i + len(head), 1
+        while j < len(text) and depth:
+            if text.startswith("${", j):
+                depth += 1
+                j += 2
+                continue
+            if text[j] == "}":
+                depth -= 1
+            j += 1
+        if depth == 0:
+            out.add(text[i + len(head):j - 1])
+        start = i + len(head)
+    return out
 
 
 def norm(v):

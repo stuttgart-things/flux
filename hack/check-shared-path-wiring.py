@@ -67,6 +67,24 @@ MUST_MATCH = {
         # one here means adding it there in the same commit.
         "extra_allowed": set(),
     },
+    "./infra/kube-prometheus-stack": {
+        "why": "kube-prometheus-stack-eso is the kube-prometheus-stack component "
+               "with Alertmanager's webhook token read from a ClusterSecretStore "
+               "instead of substituted -- the same chart and the same stack",
+        # The ESO mode's own: which store, which entry, how often. Everything
+        # else the base reads must be threaded by both, so a cluster switching
+        # modes keeps its storage, hostname and webhook URL.
+        "extra_allowed": {
+            "KPS_ESO_SECRET_STORE_NAME",
+            "KPS_ESO_SECRET_STORE_KIND",
+            "KPS_ESO_SECRET_PATH",
+            "KPS_ESO_TOKEN_PROPERTY",
+            "KPS_ESO_REFRESH_INTERVAL",
+        },
+        # That mode IS this component: the ExternalSecret plus the patch that
+        # swaps the receiver's credentials for a credentials_file.
+        "extra_components_allowed": {"./components/alertmanager-webhook-token"},
+    },
     "./infra/velero": {
         "why": "velero-eso is the velero component with its S3 pair read from a "
                "ClusterSecretStore instead of substituted from a Secret -- the "

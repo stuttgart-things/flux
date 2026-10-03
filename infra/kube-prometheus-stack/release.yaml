@@ -129,7 +129,10 @@ spec:
               # (Alertmanager's webhook v4 payload is field-compatible with
               # Grafana's). Bearer token matches the pitcher's AUTH_TOKEN.
               # See: stuttgart-things/homerun2-notification-catcher/docs/alertmanager.md
-              - url: http://homerun2-omni-pitcher.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local/pitch/grafana
+              # KPS_ALERTMANAGER_WEBHOOK_URL: a cluster without its own homerun2
+              # points this at a reachable pitcher instead (e.g. the LabUL
+              # platform's public omni-pitcher). Default: the in-cluster one.
+              - url: ${KPS_ALERTMANAGER_WEBHOOK_URL:-http://homerun2-omni-pitcher.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local/pitch/grafana}
                 send_resolved: true
                 http_config:
                   authorization:
