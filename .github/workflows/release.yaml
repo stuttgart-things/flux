@@ -10,8 +10,13 @@
 #                 apps/* and infra/* components changed in this merge.
 #   3. push     – packages each CHANGED component directory as a Flux OCI
 #                 artifact and pushes it to ghcr.io.
+#   4. push-repo – packages the WHOLE repo as one Flux OCI artifact
+#                 (flux/repo), independent of which components changed. The
+#                 platform bundles need it: their child Kustomizations use
+#                 paths from the repo root and cross layers (#621).
 #
-# Naming:  oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>
+# Naming:  oci://ghcr.io/stuttgart-things/flux/<apps|infra|cicd>/<name>
+#          oci://ghcr.io/stuttgart-things/flux/repo
 # Tags:    <release-version> (e.g. v1.17.0) AND latest
 #
 # Only changed components get the new version tag. Unchanged components keep
@@ -27,9 +32,10 @@ on:
     branches:
       - main
   # Manual trigger for backfilling / re-pushing artifacts. With push-all=true
-  # (default) every apps/* and infra/* component is published at the current
-  # release version — used to seed the registry or force a re-push. No release
-  # is cut on manual dispatch.
+  # (default) every apps/*, infra/* and cicd/* component AND the whole-repo
+  # artifact (flux/repo) are published at the current release version — used
+  # to seed the registry or force a re-push. No release is cut on manual
+  # dispatch.
   workflow_dispatch:
     inputs:
       push-all:
@@ -88,6 +94,9 @@ jobs:
     outputs:
       components: ${{ steps.changed.outputs.components }}
       version: ${{ steps.version.outputs.version }}
+      # "true" when this run publishes a version that belongs to this commit:
+      # a release was cut, or a push-all dispatch backfills. Gates push-repo.
+      repo: ${{ steps.version.outputs.repo }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -106,6 +115,20 @@ jobs:
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Publishing OCI artifacts with tag: ${VERSION}"
+
+          # The whole-repo artifact is what a cluster pins as ONE immutable
+          # version, so only push it when VERSION is a real release of this
+          # commit -- or on an explicit push-all backfill. A chore/docs-only
+          # push reuses the previous tag above; re-pushing repo:<that tag>
+          # would silently change what an already-pinned cluster pulls.
+          if [ "${{ needs.release.outputs.published }}" = "true" ] \
+             || { [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+                  && [ "${{ inputs.push-all }}" = "true" ]; }; then
+            echo "repo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "repo=false" >> "$GITHUB_OUTPUT"
+            echo "No release cut: skipping the whole-repo artifact"
+          fi
 
       - id: changed
         name: Compute components to push
@@ -194,6 +217,64 @@ jobs:
 
           {
             echo "## OCI artifact pushed"
+            echo ""
+            echo "- \`${ARTIFACT}:${VERSION}\`"
+            echo "- \`${ARTIFACT}:latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  push-repo:
+    name: push repo OCI artifact
+    needs: plan
+    # Independent of the component matrix: a release that touches only hack/
+    # or the repo root still gets a repo artifact. !cancelled() for the same
+    # reason as `push` -- on manual dispatch the skipped `release` would
+    # otherwise propagate a skip through `plan` to this job.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.version != '' && needs.plan.outputs.repo == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write        # push OCI artifacts to ghcr.io
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@main
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The bundles (infra|apps|cicd/platform) render child Kustomizations
+      # whose paths start at the repo root (./infra/cert-manager/...) and
+      # cross layers (infra-platform -> ./apps/cnpg-operator), so no single
+      # component artifact can serve them. `repo` cannot collide with a
+      # component: those are always <apps|infra|cicd>/<name>.
+      #
+      # --ignore-paths REPLACES flux's default list, so the VCS entries are
+      # repeated here. Leading `/` anchors a pattern to the repo root, so a
+      # component folder that happens to be called docs/ or tests/ is kept.
+      # Nothing under apps/, infra/ or cicd/ is dropped except *.md, which no
+      # kustomization reads.
+      - name: Push repo OCI artifact
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          ARTIFACT="oci://ghcr.io/${{ github.repository }}/repo"
+
+          flux push artifact "${ARTIFACT}:${VERSION}" \
+            --path=. \
+            --source="https://github.com/${{ github.repository }}" \
+            --revision="${VERSION}@sha1:${{ github.sha }}" \
+            --ignore-paths=".git,.gitignore,.gitmodules,.gitattributes,/.github/,/.claude/,/docs/,/tests/,/hack/,/memory/,*.md"
+
+          # Move the rolling `latest` tag to this build
+          flux tag artifact "${ARTIFACT}:${VERSION}" --tag=latest
+
+          {
+            echo "## Repo OCI artifact pushed"
             echo ""
             echo "- \`${ARTIFACT}:${VERSION}\`"
             echo "- \`${ARTIFACT}:latest\`"

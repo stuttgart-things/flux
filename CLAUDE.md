@@ -102,19 +102,21 @@ The `Release` workflow (`.github/workflows/release.yaml`) runs on every push to 
 1. **release** – semantic-release cuts the SemVer tag + GitHub Release (release notes live there; `CHANGELOG.md` is no longer updated). Releases now happen in CI — do **not** run `task release` locally as well (it would race on the tag).
 2. **plan** – resolves the version tag (new release version, else the latest existing tag) and diffs the merge to find changed `apps/*` / `infra/*` components.
 3. **push** – packages each **changed** component as a Flux OCI artifact via `flux push artifact`.
+4. **push-repo** – packages the **whole repo** as one artifact, `oci://ghcr.io/stuttgart-things/flux/repo`, independent of which components changed. It runs only when a release was cut, or on a `push-all` dispatch. A chore/docs-only push reuses the previous tag in `plan`, and re-pushing `repo:<that tag>` would change what a pinned cluster pulls. `--ignore-paths` drops `.git`, `/.github/`, `/.claude/`, `/docs/`, `/tests/`, `/hack/`, `/memory/` and `*.md`. It **replaces** flux's default list, which is why the VCS entries are repeated. The leading `/` anchors a pattern to the root. Never add a pattern that matches something under `apps/`, `infra/` or `cicd/`: the bundles reference those paths from the root.
 
-- **Naming:** `oci://ghcr.io/stuttgart-things/flux/<apps|infra>/<name>` (e.g. `flux/apps/vault`)
+- **Naming:** `oci://ghcr.io/stuttgart-things/flux/<apps|infra|cicd>/<name>` (e.g. `flux/apps/vault`), plus `flux/repo` for the whole tree. `repo` cannot collide with a component.
 - **Tags:** the release version (e.g. `v1.17.0`) **and** the rolling `latest`
 - Only changed components get the new version tag; unchanged components keep their existing tags (content — and therefore `latest` — is unchanged). Consumers reference an artifact via `OCIRepository` instead of `GitRepository` (see README → OCI ARTIFACTS).
+- **Bundles need `flux/repo`.** Their child Kustomizations use paths from the repo root and cross layers (`infra-platform` → `./apps/cnpg-operator`), so no per-component artifact can serve them. A consumer points the bundle Kustomization at an `OCIRepository` for `flux/repo`, sets `FLUX_SOURCE` (or `APPS_SOURCE`) to it, and patches every child's `/spec/sourceRef/kind` to `OCIRepository`, because the children hard-code `GitRepository`. README → *Consuming a bundle from `flux/repo`* has the full example.
 
-**Manual backfill / re-push:** the workflow also has a `workflow_dispatch` trigger with a `push-all` boolean input (default `true`). Running it publishes **all** `apps/*` and `infra/*` components at the current release version — used to seed the registry or force a re-push. On manual dispatch the `release` job is skipped (no new tag is cut); the version tag is taken from the latest existing git tag.
+**Manual backfill / re-push:** the workflow also has a `workflow_dispatch` trigger with a `push-all` boolean input (default `true`). Running it publishes **all** `apps/*`, `infra/*` and `cicd/*` components **and `flux/repo`** at the current release version — used to seed the registry or force a re-push. On manual dispatch the `release` job is skipped (no new tag is cut); the version tag is taken from the latest existing git tag.
 
 ```bash
 gh workflow run release.yaml --ref main -f push-all=true    # backfill everything
 gh workflow run release.yaml --ref main -f push-all=false   # changed-only (rarely useful manually)
 ```
 
-Note: because `release` is skipped on manual dispatch, the `push` job is gated on `!cancelled() && needs.plan.result == 'success'` — otherwise the skipped `release` would propagate a transitive skip through `plan` and yield an empty push matrix.
+Note: because `release` is skipped on manual dispatch, the `push` and `push-repo` jobs are gated on `!cancelled() && needs.plan.result == 'success'` — otherwise the skipped `release` would propagate a transitive skip through `plan` and yield an empty push matrix.
 
 Note: the workflow uses third-party actions (semantic-release, flux2). The `stuttgart-things` org restricts non-first-party actions — an unlisted one fails the run with `startup_failure` (0 jobs, no logs) despite passing actionlint; the fix is org-side allowlisting, not a code change.
 
