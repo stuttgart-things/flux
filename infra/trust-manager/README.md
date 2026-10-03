@@ -13,6 +13,10 @@ Deploys [trust-manager](https://cert-manager.io/docs/trust/trust-manager/) via H
 | `TRUST_BUNDLE_CA_SECRET` | `cluster-ca-secret` | no | Secret containing the cluster CA |
 | `TRUST_BUNDLE_CA_KEY` | `ca.crt` | no | Key within the CA secret |
 | `TRUST_BUNDLE_TARGET_KEY` | `trust-bundle.pem` | no | Key in the distributed ConfigMap |
+| `TRUST_BUNDLE_VAULT_CA_SECRET` | `vault-pki-ca` | no | Secret containing the Vault PKI CA (must exist) |
+| `TRUST_BUNDLE_VAULT_CA_KEY` | `ca.crt` | no | Key within the Vault CA secret |
+| `TRUST_BUNDLE_EXTRA_CA_SECRET` | `TRUST_BUNDLE_CA_SECRET` | no | One additional CA to trust (e.g. the other lab's Vault root), `cluster-trust-bundle` only. Unset = the cluster CA again, de-duplicated by trust-manager, so the bundle is unchanged |
+| `TRUST_BUNDLE_EXTRA_CA_KEY` | `TRUST_BUNDLE_CA_KEY` | no | Key within the extra CA secret |
 
 ## GIT-REPOSITORY MANIFEST
 
