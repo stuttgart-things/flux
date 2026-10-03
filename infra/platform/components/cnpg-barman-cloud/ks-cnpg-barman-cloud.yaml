@@ -33,4 +33,4 @@ spec:
     substitute:
       CNPG_NAMESPACE: "${CNPG_NAMESPACE:-cnpg-system}"
       # renovate: datasource=helm depName=plugin-barman-cloud registryUrl=https://cloudnative-pg.github.io/charts
-      CNPG_BARMAN_CLOUD_VERSION: "${CNPG_BARMAN_CLOUD_VERSION:-0.8.0}"
+      CNPG_BARMAN_CLOUD_VERSION: "${CNPG_BARMAN_CLOUD_VERSION:-0.8.1}"
