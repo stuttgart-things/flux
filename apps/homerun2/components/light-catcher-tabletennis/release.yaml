@@ -62,7 +62,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-light-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.4.0}
+                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.5.0}
                   env:
                     # redis stays where homerun2 runs; only this catcher moved.
                     - name: REDIS_ADDR
