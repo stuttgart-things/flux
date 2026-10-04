@@ -16,6 +16,10 @@ cluster repo.
 The Secret needs `ACCESS_KEY_ID`, `ACCESS_SECRET_KEY` and `trust-bundle.pem`
 (the CA of the S3 endpoint).
 
+To have this build render that Secret from substitution variables instead of
+shipping it, select [`schmetterpause-db-backup-subst`](../schmetterpause-db-backup-subst)
+in place of this component. It includes this component.
+
 ## `SCHMETTERPAUSE_BACKUP_SERVER_NAME`
 
 The directory under the bucket; defaults to `schmetterpause-db`. The ESO

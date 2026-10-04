@@ -90,6 +90,31 @@ included -- which then has to be re-encrypted by hand when that CA changes. It
 also takes `SCHMETTERPAUSE_BACKUP_SERVER_NAME`, for archiving beside another
 cluster's backups in one bucket.
 
+`schmetterpause-db-backup-subst` is `-sops` with that Secret rendered in
+the tabletennis build. The cluster ships no Secret manifest and no separate
+Kustomization. It adds three keys to the `substituteFrom` Secret instead. Select
+it **instead of** `-sops`, because it includes `-sops`:
+
+```yaml
+  components:
+    - ../../components/schmetterpause-db-backup-subst
+```
+
+| Variable | Required | Notes |
+|---|---|---|
+| `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID` | yes | S3 access key, `ACCESS_KEY_ID` in the Secret |
+| `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` | yes | S3 secret key, `ACCESS_SECRET_KEY` |
+| `SCHMETTERPAUSE_BACKUP_CA_PEM_B64` | for HTTPS | the endpoint's CA, `base64 -w0 ca.pem`. The default is a placeholder certificate (no key exists): the ObjectStore always names `endpointCA`, and a plain-HTTP endpoint never reads it |
+| `SCHMETTERPAUSE_BACKUP_BUCKET` | yes | as for `-sops` |
+| `SCHMETTERPAUSE_BACKUP_S3_ENDPOINT` | yes | as for `-sops`; `http://…` for in-cluster MinIO |
+| `SCHMETTERPAUSE_BACKUP_SERVER_NAME`, `…_RETENTION`, `…_SCHEDULE` | no | as for `-sops` |
+
+The CA is base64 because a multi-line PEM cannot pass through `postBuild`
+substitution into a block scalar: every line after the first loses its
+indentation. As with the other sops values, an unset key is not refused at
+apply. It arrives as `""`, and the Cluster's `ContinuousArchiving` condition
+reports the S3 error.
+
 `schmetterpause-db-recovery` bootstraps the database from such an archive
 instead of `initdb`. It creates no credentials and works with either variant.
 

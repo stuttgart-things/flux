@@ -9,6 +9,12 @@
 # SCHMETTERPAUSE_DB_PASSWORD (both required), plus ZAEHLWERK_OMNI_PITCHER_TOKEN
 # and ZAEHLWERK_REDIS_PASSWORD if zaehlwerk drives a panel. The same
 # Kustomization needs the cnpg-operator CRD and a Gateway before it can apply.
+#
+# Backups: add components/schmetterpause-db-backup-sops (the cluster ships the
+# Secret `schmetterpause-db-backup`) OR -subst (rendered here from
+# SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID, SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY
+# and optionally SCHMETTERPAUSE_BACKUP_CA_PEM_B64 in the same Secret, plus
+# SCHMETTERPAUSE_BACKUP_BUCKET / _S3_ENDPOINT). Both need cnpg-barman-cloud.
 # See the README.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

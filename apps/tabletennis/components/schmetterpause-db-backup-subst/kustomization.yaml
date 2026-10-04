@@ -1,0 +1,32 @@
+---
+# schmetterpause-db-backup-subst -- schmetterpause-db-backup-sops WITH its
+# Secret: the same ObjectStore, ScheduledBackup and WAL-archiving patch, plus
+# `schmetterpause-db-backup` rendered from substitution variables inside the
+# tabletennis build. The caller provides values through substituteFrom (a
+# SOPS-encrypted Secret, typically) and ships no manifest of its own.
+#
+# INSTEAD OF ../schmetterpause-db-backup-sops, not beside it: this includes
+# that component, and selecting both adds its objects twice (the build fails).
+#
+# REQUIRES (no defaults, see secret.yaml)
+#   SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID       the S3 access key
+#   SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY   the S3 secret key
+# and everything -sops reads: SCHMETTERPAUSE_BACKUP_BUCKET,
+# SCHMETTERPAUSE_BACKUP_S3_ENDPOINT, optionally ..._SERVER_NAME,
+# ..._RETENTION, ..._SCHEDULE.
+#
+# SCHMETTERPAUSE_BACKUP_CA_PEM_B64 -- the endpoint's CA, base64 of the PEM.
+# Needed for an HTTPS endpoint. Its default is a placeholder certificate whose
+# key was never kept. The ObjectStore always references endpointCA, and a
+# plain-HTTP endpoint (in-cluster MinIO) never reads it, so the placeholder
+# only keeps that reference valid. Against HTTPS it fails verification, loudly.
+#
+# Same contract as -sops: the build refuses unless the schmetterpause
+# Kustomization carries tabletennis.stuttgart-things.com/credentials: sops
+# (profiles/sops). The `op: test` comes with the included component.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+components:
+  - ../schmetterpause-db-backup-sops
+resources:
+  - secret.yaml
