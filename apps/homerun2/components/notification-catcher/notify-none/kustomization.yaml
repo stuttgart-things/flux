@@ -1,0 +1,24 @@
+---
+# notify-none -- a routing file with NO outputs: the catcher runs, consumes its
+# streams and logs, and sends nothing anywhere. For a cluster that has nowhere
+# to post to (an edge node with no Teams webhook), but whose homerun2 still
+# carries a notification-catcher -- profiles/sops and profiles/base do.
+#
+# Without SOME routing file the pod hangs in ContainerCreating (`configmap
+# "homerun2-notification-catcher-notify" not found`): the chart mounts it but
+# has not shipped it since catcher v3.0.0. This renders it inside the homerun2
+# build, so it is applied together with the namespace it lives in -- no
+# separate Kustomization that has to retry until homerun2 created that namespace.
+#
+# MUTUALLY EXCLUSIVE with every other notify-* component: each renders the same
+# ConfigMap, and selecting two fails the build with kustomize's "may not add
+# resource with an already registered id". Pick exactly one.
+#
+# Selecting it:
+#   profiles/sops, profiles/base   add it to the Kustomization's spec.components
+#                                  (../../components/notification-catcher/notify-none)
+#   apps/platform bundle           HOMERUN2_NOTIFICATION_CATCHER_ROUTING: none
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - notify.yaml

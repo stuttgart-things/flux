@@ -70,6 +70,13 @@ which would fight the base profile over the same objects.
 Note the root `kustomization.yaml` does **not** include `notification-catcher`;
 that component ships only via `profiles/base`.
 
+`profiles/base` and `profiles/sops` do not ship the catcher's routing file
+(`homerun2-notification-catcher-notify`). The pod cannot start without it.
+Either the cluster supplies it, or the Kustomization selects one `notify-*`
+component. `notify-none` is the choice for a cluster with nowhere to post: it
+renders `outputs: []`, so the catcher consumes and logs but sends nothing.
+See `components/notification-catcher/README.md`.
+
 ## SUBSTITUTION VARIABLES
 
 Version defaults are not repeated in these tables. Each component pins them in `components/<name>/requirements.yaml` (the kustomize OCI tag) and `release.yaml` (the image tag), bundle copies sit in `apps/platform/components/homerun2*/ks-*.yaml`, and renovate bumps all of them in one `fix(deps)` PR per component. A version column here was one more copy that nothing updated.

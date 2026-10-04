@@ -7,7 +7,7 @@ other webhooks). A pure consumer: no Service, no route.
 
 | | Credentials | Routing file | Used by |
 |---|---|---|---|
-| `profiles/base` (+ `sops/`) | `HOMERUN2_REDIS_PASSWORD_B64` and `TEAMS_WEBHOOK_URL` from the consumer's `substituteFrom` Secret | supplied by the cluster (`homerun2-notification-catcher-notify`) | platform-sthings: git PRs and Grafana alerts, streams `messages,alerts` |
+| `profiles/base` (+ `sops/`) | `HOMERUN2_REDIS_PASSWORD_B64` and `TEAMS_WEBHOOK_URL` from the consumer's `substituteFrom` Secret | supplied by the cluster (`homerun2-notification-catcher-notify`), or a `notify-*` component such as `notify-none` | platform-sthings: git PRs and Grafana alerts, streams `messages,alerts` |
 | bundle component `homerun2-notification-catcher` (+ `eso/`) | `redis-password` and `teams-webhook-url` in `${HOMERUN2_SECRET_PATH}`, through the ClusterSecretStore | a `notify-*` component, `tabletennis-results` by default | table tennis results, stream `tabletennis` (#431) |
 
 ## Table tennis results (bundle default)
@@ -49,6 +49,35 @@ HOMERUN2_NOTIFICATION_CATCHER_STREAMS: tabletennis,messages
 ```
 
 Dry run applies to both outputs alike (stuttgart-things/dapr-workflows#49).
+
+## Nowhere to post (`none`)
+
+`notify-none` renders the routing file with `outputs: []`. The catcher starts,
+consumes its streams and logs every message, and sends nothing. An empty list
+is valid: the catcher's `Validate` (`internal/config/notify.go`) checks only
+the outputs that are present, and the file has no `${VAR}` to resolve, so
+`TEAMS_WEBHOOK_URL` may be empty.
+
+Use it where a homerun2 profile brings a notification-catcher but the cluster
+has no webhook, such as an edge node. Before this component, such a cluster had to
+ship the ConfigMap itself, in a Flux Kustomization of its own. The namespace
+exists only after homerun2's own apply, so that Kustomization had to retry
+until homerun2 had created it.
+
+| Path | Selecting it |
+|---|---|
+| `profiles/sops`, `profiles/base` | `spec.components: [../../components/notification-catcher/notify-none]` on the Kustomization |
+| bundle component `homerun2-notification-catcher` | `HOMERUN2_NOTIFICATION_CATCHER_ROUTING: none` |
+
+**Exactly one `notify-*`.** Every variant renders the same ConfigMap
+`homerun2-notification-catcher-notify`, and two in one build fail it with
+`may not add resource with an already registered id`. The same applies to a
+cluster that still ships its own `-notify` ConfigMap: remove that copy when
+you select this component. Otherwise two Kustomizations own one object.
+
+Under the bundle's `eso` credentials the ExternalSecret still reads
+`teams-webhook-url`. Any value in the store entry satisfies it, because nothing
+uses it.
 
 ## Config changes roll the pod -- where Reloader runs
 
