@@ -1,9 +1,13 @@
 ---
 # OpenBao with a real transit auto-unseal → ./apps/openbao
 #
-# NO dependsOn cilium-gateway. The base renders an HTTPRoute against that
-# Gateway, and an HTTPRoute is valid against a Gateway that is not yet Ready --
-# it simply does not attach until the Gateway comes up. Gating the whole
+# The HTTPRoute is NOT in this Kustomization: it is openbao-httproute
+# (ks-openbao-httproute.yaml), which waits for this one, so the route is only
+# applied once the Service exists.
+#
+# NO dependsOn cilium-gateway, here or on openbao-httproute. An HTTPRoute is
+# valid against a Gateway that is not yet Ready -- it simply does not attach
+# until the Gateway comes up. Gating the whole
 # instance on cilium-gateway created a deadlock the first time this cluster
 # hosted the PKI it depends on: cilium-gateway waits on the platform wildcard
 # certificate, which during a PKI migration is issued by the very Vault this
@@ -88,8 +92,5 @@ spec:
       OPENBAO_TRUST_BUNDLE_CONFIGMAP: "${OPENBAO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
       OPENBAO_TRUST_BUNDLE_KEY: "${OPENBAO_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
 
-      # ---- HTTPRoute ----------------------------------------------------
-      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
-      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
-      HOSTNAME: "${OPENBAO_HOSTNAME:-openbao}"
-      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      # The HTTPRoute's variables are on openbao-httproute
+      # (ks-openbao-httproute.yaml); ./apps/openbao no longer reads them.

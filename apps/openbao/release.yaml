@@ -55,7 +55,7 @@ spec:
         repository: openbao/openbao
 
       # The chart's Ingress stays off -- published through the shared Gateway
-      # by httproute.yaml, like everything else in this bundle.
+      # by components/httproute, applied after this release (README.md).
       ingress:
         enabled: false
 
@@ -83,4 +83,3 @@ spec:
           }
 
           service_registration "kubernetes" {}
-

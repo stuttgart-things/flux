@@ -1,0 +1,23 @@
+---
+# The HTTPRoute for OpenBao -> svc/openbao:8200, on its own.
+#
+# Out of the base on purpose. Cilium resolves a route's backendRefs ONCE: a
+# route applied before its Service exists serves HTTP 500 for good while every
+# Kustomization reports Ready (apps/homerun2/README.md, "Routes come last"). In
+# one Kustomization with the HelmRelease the route is applied at once, and the
+# Service only later, when helm-controller installs the chart.
+#
+# Two ways to use it:
+#
+#   * as the `path:` of a SECOND Flux Kustomization that dependsOn the one
+#     deploying ./apps/openbao -- the route lands after the Service. This is
+#     what apps/platform/components/openbao does (openbao-httproute), and the
+#     same split apps/minio/components/httproute has. kustomize builds a
+#     Component directory as a path just like a Kustomization.
+#   * as a `components:` entry beside the seal, which restores the base as it
+#     was before the route moved here -- route and release in one apply, with
+#     the race described above.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

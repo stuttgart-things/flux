@@ -1,5 +1,6 @@
 ---
-# openbao — OpenBao with transit auto-unseal.
+# openbao — OpenBao with transit auto-unseal, plus its HTTPRoute applied after
+# it (openbao-httproute).
 #
 # REQUIRES ../cilium-gateway, a StorageClass that exists here, and a Vault or
 # OpenBao elsewhere holding the transit key plus a Secret with a token for it.
@@ -7,3 +8,4 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - ks-openbao.yaml
+  - ks-openbao-httproute.yaml

@@ -2,7 +2,9 @@
 
 Deploys [OpenBao](https://openbao.org) — the MPL-2.0 fork of Vault — as a
 **standalone raft** instance, published through the shared Gateway API
-`HTTPRoute` (the chart's own Ingress stays off).
+`HTTPRoute` (the chart's own Ingress stays off). The route is a component of its
+own, applied **after** the release — see
+[The HTTPRoute](#the-httproute-is-applied-after-the-release).
 
 This is a **new instance, not a migration**. The documented in-place Vault →
 OpenBao migration only covers Vault 1.14.1 with raft + shamir and is explicitly
@@ -41,18 +43,74 @@ remembers what unseals it.
 > `-migrate`) which these components do not model. Decide the seal before
 > `bao operator init`.
 
+## The HTTPRoute is applied after the release
+
+The base renders namespace, HelmRepository and HelmRelease — **no route**. The
+HTTPRoute is `./components/httproute`, and the intended use is as the `path:` of
+a **second** Kustomization with `dependsOn` on the first:
+
+```
+openbao            ./apps/openbao                       + seal (+ single-node)
+openbao-httproute  ./apps/openbao/components/httproute  dependsOn: openbao
+```
+
+Cilium resolves a route's `backendRefs` once. A route applied before its Service
+exists serves **HTTP 500 for good** while every Kustomization reports Ready
+(the reason [`apps/homerun2`](../homerun2/README.md) has its `*-routes`
+profiles). In one Kustomization with the HelmRelease, the route is applied at
+once and the Service only when helm-controller installs the chart. Same split as
+[`apps/minio`](../minio/README.md)'s `components/httproute`.
+
+Selecting `./components/httproute` as a **component** beside the seal instead
+renders exactly what the base rendered before the route moved out — with the
+race above.
+
+> **Upgrading from a revision where the base carried the route.** A consumer of
+> `./apps/openbao` that relied on it loses the route on the next reconcile
+> (pruned) until it either adds the `openbao-httproute` Kustomization below or
+> selects `./components/httproute`. A consumer that deleted the base's route
+> with a `$patch: delete` patch needs no change there — a patch whose target
+> matches nothing is a no-op — but a Kustomization that reduced the base to the
+> route by deleting everything else now renders **nothing**: repoint it at
+> `./apps/openbao/components/httproute`. `apps/platform/components/openbao`
+> already does this (`openbao-httproute`).
+
+## Single node: `components/single-node`
+
+For a cluster with one node. Combine it with a seal; it changes no seal
+setting:
+
+```yaml
+  components:
+    - ./components/seal-static
+    - ./components/single-node
+```
+
+| What | Why |
+|---|---|
+| `install.disableWait` + `upgrade.disableWait` | A fresh pod is **never Ready before `bao operator init`** (the readiness probe is `bao status`). A Helm install that waits for it times out, remediation uninstalls it, and the pod you need to `exec` into for the init is gone again. Without the wait the HelmRelease is Ready once the objects exist — the Service included, so the route Kustomization can follow. **Cost:** a broken upgrade no longer fails the HelmRelease; check `bao status`, not only the HelmRelease. |
+| `injector.enabled: false` | Nothing on a single node is expected to use sidecar injection. `OPENBAO_INJECTOR_ENABLED: "true"` keeps it. |
+| `injector.affinity: ""` | The chart's injector has a **hard** anti-affinity against itself plus a RollingUpdate: on one node the new pod never schedules beside the old one, and every chart upgrade stalls on `Deployment/openbao-agent-injector`. Matters only if the injector is enabled. Not `strategy: Recreate` — server-side apply then fails on the live, defaulted `rollingUpdate`. |
+| small `server.resources` | The chart sets none; on a small box the request is what reserves the room. |
+
+Why not in the base: on a multi-node cluster with a transit seal and a healthy
+peer, Helm's wait is a real check, and the injector's anti-affinity is what
+spreads it.
+
 ## Structure
 
 ```
 openbao/
-├── kustomization.yaml      # Base: namespace + HelmRepository + release + HTTPRoute
+├── kustomization.yaml      # Base: namespace + HelmRepository + release (no route)
 ├── requirements.yaml       # Namespace + openbao.github.io HelmRepository
 ├── release.yaml            # OpenBao HelmRelease (standalone raft, shamir)
-├── httproute.yaml          # Gateway API HTTPRoute → svc/openbao:8200
 └── components/
     ├── seal-transit/       # seal "transit" — a peer unwraps the key
     ├── seal-static/        # seal "static" — 32-byte key from a Secret
-    └── seal-none/          # no seal stanza: shamir, unsealed by hand
+    ├── seal-none/          # no seal stanza: shamir, unsealed by hand
+    ├── single-node/        # no Helm wait, no injector, small requests
+    └── httproute/          # Gateway API HTTPRoute → svc/openbao:8200
+                            #   (the path of a second Kustomization)
 ```
 
 ## Requirements
@@ -157,7 +215,7 @@ spec:
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: openbao
-      OPENBAO_CHART_VERSION: "0.29.2"
+      OPENBAO_CHART_VERSION: "0.30.0"
       OPENBAO_STORAGE_CLASS: openebs-hostpath
       OPENBAO_STORAGE_SIZE: 8Gi
       # ---- seal: transit ----
@@ -168,11 +226,6 @@ spec:
       OPENBAO_SEAL_SECRET_KEY: token
       OPENBAO_TRUST_BUNDLE_CONFIGMAP: cluster-trust-bundle
       OPENBAO_TRUST_BUNDLE_KEY: trust-bundle.pem
-      # ---- HTTPRoute ----
-      GATEWAY_NAME: cilium-gateway
-      GATEWAY_NAMESPACE: default
-      HOSTNAME: openbao
-      DOMAIN: example.sthings-vsphere.labul.sva.de
 EOF
 ```
 
@@ -201,7 +254,7 @@ spec:
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: openbao
-      OPENBAO_CHART_VERSION: "0.29.2"
+      OPENBAO_CHART_VERSION: "0.30.0"
       OPENBAO_STORAGE_CLASS: openebs-hostpath
       OPENBAO_STORAGE_SIZE: 8Gi
       # ---- seal: static ----
@@ -209,11 +262,6 @@ spec:
       OPENBAO_SEAL_KEY_ID: openbao-2026-01
       OPENBAO_SEAL_SECRET: openbao-static-seal
       OPENBAO_SEAL_SECRET_KEY: key
-      # ---- HTTPRoute ----
-      GATEWAY_NAME: cilium-gateway
-      GATEWAY_NAMESPACE: default
-      HOSTNAME: openbao
-      DOMAIN: example.sthings-vsphere.labul.sva.de
 EOF
 ```
 
@@ -245,16 +293,47 @@ spec:
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: openbao
-      OPENBAO_CHART_VERSION: "0.29.2"
+      OPENBAO_CHART_VERSION: "0.30.0"
       OPENBAO_STORAGE_CLASS: openebs-hostpath
       OPENBAO_STORAGE_SIZE: 8Gi
-      # ---- HTTPRoute ----
+EOF
+```
+
+## Deployment — the HTTPRoute (with any of the above)
+
+```bash
+kubectl apply -f - <<EOF
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openbao-httproute
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: openbao
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-apps
+  path: ./apps/openbao/components/httproute
+  prune: true
+  wait: true
+  postBuild:
+    substitute:
+      OPENBAO_NAMESPACE: openbao
       GATEWAY_NAME: cilium-gateway
       GATEWAY_NAMESPACE: default
       HOSTNAME: openbao
       DOMAIN: example.sthings-vsphere.labul.sva.de
 EOF
 ```
+
+On a **fresh** instance `openbao` is not Ready until `bao operator init` has
+run — unless it uses `components/single-node` — so the route follows only after
+the init.
 
 ## Parameters
 
@@ -263,13 +342,9 @@ EOF
 | Variable | Default | Description |
 |---|---|---|
 | `OPENBAO_NAMESPACE` | `openbao` | Target namespace |
-| `OPENBAO_CHART_VERSION` | `0.29.2` | openbao-helm chart version |
+| `OPENBAO_CHART_VERSION` | `0.30.0` | openbao-helm chart version |
 | `OPENBAO_STORAGE_CLASS` | *(required)* | StorageClass for the raft PVC — a PVC that never binds leaves the pod `Pending` while the HelmRelease reports installed |
 | `OPENBAO_STORAGE_SIZE` | `8Gi` | Raft data volume size |
-| `GATEWAY_NAME` | `cilium-gateway` | Gateway resource name |
-| `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway |
-| `HOSTNAME` | *(required)* | Hostname prefix for the HTTPRoute |
-| `DOMAIN` | *(required)* | Domain suffix for the HTTPRoute |
 
 There is **no** `OPENBAO_VERSION`: the image tag is not parameterised at all.
 The chart renders `.Values.server.image.tag | default (trimPrefix "v" .Chart.AppVersion)`,
@@ -306,6 +381,25 @@ would be plaintext to anyone with `get`.
 ### `seal-none`
 
 No variables. Base parameters only.
+
+### `single-node`
+
+| Variable | Default | Description |
+|---|---|---|
+| `OPENBAO_INJECTOR_ENABLED` | `false` | Agent injector on/off (`"true"`/`"false"`, quoted in `postBuild.substitute`) |
+| `OPENBAO_CPU_REQUEST` | `50m` | Server CPU request |
+| `OPENBAO_MEMORY_REQUEST` | `128Mi` | Server memory request |
+| `OPENBAO_MEMORY_LIMIT` | `512Mi` | Server memory limit |
+
+### `httproute`
+
+| Variable | Default | Description |
+|---|---|---|
+| `OPENBAO_NAMESPACE` | `openbao` | Namespace of the route — the release's |
+| `GATEWAY_NAME` | `cilium-gateway` | Gateway resource name |
+| `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway |
+| `HOSTNAME` | *(required)* | Hostname prefix for the HTTPRoute |
+| `DOMAIN` | *(required)* | Domain suffix for the HTTPRoute |
 
 ## Initialize
 
@@ -356,7 +450,11 @@ components:
 ```
 
 Set `OPENBAO_SEAL_MODE` to `transit`, `static` or `none` there instead of
-writing a standalone Kustomization.
+writing a standalone Kustomization. The component renders **two** child
+Kustomizations, `openbao` and `openbao-httproute` (`dependsOn: openbao`), the
+split described [above](#the-httproute-is-applied-after-the-release). It does
+not select `single-node`; a single-node cluster patches the `openbao` child (or
+writes its own Kustomization).
 
 ## Verify deployment
 
