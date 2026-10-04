@@ -1,0 +1,16 @@
+---
+# AppProfile: what a cluster sets for cilium-gateway.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cilium-gateway
+spec:
+  bundle: infra-platform
+  component: ../components/cilium-gateway
+  vars:
+    INFRA_DOMAIN: { required: true }
+    CILIUM_GATEWAY_SUSPEND: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+    INFRA_TLS_SECRET: {}

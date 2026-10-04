@@ -1,0 +1,14 @@
+---
+# AppProfile: what a cluster sets for cert-manager-ca-from-secret.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cert-manager-ca-from-secret
+spec:
+  bundle: infra-platform
+  component: ../components/cert-manager-ca-from-secret
+  vars:
+    CERT_MANAGER_CA_FROM_SECRET_ISSUER: {}
+    CERT_MANAGER_CA_FROM_SECRET_NAME: {}
+    CERT_MANAGER_CA_FROM_SECRET_SUSPEND: {}

@@ -1,0 +1,14 @@
+---
+# AppProfile: what a cluster sets for cert-manager-install.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cert-manager-install
+spec:
+  bundle: infra-platform
+  component: ../components/cert-manager-install
+  vars:
+    CERT_MANAGER_INSTALL_SUSPEND: {}
+    CERT_MANAGER_NAMESPACE: {}
+    CERT_MANAGER_VERSION: {}

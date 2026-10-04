@@ -1,0 +1,19 @@
+---
+# AppProfile: what a cluster sets for cert-manager-selfsigned.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cert-manager-selfsigned
+spec:
+  bundle: infra-platform
+  component: ../components/cert-manager-selfsigned
+  vars:
+    INFRA_DOMAIN: { required: true }
+    CERT_MANAGER_CA_NAME: {}
+    CERT_MANAGER_CA_SECRET: {}
+    CERT_MANAGER_NAMESPACE: {}
+    CERT_MANAGER_SELFSIGNED_ISSUER: {}
+    CERT_MANAGER_SELFSIGNED_SUSPEND: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+    INFRA_TLS_SECRET: {}

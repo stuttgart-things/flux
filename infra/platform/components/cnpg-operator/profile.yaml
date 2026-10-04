@@ -1,0 +1,14 @@
+---
+# AppProfile: what a cluster sets for cnpg-operator.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cnpg-operator
+spec:
+  bundle: infra-platform
+  component: ../components/cnpg-operator
+  vars:
+    CNPG_NAMESPACE: {}
+    CNPG_OPERATOR_SUSPEND: {}
+    CNPG_VERSION: {}

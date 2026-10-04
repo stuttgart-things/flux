@@ -1,0 +1,14 @@
+---
+# AppProfile: what a cluster sets for cnpg-barman-cloud.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: cnpg-barman-cloud
+spec:
+  bundle: infra-platform
+  component: ../components/cnpg-barman-cloud
+  vars:
+    CNPG_BARMAN_CLOUD_SUSPEND: {}
+    CNPG_BARMAN_CLOUD_VERSION: {}
+    CNPG_NAMESPACE: {}

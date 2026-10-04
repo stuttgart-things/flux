@@ -1,0 +1,15 @@
+---
+# AppProfile: what a cluster sets for reloader.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: reloader
+spec:
+  bundle: infra-platform
+  component: ../components/reloader
+  vars:
+    RELOADER_NAMESPACE: {}
+    RELOADER_RELOAD_STRATEGY: {}
+    RELOADER_SUSPEND: {}
+    RELOADER_VERSION: {}
