@@ -20,6 +20,7 @@ infra/platform/
 └── components/    one kustomize Component per app, all opt-in
     ├── cilium-lb/                → ./infra/cilium/components/lb
     ├── cilium-gateway/           → ./infra/cilium/components/gateway        (requires cilium-lb)
+    ├── cilium-gateway-extra/     → ./infra/cilium/components/gateway-extra  (requires cilium-lb, cert-manager-install)
     ├── cert-manager-install/     → ./infra/cert-manager/components/install
     ├── cert-manager-selfsigned/  → ./infra/cert-manager/components/selfsigned (requires cert-manager-install)
     ├── cert-manager-vault-issuer/→ ./infra/cert-manager/components/vault-issuer  (requires cert-manager-install)
@@ -56,6 +57,25 @@ and `cnpg-operator` is one cluster-wide operator watching every namespace, with
 There is no always-on base. The first cluster pointed at this bundle wanted
 `cilium-lb` + `cert-manager-install` and neither the Gateway nor the PKI chain,
 so everything is opt-in.
+
+### cilium-gateway-extra
+
+A second Gateway beside `cilium-gateway`, on an address of its own, with its own
+wildcard certificate. Use it for a side reached by other clients than the
+cluster Gateway, such as a public or player-facing one. Its pool holds exactly
+`CILIUM_GATEWAY_EXTRA_IP` and selects only that Gateway's Service
+(`io.cilium.gateway/owning-gateway`). The Gateway asks for the address through
+`spec.infrastructure.annotations`. `cilium-lb`'s L2 policy announces it. There
+is one HTTPS listener and no port 80, so routes attach with `sectionName: https`.
+All defaults differ from `cilium-gateway`'s, so selecting it changes nothing
+about the main Gateway. It needs Cilium ≥ 1.18 (`cilium.io/v2` pools).
+
+**The issuer must not wait on this bundle.** The child waits on the
+Certificate. If the issuer comes from a Kustomization that `dependsOn` the
+bundle, neither one ever gets Ready. Use an issuer the bundle creates itself
+(`cluster-ca`, `cert-manager-vault-issuer`, `cert-manager-ca-from-secret`), or
+point that later Kustomization at `./infra/cilium/components/gateway-extra`
+directly.
 
 ### coredns-lab-zone
 
@@ -145,6 +165,7 @@ the same list:
 | Component | Requires |
 |---|---|
 | `cilium-gateway` | `cilium-lb` |
+| `cilium-gateway-extra` | `cilium-lb`, `cert-manager-install` |
 | `cert-manager-selfsigned` | `cert-manager-install` |
 | `cert-manager-vault-issuer` | `cert-manager-install` |
 | `cert-manager-ca-from-secret` | `cert-manager-install` |
@@ -307,6 +328,13 @@ Bundle-level names (they map onto differently-named base variables):
 | `VELERO_SECRET` | `velero-s3-credentials` | Secret holding `VELERO_S3_ACCESS_KEY` / `VELERO_S3_SECRET_KEY` |
 | `CERT_MANAGER_CA_FROM_SECRET_ISSUER` | `ca-from-secret` | cert-manager-ca-from-secret: the ClusterIssuer's name |
 | `CERT_MANAGER_CA_FROM_SECRET_NAME` | `ca-from-secret` | cert-manager-ca-from-secret: the CA Secret (`tls.crt`/`tls.key`) the cluster provides in cert-manager's namespace |
+| `CILIUM_GATEWAY_EXTRA_NAME` | `cilium-gateway-extra` | cilium-gateway-extra: the second Gateway's name (routes' `parentRefs`) |
+| `CILIUM_GATEWAY_EXTRA_NAMESPACE` | `default` | its namespace, and the Certificate's |
+| `CILIUM_GATEWAY_EXTRA_IP` | *(required, `0.0.0.0`)* | its VIP: a one-address pool + `lbipam.cilium.io/ips` |
+| `CILIUM_GATEWAY_EXTRA_DOMAIN` | *(required)* | its listener hostname and wildcard, `*.<domain>` |
+| `CILIUM_GATEWAY_EXTRA_ISSUER` | `cluster-ca` | the issuer of that wildcard (`…_ISSUER_KIND`, default `ClusterIssuer`) |
+| `CILIUM_GATEWAY_EXTRA_TLS_SECRET` | `cilium-gateway-extra-tls` | Certificate name and its Secret |
+| `CILIUM_GATEWAY_EXTRA_POOL_NAME` | `cilium-gateway-extra-pool` | the CiliumLoadBalancerIPPool |
 | `PVE_EXPORTER_TARGET` | *(required)* | the Proxmox host scraped via `?target=` |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 

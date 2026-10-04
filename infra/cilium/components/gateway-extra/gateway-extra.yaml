@@ -1,0 +1,57 @@
+---
+# Exactly one address, and only for this Gateway. Without the serviceSelector
+# any LoadBalancer Service could be handed the VIP; without its own pool the
+# address would have to sit in the shared one, where another Service could
+# take it first.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: ${CILIUM_GATEWAY_EXTRA_POOL_NAME:-cilium-gateway-extra-pool}
+spec:
+  blocks:
+    - start: "${CILIUM_GATEWAY_EXTRA_IP:-0.0.0.0}"
+      stop: "${CILIUM_GATEWAY_EXTRA_IP:-0.0.0.0}"
+  serviceSelector:
+    matchLabels:
+      io.cilium.gateway/owning-gateway: ${CILIUM_GATEWAY_EXTRA_NAME:-cilium-gateway-extra}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ${CILIUM_GATEWAY_EXTRA_TLS_SECRET:-cilium-gateway-extra-tls}
+  namespace: ${CILIUM_GATEWAY_EXTRA_NAMESPACE:-default}
+spec:
+  secretName: ${CILIUM_GATEWAY_EXTRA_TLS_SECRET:-cilium-gateway-extra-tls} # pragma: allowlist secret
+  issuerRef:
+    name: ${CILIUM_GATEWAY_EXTRA_ISSUER:-cluster-ca}
+    kind: ${CILIUM_GATEWAY_EXTRA_ISSUER_KIND:-ClusterIssuer}
+  commonName: "*.${CILIUM_GATEWAY_EXTRA_DOMAIN:-set-CILIUM_GATEWAY_EXTRA_DOMAIN.invalid}"
+  dnsNames:
+    - "*.${CILIUM_GATEWAY_EXTRA_DOMAIN:-set-CILIUM_GATEWAY_EXTRA_DOMAIN.invalid}"
+  duration: 2160h   # 90 days
+  renewBefore: 360h # renew 15 days before expiry
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: ${CILIUM_GATEWAY_EXTRA_NAME:-cilium-gateway-extra}
+  namespace: ${CILIUM_GATEWAY_EXTRA_NAMESPACE:-default}
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      lbipam.cilium.io/ips: "${CILIUM_GATEWAY_EXTRA_IP:-0.0.0.0}"
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.${CILIUM_GATEWAY_EXTRA_DOMAIN:-set-CILIUM_GATEWAY_EXTRA_DOMAIN.invalid}"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: ${CILIUM_GATEWAY_EXTRA_TLS_SECRET:-cilium-gateway-extra-tls}
+      allowedRoutes:
+        namespaces:
+          from: All
