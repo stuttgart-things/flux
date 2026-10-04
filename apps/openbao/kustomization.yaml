@@ -1,7 +1,9 @@
 ---
+# The HTTPRoute is NOT here -- it is ./components/httproute, which a consumer
+# either selects as a component or (better) applies as the `path:` of a second
+# Kustomization that dependsOn this one. See README.md, "The HTTPRoute".
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - requirements.yaml
   - release.yaml
-  - httproute.yaml

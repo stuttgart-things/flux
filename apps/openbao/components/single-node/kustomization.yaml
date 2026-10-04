@@ -1,0 +1,70 @@
+---
+# single-node -- OpenBao on a cluster with ONE node (edge boxes, single-node
+# labs). Combine with a seal component; it touches no seal setting:
+#
+#   components:
+#     - ./components/seal-static
+#     - ./components/single-node
+#
+# Three things, each a workaround first carried by hand on a cluster
+# (harvester clusters/edge/apps/openbao.yaml, clusters/platform/apps-platform.yaml):
+#
+# 1. install.disableWait + upgrade.disableWait.
+#    A FRESH OpenBao pod is never Ready before `bao operator init` has run once:
+#    the chart's readiness probe is `bao status`, which exits non-zero while the
+#    instance is uninitialised or sealed. A Helm install that waits for it times
+#    out and fails, the HelmRelease goes to remediation, and the pod a human
+#    needs to `exec` into for the init is uninstalled again. Without waiting,
+#    the HelmRelease is Ready as soon as the objects are applied -- the Service
+#    exists, so a route applied after it (components/httproute) is safe -- and
+#    the pod sits at 0/1 until the init, which is the expected state.
+#    The cost: a broken upgrade no longer fails the HelmRelease. Check the pod
+#    (`bao status`), not only the HelmRelease. Not in the base, because on a
+#    cluster with a transit seal and a healthy peer the wait is a real check.
+#
+# 2. No agent injector, and if one is enabled anyway, without its anti-affinity.
+#    The chart ships the injector with a HARD pod anti-affinity against itself
+#    plus a RollingUpdate Deployment: on one node the new injector pod can never
+#    be scheduled beside the old one, so every chart upgrade leaves it Pending
+#    and the HelmRelease Stalled ("timeout waiting for:
+#    Deployment/openbao/openbao-agent-injector"). `affinity: ""` drops the block
+#    (the chart renders it only when set). NOT `strategy: Recreate`: the live
+#    Deployment keeps the API-server-defaulted rollingUpdate, and server-side
+#    apply then fails with "rollingUpdate: Forbidden".
+#    The injector is off by default because nothing on a single node is
+#    expected to use sidecar injection; OPENBAO_INJECTOR_ENABLED: "true" keeps
+#    it, still upgradable thanks to the empty affinity.
+#
+# 3. Small server resources, all overridable. The chart sets none, so the
+#    scheduler counts the pod as free; on a small box the request is what
+#    reserves the room.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  # By kind + name, never by namespace: Flux applies spec.patches -- and
+  # kustomize components -- BEFORE postBuild substitution, so the namespace is
+  # still the literal ${OPENBAO_NAMESPACE:-openbao} when this is matched.
+  - target:
+      kind: HelmRelease
+      name: openbao
+    patch: |
+      apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      metadata:
+        name: openbao
+      spec:
+        install:
+          disableWait: true
+        upgrade:
+          disableWait: true
+        values:
+          injector:
+            enabled: ${OPENBAO_INJECTOR_ENABLED:-false}
+            affinity: ""
+          server:
+            resources:
+              requests:
+                cpu: ${OPENBAO_CPU_REQUEST:-50m}
+                memory: ${OPENBAO_MEMORY_REQUEST:-128Mi}
+              limits:
+                memory: ${OPENBAO_MEMORY_LIMIT:-512Mi}
