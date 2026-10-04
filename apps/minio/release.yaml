@@ -13,8 +13,16 @@ spec:
   chart:
     spec:
       chart: charts/minio/minio
+      # 16.0.10, NOT 17. Chart 17 splits the console into its own Deployment
+      # with its own image, and this release sets the registry globally but not
+      # that repository -- it resolves to ghcr.io/bitnami/minio-object-browser,
+      # which cannot be pulled, while the server keeps serving and the
+      # HelmRelease reports installed. Moving to 17 means pointing the console
+      # repository at the mirror (ghcr.io/stuttgart-things/minio-object-browser)
+      # first, and that is a licence decision before it is a config change.
+      # renovate.json holds this chart below 17 ("Hold the minio chart at 16.x").
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/minio/minio
-      version: ${MINIO_VERSION:-17.0.21}
+      version: ${MINIO_VERSION:-16.0.10}
       sourceRef:
         kind: HelmRepository
         name: stuttgart-things

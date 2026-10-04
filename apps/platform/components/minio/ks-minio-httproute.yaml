@@ -1,0 +1,49 @@
+---
+# minio-httproute -- the HTTPRoutes for minio (API + console)
+# → ./apps/minio/components/httproute
+#
+# A Kustomization of its own that waits for minio, because Cilium resolves a
+# route's backendRefs once: applied before its Service exists, a route serves
+# HTTP 500 for good while every Kustomization reports Ready. In one
+# Kustomization with the HelmRelease the routes were applied at once and the
+# Service only when helm-controller installed the chart. Same split as the
+# homerun2 *-routes components and the hand-written minio-httproute on
+# harvester's platform cluster.
+#
+# Moving from a revision where the routes were part of minio: they change
+# owner. minio prunes them (gone from its inventory) and minio-httproute
+# applies them again -- at most a reconcile's gap, against a Service that
+# already exists. Should minio-httproute apply first, it takes over the owner
+# labels and minio's prune leaves them alone: Flux deletes only objects still
+# labelled as its own.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: minio
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MINIO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/minio/components/httproute
+  postBuild:
+    substitute:
+      MINIO_NAMESPACE: "${MINIO_NAMESPACE:-minio}"
+      INGRESS_HOSTNAME_API: "${MINIO_HOSTNAME_API:-minio}"
+      INGRESS_HOSTNAME_CONSOLE: "${MINIO_HOSTNAME_CONSOLE:-minio-console}"
+      INGRESS_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

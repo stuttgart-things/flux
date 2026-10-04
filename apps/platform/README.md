@@ -11,7 +11,7 @@ apps/platform/
     ├── openbao/     → ./apps/openbao     (requires cilium-gateway, a seal; route: openbao-httproute)
     ├── vault/       → ./apps/vault       (existing instances only — see below)
     ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
-    ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret)
+    ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret; routes: minio-httproute)
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
@@ -143,12 +143,12 @@ The catalog ConfigMap the Deployment mounts is shipped by the app itself. It
 used to be a cluster prerequisite, and a missing one does not degrade the
 catalog — the pod never starts, while everything reports Ready.
 
-## minio is on chart 17, and the console caveat is still open
+## minio stays on chart 16, and why
 
-The base sat on chart 16 deliberately — it predates MinIO's licence change, and
-a higher number was not an improvement. Renovate has since carried it to
-17.0.21, which the caveat below was written about and which nothing has
-addressed:
+The base sits on chart 16 deliberately — it predates MinIO's licence change, and
+a higher number is not an improvement. Renovate had carried base and component
+to 17.0.21; both are back on 16.0.10, and a `packageRule` in `renovate.json`
+holds the chart below 17, because of the caveat below:
 
 Chart 17 splits the console into its own deployment with its own image. The
 base parameterises the registry globally but not that repository, so it
@@ -158,9 +158,13 @@ carry `ghcr.io/stuttgart-things/minio-object-browser:2.0.2-debian-12-r3`, so 17
 is reachable once that repository is set too. That is a licence decision first
 and a config change second.
 
-Until it is made, a cluster that needs the console pins `MINIO_VERSION` to
-`16.0.10`. The component threads that variable — the image values it still
-leaves entirely to the base.
+Until it is made, the default is `16.0.10`. The component threads
+`MINIO_VERSION` — the image values it still leaves entirely to the base.
+
+The component renders two children: `minio` and `minio-httproute`
+(`./apps/minio/components/httproute`, `dependsOn: minio`). The routes are applied
+only once the Service exists — a route applied before it serves HTTP 500 for
+good (the same split as the homerun2 `*-routes`).
 
 ## `vault` never becomes Ready on its own
 
