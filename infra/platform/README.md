@@ -23,6 +23,7 @@ infra/platform/
     ├── cert-manager-install/     → ./infra/cert-manager/components/install
     ├── cert-manager-selfsigned/  → ./infra/cert-manager/components/selfsigned (requires cert-manager-install)
     ├── cert-manager-vault-issuer/→ ./infra/cert-manager/components/vault-issuer  (requires cert-manager-install)
+    ├── cert-manager-ca-from-secret/ → ./infra/cert-manager/components/ca-from-secret (requires cert-manager-install, a CA Secret)
     ├── trust-manager/            → ./infra/trust-manager                    (requires cert-manager-install)
     ├── nfs-csi/                  → ./infra/nfs-csi
     ├── openebs/                  → ./infra/openebs
@@ -146,6 +147,7 @@ the same list:
 | `cilium-gateway` | `cilium-lb` |
 | `cert-manager-selfsigned` | `cert-manager-install` |
 | `cert-manager-vault-issuer` | `cert-manager-install` |
+| `cert-manager-ca-from-secret` | `cert-manager-install` |
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
@@ -303,6 +305,8 @@ Bundle-level names (they map onto differently-named base variables):
 | `VELERO_BUCKET` | *(required)* | the S3 bucket backups are written to |
 | `VELERO_S3_ENDPOINT` | *(required)* | S3 / MinIO endpoint URL |
 | `VELERO_SECRET` | `velero-s3-credentials` | Secret holding `VELERO_S3_ACCESS_KEY` / `VELERO_S3_SECRET_KEY` |
+| `CERT_MANAGER_CA_FROM_SECRET_ISSUER` | `ca-from-secret` | cert-manager-ca-from-secret: the ClusterIssuer's name |
+| `CERT_MANAGER_CA_FROM_SECRET_NAME` | `ca-from-secret` | cert-manager-ca-from-secret: the CA Secret (`tls.crt`/`tls.key`) the cluster provides in cert-manager's namespace |
 | `PVE_EXPORTER_TARGET` | *(required)* | the Proxmox host scraped via `?target=` |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 

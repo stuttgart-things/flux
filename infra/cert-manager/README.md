@@ -123,6 +123,50 @@ spec:
 EOF
 ```
 
+## COMPONENT `ca-from-secret`: a CA issuer from a CA the cluster provides
+
+`components/ca-from-secret` renders one `ClusterIssuer` with
+`spec.ca.secretName`. The CA itself (a `kubernetes.io/tls` Secret with
+`tls.crt` and `tls.key`, typically an intermediate) is the cluster's, usually
+SOPS-encrypted in the cluster repo, and never in this repo. Certificates then
+chain to a root that survives a reinstall. `components/selfsigned`'s
+`cluster-ca` does not: it is regenerated with the cluster.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `CERT_MANAGER_CA_FROM_SECRET_ISSUER` | `ca-from-secret` | the ClusterIssuer's name |
+| `CERT_MANAGER_CA_FROM_SECRET_NAME` | `ca-from-secret` | the CA Secret's name |
+
+The Secret's **namespace is fixed by cert-manager**, not by a variable. A
+ClusterIssuer reads it from the cluster resource namespace, which is
+cert-manager's own namespace (`CERT_MANAGER_NAMESPACE`, default
+`cert-manager`). Until the Secret is there, the issuer stays not-Ready.
+
+In the infra bundle it is the component `cert-manager-ca-from-secret`. To issue
+the **gateway wildcard** from that CA, combine it with
+`cert-manager-selfsigned`, which already renders the wildcard Certificate, and
+point that Certificate at this issuer:
+
+```yaml
+  components:
+    - ../components/cert-manager-install
+    - ../components/cert-manager-selfsigned
+    - ../components/cert-manager-ca-from-secret
+  postBuild:
+    substitute:
+      CERT_MANAGER_CA_FROM_SECRET_ISSUER: edge-ca
+      CERT_MANAGER_CA_FROM_SECRET_NAME: edge-ca
+      CERT_MANAGER_SELFSIGNED_ISSUER: edge-ca   # the wildcard comes from it
+```
+
+The selfsigned → `cluster-ca` chain is still created alongside it. A second
+wildcard for another domain is `components/extra-certificate` with
+`EXTRA_CERT_ISSUER` set to the same issuer.
+
+The Secret comes from a Kustomization of the cluster's own. It has to
+`dependsOn: cert-manager-install` (the namespace) and carry the SOPS
+`decryption` block. Nothing in the bundle waits on it except this child.
+
 ## Claims CLI
 
 ```bash
