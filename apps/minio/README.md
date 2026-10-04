@@ -2,6 +2,18 @@
 
 Deploys MinIO object storage via the stuttgart-things Helm chart (`charts/minio/minio` v16.0.10).
 
+**Chart 16, not 17, on purpose.** Chart 17 runs the console as its own
+Deployment with its own image, which this release does not parameterise: it
+resolves to `ghcr.io/bitnami/minio-object-browser` and cannot be pulled, while
+the server keeps serving and the HelmRelease reports installed. `renovate.json`
+holds the chart below 17 until somebody points the console repository at the
+mirror — a licence decision first.
+
+**Routes after the release.** `components/httproute` is meant as the `path:` of a
+second Kustomization with `dependsOn` on the first (example below). Cilium
+resolves a route's backends once: a route applied before the Service exists
+serves HTTP 500 for good while everything reports Ready.
+
 ## Structure
 
 ```
