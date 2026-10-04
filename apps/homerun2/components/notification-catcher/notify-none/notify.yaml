@@ -1,0 +1,17 @@
+---
+# `outputs: []` is a valid routing file: the catcher's Validate
+# (homerun2-notification-catcher internal/config/notify.go) only checks the
+# outputs that are present, and NewDispatcher builds an empty dispatcher -- the
+# catcher logs `notify dispatcher loaded outputs=[]` and keeps consuming.
+#
+# There is no ${VAR} in it, so nothing has to resolve at start either:
+# TEAMS_WEBHOOK_URL may stay empty (an empty ${TEAMS_WEBHOOK_URL} in a routing
+# file that USES it is fatal by design; here nothing does).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-notification-catcher-notify
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+data:
+  config.yaml: |
+    outputs: []
