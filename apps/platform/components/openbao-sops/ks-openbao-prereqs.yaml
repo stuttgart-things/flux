@@ -1,0 +1,43 @@
+---
+# openbao-prereqs -- the namespace and the static seal key
+# → ./apps/openbao/seal-static-secret
+#
+# Its own Kustomization, ahead of openbao, so the Secret components/seal-static
+# reads exists before the HelmRelease starts the pod. The key comes from this
+# Kustomization's substituteFrom Secret, which the cluster ships SOPS-encrypted
+# (blueprints render-cluster-apps generates it from profile.yaml: 32 random
+# bytes, base64 -- `openssl rand -base64 32`).
+#
+# THE KEY MUST NOT CHANGE under the same OPENBAO_SEAL_KEY_ID. Regenerating the
+# Secret (a fresh render-cluster-apps run without --existing-secrets) on an
+# initialised instance makes it unsealable.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openbao-prereqs
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 2m
+  force: false
+  prune: true
+  suspend: ${OPENBAO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/openbao/seal-static-secret
+  postBuild:
+    substitute:
+      OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
+      OPENBAO_SEAL_SECRET: "${OPENBAO_SEAL_SECRET:-openbao-static-seal}"
+    substituteFrom:
+      # substituteFrom-keys: OPENBAO_SEAL_STATIC_KEY
+      - kind: Secret
+        name: ${OPENBAO_SOPS_SECRET:-openbao-sops-secrets}
+        optional: false

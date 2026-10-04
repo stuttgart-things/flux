@@ -1,0 +1,95 @@
+---
+# tabletennis-sops with schmetterpause's database backed up
+# → ./apps/tabletennis/profiles/sops + components/schmetterpause-db-backup-subst
+#
+# ---------------------------------------------------------------------------
+# THE ALTERNATIVE TO ../tabletennis (and ../tabletennis-sops), NOT AN ADD-ON.
+# Same child name, same path as ../tabletennis-sops; this file may only ADD the
+# backup component, its dependsOn and its variables.
+# ---------------------------------------------------------------------------
+#
+# What it adds: an ObjectStore, continuous WAL archiving on schmetterpause-db
+# through the Barman Cloud plugin, a daily ScheduledBackup, and the Secret
+# `schmetterpause-db-backup` rendered in this build from the S3 pair in the
+# substituteFrom Secret (flux#628). Recovery: the -sops component's README.
+#
+# NO dependsOn on the S3 endpoint. An in-cluster MinIO (../minio) comes up in
+# parallel; WAL archiving retries until the bucket answers. Create the bucket
+# and the user before selecting this (harvester clusters/edge: Terraform).
+#
+# The panel note of ../tabletennis-sops applies here too.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tabletennis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  # As ../tabletennis-sops, plus:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cnpg-operator
+    # the plugin, and the ObjectStore CRD (barmancloud.cnpg.io) this applies
+    - name: cnpg-barman-cloud
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${TABLETENNIS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/tabletennis/profiles/sops
+  components:
+    # zaehlwerk's scoreboard panel: off, or homerun2 on the same cluster.
+    - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
+    # WAL archiving + daily base backup; the credentials Secret is rendered
+    # here, next to its namespace.
+    - ../../components/schmetterpause-db-backup-subst
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
+      SCHMETTERPAUSE_DB_IMAGE: "${TABLETENNIS_SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}"
+      SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
+      ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # passthrough-override: the component derives this from SCHMETTERPAUSE_HOSTNAME
+      # and DOMAIN, which exist one level down; the same value has to be built
+      # from this layer's own INFRA_DOMAIN here.
+      ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # ---- the backup -----------------------------------------------------
+      # REQUIRED, both. A bucket of its own: Velero treats unknown top-level
+      # directories in ITS bucket as an invalid store.
+      SCHMETTERPAUSE_BACKUP_BUCKET: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_BUCKET:-set-SCHMETTERPAUSE_BACKUP_BUCKET}"
+      SCHMETTERPAUSE_BACKUP_S3_ENDPOINT: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_S3_ENDPOINT:-https://set-SCHMETTERPAUSE_BACKUP_S3_ENDPOINT.invalid}"
+      # The barman serverName: a new one per fresh database, so a reinstall
+      # does not archive into the previous instance's WAL.
+      SCHMETTERPAUSE_BACKUP_SERVER_NAME: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_SERVER_NAME:-schmetterpause-db}"
+      SCHMETTERPAUSE_BACKUP_RETENTION: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_RETENTION:-7d}"
+      # Six fields, seconds first.
+      SCHMETTERPAUSE_BACKUP_SCHEDULE: "${TABLETENNIS_SCHMETTERPAUSE_BACKUP_SCHEDULE:-0 0 3 * * *}"
+    substituteFrom:
+      # substituteFrom-keys: SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID,
+      #   SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY, SCHMETTERPAUSE_DB_PASSWORD,
+      #   SCHMETTERPAUSE_SESSION_KEY
+      # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
+      #   ZAEHLWERK_REDIS_PASSWORD
+      # The S3 pair belongs to a user that already exists on the endpoint.
+      # SCHMETTERPAUSE_BACKUP_CA_PEM_B64 is not declared: its placeholder
+      # default suits a plain-HTTP endpoint (an in-cluster MinIO), which never
+      # reads it. An HTTPS endpoint with a private CA needs it in this Secret.
+      # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
+      # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
+      - kind: Secret
+        name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
+        optional: false

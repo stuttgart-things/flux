@@ -63,6 +63,11 @@ spec:
   # cluster's seal choice is visible where its apps are listed.
   components:
     - ./components/seal-${OPENBAO_SEAL_MODE:-transit}
+    # WHICH TOPOLOGY: multi-node (the base as it is, an empty component) or
+    # single-node (install/upgrade without wait, no injector, small requests --
+    # apps/openbao/components/single-node). The default changes nothing for a
+    # cluster that does not set it.
+    - ./components/${OPENBAO_TOPOLOGY:-multi-node}
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"

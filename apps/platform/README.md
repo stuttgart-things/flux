@@ -9,6 +9,7 @@ apps/platform/
 ├── root/          empty kustomization — the consumer's spec.path
 └── components/
     ├── openbao/     → ./apps/openbao     (requires cilium-gateway, a seal; route: openbao-httproute)
+    ├── openbao-sops/ → ./apps/openbao    (instead of openbao: static seal, key from a Secret; openbao-prereqs first)
     ├── vault/       → ./apps/vault       (existing instances only — see below)
     ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
     ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret; routes: minio-httproute)
@@ -24,8 +25,16 @@ apps/platform/
     ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
     ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
     ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
-    └── vcluster/    → ./apps/vcluster
+    ├── vcluster/    → ./apps/vcluster
+    │
+    │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:
+    ├── homerun2-sops/           → ./apps/homerun2/profiles/sops      (instead of homerun2; a StorageClass + a Secret)
+    ├── tabletennis-sops/        → ./apps/tabletennis/profiles/sops   (instead of tabletennis; cnpg-operator + a Secret)
+    └── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
 ```
+
+(The listing above is not exhaustive: the homerun2 and tabletennis families
+have more components; see `components/`.)
 
 ## Two bundles, one cluster
 
@@ -40,6 +49,44 @@ which the infra bundle provides. Flux does not care which Kustomization owns a
 name, only that it exists and is ready. Selecting an app whose dependency is
 not selected anywhere gives no error — it waits on "dependency not ready"
 forever, which reads like slowness.
+
+## SOPS-only clusters: the `-sops` alternatives
+
+A cluster where Flux decrypts SOPS but no external-secrets controller, store or
+peer Vault exists -- an edge box -- cannot use `homerun2`, `tabletennis` or
+`openbao`: their credentials come from a ClusterSecretStore, or from a transit
+seal. Each has an alternative with the same child Kustomization names, reading
+a `substituteFrom` Secret in `flux-system` instead:
+
+| Component | Secret (default name) | Keys |
+|---|---|---|
+| `homerun2-sops` | `homerun2-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64`, `TEAMS_WEBHOOK_URL`; optional `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN`, `HOMERUN2_SCOUT_AUTH_TOKEN` | <!-- pragma: allowlist secret -->
+| `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD` | <!-- pragma: allowlist secret -->
+| `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
+| `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`) |
+
+Select one of each pair, never both: the alternative renders the same child
+Kustomization (`homerun2`, `tabletennis`, `openbao`), and the bundle build
+fails on the duplicate. Switching between the two rebuilds the child in place
+rather than pruning it.
+
+- `homerun2-sops` renders the notification-catcher's routing file in its own
+  build: `HOMERUN2_SOPS_NOTIFY`, default `none` (nothing leaves the cluster).
+- With `TABLETENNIS_ZAEHLWERK_PANEL: homerun2`, zaehlwerk needs homerun2's
+  omni-pitcher token and redis password: `ZAEHLWERK_OMNI_PITCHER_TOKEN` and <!-- pragma: allowlist secret -->
+  `ZAEHLWERK_REDIS_PASSWORD` must equal `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` and
+  the decoded `HOMERUN2_REDIS_PASSWORD_B64`. Nothing derives one from the
+  other; reference both from one source. The AppProfiles therefore default
+  these, and the redis password, to `set-...` placeholders, not generated
+  values.
+- `tabletennis-sops-backup` writes WAL and base backups to any S3 endpoint
+  (`TABLETENNIS_SCHMETTERPAUSE_BACKUP_*`), with no `dependsOn` on it: an
+  in-cluster `minio` beside it comes up in parallel and archiving retries.
+- `openbao-sops` applies `openbao-prereqs` (the namespace and the seal key
+  Secret, `./apps/openbao/seal-static-secret`) before `openbao`, which runs
+  `seal-static` plus `./components/${OPENBAO_TOPOLOGY}`: `multi-node`
+  (default, the base unchanged) or `single-node`. The plain `openbao`
+  component has the same topology slot.
 
 ## argo-cd moved
 
@@ -59,7 +106,9 @@ success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor` and `minio` carry a `profile.yaml` next to their `ks-*.yaml`.
+`keycloak`, `harbor`, `minio`, `homerun2-sops`, `tabletennis-sops`,
+`tabletennis-sops-backup` and `openbao-sops` carry a `profile.yaml` next to
+their `ks-*.yaml`.
 It lists the vars a cluster may set for the app, which of them are required, and
 the Secret with its keys and how each value is made (generated, referenced from
 SOPS or Vault, or literal). blueprints' `render-cluster-apps` reads it and renders
@@ -69,7 +118,10 @@ SOPS-encrypted Secret in `flux-system`
 
 `hack/check-app-profiles.py` keeps each profile true to its component in both
 directions: the vars the component reads, `required: true` for every `set-...`
-placeholder, and exactly the keys of `# substituteFrom-keys:`. The releases quote
+placeholder, and exactly the keys of `# substituteFrom-keys:` plus
+`# substituteFrom-optional-keys:` -- keys the build reads WITH a default that a
+cluster still has to be able to set (an auth token whose default is
+`changeme`). The releases quote
 the substituted credentials, so any generated value renders as a string; the
 profiles still generate `alnum`, because a chart may put the value somewhere
 `! # %` would need escaping.

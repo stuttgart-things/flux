@@ -97,6 +97,20 @@ Why not in the base: on a multi-node cluster with a transit seal and a healthy
 peer, Helm's wait is a real check, and the injector's anti-affinity is what
 spreads it.
 
+`./components/multi-node` is its empty counterpart, so a topology can be a
+slot: the `apps/platform` components select
+`./components/${OPENBAO_TOPOLOGY:-multi-node}`.
+
+## The static seal key from substitution: `seal-static-secret`
+
+`./seal-static-secret` is a **path**, not a component: the Namespace (with
+`ssa: merge`, as the base renders it too) and the Secret
+`OPENBAO_SEAL_SECRET` (default `openbao-static-seal`) with `key:
+OPENBAO_SEAL_STATIC_KEY`. Apply it from a Kustomization that reads the key
+from a SOPS `substituteFrom` Secret, and make `openbao` `dependsOn` it, so the
+Secret exists before the HelmRelease starts the pod.
+`apps/platform/components/openbao-sops` does exactly that (`openbao-prereqs`).
+
 ## Structure
 
 ```
@@ -104,11 +118,14 @@ openbao/
 ├── kustomization.yaml      # Base: namespace + HelmRepository + release (no route)
 ├── requirements.yaml       # Namespace + openbao.github.io HelmRepository
 ├── release.yaml            # OpenBao HelmRelease (standalone raft, shamir)
+├── seal-static-secret/     # Namespace + seal-static key Secret from substitution
+│                           #   (the path of a Kustomization openbao dependsOn)
 └── components/
     ├── seal-transit/       # seal "transit" — a peer unwraps the key
     ├── seal-static/        # seal "static" — 32-byte key from a Secret
     ├── seal-none/          # no seal stanza: shamir, unsealed by hand
     ├── single-node/        # no Helm wait, no injector, small requests
+    ├── multi-node/         # empty: the base as it is (the topology slot's default)
     └── httproute/          # Gateway API HTTPRoute → svc/openbao:8200
                             #   (the path of a second Kustomization)
 ```

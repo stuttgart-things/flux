@@ -32,8 +32,12 @@ decrypts SOPS and an external-secrets controller, a `ClusterSecretStore` and an
 OpenBao auth mount would exist only to deliver these few values. That is
 typically an edge cluster.
 
-It is not a bundle component: point a Kustomization of your own at it, with the
-values in a SOPS-encrypted Secret:
+On a bundle cluster, select `tabletennis-sops` or `tabletennis-sops-backup`
+(alternatives of `tabletennis`, same child name): they apply this path with
+the values from a `substituteFrom` Secret, `tabletennis-sops-secrets` by
+default (`apps/platform/README.md`, "SOPS-only clusters"). Without the bundle,
+point a Kustomization of your own at it, with the values in a SOPS-encrypted
+Secret:
 
 ```yaml
 spec:

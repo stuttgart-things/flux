@@ -1,0 +1,39 @@
+---
+# AppProfile: what a cluster sets for tabletennis-sops, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# With TABLETENNIS_ZAEHLWERK_PANEL: homerun2, ZAEHLWERK_OMNI_PITCHER_TOKEN and
+# ZAEHLWERK_REDIS_PASSWORD must be homerun2-sops' omni-pitcher token and redis
+# password (decoded). Nothing generates them from those, so the defaults are the
+# component's own set-... placeholders: reference both apps' values from one
+# source in the ClusterApps.
+kind: AppProfile
+metadata:
+  name: tabletennis-sops
+spec:
+  bundle: apps-platform
+  component: ../components/tabletennis-sops
+  vars:
+    INFRA_DOMAIN: { required: true }
+    TABLETENNIS_SUSPEND: {}
+    TABLETENNIS_ZAEHLWERK_PANEL: {}
+    TABLETENNIS_SCHMETTERPAUSE_NAMESPACE: {}
+    TABLETENNIS_SCHMETTERPAUSE_HOSTNAME: {}
+    TABLETENNIS_SCHMETTERPAUSE_DB_IMAGE: {}
+    TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE: {}
+    TABLETENNIS_ZAEHLWERK_NAMESPACE: {}
+    TABLETENNIS_ZAEHLWERK_HOSTNAME: {}
+    TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS: {}
+    HOMERUN2_NAMESPACE: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: tabletennis-sops-secrets
+      data:
+        # alnum: it ends up in a postgres connection URL.
+        SCHMETTERPAUSE_DB_PASSWORD: { generate: { type: alnum, length: 32 } }
+        # signs every player session; >= 32 characters (openssl rand -base64 32)
+        SCHMETTERPAUSE_SESSION_KEY: { generate: { type: base64, length: 32 } }
+        ZAEHLWERK_OMNI_PITCHER_TOKEN: set-ZAEHLWERK_OMNI_PITCHER_TOKEN
+        ZAEHLWERK_REDIS_PASSWORD: set-ZAEHLWERK_REDIS_PASSWORD # pragma: allowlist secret

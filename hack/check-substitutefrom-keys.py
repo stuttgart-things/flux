@@ -39,6 +39,13 @@ BOTH DIRECTIONS FAIL:
 
 The declaration is the `# substituteFrom-keys:` comment in the substituteFrom
 block, comma-separated; it may wrap onto the following comment lines.
+
+OPTIONAL KEYS. A variable the build reads WITH a default can still be meant to
+come from the Secret: an auth token whose default is a placeholder, or a value
+that has to match another app's. `# substituteFrom-optional-keys:` names those.
+Each must be read by the build -- with a default; one read without any belongs
+in the main list. A renderer generating the Secret (hack/check-app-profiles.py)
+takes both lists.
 """
 import importlib.util
 import re
@@ -50,6 +57,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 KS_API = "kustomize.toolkit.fluxcd.io"
 MARKER = "substituteFrom-keys:"
+OPTIONAL_MARKER = "substituteFrom-optional-keys:"
 
 _spec = importlib.util.spec_from_file_location(
     "passthrough_defaults", ROOT / "hack" / "check-passthrough-defaults.py")
@@ -65,14 +73,14 @@ DISABLED = "kustomize.toolkit.fluxcd.io/substitute"
 NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-def declared(lines, start):
-    """The key names after MARKER on line `start`, following wrapped lines.
+def declared(lines, start, marker=MARKER):
+    """The key names after `marker` on line `start`, following wrapped lines.
 
     A continuation is a comment line directly below whose content is only
     names and commas. A blank `#`, prose, or a non-comment line ends it.
     """
     names = []
-    text = lines[start].split(MARKER, 1)[1]
+    text = lines[start].split(marker, 1)[1]
     i = start
     while True:
         parts = [p.strip() for p in text.split(",")]
@@ -88,8 +96,8 @@ def declared(lines, start):
     return names
 
 
-def declarations(f: Path):
-    """{Kustomization name: [keys]} for every MARKER in the file.
+def declarations(f: Path, marker=MARKER):
+    """{Kustomization name: [keys]} for every `marker` in the file.
 
     Attributed to the nearest `name:` of a Flux Kustomization above it -- the
     marker sits inside that document's postBuild block.
@@ -102,8 +110,8 @@ def declarations(f: Path):
         m = re.match(r"^  name:\s*(\S+)", line)
         if m and current is None:
             current = m.group(1)
-        if MARKER in line and line.lstrip().startswith("#"):
-            out.setdefault(current, []).extend(declared(lines, i))
+        if marker in line and line.lstrip().startswith("#"):
+            out.setdefault(current, []).extend(declared(lines, i, marker))
     return out
 
 
@@ -125,6 +133,12 @@ def substituted(text):
     return "\n".join(out)
 
 
+def read_vars(text):
+    """Every variable the build reads, with a default or without."""
+    text = substituted(text)
+    return set(BARE.findall(text)) | set(DEFAULTED.findall(text))
+
+
 def required(text, own_substitute):
     """Variables the build reads with no default anywhere and no own value."""
     text = substituted(text)
@@ -143,7 +157,7 @@ def main():
             docs = list(yaml.safe_load_all(f.read_text()))
         except (yaml.YAMLError, UnicodeDecodeError):
             continue
-        decl = None
+        decl = opt_decl = None
         for doc in docs:
             if not isinstance(doc, dict) or doc.get("kind") != "Kustomization":
                 continue
@@ -159,7 +173,9 @@ def main():
             rel = f.relative_to(ROOT)
             if decl is None:
                 decl = declarations(f)
+                opt_decl = declarations(f, OPTIONAL_MARKER)
             have = sorted(set(decl.get(name, [])))
+            optional = sorted(set(opt_decl.get(name, [])))
             if not have:
                 print(f"FAIL {rel}: {name} reads a Secret with optional: false "
                       f"but declares no `# {MARKER}`. Say which keys that "
@@ -197,6 +213,23 @@ def main():
                           f"any more. Drop it from `# {MARKER}`.",
                           file=sys.stderr)
                     fail = 1
+                read = read_vars(text) - set(post.get("substitute") or {})
+                for key in optional:
+                    if key in need:
+                        print(f"FAIL {rel}: {name} declares {key} in "
+                              f"`# {OPTIONAL_MARKER}`, but {shown} reads it with "
+                              f"no default. Move it to `# {MARKER}`.",
+                              file=sys.stderr)
+                        fail = 1
+                    elif key not in read:
+                        print(f"FAIL {rel}: {name} declares {key} in "
+                              f"`# {OPTIONAL_MARKER}`, which nothing in {shown} "
+                              f"reads. Drop it.", file=sys.stderr)
+                        fail = 1
+                    elif key in have:
+                        print(f"FAIL {rel}: {name} declares {key} in both lists.",
+                              file=sys.stderr)
+                        fail = 1
                 if not missing and not stale:
                     checked.append((name, need))
 

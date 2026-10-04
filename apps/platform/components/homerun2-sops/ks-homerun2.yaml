@@ -1,0 +1,70 @@
+---
+# homerun2 on a SOPS-only cluster → ./apps/homerun2/profiles/sops
+#
+# THE ALTERNATIVE TO ../homerun2 for a cluster with no external-secrets and no
+# ClusterSecretStore: the credentials are plain Secrets rendered from this
+# Kustomization's substituteFrom Secret, which the cluster ships SOPS-encrypted
+# (blueprints render-cluster-apps generates it from profile.yaml). Same child
+# names as ../homerun2 (homerun2, homerun2-routes), so selecting both is one
+# object defined twice.
+#
+# One Kustomization for redis and the apps, unlike ../homerun2's
+# homerun2-redis + homerun2: profiles/sops renders both, and `wait: true`
+# holds homerun2-routes until all of it is Ready.
+#
+# The notification-catcher's routing file is rendered IN THIS BUILD, next to
+# its namespace (components/notification-catcher/notify-*). Default `none`:
+# the catcher consumes and logs, nothing leaves the cluster.
+# HOMERUN2_SOPS_NOTIFY picks another notify-* variant.
+#
+# REQUIRES a StorageClass (HOMERUN2_REDIS_STORAGE_CLASS) and the Secret below.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/sops
+  components:
+    # none | tabletennis-results | tabletennis-results-and-cluster-builds.
+    # Exactly one: each renders the same ConfigMap.
+    - ../../components/notification-catcher/notify-${HOMERUN2_SOPS_NOTIFY:-none}
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # passthrough-override: no StorageClass is safe to guess -- the base's
+      # "standard" exists on almost no cluster here, and a PVC that never binds
+      # reads as a slow redis. A sentinel names the variable to set.
+      HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
+      HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"
+      # passthrough-override: the base's default is empty (only the configured
+      # stream), and an empty postBuild.substitute value renders as YAML null
+      # and fails the whole Kustomization. `messages` is that configured stream.
+      HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS: "${HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS:-messages}"
+    substituteFrom:
+      # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64, TEAMS_WEBHOOK_URL
+      # substituteFrom-optional-keys: HOMERUN2_OMNI_PITCHER_AUTH_TOKEN,
+      #   HOMERUN2_SCOUT_AUTH_TOKEN
+      # The two tokens default to `changeme` in the base, so the build does not
+      # need them -- a cluster does. TEAMS_WEBHOOK_URL is read by the catcher's
+      # Secret whatever the routing; with notify-none any placeholder will do.
+      # HOMERUN2_REDIS_PASSWORD_B64 is base64 (it lands in Secret `data:`), and
+      # zaehlwerk's ZAEHLWERK_REDIS_PASSWORD (../tabletennis-sops) is the same
+      # password, decoded.
+      - kind: Secret
+        name: ${HOMERUN2_SOPS_SECRET:-homerun2-sops-secrets}
+        optional: false

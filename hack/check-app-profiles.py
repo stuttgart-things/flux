@@ -31,8 +31,10 @@ THE CONTRACT IS DERIVED FROM THE COMPONENT, in both directions:
              A var whose default is a `set-...` placeholder is required: true.
   secrets    one entry per substituteFrom Secret with optional: false, named
              like its default (`${KEYCLOAK_SECRET:-keycloak-secrets}`), with
-             exactly the keys of its `# substituteFrom-keys:` declaration --
-             which check-substitutefrom-keys.py already keeps true.
+             exactly the keys of its `# substituteFrom-keys:` declaration plus
+             those of `# substituteFrom-optional-keys:` (read with a default,
+             still meant to come from the Secret) -- both of which
+             check-substitutefrom-keys.py already keeps true.
   placement  metadata.name is the directory, spec.bundle its bundle,
              spec.component `../components/<directory>`.
 
@@ -78,7 +80,8 @@ def component_contract(ks_files):
                     continue
                 m = VAR.fullmatch(str(src.get("name", "")))
                 secret = m.group(2) if m and m.group(2) else str(src.get("name"))
-                secrets[secret] = sorted(set(decl.get(name, [])))
+                optional = sk.declarations(f, sk.OPTIONAL_MARKER).get(name, [])
+                secrets[secret] = sorted(set(decl.get(name, [])) | set(optional))
                 if m:
                     name_vars.add(m.group(1))
         for var, default in VAR.findall(text):
@@ -145,10 +148,12 @@ def check(profile_file):
         extra = sorted(set(have_secrets[name]) - set(need_secrets[name]))
         if missing:
             errs.append(f"{rel}: secret {name} lacks {', '.join(missing)} -- "
-                        f"`# substituteFrom-keys:` needs it, it would render empty")
+                        f"`# substituteFrom-keys:` (or -optional-keys:) names it, "
+                        f"it would render empty or keep its default")
         if extra:
             errs.append(f"{rel}: secret {name} has {', '.join(extra)}, which "
-                        f"`# substituteFrom-keys:` does not name -- nothing reads it")
+                        f"neither `# substituteFrom-keys:` nor -optional-keys: "
+                        f"names -- nothing reads it")
     return errs
 
 

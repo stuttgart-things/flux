@@ -118,6 +118,46 @@ MUST_MATCH = {
         },
         "extra_components_allowed": {"../../components/schmetterpause-db-backup"},
     },
+    "./apps/tabletennis/profiles/sops": {
+        "why": "tabletennis-sops-backup is tabletennis-sops with schmetterpause's "
+               "database archived through the Barman Cloud plugin -- the same "
+               "install on the SOPS path, so switching a cluster to or from "
+               "backups keeps its hostnames, namespaces and panel",
+        "extra_allowed": {
+            "SCHMETTERPAUSE_BACKUP_BUCKET",
+            "SCHMETTERPAUSE_BACKUP_S3_ENDPOINT",
+            "SCHMETTERPAUSE_BACKUP_SERVER_NAME",
+            "SCHMETTERPAUSE_BACKUP_RETENTION",
+            "SCHMETTERPAUSE_BACKUP_SCHEDULE",
+        },
+        "extra_components_allowed": {"../../components/schmetterpause-db-backup-subst"},
+    },
+    "./apps/openbao": {
+        "why": "openbao-sops is the openbao component with the seal fixed to "
+               "static and its key Secret applied ahead of it -- the same chart, "
+               "storage and topology slot, so both have to move together",
+        # The transit seal's own and the trust bundle it verifies the peer
+        # with; openbao-sops has no transit seal. OPENBAO_SEAL_SECRET_KEY stays
+        # at seal-static's default `key`, which openbao-prereqs renders.
+        "extra_allowed": {
+            "OPENBAO_SEAL_ADDRESS",
+            "OPENBAO_SEAL_KEY_NAME",
+            "OPENBAO_SEAL_MOUNT_PATH",
+            "OPENBAO_SEAL_SECRET_KEY",
+            "OPENBAO_TRUST_BUNDLE_CONFIGMAP",
+            "OPENBAO_TRUST_BUNDLE_KEY",
+        },
+        # The seal slot of openbao against the fixed seal of openbao-sops.
+        "extra_components_allowed": {
+            "./components/seal-${OPENBAO_SEAL_MODE:-transit}",
+            "./components/seal-static",
+        },
+    },
+    "./apps/openbao/components/httproute": {
+        "why": "openbao-sops carries openbao's route unchanged -- the seal is "
+               "not the route's business",
+        "extra_allowed": set(),
+    },
     "./cicd/machinery": {
         "why": "machinery-auth is the machinery component with its gRPC "
                "bearer-token auth switched on -- same image, watch set and "

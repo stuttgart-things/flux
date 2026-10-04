@@ -7,6 +7,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | Bundle component | Path | What it deploys |
 |---|---|---|
 | `homerun2` | `profiles/platform-redis`, then `profiles/platform` | the namespace and redis-stack (`homerun2-redis`), then omni-pitcher, core-catcher, scout, led-catcher once redis answers |
+| `homerun2-sops` | `profiles/sops`, then `profiles/sops-routes` | **instead of `homerun2`**, for a cluster without external-secrets: the whole sops stack (redis-stack, omni-pitcher, core-catcher, scout, led-catcher, light-catcher + wled-mock, demo-pitcher, notification-catcher with `notify-none`, config-viewer), credentials from a `substituteFrom` Secret (`homerun2-sops-secrets`). Do not combine with the other `homerun2-*` components, which read the store |
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
 | `homerun2-config-viewer` | `profiles/platform-config-viewer` | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
