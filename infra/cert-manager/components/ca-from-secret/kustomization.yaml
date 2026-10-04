@@ -1,0 +1,22 @@
+---
+# ca-from-secret -- a CA ClusterIssuer backed by a CA the CALLER provides: a
+# kubernetes.io/tls Secret (tls.crt + tls.key of an intermediate or root CA)
+# that this repo never sees. Typically SOPS-encrypted in the cluster repo, so
+# certificates chain to a root that survives a reinstall -- unlike
+# ../selfsigned's cluster-ca, which is regenerated with the cluster.
+#
+# THE SECRET'S NAMESPACE IS NOT A CHOICE HERE. A ClusterIssuer reads its CA
+# Secret from cert-manager's cluster resource namespace, which is the namespace
+# cert-manager runs in (CERT_MANAGER_NAMESPACE, default cert-manager) unless the
+# controller was started with --cluster-resource-namespace. Put it there.
+#
+# Until the Secret exists the issuer sits not-Ready, and any Certificate naming
+# it waits. Correct and loud.
+#
+# Composes with ../selfsigned for the gateway wildcard: point
+# CERT_MANAGER_SELFSIGNED_ISSUER at this issuer and the wildcard Certificate
+# selfsigned already renders is signed by the provided CA. See the README.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - clusterissuer.yaml

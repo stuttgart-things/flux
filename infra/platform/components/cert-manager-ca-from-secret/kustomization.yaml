@@ -1,0 +1,9 @@
+---
+# cert-manager-ca-from-secret
+#
+# REQUIRES ../cert-manager-install in the same spec.components list (its child
+# dependsOn it), and a CA Secret the cluster provides -- see the child.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cert-manager-ca-from-secret.yaml

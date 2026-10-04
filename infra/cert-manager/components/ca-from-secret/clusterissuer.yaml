@@ -1,0 +1,10 @@
+---
+# Defaults differ from ../selfsigned's cluster-ca / cluster-ca-secret, so
+# both can run side by side with nothing set.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ${CERT_MANAGER_CA_FROM_SECRET_ISSUER:-ca-from-secret}
+spec:
+  ca:
+    secretName: ${CERT_MANAGER_CA_FROM_SECRET_NAME:-ca-from-secret} # pragma: allowlist secret
