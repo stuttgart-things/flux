@@ -1,0 +1,26 @@
+---
+# gateway-extra -- a SECOND Gateway on its own VIP, with its own wildcard
+# certificate: e.g. a public/player-facing side next to the internal
+# cluster Gateway (../gateway), without touching that one.
+#
+#   CiliumLoadBalancerIPPool  one address, serving ONLY this Gateway's Service
+#                             (Cilium labels it io.cilium.gateway/owning-gateway)
+#   Certificate               *.CILIUM_GATEWAY_EXTRA_DOMAIN from a given issuer
+#   Gateway                   HTTPS on 443, asks for the address through
+#                             spec.infrastructure (lbipam.cilium.io/ips)
+#
+# Every default differs from ../gateway and ../lb (cilium-gateway,
+# wildcard-tls, default-pool), so both render side by side with nothing set.
+#
+# REQUIRES Cilium >= 1.18 (cilium.io/v2 pools; Gateway infrastructure
+# annotations), Gateway API and LB-IPAM enabled, cert-manager, and the issuer.
+# The address must be announced: ../lb's CiliumL2AnnouncementPolicy covers
+# every LB IP, so with it selected nothing more is needed.
+#
+# HTTPS only, no port-80 listener: routes attach with sectionName: https. A
+# base whose HTTP route redirects through sectionName: http does not attach
+# here; give such an app a route of its own.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - gateway-extra.yaml

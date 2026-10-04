@@ -1,0 +1,55 @@
+---
+# A second Gateway on its own VIP → ./infra/cilium/components/gateway-extra
+#
+# Independent of cilium-gateway: its own name, address, domain, certificate
+# and issuer. HTTPRoutes attach to it by CILIUM_GATEWAY_EXTRA_NAME /
+# _NAMESPACE, sectionName https.
+#
+# THE ISSUER MUST NOT COME FROM SOMETHING THAT WAITS ON THIS BUNDLE. wait: true
+# below includes the Certificate, which stays not-Ready until its issuer
+# exists. A bundle consumer with wait: true then never gets Ready, and an
+# issuer applied by a Kustomization that dependsOn the bundle never arrives.
+# That is a deadlock. Use an issuer from the bundle itself (cert-manager-selfsigned's
+# cluster-ca, cert-manager-vault-issuer, cert-manager-ca-from-secret) or from
+# outside it. Otherwise point that later Kustomization at the path above
+# directly instead of selecting this component.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium-gateway-extra
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    # the L2 announcement policy that makes the VIP reachable
+    - name: cilium-lb
+    # the Certificate CRD
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${CILIUM_GATEWAY_EXTRA_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cilium/components/gateway-extra
+  postBuild:
+    # passthrough-complete: every ${VAR} the child reads is listed here.
+    substitute:
+      CILIUM_GATEWAY_EXTRA_NAME: "${CILIUM_GATEWAY_EXTRA_NAME:-cilium-gateway-extra}"
+      CILIUM_GATEWAY_EXTRA_NAMESPACE: "${CILIUM_GATEWAY_EXTRA_NAMESPACE:-default}"
+      CILIUM_GATEWAY_EXTRA_POOL_NAME: "${CILIUM_GATEWAY_EXTRA_POOL_NAME:-cilium-gateway-extra-pool}"
+      # REQUIRED, both. Sentinels rather than nulls, like cilium-lb's
+      # CILIUM_LB_IP_*: a null takes the whole bundle down, a sentinel shows
+      # in `kubectl get ciliumloadbalancerippool` / the Certificate.
+      CILIUM_GATEWAY_EXTRA_IP: "${CILIUM_GATEWAY_EXTRA_IP:-0.0.0.0}"
+      CILIUM_GATEWAY_EXTRA_DOMAIN: "${CILIUM_GATEWAY_EXTRA_DOMAIN:-set-CILIUM_GATEWAY_EXTRA_DOMAIN.invalid}"
+      CILIUM_GATEWAY_EXTRA_ISSUER: "${CILIUM_GATEWAY_EXTRA_ISSUER:-cluster-ca}"
+      CILIUM_GATEWAY_EXTRA_ISSUER_KIND: "${CILIUM_GATEWAY_EXTRA_ISSUER_KIND:-ClusterIssuer}"
+      CILIUM_GATEWAY_EXTRA_TLS_SECRET: "${CILIUM_GATEWAY_EXTRA_TLS_SECRET:-cilium-gateway-extra-tls}" # pragma: allowlist secret
