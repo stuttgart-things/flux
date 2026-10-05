@@ -46,8 +46,18 @@ that has to match another app's. `# substituteFrom-optional-keys:` names those.
 Each must be read by the build -- with a default; one read without any belongs
 in the main list. A renderer generating the Secret (hack/check-app-profiles.py)
 takes both lists.
+
+An optional key may also be read only behind a SWITCH: a component slot like
+`../../components/zaehlwerk-handover-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}`
+whose default variant reads nothing, and whose other variant reads the token
+bare. The default render does not see it, so for optional keys the build is
+also rendered with each slot variable set to every value its sibling
+directories offer (all slots sharing the variable at once). A variant that
+does not build -- an ESO component refusing a sops path -- contributes nothing.
 """
+import glob
 import importlib.util
+import os
 import re
 import sys
 from pathlib import Path
@@ -147,6 +157,37 @@ def required(text, own_substitute):
     return sorted(bare - defaulted - set(own_substitute))
 
 
+def switched(target, components):
+    """Renders of `target` with each component-slot variable set to each value.
+
+    A slot is a component path carrying `${VAR:-default}`; its values are the
+    sibling directories its glob matches. Every slot sharing VAR gets the same
+    value, the others their default -- as Flux resolves it.
+    """
+    values = {}
+    for c in map(str, components):
+        for m in pd.SUBST_PATH.finditer(c):
+            pre, post = c[:m.start()], c[m.end():]
+            if "${" in pre + post:
+                continue
+            head = os.path.normpath(os.path.join(target, pre + "X"))[:-1]
+            # A slot's value is one path segment: the rest of a matching
+            # sibling's name, nothing after it (as `-${VAR:-off}` is used).
+            tail = post.rstrip("/")
+            for d in glob.glob(head + "*" + tail):
+                v = d[len(head):len(d) - len(tail)]
+                if v and "/" not in v and os.path.isdir(d):
+                    values.setdefault(m.group(1), set()).add(v)
+    for var, vals in sorted(values.items()):
+        for v in sorted(vals):
+            comps = [pd.SUBST_PATH.sub(
+                lambda m: v if m.group(1) == var else (m.group(2) or ""), str(c))
+                for c in components]
+            text = pd.rendered(target, comps)
+            if text and text.strip():
+                yield text
+
+
 def main():
     fail = 0
     checked = []
@@ -213,7 +254,11 @@ def main():
                           f"any more. Drop it from `# {MARKER}`.",
                           file=sys.stderr)
                     fail = 1
-                read = read_vars(text) - set(post.get("substitute") or {})
+                read = read_vars(text)
+                if optional:
+                    for alt in switched(target, spec.get("components") or []):
+                        read |= read_vars(alt)
+                read -= set(post.get("substitute") or {})
                 for key in optional:
                     if key in need:
                         print(f"FAIL {rel}: {name} declares {key} in "
