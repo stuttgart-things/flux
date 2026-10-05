@@ -92,6 +92,12 @@ rather than pruning it.
   other; reference both from one source. The AppProfiles therefore default
   these, and the redis password, to `set-...` placeholders, not generated
   values.
+- `TABLETENNIS_SCHMETTERPAUSE_ADMIN: 'on'` (quoted -- a bare `on` is YAML
+  1.1 `true`; default `off`) with `TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN:
+  <display name>` grants that player the admin flag at every start (the same
+  components as `tabletennis`; schmetterpause `docs/admin-and-observers.md`
+  for the order: join, make admin, then mark as observer under `/admin`).
+  `on` without a name grants nothing (default `admin-name-unset`).
 - `TABLETENNIS_SCOREBOARD_HANDOVER: sops` (default `off`) switches on
   schmetterpause's scoreboard API and zaehlwerk's handover together: the
   scoring page offers schmetterpause's players, and a won match is reported
