@@ -1,0 +1,30 @@
+---
+# AppProfile: what a cluster sets for homerun2-light-catcher-tabletennis-sops,
+# and the Secret it needs. Read by blueprints `render-cluster-apps`; kept true
+# by hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# HOMERUN2_REDIS_PASSWORD_B64 must be homerun2-sops' value -- one redis.
+# Nothing generates it from that, so the default is a placeholder that is not
+# valid base64: the apply fails loudly until a cluster references the same
+# source as homerun2-sops (ref+sops:// in its ClusterApps).
+kind: AppProfile
+metadata:
+  name: homerun2-light-catcher-tabletennis-sops
+spec:
+  bundle: apps-platform
+  component: ../components/homerun2-light-catcher-tabletennis-sops
+  vars:
+    INFRA_DOMAIN: { required: true }
+    HOMERUN2_NAMESPACE: {}
+    HOMERUN2_LIGHT_CATCHER_TABLETENNIS_SUSPEND: {}
+    HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE: {}
+    HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME: {}
+    HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT: {}
+    HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: {}
+    HOMERUN2_LIGHT_CATCHER_VERSION: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: homerun2-light-catcher-tabletennis-sops-secrets
+      data:
+        HOMERUN2_REDIS_PASSWORD_B64: set-HOMERUN2_REDIS_PASSWORD_B64 # pragma: allowlist secret
