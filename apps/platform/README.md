@@ -67,7 +67,7 @@ a `substituteFrom` Secret in `flux-system` instead:
 | `homerun2-light-catcher-tabletennis-sops` | `homerun2-light-catcher-tabletennis-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
 | `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
-| `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`) |
+| `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`); optional `OPENBAO_TERRAFORM_PASSWORD`, `OPENBAO_ADMIN_PASSWORD` (both needed with `OPENBAO_INIT: self-init-userpass`) |
 
 Select one of each pair, never both: the alternative renders the same child
 Kustomization (`homerun2`, `homerun2-light-catcher-tabletennis`,
@@ -110,6 +110,17 @@ rather than pruning it.
   `seal-static` plus `./components/${OPENBAO_TOPOLOGY}`: `multi-node`
   (default, the base unchanged) or `single-node`. The plain `openbao`
   component has the same topology slot.
+- `openbao-sops` also has an init slot, `./components/${OPENBAO_INIT}`:
+  `init-none` (default, nothing changes: `bao operator init` by hand) or
+  `self-init-userpass` -- OpenBao initialises itself on first start, keeps no
+  root token, and leaves two userpass logins: `terraform` with a PKI-only
+  policy (automation) and the break-glass `admin` (everything, short-lived
+  tokens; password only in SOPS, used by hand, never in automation).
+  Passwords `OPENBAO_TERRAFORM_PASSWORD` and `OPENBAO_ADMIN_PASSWORD`, carried
+  by `openbao-prereqs` into the seal Secret as `terraform-password` and
+  `admin-password`. Fresh, empty storage only;
+  see [`apps/openbao`](../openbao/README.md#self-initialisation-componentsself-init-userpass).
+  The plain `openbao` has no init slot.
 
 ## argo-cd moved
 

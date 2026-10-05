@@ -1,0 +1,91 @@
+---
+# self-init-userpass -- OpenBao initialises ITSELF on first start: no
+# `bao operator init`, no root token anyone holds, no recovery keys. What
+# exists afterwards is userpass with TWO users:
+#   terraform  least-privilege policy `terraform` (PKI at pki/, nothing else),
+#              for automation
+#   admin      policy `admin` (everything): the BREAK-GLASS login in place of
+#              a root token -- enable k8s auth later, rotate, extend policies,
+#              without a reinstall. Its password stays in SOPS and is used by
+#              hand only, never by automation. Tokens: 30m, at most 1h.
+# See self-init.hcl for the requests and every policy path.
+#
+# REQUIRES AN AUTO-UNSEAL: combine with ../seal-static or ../seal-transit and
+# list it AFTER the seal. It appends to the env list the seal component
+# creates, so with ../seal-none (or before the seal) the build FAILS -- on
+# purpose: OpenBao refuses self-init without an auto-unseal anyway.
+#
+#   components:
+#     - ./components/seal-static
+#     - ./components/single-node       # optional
+#     - ./components/self-init-userpass
+#
+# The passwords are env OPENBAO_TERRAFORM_PASSWORD and OPENBAO_ADMIN_PASSWORD,
+# from keys `terraform-password` and `admin-password` of the seal Secret
+# ${OPENBAO_SEAL_SECRET} (../../seal-static-secret renders them from the
+# variables of the same names). The SAME Secret on purpose: it is the
+# one SOPS-delivered Secret this instance already depends on, and the
+# Kustomization that renders it (openbao-prereqs) already reads the SOPS
+# substituteFrom Secret.
+#
+# FAILURE IS LOUD, AT RUNTIME. A missing key in the Secret keeps the pod in
+# CreateContainerConfigError (nothing initialised yet: add the key, done). An
+# EMPTY password (either one) fails the self-init: the server exits and
+# refuses to unseal from then on -- set the password, delete PVC
+# data-openbao-0 and the pod.
+# A render-time check is not possible: Flux substitution cannot fail on an
+# empty value.
+#
+# ONLY ON EMPTY STORAGE. Added to an instance that is already initialised, it
+# changes the pod spec and does nothing else: OpenBao never re-runs self-init.
+# Create the users by hand there, or reinstall.
+#
+# HOW: the requests are a second server config file. The chart's own config is
+# a single string that ../seal-static REPLACES wholesale, and JSON patch cannot
+# append to a string; `bao server` takes -config more than once and merges the
+# `initialize` stanzas of all files. So: a ConfigMap mounted through
+# extraVolumes (/openbao/userconfig/openbao-self-init/) and server.extraArgs
+# naming it -- independent of which seal and topology are selected, and of the
+# chart's standalone/ha config split.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+configMapGenerator:
+  - name: openbao-self-init
+    namespace: ${OPENBAO_NAMESPACE:-openbao}
+    files:
+      - self-init.hcl
+    options:
+      # Referenced by name from the HelmRelease values, which kustomize does
+      # not rewrite.
+      disableNameSuffixHash: true
+patches:
+  # By kind + name, never by namespace: components are applied BEFORE
+  # postBuild substitution (see ../single-node).
+  - target:
+      kind: HelmRelease
+      name: openbao
+    patch: |  # pragma: allowlist secret -- secretKey below names a key, holds none
+      # `-` appends to the list the seal component created; no list (no
+      # auto-unseal) fails the build.
+      - op: add
+        path: /spec/values/server/extraSecretEnvironmentVars/-
+        value:
+          envName: OPENBAO_TERRAFORM_PASSWORD
+          secretName: ${OPENBAO_SEAL_SECRET:-openbao-static-seal}
+          secretKey: terraform-password
+      - op: add
+        path: /spec/values/server/extraSecretEnvironmentVars/-
+        value:
+          envName: OPENBAO_ADMIN_PASSWORD
+          secretName: ${OPENBAO_SEAL_SECRET:-openbao-static-seal}
+          secretKey: admin-password
+      # extraVolumes rather than volumes/volumeMounts: ../seal-transit owns
+      # those lists, and an `add` here would replace its trust bundle.
+      - op: add
+        path: /spec/values/server/extraVolumes
+        value:
+          - type: configMap
+            name: openbao-self-init
+      - op: add
+        path: /spec/values/server/extraArgs
+        value: -config=/openbao/userconfig/openbao-self-init/self-init.hcl

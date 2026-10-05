@@ -9,9 +9,13 @@
 #   OPENBAO_SEAL_SECRET       the Secret's name (default openbao-static-seal);
 #                             components/seal-static reads the same variable
 #   OPENBAO_NAMESPACE         default openbao
+#   OPENBAO_TERRAFORM_PASSWORD  optional, default empty: the userpass password
+#                             components/self-init-userpass reads
+#   OPENBAO_ADMIN_PASSWORD    optional, default empty: the break-glass admin's
+#                             userpass password, same component
 #
 # The key lands under `key`, components/seal-static's default
-# OPENBAO_SEAL_SECRET_KEY.
+# OPENBAO_SEAL_SECRET_KEY; the passwords under `terraform-password` and `admin-password`.
 #
 # apps/platform/components/openbao-sops applies this as openbao-prereqs.
 apiVersion: kustomize.config.k8s.io/v1beta1

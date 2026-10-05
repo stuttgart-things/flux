@@ -7,9 +7,19 @@
 # The key Secret is applied by openbao-prereqs (ks-openbao-prereqs.yaml), which
 # this waits for; the HTTPRoute by openbao-httproute, which waits for this.
 #
-# THE FIRST ROLLOUT ENDS WITH AN UNINITIALISED INSTANCE: run `bao operator
-# init` once (apps/openbao/README.md, "Initialize"). The static seal unseals
-# on every restart after that; it does not initialise.
+# THE FIRST ROLLOUT ENDS WITH AN UNINITIALISED INSTANCE -- unless
+# OPENBAO_INIT is self-init-userpass (below): run `bao operator init` once
+# (apps/openbao/README.md, "Initialize"). The static seal unseals on every
+# restart after that; it does not initialise.
+#
+# OPENBAO_INIT self-init-userpass: no `bao operator init` -- the instance
+# initialises itself on first start (empty storage only), keeps no root token
+# and leaves two userpass logins: `terraform` (PKI-only policy, automation) and
+# `admin` (break-glass, everything, by hand only); passwords
+# OPENBAO_TERRAFORM_PASSWORD / OPENBAO_ADMIN_PASSWORD, carried by
+# openbao-prereqs into the seal Secret
+# (apps/openbao/components/self-init-userpass). init-none (default)
+# changes nothing.
 #
 # OPENBAO_TOPOLOGY single-node for a cluster with ONE node: install/upgrade
 # without wait (the pod is not ready before the init), no agent injector, small
@@ -44,6 +54,7 @@ spec:
   components:
     - ./components/seal-static
     - ./components/${OPENBAO_TOPOLOGY:-multi-node}
+    - ./components/${OPENBAO_INIT:-init-none}
   postBuild:
     substitute:
       OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"

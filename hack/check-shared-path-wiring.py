@@ -148,9 +148,14 @@ MUST_MATCH = {
             "OPENBAO_TRUST_BUNDLE_KEY",
         },
         # The seal slot of openbao against the fixed seal of openbao-sops.
+        # The init slot is openbao-sops' own: self-init-userpass reads its
+        # password from the seal Secret, which only openbao-prereqs renders
+        # (the transit token Secret of openbao comes from elsewhere). Its
+        # default init-none is empty, so the two still render the same.
         "extra_components_allowed": {
             "./components/seal-${OPENBAO_SEAL_MODE:-transit}",
             "./components/seal-static",
+            "./components/${OPENBAO_INIT:-init-none}",
         },
     },
     "./apps/openbao/components/httproute": {
