@@ -101,12 +101,91 @@ spreads it.
 slot: the `apps/platform` components select
 `./components/${OPENBAO_TOPOLOGY:-multi-node}`.
 
+## Self-initialisation: `components/self-init-userpass`
+
+Instead of `bao operator init` by hand, OpenBao initialises **itself** on its
+first start ([`initialize`](https://openbao.org/docs/configuration/self-init/),
+tested with OpenBao 2.7.0 and 2.7.1): it runs a fixed list of requests once, on empty storage, with
+a root token it revokes right after. **No root token** is handed to anyone and
+**no recovery keys** are created. What is left is one login:
+
+| Created | What |
+|---|---|
+| `auth/userpass` | the auth method |
+| policy `terraform` | PKI at `pki/` and nothing else (below) |
+| user `terraform` | `token_policies = ["terraform"]`, token TTL 1h (max 4h), password from env `OPENBAO_TERRAFORM_PASSWORD` |
+
+```yaml
+  components:
+    - ./components/seal-static          # an auto-unseal is REQUIRED
+    - ./components/single-node          # optional
+    - ./components/self-init-userpass   # after the seal
+```
+
+The policy (`components/self-init-userpass/self-init.hcl`, each path
+commented there):
+
+| Path | Capabilities | For |
+|---|---|---|
+| `sys/mounts/pki` | create, read, update, delete | `vault_mount` -- mount, read back, unmount `pki/` |
+| `sys/mounts/pki/tune` | read, update | the mount's TTLs and ACME headers |
+| `sys/mounts` | read | the mount table (`bao secrets list`); hashicorp/vault 5.12 does not need it |
+| `pki/*` | create, read, update, delete, list | config/cluster, config/urls, config/acme, roles, issuers, intermediate/generate/internal, intermediate/set-signed, issue/sign, acme/new-eab |
+| `auth/token/lookup-self` | read | the provider's token lookup (the default policy has it too) |
+
+Everything else is denied: `sys/auth`, policies, other mounts, audit,
+`sys/seal`, `sys/rotate`, the userpass users, token creation. Terraform logs in
+with `auth_login_userpass { username = "terraform" }` and `skip_child_token =
+true`.
+
+**How it is wired.** The requests are a **second** server config file: the
+ConfigMap `openbao-self-init` (mounted through `server.extraVolumes` at
+`/openbao/userconfig/openbao-self-init/`) and `server.extraArgs:
+-config=…/self-init.hcl`; `bao server` merges the `initialize` stanzas of all
+its `-config` files. The chart's own config is not touched -- the seal
+components replace that string wholesale, and a JSON patch cannot append to a
+string -- so this works with either seal and either topology. The password
+env is appended to the seal's `extraSecretEnvironmentVars`: from key
+`terraform-password` of the seal Secret `OPENBAO_SEAL_SECRET`, which
+`./seal-static-secret` renders from `OPENBAO_TERRAFORM_PASSWORD` -- the one
+SOPS-delivered Secret the instance already depends on.
+
+**Rules:**
+
+* **An auto-unseal is required** (`seal-static`, `seal-transit`): OpenBao
+  refuses self-init with shamir. Listed after `seal-none`, or before the seal,
+  the build fails -- there is no env list to append to.
+* **Empty storage only.** On an instance that is already initialised it only
+  changes the pod spec; OpenBao never re-runs self-init. Reinstall (delete the
+  PVC), or create the user by hand there.
+* **Failure is loud, at runtime.** A Secret without the key keeps the pod in
+  `CreateContainerConfigError` before anything is initialised -- add the key.
+  An **empty** password (unset `OPENBAO_TERRAFORM_PASSWORD`: the Secret then
+  holds `""`) fails the self-init: the server exits, and from then on refuses
+  to unseal (`self-initialization failed: refusing to unseal`). Set the
+  password, then delete PVC `data-openbao-0` and the pod. A render-time check
+  is not possible: substitution cannot fail on an empty value.
+* **The password is read once.** Changing it in the Secret later changes
+  nothing in OpenBao.
+* **No admin is left behind.** Anything beyond `pki/` -- another auth method, a
+  policy change -- means extending `self-init.hcl` and reinstalling. That is
+  the point: nothing on the cluster can widen its own access.
+* With `self-init-userpass` the pod becomes Ready on its own, so Helm's wait
+  (multi-node) passes on a fresh install; `single-node`'s no-wait is no
+  longer needed for the init, and harmless.
+
+`./components/init-none` is its empty counterpart:
+`apps/platform/components/openbao-sops` selects
+`./components/${OPENBAO_INIT:-init-none}`.
+
 ## The static seal key from substitution: `seal-static-secret`
 
 `./seal-static-secret` is a **path**, not a component: the Namespace (with
 `ssa: merge`, as the base renders it too) and the Secret
 `OPENBAO_SEAL_SECRET` (default `openbao-static-seal`) with `key:
-OPENBAO_SEAL_STATIC_KEY`. Apply it from a Kustomization that reads the key
+OPENBAO_SEAL_STATIC_KEY` and `terraform-password: OPENBAO_TERRAFORM_PASSWORD`
+(optional, empty when unset; only `components/self-init-userpass` reads it).
+Apply it from a Kustomization that reads the key
 from a SOPS `substituteFrom` Secret, and make `openbao` `dependsOn` it, so the
 Secret exists before the HelmRelease starts the pod.
 `apps/platform/components/openbao-sops` does exactly that (`openbao-prereqs`).
@@ -126,6 +205,8 @@ openbao/
     ├── seal-none/          # no seal stanza: shamir, unsealed by hand
     ├── single-node/        # no Helm wait, no injector, small requests
     ├── multi-node/         # empty: the base as it is (the topology slot's default)
+    ├── self-init-userpass/ # self-init on first start: userpass user `terraform`, PKI-only policy
+    ├── init-none/          # empty: init by hand (the init slot's default)
     └── httproute/          # Gateway API HTTPRoute → svc/openbao:8200
                             #   (the path of a second Kustomization)
 ```
@@ -408,6 +489,13 @@ No variables. Base parameters only.
 | `OPENBAO_MEMORY_REQUEST` | `128Mi` | Server memory request |
 | `OPENBAO_MEMORY_LIMIT` | `512Mi` | Server memory limit |
 
+### `self-init-userpass`
+
+No variables of its own. It reads `OPENBAO_SEAL_SECRET` (default
+`openbao-static-seal`, the Secret holding key `terraform-password`) and
+`OPENBAO_NAMESPACE`. The password itself goes into that Secret:
+`OPENBAO_TERRAFORM_PASSWORD` for `./seal-static-secret`.
+
 ### `httproute`
 
 | Variable | Default | Description |
@@ -420,7 +508,8 @@ No variables. Base parameters only.
 
 ## Initialize
 
-Whichever seal is chosen, the instance still has to be **initialized once**:
+Whichever seal is chosen, the instance still has to be **initialized once** --
+unless it uses `components/self-init-userpass`, which does that itself:
 
 ```bash
 kubectl exec -n openbao openbao-0 -- bao operator init

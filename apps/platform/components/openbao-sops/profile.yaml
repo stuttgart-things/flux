@@ -6,6 +6,11 @@
 # OPENBAO_SEAL_STATIC_KEY is generated ONCE: render-cluster-apps keeps it as
 # long as --existing-secrets is passed. A new key under the same
 # OPENBAO_SEAL_KEY_ID leaves an initialised instance unsealable.
+#
+# OPENBAO_TERRAFORM_PASSWORD is generated for every cluster but read only with
+# OPENBAO_INIT: self-init-userpass, ONCE, when the instance initialises itself
+# (the userpass user `terraform`). Keep it with --existing-secrets too: it is
+# what Terraform logs in with.
 kind: AppProfile
 metadata:
   name: openbao-sops
@@ -19,6 +24,7 @@ spec:
     OPENBAO_NAMESPACE: {}
     OPENBAO_SUSPEND: {}
     OPENBAO_TOPOLOGY: {}
+    OPENBAO_INIT: {}
     OPENBAO_CHART_VERSION: {}
     OPENBAO_STORAGE_SIZE: {}
     OPENBAO_SEAL_SECRET: {}
@@ -30,3 +36,4 @@ spec:
       data:
         # 32 random bytes, base64: what `openssl rand -base64 32` gives
         OPENBAO_SEAL_STATIC_KEY: { generate: { type: base64, length: 32 } }
+        OPENBAO_TERRAFORM_PASSWORD: { generate: { type: alnum, length: 32 } }

@@ -1,0 +1,13 @@
+---
+# init-none -- no self-initialisation: the instance is initialised by hand,
+# `bao operator init` (../../README.md, "Initialize"). The counterpart of
+# ./self-init-userpass.
+#
+# An EMPTY component, like ../seal-none and ../multi-node, so the apps/platform
+# bundle can select `./components/${OPENBAO_INIT:-init-none}` with a default
+# that changes nothing for a cluster already running.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Not decoration: kustomize rejects a kustomization.yaml with nothing but
+# apiVersion and kind as "empty" (see ../seal-none).
+resources: []
