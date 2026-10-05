@@ -29,6 +29,8 @@ spec:
     TABLETENNIS_ZAEHLWERK_NAMESPACE: {}
     TABLETENNIS_ZAEHLWERK_HOSTNAME: {}
     TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS: {}
+    TABLETENNIS_SCOREBOARD_HANDOVER: {}
+    TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL: {}
     HOMERUN2_NAMESPACE: {}
     INFRA_GATEWAY_NAME: {}
     INFRA_GATEWAY_NAMESPACE: {}
@@ -46,5 +48,9 @@ spec:
         SCHMETTERPAUSE_SESSION_KEY: { generate: { type: base64, length: 32 } }
         ZAEHLWERK_OMNI_PITCHER_TOKEN: set-ZAEHLWERK_OMNI_PITCHER_TOKEN
         ZAEHLWERK_REDIS_PASSWORD: set-ZAEHLWERK_REDIS_PASSWORD # pragma: allowlist secret
+        # Read only with TABLETENNIS_SCOREBOARD_HANDOVER: sops, by schmetterpause
+        # (serves /api with it) and zaehlwerk (calls it) -- one value, generated
+        # once. Hex: substituted into YAML unquoted. 64 characters = rand -hex 32.
+        SCHMETTERPAUSE_SCOREBOARD_TOKEN: { generate: { type: hex, length: 64 } }
         SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID: set-SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID
         SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY: set-SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY # pragma: allowlist secret

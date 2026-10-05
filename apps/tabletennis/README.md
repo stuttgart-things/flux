@@ -87,6 +87,21 @@ Both read one variable, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` (`openssl rand -hex
 arrives as `""`. schmetterpause then registers no `/api` at all, and zaehlwerk
 logs `authenticated=false`, so check both after enabling it.
 
+Through the bundle (`tabletennis-sops`, `tabletennis-sops-backup`) the pair is
+ONE switch, `TABLETENNIS_SCOREBOARD_HANDOVER: off | sops` (default `off`): it
+fills both component slots, so one cannot be selected without the other. The
+token is a key of the `substituteFrom` Secret (`tabletennis-sops-secrets`),
+which the AppProfiles generate. zaehlwerk's target is
+`TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL`, by default the HTTPRoute
+(`https://<TABLETENNIS_SCHMETTERPAUSE_HOSTNAME>.<INFRA_DOMAIN>`). That needs
+trust-manager's CA bundle, which zaehlwerk mounts as an optional ConfigMap. A
+cluster without trust-manager sets the in-cluster Service instead:
+
+```yaml
+TABLETENNIS_SCOREBOARD_HANDOVER: sops
+TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL: http://schmetterpause.schmetterpause.svc.cluster.local
+```
+
 `schmetterpause-db-backup` needs ESO to copy trust-manager's CA bundle into
 its Secret on every refresh. Its sops counterpart,
 `schmetterpause-db-backup-sops`, takes a Secret the cluster repo ships, CA
@@ -163,6 +178,7 @@ written down.
 | `TABLETENNIS_SCHMETTERPAUSE_ADMIN` | `off`, `on` | `SP_BOOTSTRAP_ADMIN` — the display name that gets the admin flag at every start |
 | `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` (`sops` under `profiles/sops`) | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
 | `TABLETENNIS_ZAEHLWERK_HANDOVER` | `off`, `on` (`sops` under `profiles/sops`) | `SCHMETTERPAUSE_URL` + `SCHMETTERPAUSE_TOKEN` — a won match reported into schmetterpause |
+| `TABLETENNIS_SCOREBOARD_HANDOVER` | `off`, `sops` | the two rows above as one switch, in the `tabletennis-sops*` bundle components only |
 | `TABLETENNIS_SCHMETTERPAUSE_POLICY` | `off`, `on` | Kyverno's check on the application image's CI signature |
 | `TABLETENNIS_ZAEHLWERK_PIEZO_SIM` | `off`, `on` | The piezo board simulator next to zaehlwerk: plays every match started on the scoring page. A won match is handed over like any other, so demo/test clusters only. Needs zaehlwerk ≥ v0.8.0; tuned with `TABLETENNIS_ZAEHLWERK_PIEZO_VERSION` (default `v0.9.0`), `…_PIEZO_PACE` (`1s`); the board plays best of 3 |
 
@@ -175,6 +191,10 @@ client for it. **Select both or neither.** Either alone fails quietly:
   registered. Every finished match comes back 404, the match still scores and
   shows, and only zaehlwerk's log says so.
 * scoreboard without handover — an `/api` nothing calls.
+
+Under `profiles/sops` through the bundle they are one variable,
+`TABLETENNIS_SCOREBOARD_HANDOVER`, so this cannot happen there (see "The
+switches under sops" above). On the ESO path they are two, and:
 
 They read one Vault entry (`TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD_VAULT_PATH`,
 default `schmetterpause-scoreboard`), so the token is rotated once and the two

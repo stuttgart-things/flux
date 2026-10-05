@@ -17,9 +17,12 @@
 # a cluster references both from one source (ref+sops:// in its ClusterApps).
 # Without the panel neither is read for anything that matters.
 #
-# The scoreboard / handover / monitoring / admin / policy / piezo-sim switches
-# of ../tabletennis are NOT here: their sops variants exist only for the
-# scoreboard and handover, and none has been run on this path yet.
+# The scoreboard and the handover are ONE switch here,
+# TABLETENNIS_SCOREBOARD_HANDOVER (off | sops), where ../tabletennis has two:
+# their sops variants share SCHMETTERPAUSE_SCOREBOARD_TOKEN from the
+# substituteFrom Secret, and one variable cannot select half the feature.
+# The monitoring / admin / policy / piezo-sim switches of ../tabletennis are
+# NOT here: they have no sops variants, and none has been run on this path.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -50,6 +53,12 @@ spec:
   components:
     # zaehlwerk's scoreboard panel: off, or homerun2 on the same cluster.
     - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
+    # The scoreboard and the handover: off or sops. ONE variable for both
+    # slots, because they are the two ends of one feature and either alone
+    # fails quietly (apps/tabletennis/README.md). `on` selects the ESO
+    # variants, whose credentials-mode test refuses to build here.
+    - ../../components/schmetterpause-scoreboard-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
+    - ../../components/zaehlwerk-handover-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
   postBuild:
     substitute:
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
@@ -66,12 +75,22 @@ spec:
       # and DOMAIN, which exist one level down; the same value has to be built
       # from this layer's own INFRA_DOMAIN here.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # Where zaehlwerk reports a won match, read only by the `sops` handover.
+      # The HTTPRoute by default. A cluster without trust-manager's CA bundle
+      # (zaehlwerk mounts it optionally) sets the in-cluster Service instead:
+      # http://schmetterpause.<namespace>.svc.cluster.local
+      #
+      # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS above.
+      ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
     substituteFrom:
       # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SESSION_KEY
       # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
-      #   ZAEHLWERK_REDIS_PASSWORD
+      #   ZAEHLWERK_REDIS_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN
       # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
       # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
+      # SCHMETTERPAUSE_SCOREBOARD_TOKEN: read only with
+      # TABLETENNIS_SCOREBOARD_HANDOVER: sops, by both sides (one credential).
+      # `openssl rand -hex 32`: it is substituted into YAML unquoted.
       - kind: Secret
         name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
         optional: false

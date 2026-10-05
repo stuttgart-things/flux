@@ -65,7 +65,7 @@ a `substituteFrom` Secret in `flux-system` instead:
 |---|---|---|
 | `homerun2-sops` | `homerun2-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64`, `TEAMS_WEBHOOK_URL`; optional `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN`, `HOMERUN2_SCOUT_AUTH_TOKEN` | <!-- pragma: allowlist secret -->
 | `homerun2-light-catcher-tabletennis-sops` | `homerun2-light-catcher-tabletennis-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
-| `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD` | <!-- pragma: allowlist secret -->
+| `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`) |
 
@@ -92,6 +92,16 @@ rather than pruning it.
   other; reference both from one source. The AppProfiles therefore default
   these, and the redis password, to `set-...` placeholders, not generated
   values.
+- `TABLETENNIS_SCOREBOARD_HANDOVER: sops` (default `off`) switches on
+  schmetterpause's scoreboard API and zaehlwerk's handover together: the
+  scoring page offers schmetterpause's players, and a won match is reported
+  back. One variable selects both components, so the feature cannot be half
+  on. Both sides read `SCHMETTERPAUSE_SCOREBOARD_TOKEN` from the Secret (the
+  AppProfiles generate it, 64 hex characters). zaehlwerk calls
+  `TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL`, by default schmetterpause's
+  HTTPRoute; a cluster without trust-manager's CA bundle sets the in-cluster
+  `http://schmetterpause.<namespace>.svc.cluster.local` instead. `on` is the
+  ESO variant and refuses to build here. Details: `apps/tabletennis/README.md`.
 - `tabletennis-sops-backup` writes WAL and base backups to any S3 endpoint
   (`TABLETENNIS_SCHMETTERPAUSE_BACKUP_*`), with no `dependsOn` on it: an
   in-cluster `minio` beside it comes up in parallel and archiving retries.

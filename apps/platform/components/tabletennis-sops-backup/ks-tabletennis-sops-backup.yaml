@@ -17,7 +17,7 @@
 # parallel; WAL archiving retries until the bucket answers. Create the bucket
 # and the user before selecting this (harvester clusters/edge: Terraform).
 #
-# The panel note of ../tabletennis-sops applies here too.
+# The panel and scoreboard/handover notes of ../tabletennis-sops apply here too.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -48,6 +48,12 @@ spec:
   components:
     # zaehlwerk's scoreboard panel: off, or homerun2 on the same cluster.
     - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
+    # The scoreboard and the handover: off or sops. ONE variable for both
+    # slots, because they are the two ends of one feature and either alone
+    # fails quietly (apps/tabletennis/README.md). `on` selects the ESO
+    # variants, whose credentials-mode test refuses to build here.
+    - ../../components/schmetterpause-scoreboard-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
+    - ../../components/zaehlwerk-handover-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
     # WAL archiving + daily base backup; the credentials Secret is rendered
     # here, next to its namespace.
     - ../../components/schmetterpause-db-backup-subst
@@ -67,6 +73,13 @@ spec:
       # and DOMAIN, which exist one level down; the same value has to be built
       # from this layer's own INFRA_DOMAIN here.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # Where zaehlwerk reports a won match, read only by the `sops` handover.
+      # The HTTPRoute by default. A cluster without trust-manager's CA bundle
+      # (zaehlwerk mounts it optionally) sets the in-cluster Service instead:
+      # http://schmetterpause.<namespace>.svc.cluster.local
+      #
+      # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS above.
+      ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       # ---- the backup -----------------------------------------------------
       # REQUIRED, both. A bucket of its own: Velero treats unknown top-level
       # directories in ITS bucket as an invalid store.
@@ -83,13 +96,16 @@ spec:
       #   SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY, SCHMETTERPAUSE_DB_PASSWORD,
       #   SCHMETTERPAUSE_SESSION_KEY
       # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
-      #   ZAEHLWERK_REDIS_PASSWORD
+      #   ZAEHLWERK_REDIS_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN
       # The S3 pair belongs to a user that already exists on the endpoint.
       # SCHMETTERPAUSE_BACKUP_CA_PEM_B64 is not declared: its placeholder
       # default suits a plain-HTTP endpoint (an in-cluster MinIO), which never
       # reads it. An HTTPS endpoint with a private CA needs it in this Secret.
       # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
       # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
+      # SCHMETTERPAUSE_SCOREBOARD_TOKEN: read only with
+      # TABLETENNIS_SCOREBOARD_HANDOVER: sops, by both sides (one credential).
+      # `openssl rand -hex 32`: it is substituted into YAML unquoted.
       - kind: Secret
         name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
         optional: false
