@@ -1,0 +1,32 @@
+---
+# AppProfile: what a cluster sets for openbao-sops, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# OPENBAO_SEAL_STATIC_KEY is generated ONCE: render-cluster-apps keeps it as
+# long as --existing-secrets is passed. A new key under the same
+# OPENBAO_SEAL_KEY_ID leaves an initialised instance unsealable.
+kind: AppProfile
+metadata:
+  name: openbao-sops
+spec:
+  bundle: apps-platform
+  component: ../components/openbao-sops
+  vars:
+    OPENBAO_STORAGE_CLASS: { required: true }
+    OPENBAO_SEAL_KEY_ID: { required: true }
+    INFRA_DOMAIN: { required: true }
+    OPENBAO_NAMESPACE: {}
+    OPENBAO_SUSPEND: {}
+    OPENBAO_TOPOLOGY: {}
+    OPENBAO_CHART_VERSION: {}
+    OPENBAO_STORAGE_SIZE: {}
+    OPENBAO_SEAL_SECRET: {}
+    OPENBAO_HOSTNAME: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: openbao-sops-secrets
+      data:
+        # 32 random bytes, base64: what `openssl rand -base64 32` gives
+        OPENBAO_SEAL_STATIC_KEY: { generate: { type: base64, length: 32 } }

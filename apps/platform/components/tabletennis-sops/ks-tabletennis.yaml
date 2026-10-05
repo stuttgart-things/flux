@@ -1,0 +1,77 @@
+---
+# tabletennis on a SOPS-only cluster → ./apps/tabletennis/profiles/sops
+#
+# ---------------------------------------------------------------------------
+# THE ALTERNATIVE TO ../tabletennis, NOT AN ADD-ON, for a cluster with no
+# external-secrets: schmetterpause's and zaehlwerk's credentials are plain
+# Secrets rendered from this Kustomization's substituteFrom Secret. Same child
+# name (tabletennis), so selecting both is one object defined twice.
+# ../tabletennis-sops-backup is this plus the database backup.
+# ---------------------------------------------------------------------------
+#
+# The panel (TABLETENNIS_ZAEHLWERK_PANEL: homerun2) points zaehlwerk at
+# omni-pitcher and led-catcher in-cluster. zaehlwerk then needs the SAME
+# credentials homerun2 has: ZAEHLWERK_OMNI_PITCHER_TOKEN is homerun2's
+# HOMERUN2_OMNI_PITCHER_AUTH_TOKEN, ZAEHLWERK_REDIS_PASSWORD its redis password
+# (decoded HOMERUN2_REDIS_PASSWORD_B64). Nothing can derive one from the other:
+# a cluster references both from one source (ref+sops:// in its ClusterApps).
+# Without the panel neither is read for anything that matters.
+#
+# The scoreboard / handover / monitoring / admin / policy / piezo-sim switches
+# of ../tabletennis are NOT here: their sops variants exist only for the
+# scoreboard and handover, and none has been run on this path yet.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tabletennis
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  # cnpg-operator because schmetterpause's database is a CloudNativePG Cluster
+  # applied by THIS Kustomization: without the CRD the dry-run rejects it.
+  # No external-secrets -- that is the point of this variant.
+  dependsOn:
+    - name: cilium-gateway
+    - name: cnpg-operator
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${TABLETENNIS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/tabletennis/profiles/sops
+  components:
+    # zaehlwerk's scoreboard panel: off, or homerun2 on the same cluster.
+    - ../../components/zaehlwerk-panel-${TABLETENNIS_ZAEHLWERK_PANEL:-off}
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SCHMETTERPAUSE_NAMESPACE:-schmetterpause}"
+      SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
+      SCHMETTERPAUSE_DB_IMAGE: "${TABLETENNIS_SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}"
+      SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
+      ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
+      ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
+      ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # passthrough-override: the component derives this from SCHMETTERPAUSE_HOSTNAME
+      # and DOMAIN, which exist one level down; the same value has to be built
+      # from this layer's own INFRA_DOMAIN here.
+      ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+    substituteFrom:
+      # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SESSION_KEY
+      # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
+      #   ZAEHLWERK_REDIS_PASSWORD
+      # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
+      # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
+      - kind: Secret
+        name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
+        optional: false

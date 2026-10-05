@@ -1,0 +1,44 @@
+---
+# AppProfile: what a cluster sets for homerun2-sops, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# HOMERUN2_REDIS_PASSWORD_B64 has no usable default: it is base64 of the redis
+# password (it lands in Secret `data:`), and zaehlwerk (tabletennis-sops)
+# needs the same password decoded -- nothing generates both. The placeholder is
+# not valid base64, so the homerun2 apply fails loudly until a cluster sets it
+# (ref+sops:// in its ClusterApps). TEAMS_WEBHOOK_URL is read even with the
+# default notify-none routing, which sends nothing.
+kind: AppProfile
+metadata:
+  name: homerun2-sops
+spec:
+  bundle: apps-platform
+  component: ../components/homerun2-sops
+  vars:
+    HOMERUN2_REDIS_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    HOMERUN2_NAMESPACE: {}
+    HOMERUN2_SUSPEND: {}
+    HOMERUN2_SOPS_NOTIFY: {}
+    HOMERUN2_REDIS_STORAGE_SIZE: {}
+    HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS: {}
+    HOMERUN2_OMNI_PITCHER_HOSTNAME: {}
+    HOMERUN2_CORE_CATCHER_HOSTNAME: {}
+    HOMERUN2_SCOUT_HOSTNAME: {}
+    HOMERUN2_LED_CATCHER_HOSTNAME: {}
+    HOMERUN2_LIGHT_CATCHER_HOSTNAME: {}
+    HOMERUN2_WLED_MOCK_HOSTNAME: {}
+    HOMERUN2_DEMO_PITCHER_HOSTNAME: {}
+    HOMERUN2_CONFIG_VIEWER_HOSTNAME: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: homerun2-sops-secrets
+      data:
+        HOMERUN2_REDIS_PASSWORD_B64: set-HOMERUN2_REDIS_PASSWORD_B64 # pragma: allowlist secret
+        TEAMS_WEBHOOK_URL: https://set-TEAMS_WEBHOOK_URL.invalid
+        # alnum: sent as a bearer token, and zaehlwerk's
+        # ZAEHLWERK_OMNI_PITCHER_TOKEN has to be the same value.
+        HOMERUN2_OMNI_PITCHER_AUTH_TOKEN: { generate: { type: alnum, length: 32 } }
+        HOMERUN2_SCOUT_AUTH_TOKEN: { generate: { type: alnum, length: 32 } }

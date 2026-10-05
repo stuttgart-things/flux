@@ -1,0 +1,12 @@
+---
+# The same Namespace ../requirements.yaml renders, applied here first so the
+# seal Secret has its namespace before openbao runs. `ssa: merge` lets both
+# Kustomizations apply it without fighting over fields.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${OPENBAO_NAMESPACE:-openbao}
+  annotations:
+    kustomize.toolkit.fluxcd.io/ssa: merge
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team

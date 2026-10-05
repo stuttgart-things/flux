@@ -1,0 +1,13 @@
+---
+# multi-node -- the base as it is: the chart's own install/upgrade wait,
+# injector and (no) resources. The counterpart of ./single-node.
+#
+# An EMPTY component, like ../seal-none, so a cluster's topology is named on
+# its `components:` line -- and so the apps/platform bundle can select
+# `./components/<topology>` with multi-node as the default that changes
+# nothing for a cluster already running it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# Not decoration: kustomize rejects a kustomization.yaml with nothing but
+# apiVersion and kind as "empty" (see ../seal-none).
+resources: []

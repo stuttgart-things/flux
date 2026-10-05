@@ -1,0 +1,43 @@
+---
+# openbao-httproute -- the HTTPRoute for ../openbao-sops → ./apps/openbao/components/httproute
+# (the same as ../openbao/ks-openbao-httproute.yaml)
+#
+# A Kustomization of its own that waits for openbao, because Cilium resolves a
+# route's backendRefs once: applied before its Service exists, a route serves
+# HTTP 500 for good while every Kustomization reports Ready. Same split as the
+# homerun2 *-routes components.
+#
+# With OPENBAO_TOPOLOGY single-node the HelmRelease does not wait for the pod,
+# so openbao -- and this route after it -- is Ready before `bao operator init`.
+# With multi-node, the route appears only after the init
+# (apps/openbao/README.md, "Initialize").
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openbao-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: openbao
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${OPENBAO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/openbao/components/httproute
+  postBuild:
+    substitute:
+      OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${OPENBAO_HOSTNAME:-openbao}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

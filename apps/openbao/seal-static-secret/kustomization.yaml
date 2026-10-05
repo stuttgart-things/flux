@@ -1,0 +1,21 @@
+---
+# The seal-static key as a Secret, rendered from a substitution variable --
+# for a cluster that delivers secrets with SOPS + substituteFrom only (no
+# external-secrets). A PATH for a Kustomization of its own that openbao
+# dependsOn, not a component: the Secret has to exist before the HelmRelease
+# starts the pod, and the namespace with it.
+#
+#   OPENBAO_SEAL_STATIC_KEY   REQUIRED, no default: `openssl rand -base64 32`
+#   OPENBAO_SEAL_SECRET       the Secret's name (default openbao-static-seal);
+#                             components/seal-static reads the same variable
+#   OPENBAO_NAMESPACE         default openbao
+#
+# The key lands under `key`, components/seal-static's default
+# OPENBAO_SEAL_SECRET_KEY.
+#
+# apps/platform/components/openbao-sops applies this as openbao-prereqs.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - secret.yaml

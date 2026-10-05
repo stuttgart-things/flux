@@ -1,0 +1,16 @@
+---
+# openbao-sops -- OpenBao with a static seal, the key from a SOPS
+# substituteFrom Secret: openbao-prereqs (namespace + key Secret), openbao,
+# openbao-httproute, in that order.
+#
+# REQUIRES ../cilium-gateway (for the route) and a StorageClass that exists
+# here. No peer Vault, no external-secrets.
+#
+# An ALTERNATIVE to ../openbao, not an add-on: select one of the two.
+# bundle-alternative-of: openbao
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-openbao-prereqs.yaml
+  - ks-openbao.yaml
+  - ks-openbao-httproute.yaml

@@ -1,0 +1,16 @@
+---
+# tabletennis-sops -- schmetterpause + zaehlwerk (profiles/sops) with plain
+# Secrets from a SOPS substituteFrom Secret instead of external-secrets.
+#
+# REQUIRES cilium-gateway and cnpg-operator from the infra bundle, a resolvable
+# DOMAIN and a GATEWAY_NAME.
+#
+# schmetterpause's CloudNativePG Cluster and its Namespace are NOT pruned:
+# removing this component leaves the database behind, to be deleted by hand.
+#
+# An ALTERNATIVE to ../tabletennis, not an add-on: select one of the two.
+# bundle-alternative-of: tabletennis
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-tabletennis.yaml

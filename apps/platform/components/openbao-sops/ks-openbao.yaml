@@ -1,0 +1,56 @@
+---
+# OpenBao with a static seal whose key the cluster ships with SOPS
+# → ./apps/openbao + components/seal-static + components/<topology>
+#
+# For a cluster with no peer Vault to chain a transit seal to and no
+# external-secrets: an edge box, or the first instance in an environment.
+# The key Secret is applied by openbao-prereqs (ks-openbao-prereqs.yaml), which
+# this waits for; the HTTPRoute by openbao-httproute, which waits for this.
+#
+# THE FIRST ROLLOUT ENDS WITH AN UNINITIALISED INSTANCE: run `bao operator
+# init` once (apps/openbao/README.md, "Initialize"). The static seal unseals
+# on every restart after that; it does not initialise.
+#
+# OPENBAO_TOPOLOGY single-node for a cluster with ONE node: install/upgrade
+# without wait (the pod is not ready before the init), no agent injector, small
+# requests (apps/openbao/components/single-node). multi-node is the base as it
+# is.
+#
+# REQUIRES a StorageClass that exists here (OPENBAO_STORAGE_CLASS) and
+# OPENBAO_SEAL_KEY_ID: an opaque label that MUST change whenever the key does.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: openbao
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: openbao-prereqs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${OPENBAO_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/openbao
+  components:
+    - ./components/seal-static
+    - ./components/${OPENBAO_TOPOLOGY:-multi-node}
+  postBuild:
+    substitute:
+      OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
+      # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
+      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.30.1}"
+      OPENBAO_STORAGE_CLASS: "${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}" # REQUIRED
+      OPENBAO_STORAGE_SIZE: "${OPENBAO_STORAGE_SIZE:-8Gi}"
+      OPENBAO_SEAL_KEY_ID: "${OPENBAO_SEAL_KEY_ID:-set-OPENBAO_SEAL_KEY_ID}" # REQUIRED
+      # The Secret openbao-prereqs renders; the key inside it is `key`.
+      OPENBAO_SEAL_SECRET: "${OPENBAO_SEAL_SECRET:-openbao-static-seal}"

@@ -1,0 +1,12 @@
+---
+# homerun2-sops -- homerun2 (profiles/sops: redis-stack, omni-pitcher,
+# core-catcher, scout, led-catcher, light-catcher + wled-mock, demo-pitcher,
+# notification-catcher, config-viewer) with plain Secrets from a SOPS
+# substituteFrom Secret instead of external-secrets.
+# An ALTERNATIVE to ../homerun2, not an add-on: select one of the two.
+# bundle-alternative-of: homerun2
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2.yaml
+  - ks-homerun2-routes.yaml
