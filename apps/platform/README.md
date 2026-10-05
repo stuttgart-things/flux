@@ -59,7 +59,9 @@ success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor` and `minio` carry a `profile.yaml` next to their `ks-*.yaml`.
+`keycloak`, `harbor` and `minio` carry a `profile.yaml` next to their `ks-*.yaml`
+(the infra bundle's profiles are listed in
+[`infra/platform`](../../infra/platform/README.md#appprofiles)).
 It lists the vars a cluster may set for the app, which of them are required, and
 the Secret with its keys and how each value is made (generated, referenced from
 SOPS or Vault, or literal). blueprints' `render-cluster-apps` reads it and renders
@@ -69,7 +71,8 @@ SOPS-encrypted Secret in `flux-system`
 
 `hack/check-app-profiles.py` keeps each profile true to its component in both
 directions: the vars the component reads, `required: true` for every `set-...`
-placeholder, and exactly the keys of `# substituteFrom-keys:`. The releases quote
+placeholder, and exactly the keys of `# substituteFrom-keys:`. Only a `${VAR}` in
+a YAML value counts; one in a comment substitutes nothing. The releases quote
 the substituted credentials, so any generated value renders as a string; the
 profiles still generate `alnum`, because a chart may put the value somewhere
 `! # %` would need escaping.

@@ -157,6 +157,25 @@ mechanism Flux gives you.
 Verified: an eight-component selection renders **byte-for-byte** the same
 manifests as the eight hand-written CRs it replaces.
 
+## AppProfiles
+
+`cilium-lb`, `cilium-gateway`, `cert-manager-install`,
+`cert-manager-selfsigned`, `cert-manager-ca-from-secret`, `cnpg-operator`,
+`cnpg-barman-cloud` and `reloader` carry a `profile.yaml` next to their
+`ks-*.yaml`: the vars a cluster may set for the component, and which of them are
+required. blueprints' `render-cluster-apps` reads it to render the bundle's
+`spec.components` and `postBuild.substitute` from a `ClusterApps` file
+(`apps: { cilium-lb: { vars: {...} } }`), the same way as for the apps bundle
+([`apps/platform` README](../../apps/platform/README.md#appprofiles-generating-that-secret-instead-of-writing-it)).
+None of these components reads a `substituteFrom` Secret, so their profiles
+list no `secrets`. `cert-manager-ca-from-secret` still needs its CA Secret in
+cert-manager's namespace; the cluster provides that, not the renderer.
+
+`hack/check-app-profiles.py` and `hack/vet-app-profiles.sh` check every
+`*/platform/components/*/profile.yaml`, so a var added to a `ks-*.yaml` fails CI
+until the profile declares it. Only `${VAR}`s in YAML values count; one in a
+comment substitutes nothing.
+
 ## Prerequisites between components
 
 Six components carry a `dependsOn` and therefore need their prerequisite in

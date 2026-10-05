@@ -25,8 +25,9 @@ its ks-*.yaml fails quietly on the cluster -- a key renders empty (#331), or a
 REQUIRED placeholder like `set-INFRA_DOMAIN.invalid` ships. This compares them.
 
 THE CONTRACT IS DERIVED FROM THE COMPONENT, in both directions:
-  vars       exactly the ${VAR} the component's Kustomization reads, minus the
-             source variable (APPS_SOURCE / FLUX_SOURCE: the renderer sets it)
+  vars       exactly the ${VAR} the component's Kustomization reads in its
+             YAML values (a ${VAR} in a comment substitutes nothing), minus
+             the source variable (APPS_SOURCE / FLUX_SOURCE: the renderer sets it)
              and the Secret-name variable (the renderer names the Secret).
              A var whose default is a `set-...` placeholder is required: true.
   secrets    one entry per substituteFrom Secret with optional: false, named
@@ -60,13 +61,32 @@ _spec.loader.exec_module(sk)
 VAR = re.compile(r"(?<!\$)\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
 
 
+def scalars(node):
+    """Every string key and value in a parsed YAML node, recursively.
+
+    Variables are read from these, not from the file text: a `${VAR}` in a
+    YAML comment (documentation like `KEY: "${VAR}"`) is not substituted into
+    anything, so it is not a var a cluster could set.
+    """
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield from scalars(k)
+            yield from scalars(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from scalars(v)
+    elif isinstance(node, str):
+        yield node
+
+
 def component_contract(ks_files):
     """(vars {name: required}, secrets {name: [keys]}, Secret-name vars)."""
     variables, secrets, name_vars = {}, {}, set()
     for f in ks_files:
         text = f.read_text()
         decl = sk.declarations(f)
-        for doc in yaml.safe_load_all(text):
+        docs = list(yaml.safe_load_all(text))
+        for doc in docs:
             if not isinstance(doc, dict) or doc.get("kind") != "Kustomization":
                 continue
             if KS_API not in str(doc.get("apiVersion", "")):
@@ -81,7 +101,8 @@ def component_contract(ks_files):
                 secrets[secret] = sorted(set(decl.get(name, [])))
                 if m:
                     name_vars.add(m.group(1))
-        for var, default in VAR.findall(text):
+        found = [m for doc in docs for v in scalars(doc) for m in VAR.findall(v)]
+        for var, default in found:
             if var in SOURCE_VARS or var in name_vars:
                 continue
             required = default.startswith("set-")
