@@ -175,7 +175,7 @@ written down.
 |---|---|---|
 | `TABLETENNIS_ZAEHLWERK_PANEL` | `off`, `homerun2` | `OMNI_PITCHER_URL` + `CATCHER_URL` — scores to the LED panel |
 | `TABLETENNIS_SCHMETTERPAUSE_MONITORING` | `off`, `on`, `backup` | PodMonitors and alert rules (`backup` adds the WAL/base-backup rules) |
-| `TABLETENNIS_SCHMETTERPAUSE_ADMIN` | `off`, `on` | `SP_BOOTSTRAP_ADMIN` — the display name that gets the admin flag at every start |
+| `TABLETENNIS_SCHMETTERPAUSE_ADMIN` | `off`, `on` | `SP_BOOTSTRAP_ADMIN` — the display name (`TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN`) that gets the admin flag at every start; also in the `tabletennis-sops*` bundle components |
 | `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` (`sops` under `profiles/sops`) | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
 | `TABLETENNIS_ZAEHLWERK_HANDOVER` | `off`, `on` (`sops` under `profiles/sops`) | `SCHMETTERPAUSE_URL` + `SCHMETTERPAUSE_TOKEN` — a won match reported into schmetterpause |
 | `TABLETENNIS_SCOREBOARD_HANDOVER` | `off`, `sops` | the two rows above as one switch, in the `tabletennis-sops*` bundle components only |

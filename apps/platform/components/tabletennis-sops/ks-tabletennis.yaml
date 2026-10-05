@@ -59,6 +59,12 @@ spec:
     # variants, whose credentials-mode test refuses to build here.
     - ../../components/schmetterpause-scoreboard-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
     - ../../components/zaehlwerk-handover-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
+    # The first admin, granted at every start (schmetterpause ADR-0008): off or
+    # on, with the name in TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN -- the same
+    # components as ../tabletennis (not a secret: the name grants nothing
+    # without that player's own PIN). A component because "none" is the empty
+    # string, which renders as YAML null (hack/check-substitute-strings.py).
+    - ../../components/schmetterpause-admin-${TABLETENNIS_SCHMETTERPAUSE_ADMIN:-off}
   postBuild:
     substitute:
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
@@ -82,6 +88,13 @@ spec:
       #
       # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS above.
       ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # Read only by schmetterpause-admin-on; "none" is the admin component at
+      # `off` (its default), never an empty value here. Required only with
+      # TABLETENNIS_SCHMETTERPAUSE_ADMIN: on -- hence a neutral default instead
+      # of a set-... placeholder (which hack/check-app-profiles.py would make
+      # required for every consumer). `on` without a name grants nothing:
+      # schmetterpause logs a warning for a display name nobody has.
+      SCHMETTERPAUSE_BOOTSTRAP_ADMIN: "${TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN:-admin-name-unset}"
     substituteFrom:
       # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SESSION_KEY
       # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
