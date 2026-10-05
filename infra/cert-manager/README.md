@@ -167,6 +167,47 @@ The Secret comes from a Kustomization of the cluster's own. It has to
 `dependsOn: cert-manager-install` (the namespace) and carry the SOPS
 `decryption` block. Nothing in the bundle waits on it except this child.
 
+## `letsencrypt-hetzner`: Let's Encrypt via DNS-01 at Hetzner DNS
+
+`letsencrypt-hetzner/` is a path for a Kustomization of its own (it needs
+cert-manager running). It renders:
+
+- `HelmRepository` `hcloud` + `HelmRelease` `cert-manager-webhook-hetzner`
+  (chart `cert-manager-webhook-hetzner` from `https://charts.hetzner.cloud`):
+  the DNS-01 solver, groupName `acme.hetzner.com`, solverName `hetzner`;
+- `ClusterIssuer`s `letsencrypt-staging-hetzner` and `letsencrypt-hetzner`
+  (Let's Encrypt staging and production);
+- `Secret` `hetzner-dns` (key `token`) in cert-manager's namespace, rendered
+  from `HETZNER_DNS_TOKEN`, which the consuming Kustomization reads from a
+  `substituteFrom` Secret (SOPS-encrypted in the cluster repo).
+
+DNS-01 needs no inbound access: cert-manager writes the `_acme-challenge` TXT
+record through the Hetzner Cloud API and Let's Encrypt checks it publicly, so
+it also works for a cluster nobody can reach from outside. The token is a
+Hetzner Cloud API token (Read & Write). A token is project-wide, so give the
+zone a project of its own.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `HETZNER_DNS_TOKEN` | *(required, none)* | the Hetzner Cloud API token |
+| `LETSENCRYPT_HETZNER_TOKEN_SECRET` | `hetzner-dns` | the token Secret's name |
+| `LETSENCRYPT_HETZNER_ISSUER` | `letsencrypt-hetzner` | production ClusterIssuer |
+| `LETSENCRYPT_HETZNER_STAGING_ISSUER` | `letsencrypt-staging-hetzner` | staging ClusterIssuer |
+| `LETSENCRYPT_HETZNER_WEBHOOK_VERSION` | `0.9.0` | the webhook chart |
+| `LETSENCRYPT_HETZNER_ACME_EMAIL` | `none` | the ACME account email, read only with `components/acme-email-set` |
+| `CERT_MANAGER_NAMESPACE` | `cert-manager` | where the release, the repository and the Secret go |
+
+The ACME email is a slot rather than a variable that may be empty:
+`components/acme-email-none` (no email, the default; Let's Encrypt no longer
+sends expiry mails) or `components/acme-email-set`, which adds `spec.acme.email`
+to both issuers. An empty substitution would render a YAML null, so the field
+has to be added by a patch.
+
+Start every new Certificate on the staging issuer (generous rate limits), then
+switch it to production. In the infra bundle this is the component
+`cert-manager-letsencrypt-hetzner`
+([infra/platform README](../platform/README.md#cert-manager-letsencrypt-hetzner)).
+
 ## Claims CLI
 
 ```bash

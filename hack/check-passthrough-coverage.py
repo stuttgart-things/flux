@@ -20,6 +20,11 @@ their defaults. The marker is a `# passthrough-complete:` comment inside the
 postBuild block. Every directory the spec.path can resolve to is rendered (a
 substituted segment becomes a glob, as in check-passthrough-defaults.py), so a
 variable read by ONE set among several still counts.
+
+A variable a substituteFrom Secret supplies is not left out: it is passed, from
+the Secret. The keys named in that block's `# substituteFrom-keys:` and
+`# substituteFrom-optional-keys:` declarations count as passed --
+check-substitutefrom-keys.py keeps those declarations true.
 """
 import importlib.util
 import re
@@ -37,11 +42,27 @@ _spec = importlib.util.spec_from_file_location(
 pd = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(pd)
 
+_spec = importlib.util.spec_from_file_location(
+    "substitutefrom_keys", ROOT / "hack" / "check-substitutefrom-keys.py")
+sk = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(sk)
+
 READ = re.compile(r"\$\{([A-Z0-9_]+)(?::-[^}]*)?\}")
 
 
+def from_secrets(chunk):
+    """Keys the chunk's substituteFrom declarations say a Secret supplies."""
+    lines = chunk.splitlines()
+    keys = set()
+    for i, line in enumerate(lines):
+        for marker in (sk.MARKER, sk.OPTIONAL_MARKER):
+            if marker in line:
+                keys.update(sk.declared(lines, i, marker))
+    return keys
+
+
 def marked_docs(f: Path):
-    """The Kustomization documents in `f` whose postBuild block carries MARKER."""
+    """(doc, secret keys) for every Kustomization in `f` carrying MARKER."""
     text = f.read_text()
     if MARKER not in text:
         return
@@ -54,7 +75,7 @@ def marked_docs(f: Path):
             continue
         if (isinstance(doc, dict) and doc.get("kind") == "Kustomization"
                 and KS_API in str(doc.get("apiVersion", ""))):
-            yield doc
+            yield doc, from_secrets(chunk)
 
 
 def main():
@@ -64,10 +85,11 @@ def main():
     for f in sorted(ROOT.rglob("*.yaml")):
         if ".git" in f.parts:
             continue
-        for doc in marked_docs(f):
+        for doc, secret_keys in marked_docs(f):
             rel = f.relative_to(ROOT)
             spec = doc.get("spec") or {}
             subs = set(((spec.get("postBuild") or {}).get("substitute") or {}))
+            subs |= secret_keys
             targets = pd.paths_for(str(spec.get("path", "")))
             if not targets:
                 print(f"FAIL {rel}: marked {MARKER} but its path "

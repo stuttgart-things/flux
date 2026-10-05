@@ -1,0 +1,54 @@
+---
+# letsencrypt-hetzner -- Let's Encrypt via ACME DNS-01 at Hetzner DNS.
+#
+# A PATH for a Kustomization of its own, not a component of ../: the
+# ClusterIssuers need cert-manager's CRDs, the chart needs cert-manager
+# running, so this is applied after cert-manager is Ready.
+#
+#   HelmRepository hcloud + HelmRelease cert-manager-webhook-hetzner
+#                             the DNS-01 solver (Hetzner's official webhook,
+#                             groupName acme.hetzner.com, solverName hetzner)
+#   ClusterIssuer x2          LETSENCRYPT_HETZNER_STAGING_ISSUER (staging) and
+#                             LETSENCRYPT_HETZNER_ISSUER (production)
+#   Secret                    the Hetzner Cloud API token both issuers read,
+#                             rendered from HETZNER_DNS_TOKEN
+#
+# DNS-01 needs no inbound access: cert-manager writes the _acme-challenge TXT
+# record through the Hetzner Cloud API (api.hetzner.cloud, not the old DNS
+# console API) and Let's Encrypt checks it publicly. So it works for a cluster
+# that is not reachable from the internet at all, e.g. one behind a visitor
+# Wi-Fi or LTE uplink.
+#
+#   HETZNER_DNS_TOKEN                   REQUIRED, no default: a Hetzner Cloud
+#                                       API token (Read & Write) of the project
+#                                       holding the zone. A token is
+#                                       project-wide: give the zone a project
+#                                       of its own.
+#   LETSENCRYPT_HETZNER_TOKEN_SECRET    the token Secret's name (hetzner-dns)
+#   LETSENCRYPT_HETZNER_ISSUER          production issuer (letsencrypt-hetzner)
+#   LETSENCRYPT_HETZNER_STAGING_ISSUER  staging issuer
+#                                       (letsencrypt-staging-hetzner)
+#   LETSENCRYPT_HETZNER_WEBHOOK_VERSION the webhook chart (0.9.0)
+#   CERT_MANAGER_NAMESPACE              cert-manager's namespace (cert-manager)
+#
+# The ACME email is a slot, ./components/acme-email-{none,set}: `none` (what
+# the consuming Kustomization selects by default) registers without one --
+# Let's Encrypt no longer sends expiry mails and cert-manager renews by itself;
+# `set` adds LETSENCRYPT_HETZNER_ACME_EMAIL to both issuers. A patch, not a
+# substitution: an empty email renders a YAML null, the field has to be absent.
+#
+# THE SECRET'S NAMESPACE IS NOT A CHOICE: a ClusterIssuer's solver reads it
+# from cert-manager's cluster resource namespace, i.e. CERT_MANAGER_NAMESPACE.
+#
+# REQUIRES cert-manager (CRDs, webhook, cainjector): the chart renders an
+# Issuer and two Certificates for its own serving certificate and has
+# cainjector fill the APIService's caBundle.
+#
+# infra/platform/components/cert-manager-letsencrypt-hetzner applies this as
+# the child Kustomization cert-manager-letsencrypt-hetzner.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - webhook.yaml
+  - clusterissuers.yaml
+  - secret.yaml

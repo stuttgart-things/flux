@@ -1,0 +1,29 @@
+---
+# AppProfile: what a cluster sets for cert-manager-letsencrypt-hetzner, and
+# the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# HETZNER_DNS_TOKEN is a Hetzner Cloud API token (Read & Write) of the project
+# holding the DNS zone -- nothing can generate it. The placeholder below is
+# NOT a token: Hetzner rejects it and every DNS-01 challenge fails. Set it in
+# the ClusterApps, e.g. as a ref+sops into the cluster's SOPS values.
+kind: AppProfile
+metadata:
+  name: cert-manager-letsencrypt-hetzner
+spec:
+  bundle: infra-platform
+  component: ../components/cert-manager-letsencrypt-hetzner
+  vars:
+    CERT_MANAGER_LETSENCRYPT_HETZNER_SUSPEND: {}
+    CERT_MANAGER_NAMESPACE: {}
+    LETSENCRYPT_HETZNER_WEBHOOK_VERSION: {}
+    LETSENCRYPT_HETZNER_ISSUER: {}
+    LETSENCRYPT_HETZNER_STAGING_ISSUER: {}
+    LETSENCRYPT_HETZNER_TOKEN_SECRET: {}
+    LETSENCRYPT_HETZNER_ACME_EMAIL_MODE: {}
+    LETSENCRYPT_HETZNER_ACME_EMAIL: {}
+  secrets:
+    - name: cert-manager-letsencrypt-hetzner-secrets
+      data:
+        HETZNER_DNS_TOKEN: set-HETZNER_DNS_TOKEN # pragma: allowlist secret

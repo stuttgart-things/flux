@@ -1,0 +1,27 @@
+---
+# AppProfile: what a cluster sets for cilium-gateway-extra.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# CILIUM_GATEWAY_EXTRA_IP and _DOMAIN are required (sentinels 0.0.0.0 and
+# set-...invalid otherwise). CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION names
+# the Kustomization the issuer comes from, so the Certificate waits for it:
+# with the Let's Encrypt issuer of cert-manager-letsencrypt-hetzner set it to
+# cert-manager-letsencrypt-hetzner (and select that component too).
+kind: AppProfile
+metadata:
+  name: cilium-gateway-extra
+spec:
+  bundle: infra-platform
+  component: ../components/cilium-gateway-extra
+  vars:
+    CILIUM_GATEWAY_EXTRA_IP: { required: true }
+    CILIUM_GATEWAY_EXTRA_DOMAIN: { required: true }
+    CILIUM_GATEWAY_EXTRA_SUSPEND: {}
+    CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION: {}
+    CILIUM_GATEWAY_EXTRA_NAME: {}
+    CILIUM_GATEWAY_EXTRA_NAMESPACE: {}
+    CILIUM_GATEWAY_EXTRA_POOL_NAME: {}
+    CILIUM_GATEWAY_EXTRA_ISSUER: {}
+    CILIUM_GATEWAY_EXTRA_ISSUER_KIND: {}
+    CILIUM_GATEWAY_EXTRA_TLS_SECRET: {}

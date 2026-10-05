@@ -1,0 +1,66 @@
+---
+# Let's Encrypt via DNS-01 at Hetzner DNS
+# → ./infra/cert-manager/letsencrypt-hetzner
+#
+# The webhook (HelmRelease cert-manager-webhook-hetzner), the ClusterIssuers
+# letsencrypt-staging-hetzner / letsencrypt-hetzner and the token Secret they
+# read, in ONE child. One is enough: the ClusterIssuers only need the
+# cert-manager CRDs and webhook (cert-manager-install), not the Hetzner solver
+# -- an ACME issuer gets Ready by registering its account, the solver is only
+# called for a challenge. And wait: true makes Ready here mean all of it: the
+# solver's APIService is served (the chart's own Certificates came from
+# cert-manager, cainjector filled the caBundle), both accounts are registered
+# and the token is in place. Something issuing from these issuers dependsOn
+# this Kustomization -- cilium-gateway-extra does so with
+# CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION: cert-manager-letsencrypt-hetzner.
+#
+# THE TOKEN comes from this Kustomization's substituteFrom Secret, which the
+# cluster ships SOPS-encrypted (blueprints render-cluster-apps generates it
+# from profile.yaml, whose placeholder is not a token: set the real one).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cert-manager-letsencrypt-hetzner
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    # the ClusterIssuer/Certificate CRDs, cert-manager's webhook and cainjector
+    - name: cert-manager-install
+  interval: 1h
+  retryInterval: 1m
+  # the webhook's helm install waits for its own Certificates
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${CERT_MANAGER_LETSENCRYPT_HETZNER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/cert-manager/letsencrypt-hetzner
+  # The ACME email: `none` (default) registers without one, `set` adds
+  # LETSENCRYPT_HETZNER_ACME_EMAIL. A patch, because the field has to be absent
+  # when unused -- an empty substitution renders a YAML null.
+  components:
+    - ./components/acme-email-${LETSENCRYPT_HETZNER_ACME_EMAIL_MODE:-none}
+  postBuild:
+    # passthrough-complete: every ${VAR} the child reads is listed here.
+    substitute:
+      CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
+      # renovate: datasource=helm depName=cert-manager-webhook-hetzner registryUrl=https://charts.hetzner.cloud
+      LETSENCRYPT_HETZNER_WEBHOOK_VERSION: "${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.0}"
+      LETSENCRYPT_HETZNER_ISSUER: "${LETSENCRYPT_HETZNER_ISSUER:-letsencrypt-hetzner}"
+      LETSENCRYPT_HETZNER_STAGING_ISSUER: "${LETSENCRYPT_HETZNER_STAGING_ISSUER:-letsencrypt-staging-hetzner}"
+      LETSENCRYPT_HETZNER_TOKEN_SECRET: "${LETSENCRYPT_HETZNER_TOKEN_SECRET:-hetzner-dns}" # pragma: allowlist secret
+      # Read only with LETSENCRYPT_HETZNER_ACME_EMAIL_MODE: set. `none` there is
+      # not an address: ACME rejects it, so `set` without an email fails loudly.
+      LETSENCRYPT_HETZNER_ACME_EMAIL: "${LETSENCRYPT_HETZNER_ACME_EMAIL:-none}"
+    substituteFrom:
+      # substituteFrom-keys: HETZNER_DNS_TOKEN
+      - kind: Secret
+        name: ${CERT_MANAGER_LETSENCRYPT_HETZNER_SECRET:-cert-manager-letsencrypt-hetzner-secrets}
+        optional: false

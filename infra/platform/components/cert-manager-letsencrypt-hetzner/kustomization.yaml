@@ -1,0 +1,10 @@
+---
+# cert-manager-letsencrypt-hetzner
+#
+# REQUIRES ../cert-manager-install in the same spec.components list (its child
+# dependsOn it), and the Secret named by CERT_MANAGER_LETSENCRYPT_HETZNER_SECRET
+# in flux-system carrying HETZNER_DNS_TOKEN (see the child).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-cert-manager-letsencrypt-hetzner.yaml

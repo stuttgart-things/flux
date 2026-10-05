@@ -25,6 +25,7 @@ infra/platform/
     ├── cert-manager-selfsigned/  → ./infra/cert-manager/components/selfsigned (requires cert-manager-install)
     ├── cert-manager-vault-issuer/→ ./infra/cert-manager/components/vault-issuer  (requires cert-manager-install)
     ├── cert-manager-ca-from-secret/ → ./infra/cert-manager/components/ca-from-secret (requires cert-manager-install, a CA Secret)
+    ├── cert-manager-letsencrypt-hetzner/ → ./infra/cert-manager/letsencrypt-hetzner (requires cert-manager-install, a token Secret)
     ├── trust-manager/            → ./infra/trust-manager                    (requires cert-manager-install)
     ├── nfs-csi/                  → ./infra/nfs-csi
     ├── openebs/                  → ./infra/openebs
@@ -76,6 +77,46 @@ bundle, neither one ever gets Ready. Use an issuer the bundle creates itself
 (`cluster-ca`, `cert-manager-vault-issuer`, `cert-manager-ca-from-secret`), or
 point that later Kustomization at `./infra/cilium/components/gateway-extra`
 directly.
+
+`CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION` names the Kustomization the issuer
+comes from, and the child `dependsOn` it in place of `cert-manager-install`
+(the default, so nothing changes without it). Set it when the issuer takes
+longer than the CRD to become usable. For the Let's Encrypt issuer of
+`cert-manager-letsencrypt-hetzner` it is `cert-manager-letsencrypt-hetzner`:
+the Certificate is created once the solver is running and the account is
+registered. Whatever it names must itself depend on `cert-manager-install`,
+and every `cert-manager-*` issuer component does.
+
+### cert-manager-letsencrypt-hetzner
+
+Let's Encrypt certificates via ACME DNS-01 at Hetzner DNS, as one child
+Kustomization `cert-manager-letsencrypt-hetzner`
+(→ [`./infra/cert-manager/letsencrypt-hetzner`](../cert-manager/README.md#letsencrypt-hetzner-lets-encrypt-via-dns-01-at-hetzner-dns)):
+the webhook `cert-manager-webhook-hetzner`, the ClusterIssuers
+`letsencrypt-staging-hetzner` and `letsencrypt-hetzner`, and the token Secret
+`cert-manager/hetzner-dns` they read. One child is enough. The issuers need
+only cert-manager's CRDs (an ACME issuer gets Ready by registering its account,
+and the solver is called only for a challenge), and `wait: true` makes Ready
+mean the solver is served too. The token comes from the `substituteFrom`
+Secret `cert-manager-letsencrypt-hetzner-secrets` (key `HETZNER_DNS_TOKEN`) in
+`flux-system`. Its AppProfile lists it with a placeholder that is not a token,
+so the cluster sets the real one.
+
+For a public wildcard, combine it with `cilium-gateway-extra`:
+
+```yaml
+  components:
+    - ../components/cert-manager-install
+    - ../components/cert-manager-letsencrypt-hetzner
+    - ../components/cilium-lb
+    - ../components/cilium-gateway-extra
+  postBuild:
+    substitute:
+      CILIUM_GATEWAY_EXTRA_DOMAIN: example.com          # the Hetzner zone
+      CILIUM_GATEWAY_EXTRA_IP: "10.0.0.10"
+      CILIUM_GATEWAY_EXTRA_ISSUER: letsencrypt-hetzner   # staging: letsencrypt-staging-hetzner
+      CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION: cert-manager-letsencrypt-hetzner
+```
 
 ### coredns-lab-zone
 
@@ -160,15 +201,21 @@ manifests as the eight hand-written CRs it replaces.
 ## AppProfiles
 
 `cilium-lb`, `cilium-gateway`, `cert-manager-install`,
-`cert-manager-selfsigned`, `cert-manager-ca-from-secret`, `cnpg-operator`,
+`cert-manager-selfsigned`, `cert-manager-ca-from-secret`,
+`cert-manager-letsencrypt-hetzner`, `cilium-gateway-extra`, `cnpg-operator`,
 `cnpg-barman-cloud`, `reloader` and `trust-manager` carry a `profile.yaml` next to their
 `ks-*.yaml`: the vars a cluster may set for the component, and which of them are
 required. blueprints' `render-cluster-apps` reads it to render the bundle's
 `spec.components` and `postBuild.substitute` from a `ClusterApps` file
 (`apps: { cilium-lb: { vars: {...} } }`), the same way as for the apps bundle
 ([`apps/platform` README](../../apps/platform/README.md#appprofiles-generating-that-secret-instead-of-writing-it)).
-None of these components reads a `substituteFrom` Secret, so their profiles
-list no `secrets`. `cert-manager-ca-from-secret` still needs its CA Secret in
+Only `cert-manager-letsencrypt-hetzner` reads a `substituteFrom` Secret: its
+profile lists `cert-manager-letsencrypt-hetzner-secrets` with
+`HETZNER_DNS_TOKEN`, whose value is the placeholder `set-HETZNER_DNS_TOKEN`
+(Hetzner rejects it, every challenge fails). Nothing can generate a token, so
+the cluster sets the real one, e.g. as a `ref+sops`. The other profiles list no
+`secrets`. `cilium-gateway-extra` requires `CILIUM_GATEWAY_EXTRA_IP` and
+`CILIUM_GATEWAY_EXTRA_DOMAIN`. `cert-manager-ca-from-secret` still needs its CA Secret in
 cert-manager's namespace; the cluster provides that, not the renderer.
 `trust-manager`'s Bundle always lists the Secret named by
 `TRUST_BUNDLE_VAULT_CA_SECRET` (default `vault-pki-ca`); a cluster without a
@@ -187,10 +234,11 @@ the same list:
 | Component | Requires |
 |---|---|
 | `cilium-gateway` | `cilium-lb` |
-| `cilium-gateway-extra` | `cilium-lb`, `cert-manager-install` |
+| `cilium-gateway-extra` | `cilium-lb`, `cert-manager-install` (or the component named by `CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION`) |
 | `cert-manager-selfsigned` | `cert-manager-install` |
 | `cert-manager-vault-issuer` | `cert-manager-install` |
 | `cert-manager-ca-from-secret` | `cert-manager-install` |
+| `cert-manager-letsencrypt-hetzner` | `cert-manager-install` |
 | `trust-manager` | `cert-manager-install` |
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
@@ -357,6 +405,13 @@ Bundle-level names (they map onto differently-named base variables):
 | `CILIUM_GATEWAY_EXTRA_ISSUER` | `cluster-ca` | the issuer of that wildcard (`…_ISSUER_KIND`, default `ClusterIssuer`) |
 | `CILIUM_GATEWAY_EXTRA_TLS_SECRET` | `cilium-gateway-extra-tls` | Certificate name and its Secret |
 | `CILIUM_GATEWAY_EXTRA_POOL_NAME` | `cilium-gateway-extra-pool` | the CiliumLoadBalancerIPPool |
+| `CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION` | `cert-manager-install` | the Kustomization the child `dependsOn` for its issuer (`cert-manager-letsencrypt-hetzner` with that component's issuer) |
+| `LETSENCRYPT_HETZNER_ISSUER` | `letsencrypt-hetzner` | cert-manager-letsencrypt-hetzner: production ClusterIssuer |
+| `LETSENCRYPT_HETZNER_STAGING_ISSUER` | `letsencrypt-staging-hetzner` | its staging ClusterIssuer |
+| `LETSENCRYPT_HETZNER_TOKEN_SECRET` | `hetzner-dns` | the token Secret in cert-manager's namespace |
+| `LETSENCRYPT_HETZNER_WEBHOOK_VERSION` | `0.9.0` | the cert-manager-webhook-hetzner chart |
+| `LETSENCRYPT_HETZNER_ACME_EMAIL_MODE` | `none` | `set` registers both accounts with `LETSENCRYPT_HETZNER_ACME_EMAIL` |
+| `CERT_MANAGER_LETSENCRYPT_HETZNER_SECRET` | `cert-manager-letsencrypt-hetzner-secrets` | the `flux-system` Secret holding `HETZNER_DNS_TOKEN` |
 | `PVE_EXPORTER_TARGET` | *(required)* | the Proxmox host scraped via `?target=` |
 | `<COMPONENT>_SUSPEND` | `false` | that child's `spec.suspend` |
 

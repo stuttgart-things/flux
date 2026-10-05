@@ -1,0 +1,38 @@
+---
+# hetzner/cert-manager-webhook-hetzner, from charts.hetzner.cloud. The chart's
+# defaults fit (groupName acme.hetzner.com, cert-manager's service account
+# cert-manager); only cert-manager's namespace is threaded, because the chart
+# binds that service account by namespace.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: hcloud
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+spec:
+  interval: 24h
+  url: https://charts.hetzner.cloud
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager-webhook-hetzner
+  namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: cert-manager-webhook-hetzner
+      # renovate: datasource=helm depName=cert-manager-webhook-hetzner registryUrl=https://charts.hetzner.cloud
+      version: ${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.0}
+      sourceRef:
+        kind: HelmRepository
+        name: hcloud
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    certManager:
+      namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}

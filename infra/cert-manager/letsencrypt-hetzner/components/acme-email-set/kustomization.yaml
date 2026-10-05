@@ -1,0 +1,15 @@
+---
+# Registers both ACME accounts with LETSENCRYPT_HETZNER_ACME_EMAIL.
+#
+# A patch, not a substitution: spec.acme.email has to be ABSENT when there is
+# none, and an empty substitution renders a YAML null instead.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: cert-manager.io
+      kind: ClusterIssuer
+    patch: |
+      - op: add
+        path: /spec/acme/email
+        value: ${LETSENCRYPT_HETZNER_ACME_EMAIL:-none}
