@@ -7,8 +7,13 @@
 # the root token these requests run with is revoked when they are done. On
 # every later start the instance is already initialised and this is skipped.
 #
-# What it leaves behind: userpass at auth/userpass, policy `terraform`, user
-# `terraform` -- and nothing else that can log in.
+# What it leaves behind: userpass at auth/userpass and two users --
+#   terraform  policy `terraform`: PKI at pki/ and nothing else (automation)
+#   admin      policy `admin`: everything, the BREAK-GLASS login that replaces
+#              the root token for the exceptional operation (enable k8s auth
+#              later, rotate, extend policies) without a reinstall. Its
+#              password lives only in SOPS and is used by hand -- never by
+#              automation, never stored in a pipeline.
 #
 # If a request fails, the server exits and from then on REFUSES TO UNSEAL
 # ("self-initialization failed: refusing to unseal"). The fix is a fresh
@@ -68,6 +73,23 @@ EOP
   }
 }
 
+initialize "admin-policy" {
+  request "write-policy" {
+    operation = "update"
+    path      = "sys/policies/acl/admin"
+    data = {
+      policy = <<EOP
+# Break-glass: everything a root token could do, but behind a login whose
+# tokens expire (30m, at most 1h). For the exceptional operation only -- see
+# the header of this file.
+path "*" {
+  capabilities = ["create", "read", "update", "delete", "list", "sudo", "patch"]
+}
+EOP
+    }
+  }
+}
+
 initialize "terraform-user" {
   request "create-user" {
     operation = "update"
@@ -86,6 +108,27 @@ initialize "terraform-user" {
       token_policies = ["terraform"]
       token_ttl      = "1h"
       token_max_ttl  = "4h"
+    }
+  }
+}
+
+initialize "admin-user" {
+  request "create-user" {
+    operation = "update"
+    path      = "auth/userpass/users/admin"
+    data = {
+      # Same rules as the terraform password: env only, absent or empty fails
+      # the self-init loudly.
+      password = {
+        eval_type       = "string"
+        eval_source     = "env"
+        env_var         = "OPENBAO_ADMIN_PASSWORD"
+        require_present = true
+      }
+      token_policies = ["admin"]
+      # Short: a forgotten admin token expires within the hour.
+      token_ttl     = "30m"
+      token_max_ttl = "1h"
     }
   }
 }

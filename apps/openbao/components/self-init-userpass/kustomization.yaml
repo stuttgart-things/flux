@@ -1,9 +1,14 @@
 ---
 # self-init-userpass -- OpenBao initialises ITSELF on first start: no
 # `bao operator init`, no root token anyone holds, no recovery keys. What
-# exists afterwards is userpass with ONE user, `terraform`, bound to the
-# least-privilege policy `terraform` (PKI at pki/ and nothing else). See
-# self-init.hcl for the requests and every policy path.
+# exists afterwards is userpass with TWO users:
+#   terraform  least-privilege policy `terraform` (PKI at pki/, nothing else),
+#              for automation
+#   admin      policy `admin` (everything): the BREAK-GLASS login in place of
+#              a root token -- enable k8s auth later, rotate, extend policies,
+#              without a reinstall. Its password stays in SOPS and is used by
+#              hand only, never by automation. Tokens: 30m, at most 1h.
+# See self-init.hcl for the requests and every policy path.
 #
 # REQUIRES AN AUTO-UNSEAL: combine with ../seal-static or ../seal-transit and
 # list it AFTER the seal. It appends to the env list the seal component
@@ -15,27 +20,25 @@
 #     - ./components/single-node       # optional
 #     - ./components/self-init-userpass
 #
-# The password is env OPENBAO_TERRAFORM_PASSWORD, from key `terraform-password`
-# of the seal Secret ${OPENBAO_SEAL_SECRET} (../../seal-static-secret renders
-# it from OPENBAO_TERRAFORM_PASSWORD). The SAME Secret on purpose: it is the
+# The passwords are env OPENBAO_TERRAFORM_PASSWORD and OPENBAO_ADMIN_PASSWORD,
+# from keys `terraform-password` and `admin-password` of the seal Secret
+# ${OPENBAO_SEAL_SECRET} (../../seal-static-secret renders them from the
+# variables of the same names). The SAME Secret on purpose: it is the
 # one SOPS-delivered Secret this instance already depends on, and the
 # Kustomization that renders it (openbao-prereqs) already reads the SOPS
 # substituteFrom Secret.
 #
 # FAILURE IS LOUD, AT RUNTIME. A missing key in the Secret keeps the pod in
 # CreateContainerConfigError (nothing initialised yet: add the key, done). An
-# EMPTY password fails the self-init: the server exits and refuses to unseal
-# from then on -- set the password, delete PVC data-openbao-0 and the pod.
+# EMPTY password (either one) fails the self-init: the server exits and
+# refuses to unseal from then on -- set the password, delete PVC
+# data-openbao-0 and the pod.
 # A render-time check is not possible: Flux substitution cannot fail on an
 # empty value.
 #
 # ONLY ON EMPTY STORAGE. Added to an instance that is already initialised, it
 # changes the pod spec and does nothing else: OpenBao never re-runs self-init.
-# Create the user by hand there, or reinstall.
-#
-# No admin login is left behind, by design. Anything outside pki/ (another
-# auth method, a policy change) means: extend self-init.hcl and reinstall --
-# or add an admin user here before the first start.
+# Create the users by hand there, or reinstall.
 #
 # HOW: the requests are a second server config file. The chart's own config is
 # a single string that ../seal-static REPLACES wholesale, and JSON patch cannot
@@ -70,6 +73,12 @@ patches:
           envName: OPENBAO_TERRAFORM_PASSWORD
           secretName: ${OPENBAO_SEAL_SECRET:-openbao-static-seal}
           secretKey: terraform-password
+      - op: add
+        path: /spec/values/server/extraSecretEnvironmentVars/-
+        value:
+          envName: OPENBAO_ADMIN_PASSWORD
+          secretName: ${OPENBAO_SEAL_SECRET:-openbao-static-seal}
+          secretKey: admin-password
       # extraVolumes rather than volumes/volumeMounts: ../seal-transit owns
       # those lists, and an `add` here would replace its trust bundle.
       - op: add

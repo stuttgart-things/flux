@@ -105,15 +105,18 @@ slot: the `apps/platform` components select
 
 Instead of `bao operator init` by hand, OpenBao initialises **itself** on its
 first start ([`initialize`](https://openbao.org/docs/configuration/self-init/),
-tested with OpenBao 2.7.0 and 2.7.1): it runs a fixed list of requests once, on empty storage, with
-a root token it revokes right after. **No root token** is handed to anyone and
-**no recovery keys** are created. What is left is one login:
+tested with OpenBao 2.7.0 and 2.7.1): it runs a fixed list of requests once,
+on empty storage, with a root token it revokes right after. **No root token**
+is handed to anyone and **no recovery keys** are created. What is left is two
+userpass logins:
 
 | Created | What |
 |---|---|
 | `auth/userpass` | the auth method |
 | policy `terraform` | PKI at `pki/` and nothing else (below) |
 | user `terraform` | `token_policies = ["terraform"]`, token TTL 1h (max 4h), password from env `OPENBAO_TERRAFORM_PASSWORD` |
+| policy `admin` | `path "*"`: create, read, update, delete, list, sudo, patch |
+| user `admin` | **break-glass**: `token_policies = ["admin"]`, token TTL 30m (max 1h), password from env `OPENBAO_ADMIN_PASSWORD` |
 
 ```yaml
   components:
@@ -122,8 +125,8 @@ a root token it revokes right after. **No root token** is handed to anyone and
     - ./components/self-init-userpass   # after the seal
 ```
 
-The policy (`components/self-init-userpass/self-init.hcl`, each path
-commented there):
+The `terraform` policy (`components/self-init-userpass/self-init.hcl`, each
+path commented there):
 
 | Path | Capabilities | For |
 |---|---|---|
@@ -133,10 +136,17 @@ commented there):
 | `pki/*` | create, read, update, delete, list | config/cluster, config/urls, config/acme, roles, issuers, intermediate/generate/internal, intermediate/set-signed, issue/sign, acme/new-eab |
 | `auth/token/lookup-self` | read | the provider's token lookup (the default policy has it too) |
 
-Everything else is denied: `sys/auth`, policies, other mounts, audit,
-`sys/seal`, `sys/rotate`, the userpass users, token creation. Terraform logs in
-with `auth_login_userpass { username = "terraform" }` and `skip_child_token =
-true`.
+Everything else is denied to `terraform`: `sys/auth`, policies, other mounts,
+audit, `sys/seal`, `sys/rotate`, the userpass users, token creation. Terraform
+logs in with `auth_login_userpass { username = "terraform" }` and
+`skip_child_token = true`.
+
+**The break-glass `admin`** replaces the root token for the exceptional
+operation -- enabling Kubernetes auth later, a rotation, extending a policy --
+without a reinstall. Its policy can do anything a root token can, but its
+tokens expire (30m, at most 1h). Keep its password **only in SOPS** and use it
+**by hand** (`bao login -method=userpass username=admin`), never in
+automation, a pipeline or a Terraform run; Terraform has its own, narrow user.
 
 **How it is wired.** The requests are a **second** server config file: the
 ConfigMap `openbao-self-init` (mounted through `server.extraVolumes` at
@@ -144,10 +154,11 @@ ConfigMap `openbao-self-init` (mounted through `server.extraVolumes` at
 -config=…/self-init.hcl`; `bao server` merges the `initialize` stanzas of all
 its `-config` files. The chart's own config is not touched -- the seal
 components replace that string wholesale, and a JSON patch cannot append to a
-string -- so this works with either seal and either topology. The password
-env is appended to the seal's `extraSecretEnvironmentVars`: from key
-`terraform-password` of the seal Secret `OPENBAO_SEAL_SECRET`, which
-`./seal-static-secret` renders from `OPENBAO_TERRAFORM_PASSWORD` -- the one
+string -- so this works with either seal and either topology. The two
+password envs are appended to the seal's `extraSecretEnvironmentVars`: from
+keys `terraform-password` and `admin-password` of the seal Secret
+`OPENBAO_SEAL_SECRET`, which `./seal-static-secret` renders from
+`OPENBAO_TERRAFORM_PASSWORD` and `OPENBAO_ADMIN_PASSWORD` -- the one
 SOPS-delivered Secret the instance already depends on.
 
 **Rules:**
@@ -157,19 +168,17 @@ SOPS-delivered Secret the instance already depends on.
   the build fails -- there is no env list to append to.
 * **Empty storage only.** On an instance that is already initialised it only
   changes the pod spec; OpenBao never re-runs self-init. Reinstall (delete the
-  PVC), or create the user by hand there.
-* **Failure is loud, at runtime.** A Secret without the key keeps the pod in
-  `CreateContainerConfigError` before anything is initialised -- add the key.
-  An **empty** password (unset `OPENBAO_TERRAFORM_PASSWORD`: the Secret then
-  holds `""`) fails the self-init: the server exits, and from then on refuses
+  PVC), or create the users by hand there.
+* **Failure is loud, at runtime.** A Secret without one of the keys keeps the
+  pod in `CreateContainerConfigError` before anything is initialised -- add the
+  key. An **empty** password (unset `OPENBAO_TERRAFORM_PASSWORD` or
+  `OPENBAO_ADMIN_PASSWORD`: the Secret then holds `""`) fails the self-init: the server exits, and from then on refuses
   to unseal (`self-initialization failed: refusing to unseal`). Set the
   password, then delete PVC `data-openbao-0` and the pod. A render-time check
   is not possible: substitution cannot fail on an empty value.
-* **The password is read once.** Changing it in the Secret later changes
-  nothing in OpenBao.
-* **No admin is left behind.** Anything beyond `pki/` -- another auth method, a
-  policy change -- means extending `self-init.hcl` and reinstalling. That is
-  the point: nothing on the cluster can widen its own access.
+* **The passwords are read once.** Changing them in the Secret later changes
+  nothing in OpenBao; change a password as `admin` (`bao write
+  auth/userpass/users/<user>/password`) and then in SOPS.
 * With `self-init-userpass` the pod becomes Ready on its own, so Helm's wait
   (multi-node) passes on a fresh install; `single-node`'s no-wait is no
   longer needed for the init, and harmless.
@@ -183,8 +192,9 @@ SOPS-delivered Secret the instance already depends on.
 `./seal-static-secret` is a **path**, not a component: the Namespace (with
 `ssa: merge`, as the base renders it too) and the Secret
 `OPENBAO_SEAL_SECRET` (default `openbao-static-seal`) with `key:
-OPENBAO_SEAL_STATIC_KEY` and `terraform-password: OPENBAO_TERRAFORM_PASSWORD`
-(optional, empty when unset; only `components/self-init-userpass` reads it).
+OPENBAO_SEAL_STATIC_KEY`, `terraform-password: OPENBAO_TERRAFORM_PASSWORD`
+and `admin-password: OPENBAO_ADMIN_PASSWORD` (both optional, empty when unset;
+only `components/self-init-userpass` reads them).
 Apply it from a Kustomization that reads the key
 from a SOPS `substituteFrom` Secret, and make `openbao` `dependsOn` it, so the
 Secret exists before the HelmRelease starts the pod.
@@ -205,7 +215,7 @@ openbao/
     ├── seal-none/          # no seal stanza: shamir, unsealed by hand
     ├── single-node/        # no Helm wait, no injector, small requests
     ├── multi-node/         # empty: the base as it is (the topology slot's default)
-    ├── self-init-userpass/ # self-init on first start: userpass user `terraform`, PKI-only policy
+    ├── self-init-userpass/ # self-init on first start: userpass `terraform` (PKI-only) + break-glass `admin`
     ├── init-none/          # empty: init by hand (the init slot's default)
     └── httproute/          # Gateway API HTTPRoute → svc/openbao:8200
                             #   (the path of a second Kustomization)
@@ -492,9 +502,10 @@ No variables. Base parameters only.
 ### `self-init-userpass`
 
 No variables of its own. It reads `OPENBAO_SEAL_SECRET` (default
-`openbao-static-seal`, the Secret holding key `terraform-password`) and
-`OPENBAO_NAMESPACE`. The password itself goes into that Secret:
-`OPENBAO_TERRAFORM_PASSWORD` for `./seal-static-secret`.
+`openbao-static-seal`, the Secret holding keys `terraform-password` and
+`admin-password`) and `OPENBAO_NAMESPACE`. The passwords themselves go into
+that Secret: `OPENBAO_TERRAFORM_PASSWORD` and `OPENBAO_ADMIN_PASSWORD` for <!-- pragma: allowlist secret -->
+`./seal-static-secret`.
 
 ### `httproute`
 

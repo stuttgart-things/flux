@@ -14,9 +14,11 @@
 #
 # OPENBAO_INIT self-init-userpass: no `bao operator init` -- the instance
 # initialises itself on first start (empty storage only), keeps no root token
-# and leaves one login, userpass user `terraform` with a PKI-only policy; its
-# password is OPENBAO_TERRAFORM_PASSWORD, carried by openbao-prereqs into the
-# seal Secret (apps/openbao/components/self-init-userpass). init-none (default)
+# and leaves two userpass logins: `terraform` (PKI-only policy, automation) and
+# `admin` (break-glass, everything, by hand only); passwords
+# OPENBAO_TERRAFORM_PASSWORD / OPENBAO_ADMIN_PASSWORD, carried by
+# openbao-prereqs into the seal Secret
+# (apps/openbao/components/self-init-userpass). init-none (default)
 # changes nothing.
 #
 # OPENBAO_TOPOLOGY single-node for a cluster with ONE node: install/upgrade
