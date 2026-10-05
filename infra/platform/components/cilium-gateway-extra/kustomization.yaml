@@ -3,7 +3,8 @@
 #
 # REQUIRES ../cilium-lb and ../cert-manager-install in the same
 # spec.components list (its child dependsOn both), plus the issuer named in
-# CILIUM_GATEWAY_EXTRA_ISSUER -- see the child for the one ordering trap.
+# CILIUM_GATEWAY_EXTRA_ISSUER -- see the child for the one ordering trap --
+# and, when CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION names one, that component.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

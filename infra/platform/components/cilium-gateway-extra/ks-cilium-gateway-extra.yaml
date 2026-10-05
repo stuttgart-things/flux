@@ -10,7 +10,8 @@
 # exists. A bundle consumer with wait: true then never gets Ready, and an
 # issuer applied by a Kustomization that dependsOn the bundle never arrives.
 # That is a deadlock. Use an issuer from the bundle itself (cert-manager-selfsigned's
-# cluster-ca, cert-manager-vault-issuer, cert-manager-ca-from-secret) or from
+# cluster-ca, cert-manager-vault-issuer, cert-manager-ca-from-secret,
+# cert-manager-letsencrypt-hetzner) or from
 # outside it. Otherwise point that later Kustomization at the path above
 # directly instead of selecting this component.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -26,8 +27,15 @@ spec:
   dependsOn:
     # the L2 announcement policy that makes the VIP reachable
     - name: cilium-lb
-    # the Certificate CRD
-    - name: cert-manager-install
+    # The Kustomization the ISSUER comes from. Default cert-manager-install:
+    # the Certificate CRD, enough for an issuer that exists by then. Name the
+    # issuer's own Kustomization when it is a child of this bundle that takes
+    # longer -- cert-manager-letsencrypt-hetzner for letsencrypt-hetzner --
+    # so the Certificate is created once the issuer can solve. Whatever is
+    # named must itself (transitively) depend on cert-manager-install; every
+    # cert-manager-* issuer component does. A name that does not exist parks
+    # this child on "dependency not ready" -- loud, never half-wired.
+    - name: ${CILIUM_GATEWAY_EXTRA_ISSUER_KUSTOMIZATION:-cert-manager-install}
   interval: 1h
   retryInterval: 1m
   timeout: 5m

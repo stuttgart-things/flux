@@ -1,0 +1,11 @@
+---
+# No ACME email -- the default. Let's Encrypt no longer sends expiry mails, and
+# cert-manager renews by itself.
+#
+# An EMPTY component rather than "just leave it out", so the consumer's
+# `components:` line always names the choice (as vault-issuer's ca-bundle).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# kustomize rejects a Component holding nothing but apiVersion and kind
+# ("kustomization.yaml is empty"); an empty list makes it valid.
+resources: []
