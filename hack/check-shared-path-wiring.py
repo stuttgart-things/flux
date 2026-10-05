@@ -158,6 +158,12 @@ MUST_MATCH = {
                "not the route's business",
         "extra_allowed": set(),
     },
+    "./apps/homerun2/profiles/platform-light-catcher-tabletennis-routes": {
+        "why": "homerun2-light-catcher-tabletennis-sops carries the route of "
+               "homerun2-light-catcher-tabletennis unchanged -- the redis "
+               "password's source is not the route's business",
+        "extra_allowed": set(),
+    },
     "./cicd/machinery": {
         "why": "machinery-auth is the machinery component with its gRPC "
                "bearer-token auth switched on -- same image, watch set and "

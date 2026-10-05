@@ -1,0 +1,17 @@
+---
+# The light-catcher for the table tennis table, on top of profiles/sops (bundle
+# component homerun2-light-catcher-tabletennis-sops): the sops counterpart to
+# profiles/platform-light-catcher-tabletennis. Its own namespace -- see
+# components/light-catcher-tabletennis for why.
+#
+# Needs a substituteFrom Secret with HOMERUN2_REDIS_PASSWORD_B64 -- the value
+# profiles/sops already requires, base64 of the same redis password.
+#
+# The HTTPRoute is unchanged by the credential mode:
+# profiles/platform-light-catcher-tabletennis-routes serves both, applied from
+# a Kustomization that dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/light-catcher-tabletennis
+  - ../../components/light-catcher-tabletennis/sops

@@ -29,6 +29,9 @@ apps/platform/
     │
     │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:
     ├── homerun2-sops/           → ./apps/homerun2/profiles/sops      (instead of homerun2; a StorageClass + a Secret)
+    ├── homerun2-light-catcher-tabletennis-sops/
+    │                            → ./apps/homerun2/profiles/sops-light-catcher-tabletennis
+    │                              (instead of homerun2-light-catcher-tabletennis; homerun2 + a Secret)
     ├── tabletennis-sops/        → ./apps/tabletennis/profiles/sops   (instead of tabletennis; cnpg-operator + a Secret)
     └── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
 ```
@@ -61,17 +64,27 @@ a `substituteFrom` Secret in `flux-system` instead:
 | Component | Secret (default name) | Keys |
 |---|---|---|
 | `homerun2-sops` | `homerun2-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64`, `TEAMS_WEBHOOK_URL`; optional `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN`, `HOMERUN2_SCOUT_AUTH_TOKEN` | <!-- pragma: allowlist secret -->
+| `homerun2-light-catcher-tabletennis-sops` | `homerun2-light-catcher-tabletennis-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
 | `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`) |
 
 Select one of each pair, never both: the alternative renders the same child
-Kustomization (`homerun2`, `tabletennis`, `openbao`), and the bundle build
+Kustomization (`homerun2`, `homerun2-light-catcher-tabletennis`,
+`tabletennis`, `openbao`), and the bundle build
 fails on the duplicate. Switching between the two rebuilds the child in place
 rather than pruning it.
 
 - `homerun2-sops` renders the notification-catcher's routing file in its own
   build: `HOMERUN2_SOPS_NOTIFY`, default `none` (nothing leaves the cluster).
+- `homerun2-light-catcher-tabletennis-sops` renders the redis password Secret
+  in the same build as the namespace it creates (`homerun2-tabletennis`), and
+  waits on `homerun2` (the child of `homerun2-sops`). Its Secret is its own,
+  not `homerun2-sops-secrets`: a renderer generates one Secret per AppProfile
+  entry, and two profiles declaring one name would write it twice. Its
+  `HOMERUN2_REDIS_PASSWORD_B64` must be `homerun2-sops`' -- reference both
+  from one source. The route is `homerun2-light-catcher-tabletennis`' own path,
+  unchanged.
 - With `TABLETENNIS_ZAEHLWERK_PANEL: homerun2`, zaehlwerk needs homerun2's
   omni-pitcher token and redis password: `ZAEHLWERK_OMNI_PITCHER_TOKEN` and <!-- pragma: allowlist secret -->
   `ZAEHLWERK_REDIS_PASSWORD` must equal `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` and
@@ -128,7 +141,8 @@ syntax, unknown fields) with `kcl vet` against the
 [`app-profile`](https://github.com/stuttgart-things/kcl/tree/main/models/app-profile)
 KCL schema.
 
-So do the SOPS alternatives `homerun2-sops`, `tabletennis-sops`,
+So do the SOPS alternatives `homerun2-sops`,
+`homerun2-light-catcher-tabletennis-sops`, `tabletennis-sops`,
 `tabletennis-sops-backup` and `openbao-sops` (below). Their Secrets also carry
 the keys of `# substituteFrom-optional-keys:`: keys the build reads WITH a
 default that a cluster still has to be able to set (an auth token whose

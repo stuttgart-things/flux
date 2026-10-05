@@ -1,0 +1,14 @@
+---
+# light-catcher-tabletennis: the redis password as a plain Secret substituted
+# from the consumer's substituteFrom Secret (HOMERUN2_REDIS_PASSWORD_B64), into
+# this instance's namespace. The counterpart to ./eso for a cluster without
+# external-secrets -- and the same value homerun2's components/*/sops render:
+# it is the same redis.
+#
+# Rendered in the same build as requirements.yaml's Namespace, never from a
+# layer of its own: a Secret applied separately into a namespace an app creates
+# either races the Namespace or is pruned with it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml

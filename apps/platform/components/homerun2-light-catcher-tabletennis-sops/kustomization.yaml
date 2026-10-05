@@ -1,0 +1,21 @@
+---
+# homerun2-light-catcher-tabletennis-sops -- the light-catcher for the strip at
+# the table tennis table (profiles/sops-light-catcher-tabletennis), with the
+# redis password from a SOPS substituteFrom Secret instead of external-secrets.
+#
+# REQUIRES homerun2 (../homerun2-sops on a SOPS-only cluster) and zaehlwerk
+# v0.3.0+ pitching into it (../tabletennis-sops with
+# TABLETENNIS_ZAEHLWERK_PANEL: homerun2): the effects match on the tags
+# zaehlwerk sends, and nothing else writes that stream.
+#
+# Drives the homerun2 wled-mock by default, which homerun2-sops brings. A real
+# strip is HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT.
+#
+# An ALTERNATIVE to ../homerun2-light-catcher-tabletennis, not an add-on:
+# select one of the two.
+# bundle-alternative-of: homerun2-light-catcher-tabletennis
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-light-catcher-tabletennis.yaml
+  - ks-homerun2-light-catcher-tabletennis-routes.yaml

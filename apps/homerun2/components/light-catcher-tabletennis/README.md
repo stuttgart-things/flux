@@ -38,6 +38,21 @@ Deployment selector, the pod anti-affinity. Renamed side by side, each Service
 would route to both instances. In its own namespace the base applies unchanged;
 redis is still reached at `redis-stack.${HOMERUN2_NAMESPACE}`.
 
+## Credentials
+
+Select exactly one of the two, beside the component itself:
+
+- `eso/` -- an ExternalSecret from `${HOMERUN2_SECRET_STORE}`, entry
+  `${HOMERUN2_SECRET_PATH}`, property `redis-password`
+  (`profiles/platform-light-catcher-tabletennis`, bundle component
+  `homerun2-light-catcher-tabletennis`)
+- `sops/` -- a plain Secret from `${HOMERUN2_REDIS_PASSWORD_B64}`, the value
+  homerun2's own `sops/` variants read (`profiles/sops-light-catcher-tabletennis`,
+  bundle component `homerun2-light-catcher-tabletennis-sops`)
+
+Either renders into this instance's namespace in the same build that creates
+it.
+
 ## Variables
 
 | Variable | Default | Description |
@@ -49,11 +64,12 @@ redis is still reached at `redis-stack.${HOMERUN2_NAMESPACE}`.
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | Container image tag, shared with `light-catcher` |
 | `HOMERUN2_SECRET_STORE` | *(required)* | ClusterSecretStore for `eso/` |
 | `HOMERUN2_SECRET_PATH` | `homerun2` | Entry holding `redis-password` |
+| `HOMERUN2_REDIS_PASSWORD_B64` | *(required for `sops/`)* | base64 of the redis password, from the consumer's `substituteFrom` Secret |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME` | `light-catcher-tabletennis` | HTTPRoute hostname prefix (`route/`) |
 | `GATEWAY_NAME`, `GATEWAY_NAMESPACE`, `DOMAIN` | *(required)* | HTTPRoute parent and domain (`route/`) |
 
 ## Customizations
 
-- Removes the base's HTTPRoute (`route/` brings one with this hostname) and its placeholder redis Secret (`eso/` brings the real one)
+- Removes the base's HTTPRoute (`route/` brings one with this hostname) and its placeholder redis Secret (`eso/` or `sops/` brings the real one)
 - Points `REDIS_ADDR` at the homerun2 namespace, `REDIS_STREAM` at `tabletennis`, and uses consumer group `homerun2-light-catcher-tabletennis`
 - Replaces the profile ConfigMap with the table's effects
