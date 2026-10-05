@@ -1,0 +1,29 @@
+---
+# AppProfile: what a cluster sets for trust-manager.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# The Bundle `cluster-trust-bundle` always lists one secret source named by
+# TRUST_BUNDLE_VAULT_CA_SECRET (default vault-pki-ca). A cluster without a
+# Vault points it at another CA Secret in the trust namespace -- e.g. the
+# single-node edge: `edge-ca` (its persistent root in ca.crt).
+kind: AppProfile
+metadata:
+  name: trust-manager
+spec:
+  bundle: infra-platform
+  component: ../components/trust-manager
+  vars:
+    TRUST_MANAGER_SUSPEND: {}
+    TRUST_MANAGER_TRUST_NAMESPACE: {}
+    TRUST_MANAGER_VERSION: {}
+    CERT_MANAGER_NAMESPACE: {}
+    CERT_MANAGER_CA_SECRET: {}
+    TRUST_BUNDLE_NAME: {}
+    TRUST_BUNDLE_CA_KEY: {}
+    TRUST_BUNDLE_TARGET_KEY: {}
+    TRUST_BUNDLE_VAULT_CA_SECRET: {}
+    TRUST_BUNDLE_VAULT_CA_KEY: {}
+    TRUST_BUNDLE_SECRET_NAME: {}
+    TRUST_BUNDLE_SECRET_TARGET_KEY: {}
+    TRUST_BUNDLE_SECRET_NAMESPACE: {}
