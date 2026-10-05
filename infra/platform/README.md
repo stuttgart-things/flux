@@ -161,7 +161,7 @@ manifests as the eight hand-written CRs it replaces.
 
 `cilium-lb`, `cilium-gateway`, `cert-manager-install`,
 `cert-manager-selfsigned`, `cert-manager-ca-from-secret`, `cnpg-operator`,
-`cnpg-barman-cloud` and `reloader` carry a `profile.yaml` next to their
+`cnpg-barman-cloud`, `reloader` and `trust-manager` carry a `profile.yaml` next to their
 `ks-*.yaml`: the vars a cluster may set for the component, and which of them are
 required. blueprints' `render-cluster-apps` reads it to render the bundle's
 `spec.components` and `postBuild.substitute` from a `ClusterApps` file
@@ -170,6 +170,9 @@ required. blueprints' `render-cluster-apps` reads it to render the bundle's
 None of these components reads a `substituteFrom` Secret, so their profiles
 list no `secrets`. `cert-manager-ca-from-secret` still needs its CA Secret in
 cert-manager's namespace; the cluster provides that, not the renderer.
+`trust-manager`'s Bundle always lists the Secret named by
+`TRUST_BUNDLE_VAULT_CA_SECRET` (default `vault-pki-ca`); a cluster without a
+Vault points it at a CA Secret it has, e.g. `edge-ca` on the single-node edge.
 
 `hack/check-app-profiles.py` and `hack/vet-app-profiles.sh` check every
 `*/platform/components/*/profile.yaml`, so a var added to a `ks-*.yaml` fails CI
