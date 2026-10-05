@@ -48,7 +48,7 @@ spec:
     substitute:
       OPENBAO_NAMESPACE: "${OPENBAO_NAMESPACE:-openbao}"
       # renovate: datasource=helm depName=openbao registryUrl=https://openbao.github.io/openbao-helm
-      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.30.1}"
+      OPENBAO_CHART_VERSION: "${OPENBAO_CHART_VERSION:-0.30.2}"
       OPENBAO_STORAGE_CLASS: "${OPENBAO_STORAGE_CLASS:-set-OPENBAO_STORAGE_CLASS}" # REQUIRED
       OPENBAO_STORAGE_SIZE: "${OPENBAO_STORAGE_SIZE:-8Gi}"
       OPENBAO_SEAL_KEY_ID: "${OPENBAO_SEAL_KEY_ID:-set-OPENBAO_SEAL_KEY_ID}" # REQUIRED
