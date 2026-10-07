@@ -73,6 +73,6 @@ spec:
       # component exists for the table tennis results.
       HOMERUN2_NOTIFICATION_CATCHER_STREAMS: "${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:-tabletennis}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
-      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.0.2}"
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.0.3}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
-      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.0.2}"
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.0.3}"
