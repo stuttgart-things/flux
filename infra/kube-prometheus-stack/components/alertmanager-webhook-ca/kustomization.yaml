@@ -1,0 +1,32 @@
+---
+# The webhook receiver trusts a CA bundle from a ConfigMap. Needed when the
+# pitcher sits behind a certificate of a lab PKI -- the LabDA clusters pitch to
+# the LabUL omni-pitcher (*.platform.sthings-vsphere.labul.sva.de, issued by
+# infra.sthings-vsphere.labul.sva.de): without this every notification failed
+# with "x509: certificate signed by unknown authority" (stuttgart-things#3503).
+# Applied by the kube-prometheus-stack-eso component (infra/platform/components).
+#
+# The ConfigMap must exist in the release namespace before Alertmanager starts
+# (a missing one keeps the pod from mounting it). Default: the trust-manager
+# Bundle target `cluster-trust-bundle`, key `trust-bundle.pem`.
+#
+# Same `test` guard as alertmanager-webhook-token: index 1 must be `msteams`.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      kind: HelmRelease
+      name: kube-prometheus-stack
+    patch: |
+      - op: test
+        path: /spec/values/alertmanager/config/receivers/1/name
+        value: msteams
+      - op: add
+        path: /spec/values/alertmanager/alertmanagerSpec/configMaps
+        value:
+          - ${KPS_ALERTMANAGER_CA_CONFIGMAP:-cluster-trust-bundle}
+      - op: add
+        path: /spec/values/alertmanager/config/receivers/1/webhook_configs/0/http_config/tls_config
+        value:
+          ca_file: /etc/alertmanager/configmaps/${KPS_ALERTMANAGER_CA_CONFIGMAP:-cluster-trust-bundle}/${KPS_ALERTMANAGER_CA_KEY:-trust-bundle.pem}

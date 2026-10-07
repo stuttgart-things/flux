@@ -80,10 +80,17 @@ MUST_MATCH = {
             "KPS_ESO_SECRET_PATH",
             "KPS_ESO_TOKEN_PROPERTY",
             "KPS_ESO_REFRESH_INTERVAL",
+            # The external pitcher's certificate comes from a lab PKI, so the
+            # ESO mode also trusts a CA bundle (component alertmanager-webhook-ca).
+            "KPS_ALERTMANAGER_CA_CONFIGMAP",
+            "KPS_ALERTMANAGER_CA_KEY",
         },
         # That mode IS this component: the ExternalSecret plus the patch that
         # swaps the receiver's credentials for a credentials_file.
-        "extra_components_allowed": {"./components/alertmanager-webhook-token"},
+        "extra_components_allowed": {
+            "./components/alertmanager-webhook-token",
+            "./components/alertmanager-webhook-ca",
+        },
     },
     "./infra/velero": {
         "why": "velero-eso is the velero component with its S3 pair read from a "

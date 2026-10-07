@@ -42,6 +42,9 @@ spec:
   path: ./infra/kube-prometheus-stack
   components:
     - ./components/alertmanager-webhook-token
+    # the external pitcher's certificate is from a lab PKI: trust the
+    # cluster's trust-manager bundle (stuttgart-things#3503)
+    - ./components/alertmanager-webhook-ca
   postBuild:
     substitute:
       KPS_NAMESPACE: "${KPS_NAMESPACE:-monitoring}"
@@ -85,5 +88,7 @@ spec:
       KPS_ESO_SECRET_STORE_NAME: "${KPS_ESO_SECRET_STORE_NAME:-set-KPS_ESO_SECRET_STORE_NAME}"
       KPS_ESO_SECRET_STORE_KIND: "${KPS_ESO_SECRET_STORE_KIND:-ClusterSecretStore}"
       KPS_ESO_SECRET_PATH: "${KPS_ESO_SECRET_PATH:-alertmanager-webhook}"
+      KPS_ALERTMANAGER_CA_CONFIGMAP: "${KPS_ALERTMANAGER_CA_CONFIGMAP:-cluster-trust-bundle}"
+      KPS_ALERTMANAGER_CA_KEY: "${KPS_ALERTMANAGER_CA_KEY:-trust-bundle.pem}"
       KPS_ESO_TOKEN_PROPERTY: "${KPS_ESO_TOKEN_PROPERTY:-token}"
       KPS_ESO_REFRESH_INTERVAL: "${KPS_ESO_REFRESH_INTERVAL:-1h}"
