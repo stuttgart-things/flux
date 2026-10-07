@@ -54,6 +54,15 @@ spec:
       TRUST_BUNDLE_TARGET_KEY: "${TRUST_BUNDLE_TARGET_KEY:-trust-bundle.pem}"
       TRUST_BUNDLE_VAULT_CA_SECRET: "${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}" # pragma: allowlist secret
       TRUST_BUNDLE_VAULT_CA_KEY: "${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}"
+      # One more CA for cluster-trust-bundle, e.g. the other lab's Vault root
+      # (LabDA clusters that call the LabUL omni-pitcher). Unset = the cluster CA
+      # again, which trust-manager de-duplicates -- the bundle stays unchanged.
+      # passthrough-override: the base falls back to TRUST_BUNDLE_CA_SECRET, which
+      # this Kustomization feeds from CERT_MANAGER_CA_SECRET -- so must the
+      # fallback here, or a cluster with its own CA Secret name and no extra CA
+      # would point the Bundle at a missing `cluster-ca-secret` and break it.
+      TRUST_BUNDLE_EXTRA_CA_SECRET: "${TRUST_BUNDLE_EXTRA_CA_SECRET:-${CERT_MANAGER_CA_SECRET:-cluster-ca-secret}}" # pragma: allowlist secret
+      TRUST_BUNDLE_EXTRA_CA_KEY: "${TRUST_BUNDLE_EXTRA_CA_KEY:-${TRUST_BUNDLE_CA_KEY:-ca.crt}}"
       TRUST_BUNDLE_SECRET_NAME: "${TRUST_BUNDLE_SECRET_NAME:-tls-ca}" # pragma: allowlist secret
       TRUST_BUNDLE_SECRET_TARGET_KEY: "${TRUST_BUNDLE_SECRET_TARGET_KEY:-cacerts.pem}"
       TRUST_BUNDLE_SECRET_NAMESPACE: "${TRUST_BUNDLE_SECRET_NAMESPACE:-cattle-system}"
