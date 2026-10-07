@@ -7,6 +7,8 @@
 # TRUST_BUNDLE_VAULT_CA_SECRET (default vault-pki-ca). A cluster without a
 # Vault points it at another CA Secret in the trust namespace -- e.g. the
 # single-node edge: `edge-ca` (its persistent root in ca.crt).
+# TRUST_BUNDLE_EXTRA_CA_SECRET adds ONE more CA Secret from the trust
+# namespace (the other lab's Vault root); unset, nothing changes.
 kind: AppProfile
 metadata:
   name: trust-manager
@@ -24,6 +26,8 @@ spec:
     TRUST_BUNDLE_TARGET_KEY: {}
     TRUST_BUNDLE_VAULT_CA_SECRET: {}
     TRUST_BUNDLE_VAULT_CA_KEY: {}
+    TRUST_BUNDLE_EXTRA_CA_SECRET: {}
+    TRUST_BUNDLE_EXTRA_CA_KEY: {}
     TRUST_BUNDLE_SECRET_NAME: {}
     TRUST_BUNDLE_SECRET_TARGET_KEY: {}
     TRUST_BUNDLE_SECRET_NAMESPACE: {}
