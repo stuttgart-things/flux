@@ -144,6 +144,7 @@ Version defaults are not repeated in these tables. Each component pins them in `
 |----------|---------|----------|---------|
 | `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated, e.g. `messages,alerts` |
 | `HOMERUN2_LIGHT_CATCHER_PROFILE_CM` | `homerun2-light-catcher-profile` | no | ConfigMap name containing the profile (effects and WLED endpoints); the default drives the wled-mock |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
@@ -178,6 +179,10 @@ Shares the version variables above.
 | `HOMERUN2_LED_CATCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_LED_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 | `HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS` | *(empty)* | no | Comma-separated stream buttons in the web simulator, e.g. `messages,tabletennis`. Empty: only the configured stream |
+| `HOMERUN2_LED_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated, e.g. `messages,alerts` |
+| `HOMERUN2_LED_CATCHER_PROFILE_CM` | `homerun2-led-catcher-profile` | no | ConfigMap (key `profile.yaml`) mounted as the display profile; the default is the base's own |
+| `HOMERUN2_LED_CATCHER_IDLE` | `off` | no | Idle screen: `off` or `clock` |
+| `HOMERUN2_LED_CATCHER_TZ` | `UTC` | no | Time zone of the idle clock and the card's HH:MM, e.g. `Europe/Berlin` |
 
 ### Git Pitcher
 
