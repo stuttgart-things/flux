@@ -80,3 +80,33 @@ spec:
                     # configured stream as its only preset.
                     - name: UI_STREAM_PRESETS
                       value: "${HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS:=}"
+                    # Comma-separated, e.g. messages,alerts where Grafana
+                    # alerts arrive in their own stream.
+                    - name: REDIS_STREAMS
+                      value: "${HOMERUN2_LED_CATCHER_STREAMS:=messages}"
+                    # The idle screen (off, clock) and the zone its clock and
+                    # the card's HH:MM are shown in.
+                    - name: LED_IDLE
+                      value: "${HOMERUN2_LED_CATCHER_IDLE:=off}"
+                    - name: TZ
+                      value: "${HOMERUN2_LED_CATCHER_TZ:=UTC}"
+    # The profile -- which display rule for which event -- is the caller's to
+    # supply, as for light-catcher. Unset, the Deployment mounts the base's own
+    # ConfigMap. Set it to a ConfigMap the cluster repo ships (key
+    # profile.yaml). The catcher reads the profile at startup: the reloader
+    # annotation above rolls the pod on a change where Reloader runs.
+    - target:
+        kind: Deployment
+        name: homerun2-led-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-led-catcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: profile
+                  configMap:
+                    name: ${HOMERUN2_LED_CATCHER_PROFILE_CM:-homerun2-led-catcher-profile}

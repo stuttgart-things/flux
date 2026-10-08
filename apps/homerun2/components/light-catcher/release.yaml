@@ -116,3 +116,7 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
+                    # Comma-separated. A cluster whose Grafana alerts arrive
+                    # in their own stream adds it here, e.g. messages,alerts.
+                    - name: REDIS_STREAMS
+                      value: "${HOMERUN2_LIGHT_CATCHER_STREAMS:=messages}"

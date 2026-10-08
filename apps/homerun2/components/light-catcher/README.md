@@ -16,6 +16,7 @@ OCIRepository + Flux Kustomization
 | `HOMERUN2_NAMESPACE` | `homerun2` | Target namespace |
 | `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | OCI kustomize artifact version |
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | Container image tag |
+| `HOMERUN2_LIGHT_CATCHER_STREAMS` | `messages` | `REDIS_STREAMS`, comma-separated, e.g. `messages,alerts` |
 | `HOMERUN2_LIGHT_CATCHER_PROFILE_CM` | `homerun2-light-catcher-profile` | ConfigMap (key `profile.yaml`) mounted as the profile. The default is the base's own, which drives the wled-mock |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
 | `GATEWAY_NAME` | *(required)* | Gateway resource name for HTTPRoute |
