@@ -453,6 +453,9 @@ the init.
 | `OPENBAO_CHART_VERSION` | `0.30.0` | openbao-helm chart version |
 | `OPENBAO_STORAGE_CLASS` | *(required)* | StorageClass for the raft PVC — a PVC that never binds leaves the pod `Pending` while the HelmRelease reports installed |
 | `OPENBAO_STORAGE_SIZE` | `8Gi` | Raft data volume size |
+| `OPENBAO_CPU_REQUEST` | `50m` | CPU request (no CPU limit) |
+| `OPENBAO_MEMORY_REQUEST` | `512Mi` | Memory request -- makes the pod Burstable, not the kernel's first OOM victim |
+| `OPENBAO_MEMORY_LIMIT` | `3Gi` | Memory limit (above the ~2.1 GB seen after weeks of growth; reaching it = a restart that a transit seal unseals) |
 
 There is **no** `OPENBAO_VERSION`: the image tag is not parameterised at all.
 The chart renders `.Values.server.image.tag | default (trimPrefix "v" .Chart.AppVersion)`,

@@ -54,6 +54,18 @@ spec:
       image:
         repository: openbao/openbao
 
+      # Requests make the pod Burstable instead of BestEffort -- with none set,
+      # the kernel kills it FIRST when the node runs short (sthings-infra,
+      # 2026-10-07: OOM-killed at 2.1 GB RSS after weeks of ~50 MiB/day growth,
+      # stuttgart-things#3502). The limit sits above that plateau; reaching it
+      # means a restart, which a transit-sealed instance unseals by itself.
+      resources:
+        requests:
+          cpu: ${OPENBAO_CPU_REQUEST:-50m}
+          memory: ${OPENBAO_MEMORY_REQUEST:-512Mi}
+        limits:
+          memory: ${OPENBAO_MEMORY_LIMIT:-3Gi}
+
       # The chart's Ingress stays off -- published through the shared Gateway
       # by components/httproute, applied after this release (README.md).
       ingress:
