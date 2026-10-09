@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zaehlwerk-buttons-sim
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  labels:
+    app.kubernetes.io/name: zaehlwerk-buttons-sim
+    app.kubernetes.io/part-of: zaehlwerk
+spec:
+  # One: the page's settings and log are in memory, shared by everyone on it.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zaehlwerk-buttons-sim
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zaehlwerk-buttons-sim
+        app.kubernetes.io/part-of: zaehlwerk
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: buttons
+          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.11.0}
+          env:
+            # The hub calls zaehlwerk by its Service, like the piezo-sim.
+            - name: ZAEHLWERK_URL
+              value: http://zaehlwerk
+            # What the page links to for starting a match: the browser's way
+            # in, not the Service name above.
+            - name: ZAEHLWERK_PUBLIC_URL
+              value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}"
+            - name: BUTTONS_ADDR
+              value: ":8084"
+            - name: PIEZO_CONTROL_URL
+              value: "${ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
+          ports:
+            - name: http
+              containerPort: 8084
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi

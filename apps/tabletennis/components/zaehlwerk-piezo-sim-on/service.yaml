@@ -1,0 +1,19 @@
+---
+# The board's control endpoint, for the table mock's page in the same
+# namespace (zaehlwerk-buttons-sim-on). ClusterIP and no route: pausing the
+# board is not something to publish.
+apiVersion: v1
+kind: Service
+metadata:
+  name: zaehlwerk-piezo-sim
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  labels:
+    app.kubernetes.io/name: zaehlwerk-piezo-sim
+    app.kubernetes.io/part-of: zaehlwerk
+spec:
+  selector:
+    app.kubernetes.io/name: zaehlwerk-piezo-sim
+  ports:
+    - name: control
+      port: 8081
+      targetPort: control

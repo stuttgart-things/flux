@@ -13,6 +13,10 @@
 # schmetterpause ADR-0015). For demo and test clusters, not one whose league
 # counts.
 #
+# Its control endpoint (:8081, Service zaehlwerk-piezo-sim) lets the table
+# mock's page pause and tune it while it plays: zaehlwerk-buttons-sim-on.
+# Image v0.11.0 or later; older ones ignore PIEZO_CONTROL_ADDR.
+#
 # REQUIRES ZAEHLWERK v0.8.0 OR LATER, for the image and for GET /matches/current,
 # which the board joins through. Against an older zaehlwerk it starts and waits
 # forever ("no match running"). The image version is its own variable
@@ -26,3 +30,4 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - deployment.yaml
+  - service.yaml

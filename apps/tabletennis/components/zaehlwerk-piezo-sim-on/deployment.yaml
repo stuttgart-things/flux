@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: piezo
-          image: ghcr.io/stuttgart-things/zaehlwerk-piezo:${ZAEHLWERK_PIEZO_VERSION:-v0.9.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-piezo:${ZAEHLWERK_PIEZO_VERSION:-v0.11.0}
           env:
             - name: ZAEHLWERK_URL
               value: http://zaehlwerk
@@ -44,6 +44,15 @@ spec:
               value: "3"
             - name: PIEZO_PACE
               value: "${ZAEHLWERK_PIEZO_PACE:-1s}"
+            # The control endpoint the table mock's page pauses and tunes the
+            # board through (zaehlwerk-buttons-sim-on). In-cluster only, behind
+            # ./service.yaml; nothing routes to it. An image older than v0.11.0
+            # ignores the variable and plays on as before.
+            - name: PIEZO_CONTROL_ADDR
+              value: ":8081"
+          ports:
+            - name: control
+              containerPort: 8081
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
