@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: buttons
-          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.11.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.12.0}
           env:
             # The hub calls zaehlwerk by its Service, like the piezo-sim.
             - name: ZAEHLWERK_URL
