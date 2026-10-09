@@ -45,9 +45,9 @@ spec:
       # The same version variables as ../homerun2-light-catcher: one catcher, two
       # instances. v1.1.0 is the floor here -- the profile matches on tags.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
-      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.5.0}"
+      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.7.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
-      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.5.0}"
+      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.7.0}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64
       # base64 of the redis password (it lands in Secret `data:`) -- the SAME
