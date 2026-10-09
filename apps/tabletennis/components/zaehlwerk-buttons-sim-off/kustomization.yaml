@@ -1,0 +1,8 @@
+---
+# zaehlwerk-buttons-sim-off -- no table mock: the default.
+# Selected through TABLETENNIS_ZAEHLWERK_BUTTONS_SIM (default off). Empty on
+# purpose; `patches: []` because kustomize refuses an empty kustomization.yaml
+# (see zaehlwerk-panel-off).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches: []

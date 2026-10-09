@@ -1,0 +1,30 @@
+---
+# zaehlwerk-buttons-sim-on -- the table mock next to zaehlwerk (zaehlwerk
+# tools/chain-mock/buttons, image zaehlwerk-buttons). Selected with
+# TABLETENNIS_ZAEHLWERK_BUTTONS_SIM: on.
+#
+# Two emulated wireless buttons and their hub, with a page to press them on, at
+# https://<ZAEHLWERK_BUTTONS_HOSTNAME>.<DOMAIN>: short = a point, long = take
+# one back, both long = both_long, and switches for the faults the radio and
+# the hub can have. For trying the gestures of zaehlwerk-firmware#56 before the
+# buttons exist as hardware.
+#
+# The page also runs a piezo board through its control endpoint
+# (ZAEHLWERK_BUTTONS_PIEZO_URL, the piezo-sim's Service by default): pause it,
+# try the buttons without a second scorer, turn its faults up. With the
+# piezo-sim off the page says the board is not answering; point the variable
+# at another board, or ignore it.
+#
+# THE PAGE TAKES POINTS BACK, and it is not behind a login. It scores into the
+# running match like the real buttons, and a won match is handed over like any
+# other. For demo, test and lab clusters, not one whose league counts.
+#
+# REQUIRES ZAEHLWERK v0.10.0 OR LATER for the image, v0.11.0 for the piezo
+# section. Settings and the log live in the pod's memory and are shared by
+# everyone on the page -- one replica, as for one table and one hub.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml

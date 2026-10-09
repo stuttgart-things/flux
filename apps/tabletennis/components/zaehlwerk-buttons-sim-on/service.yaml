@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zaehlwerk-buttons-sim
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  labels:
+    app.kubernetes.io/name: zaehlwerk-buttons-sim
+    app.kubernetes.io/part-of: zaehlwerk
+spec:
+  selector:
+    app.kubernetes.io/name: zaehlwerk-buttons-sim
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
