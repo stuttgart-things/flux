@@ -53,7 +53,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-led-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.13.0}
+                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.15.0}
     # Override Redis connection
     - target:
         kind: Deployment
