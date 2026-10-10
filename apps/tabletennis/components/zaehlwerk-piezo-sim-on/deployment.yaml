@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: piezo
-          image: ghcr.io/stuttgart-things/zaehlwerk-piezo:${ZAEHLWERK_PIEZO_VERSION:-v0.11.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-piezo:${ZAEHLWERK_PIEZO_VERSION:-v0.12.0}
           env:
             - name: ZAEHLWERK_URL
               value: http://zaehlwerk
