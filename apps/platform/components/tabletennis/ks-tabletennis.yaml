@@ -88,7 +88,7 @@ spec:
       # check-passthrough-defaults failed the PR (flux#359). Keep the comment
       # directly above the key: the manager matches the two as one block.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
-      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.14.0}"
+      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.16.0}"
       SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
       # The whole image rather than a major version: a bare 18 resolves to an
       # int, which postBuild.substitute rejects for every sibling at once.
@@ -97,7 +97,7 @@ spec:
       ZAEHLWERK_NAMESPACE: "${TABLETENNIS_ZAEHLWERK_NAMESPACE:-zaehlwerk}"
       # Same as SCHMETTERPAUSE_VERSION above: the winning copy, bumped with the base.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-kustomize
-      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.9.0}"
+      ZAEHLWERK_VERSION: "${TABLETENNIS_ZAEHLWERK_VERSION:-v0.12.0}"
       ZAEHLWERK_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}"
       ZAEHLWERK_PIEZO_VERSION: "${TABLETENNIS_ZAEHLWERK_PIEZO_VERSION:-v0.11.0}"
       ZAEHLWERK_PIEZO_PACE: "${TABLETENNIS_ZAEHLWERK_PIEZO_PACE:-1s}"
