@@ -112,7 +112,7 @@ spec:
       # Read only by zaehlwerk-buttons-sim-on. PIEZO_URL is the board the
       # page pauses and tunes: the piezo-sim's Service by default, another
       # board's control endpoint where one runs outside this layer.
-      ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.11.0}"
+      ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.12.0}"
       ZAEHLWERK_BUTTONS_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}"
       ZAEHLWERK_BUTTONS_PIEZO_URL: "${TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
       SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
