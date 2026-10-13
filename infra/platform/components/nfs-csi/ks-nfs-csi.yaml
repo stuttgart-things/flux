@@ -39,7 +39,7 @@ spec:
     substitute:
       NFS_CSI_NAMESPACE: "${NFS_CSI_NAMESPACE:-kube-system}"
       # renovate: datasource=helm depName=csi-driver-nfs registryUrl=https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
-      NFS_CSI_VERSION: "${NFS_CSI_VERSION:-4.13.4}"
+      NFS_CSI_VERSION: "${NFS_CSI_VERSION:-4.13.5}"
       # REQUIRED — sentinels are unresolvable on purpose: a wrong mount target
       # is visible in the StorageClass, an unset one would null the whole CR.
       NFS_SERVER_FQDN: "${NFS_SERVER_FQDN:-set-NFS_SERVER_FQDN.invalid}"
