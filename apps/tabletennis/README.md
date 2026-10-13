@@ -183,6 +183,12 @@ written down.
 | `TABLETENNIS_ZAEHLWERK_PIEZO_SIM` | `off`, `on` | The piezo board simulator next to zaehlwerk: plays every match started on the scoring page. A won match is handed over like any other, so demo/test clusters only. Needs zaehlwerk ≥ v0.8.0; tuned with `TABLETENNIS_ZAEHLWERK_PIEZO_VERSION` (default `v0.11.0`), `…_PIEZO_PACE` (`1s`); the board plays best of 3 |. From v0.11.0 it serves a control endpoint on its Service `zaehlwerk-piezo-sim:8081`, which the table mock below pauses and tunes
 | `TABLETENNIS_ZAEHLWERK_BUTTONS_SIM` | `off`, `on` | The table mock next to zaehlwerk: two emulated buttons and their hub, pressed on a page at `https://${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.<domain>`, with switches for the radio's and the hub's faults. The page also pauses and tunes a piezo board at `TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL` (default: the piezo-sim's Service; with the piezo-sim off it reports the board as not answering). It takes points back without a login and scores into the running match, so demo/test/lab clusters only. Needs zaehlwerk ≥ v0.10.0, the piezo section v0.11.0; image `TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION` (default `v0.12.0`; from v0.12.0 the page can switch to a display device). Both switches also exist on the `tabletennis-sops*` bundles |
 
+**`TABLETENNIS_ZAEHLWERK_SET_OPENER`** is a plain value, not a switch: who serves
+first in the sets after the first, as zaehlwerk's `SET_OPENER` (v0.14.0,
+zaehlwerk ADR-0005). `alternate` (default) is the rulebook, ITTF 2.13.6; `loser`
+is the house rule where whoever lost the previous set opens the next one. A
+match can still choose its own through the API.
+
 ### The scoreboard and the handover are one feature
 
 `schmetterpause-scoreboard-on` opens the surface; `zaehlwerk-handover-on` is the

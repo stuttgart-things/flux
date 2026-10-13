@@ -91,6 +91,7 @@ spec:
       # and DOMAIN, which exist one level down; the same value has to be built
       # from this layer's own INFRA_DOMAIN here.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      ZAEHLWERK_SET_OPENER: "${TABLETENNIS_ZAEHLWERK_SET_OPENER:-alternate}"
       # Where zaehlwerk reports a won match, read only by the `sops` handover.
       # The HTTPRoute by default. A cluster without trust-manager's CA bundle
       # (zaehlwerk mounts it optionally) sets the in-cluster Service instead:

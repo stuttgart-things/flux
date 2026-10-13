@@ -76,6 +76,18 @@ spec:
         - op: add
           path: /data/ALLOWED_ORIGINS
           value: "${ZAEHLWERK_ALLOWED_ORIGINS:-https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}}"
+    # Who serves first in the sets after the first (zaehlwerk v0.14.0,
+    # ADR-0005): `alternate` is the rulebook (ITTF 2.13.6), `loser` the house
+    # rule where whoever lost the previous set opens the next one. A plain
+    # substitution like ALLOWED_ORIGINS, quoted for the same reason; ADDED
+    # because the base does not carry the key.
+    - target:
+        kind: ConfigMap
+        name: zaehlwerk-config
+      patch: |
+        - op: add
+          path: /data/SET_OPENER
+          value: "${ZAEHLWERK_SET_OPENER:-alternate}"
     # Stakater Reloader: roll zaehlwerk when zaehlwerk-config or one of its
     # Secrets changes. zaehlwerk reads them only at start, so a changed
     # ConfigMap -- e.g. the panel URLs from zaehlwerk-panel-homerun2 -- sat
