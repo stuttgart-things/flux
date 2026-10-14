@@ -1,0 +1,12 @@
+---
+# Opt-in: git-sync credentials from Vault (private repositories).
+#
+# Variables:
+#   GIT_SYNC_AUTH_STORE              ClusterSecretStore
+#   GIT_SYNC_AUTH_PATH               Vault key, e.g. homerun2-cd/data/kargo
+#   GIT_SYNC_AUTH_USERNAME_PROPERTY  default username
+#   GIT_SYNC_AUTH_PASSWORD_PROPERTY  default password
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml

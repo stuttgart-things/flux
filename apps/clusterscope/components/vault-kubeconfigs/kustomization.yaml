@@ -1,0 +1,51 @@
+---
+# Opt-in: kubeconfigs of the other clusters of the lab for live mode, from
+# Vault. Mounts the Secret at /kubeconfigs; set
+# CLUSTERSCOPE_KUBECONFIG_DIR=/kubeconfigs, CLUSTERSCOPE_LIVE=true and
+# CLUSTERSCOPE_SELF_CLUSTER=<this cluster> (read in-cluster, no kubeconfig).
+#
+# Variables:
+#   CLUSTERSCOPE_KUBECONFIG_CLUSTERS  regexp over the Vault entry names,
+#                                     e.g. ^(infra-sthings|homerun2-dev2)$
+#   CLUSTERSCOPE_KUBECONFIG_STORE     ClusterSecretStore (default vault-kubeconfigs)
+#
+# The volume is optional: clusterscope starts without it (all other clusters
+# "no kubeconfig"), and kubelet fills it once ESO has synced — clusterscope
+# rereads the directory on every refresh, no restart needed.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secret.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: clusterscope-deploy
+    patch: |  # pragma: allowlist secret -- secretName below names a Secret, holds none
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: clusterscope
+          # Strategic merge, matched by container name: after release.yaml's
+          # git-sync patch the clusterscope container is no longer index 0.
+          patch: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: clusterscope
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: clusterscope
+                      volumeMounts:
+                        - name: kubeconfigs
+                          mountPath: /kubeconfigs
+                          readOnly: true
+                  volumes:
+                    - name: kubeconfigs
+                      secret:
+                        secretName: clusterscope-kubeconfigs
+                        optional: true
