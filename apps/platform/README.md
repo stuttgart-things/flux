@@ -108,6 +108,19 @@ rather than pruning it.
   HTTPRoute; a cluster without trust-manager's CA bundle sets the in-cluster
   `http://schmetterpause.<namespace>.svc.cluster.local` instead. `on` is the
   ESO variant and refuses to build here. Details: `apps/tabletennis/README.md`.
+- `TABLETENNIS_FOB_CHECKIN: sops` (default `off`) switches on check-in by
+  fob at both ends: schmetterpause links and resolves key fobs
+  (`SCHMETTERPAUSE_RFID_UID_KEY` → `SP_RFID_UID_KEY`, at least 32 characters;
+  a new key unlinks every fob), zaehlwerk takes the hub's check-ins
+  (`ZAEHLWERK_CHECKIN_TOKEN` → `CHECKIN_TOKEN`, which the table mock reads
+  from the same Secret). Needs `TABLETENNIS_SCOREBOARD_HANDOVER: sops`,
+  schmetterpause v0.17.0 and zaehlwerk v0.18.0.
+- `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'` (default `off`) sets
+  schmetterpause's `SP_ZAEHLWERK_URL` to
+  `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL` (default zaehlwerk's HTTPRoute):
+  the running score on the start page and, with the scoreboard, check-in by
+  phone, where the pod calls zaehlwerk itself. The component mounts
+  trust-manager's CA bundle into schmetterpause for that call.
 - `tabletennis-sops-backup` writes WAL and base backups to any S3 endpoint
   (`TABLETENNIS_SCHMETTERPAUSE_BACKUP_*`), with no `dependsOn` on it: an
   in-cluster `minio` beside it comes up in parallel and archiving retries.

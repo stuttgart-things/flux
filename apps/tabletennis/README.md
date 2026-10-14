@@ -179,9 +179,11 @@ written down.
 | `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` (`sops` under `profiles/sops`) | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
 | `TABLETENNIS_ZAEHLWERK_HANDOVER` | `off`, `on` (`sops` under `profiles/sops`) | `SCHMETTERPAUSE_URL` + `SCHMETTERPAUSE_TOKEN` — a won match reported into schmetterpause |
 | `TABLETENNIS_SCOREBOARD_HANDOVER` | `off`, `sops` | the two rows above as one switch, in the `tabletennis-sops*` bundle components only |
+| `TABLETENNIS_FOB_CHECKIN` | `off`, `sops` | Check-in by fob, both ends as one switch, in the `tabletennis-sops*` bundle components only: `SP_RFID_UID_KEY` (`schmetterpause-fobs-sops`, from `SCHMETTERPAUSE_RFID_UID_KEY`) and zaehlwerk's `CHECKIN_TOKEN` (`zaehlwerk-checkin-sops`, from `ZAEHLWERK_CHECKIN_TOKEN`). See "Check-in at the table" |
+| `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK` | `off`, `on` | `SP_ZAEHLWERK_URL` = `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL` (default `https://<zaehlwerk hostname>.<domain>`) plus trust-manager's CA bundle in schmetterpause's pod — the running score on the start page, and with the scoreboard check-in by phone. In the `tabletennis-sops*` bundle components |
 | `TABLETENNIS_SCHMETTERPAUSE_POLICY` | `off`, `on` | Kyverno's check on the application image's CI signature |
 | `TABLETENNIS_ZAEHLWERK_PIEZO_SIM` | `off`, `on` | The piezo board simulator next to zaehlwerk: plays every match started on the scoring page. A won match is handed over like any other, so demo/test clusters only. Needs zaehlwerk ≥ v0.8.0; tuned with `TABLETENNIS_ZAEHLWERK_PIEZO_VERSION` (default `v0.11.0`), `…_PIEZO_PACE` (`1s`); the board plays best of 3 |. From v0.11.0 it serves a control endpoint on its Service `zaehlwerk-piezo-sim:8081`, which the table mock below pauses and tunes
-| `TABLETENNIS_ZAEHLWERK_BUTTONS_SIM` | `off`, `on` | The table mock next to zaehlwerk: two emulated buttons and their hub, pressed on a page at `https://${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.<domain>`, with switches for the radio's and the hub's faults. The page also pauses and tunes a piezo board at `TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL` (default: the piezo-sim's Service; with the piezo-sim off it reports the board as not answering). It takes points back without a login and scores into the running match, so demo/test/lab clusters only. Needs zaehlwerk ≥ v0.10.0, the piezo section v0.11.0; image `TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION` (default `v0.12.0`; from v0.12.0 the page can switch to a display device). Both switches also exist on the `tabletennis-sops*` bundles |
+| `TABLETENNIS_ZAEHLWERK_BUTTONS_SIM` | `off`, `on` | The table mock next to zaehlwerk: two emulated buttons and their hub, pressed on a page at `https://${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.<domain>`, with switches for the radio's and the hub's faults. The page also pauses and tunes a piezo board at `TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL` (default: the piezo-sim's Service; with the piezo-sim off it reports the board as not answering). It takes points back without a login and scores into the running match, so demo/test/lab clusters only. Needs zaehlwerk ≥ v0.10.0, the piezo section v0.11.0; image `TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION` (default `v0.18.0`; from v0.12.0 the page can switch to a display device, from v0.18.0 it holds fobs to the reader). Both switches also exist on the `tabletennis-sops*` bundles |
 
 **`TABLETENNIS_ZAEHLWERK_SET_OPENER`** is a plain value, not a switch: who serves
 first in the sets after the first, as zaehlwerk's `SET_OPENER` (v0.14.0,
@@ -220,6 +222,39 @@ the check is
 kubectl -n schmetterpause get externalsecret schmetterpause-app
 ```
 
+### Check-in at the table
+
+Two ways to claim a table half, both reported without an operator
+(schmetterpause ADR-0024 to ADR-0026, zaehlwerk ADR-0010/0011). Both need the
+scoreboard and the handover on.
+
+* **By fob** — `TABLETENNIS_FOB_CHECKIN: sops`. The hub posts a fob and a half
+  to zaehlwerk's `/ingest/checkin` with `CHECKIN_TOKEN` as bearer; zaehlwerk
+  resolves the fob at schmetterpause, which knows fobs only with
+  `SP_RFID_UID_KEY`. Either key alone checks nobody in, hence one switch. The
+  published zaehlwerk base (up to v0.18.0) hands Secret keys to the container
+  one by one and does not name `CHECKIN_TOKEN`, so `zaehlwerk-checkin-sops`
+  adds that env entry itself. The table mock (`zaehlwerk-buttons-sim-on`)
+  reads the same key from `zaehlwerk-panel`, optionally: it holds the page's
+  fake fobs to the reader once the switch is on.
+* **By phone** — `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'`. The QR code of
+  a half opens `/table/left` or `/table/right` on schmetterpause, which claims
+  the half at zaehlwerk's `POST /checkin/claim` with the scoreboard token. No
+  key of its own, but the **pod** calls `SP_ZAEHLWERK_URL`, so the address
+  has to resolve in-cluster and its certificate has to be trusted: the
+  component mounts trust-manager's bundle (`cluster-trust-bundle`, optional)
+  and sets `SSL_CERT_DIR`, as zaehlwerk's base does. The browser uses the same
+  address for the live score, so it must also resolve for players, with
+  schmetterpause's origin in `TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS` (the
+  default).
+
+```yaml
+TABLETENNIS_SCOREBOARD_HANDOVER: sops
+TABLETENNIS_FOB_CHECKIN: sops
+TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'
+# secret tabletennis-sops-secrets: SCHMETTERPAUSE_RFID_UID_KEY, ZAEHLWERK_CHECKIN_TOKEN
+```
+
 ### Versions
 
 | | needs |
@@ -227,6 +262,7 @@ kubectl -n schmetterpause get externalsecret schmetterpause-app
 | the scoreboard | schmetterpause **v0.10.0+** — in v0.9.0 the handlers do not exist |
 | the handover | zaehlwerk **v0.5.0+** — earlier tags do not mount the trust-manager bundle, so every call over the HTTPRoute fails on the cluster CA while the pod looks healthy |
 | an observer keeping score | schmetterpause **v0.14.0+** (`GET /api/operators`, its ADR-0023) and zaehlwerk **v0.6.0+**, which offers observers in *Keeping score*. Either alone changes nothing: the older side falls back to the player list |
+| check-in by fob or phone | schmetterpause **v0.17.0+** and zaehlwerk **v0.18.0+** (`/ingest/checkin` with `CHECKIN_TOKEN`, `/checkin/claim`); the table mock's fobs need `zaehlwerk-buttons` **v0.18.0+** |
 | monitoring | schmetterpause **v0.8.0+** — the release that added the `metrics` container port |
 | the policy | schmetterpause **v0.9.0+**, and a Kyverno serving `policies.kyverno.io/v1` |
 

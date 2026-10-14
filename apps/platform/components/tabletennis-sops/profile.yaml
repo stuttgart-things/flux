@@ -37,6 +37,9 @@ spec:
     TABLETENNIS_SCHMETTERPAUSE_ADMIN: {}
     TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN: {}
     TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL: {}
+    TABLETENNIS_FOB_CHECKIN: {}
+    TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: {}
+    TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL: {}
     HOMERUN2_NAMESPACE: {}
     INFRA_GATEWAY_NAME: {}
     INFRA_GATEWAY_NAMESPACE: {}
@@ -53,3 +56,10 @@ spec:
         # (serves /api with it) and zaehlwerk (calls it) -- one value, generated
         # once. Hex: substituted into YAML unquoted. 64 characters = rand -hex 32.
         SCHMETTERPAUSE_SCOREBOARD_TOKEN: { generate: { type: hex, length: 64 } }
+        # Read only with TABLETENNIS_FOB_CHECKIN: sops. The fob key: >= 32
+        # characters, and a new one unlinks every fob -- generated once, never
+        # rotated by a re-render (keep it with --existing-secrets).
+        SCHMETTERPAUSE_RFID_UID_KEY: { generate: { type: base64, length: 64 } }
+        # The bearer of zaehlwerk's /ingest/checkin, sent by the hub (and the
+        # table mock). Hex: substituted into YAML unquoted.
+        ZAEHLWERK_CHECKIN_TOKEN: { generate: { type: hex, length: 64 } }

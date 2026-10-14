@@ -1,0 +1,64 @@
+---
+# zaehlwerk-checkin-sops -- check-in by fob at zaehlwerk, for the sops
+# credential mode (profiles/sops): the hub at the table posts a fob and a half
+# to /ingest/checkin, zaehlwerk resolves the fob at schmetterpause, and two
+# checked-in halves start a match that is reported without an operator
+# (zaehlwerk ADR-0010). Selected with TABLETENNIS_FOB_CHECKIN: sops, together
+# with schmetterpause-fobs-sops -- without it every fob resolves to nobody.
+#
+# REQUIRES ZAEHLWERK_CHECKIN_TOKEN, ZAEHLWERK v0.18.0 OR LATER, and the
+# handover (TABLETENNIS_SCOREBOARD_HANDOVER: sops): zaehlwerk resolves fobs and
+# reports the match with SCHMETTERPAUSE_URL and SCHMETTERPAUSE_TOKEN.
+#
+# CHECKIN_TOKEN is the bearer the hub sends -- a check-in names a player, so
+# the route takes none without it. The table mock (zaehlwerk-buttons-sim-on)
+# reads the same key from the same Secret, optionally, so it needs no switch of
+# its own. Unset, the value arrives as "" and the route stays off (503).
+# Generate it as `openssl rand -base64 48` or `-hex 32`: substituted into YAML
+# unquoted.
+#
+# Check-in BY PHONE does not need this: it goes through schmetterpause
+# (schmetterpause-zaehlwerk-on) with the scoreboard token.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: | # pragma: allowlist secret
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+      # The published base hands Secret keys to the container one by one
+      # (zaehlwerk kcl/deploy.k), and up to v0.18.0 it names no CHECKIN_TOKEN:
+      # the key in the Secret alone would reach nobody's environment -- the
+      # v0.4.0 handover-token mistake again. So the env entry is added here,
+      # optional like the base's own. Into spec.patches because the
+      # Deployment comes from the OCI base at runtime.
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: zaehlwerk
+          patch: |
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CHECKIN_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    name: zaehlwerk-panel
+                    key: CHECKIN_TOKEN
+                    optional: true
+  # The token, into the plain Secret that is in this build
+  # (../zaehlwerk/sops/secrets.yaml).
+  - target:
+      version: v1
+      kind: Secret
+      name: zaehlwerk-panel
+    patch: |
+      - op: add
+        path: /stringData/CHECKIN_TOKEN
+        value: ${ZAEHLWERK_CHECKIN_TOKEN}

@@ -1,0 +1,10 @@
+---
+# schmetterpause-zaehlwerk-off -- schmetterpause without a Zählwerk address:
+# the default. Selected through TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK (default
+# off). Empty on purpose: without SP_ZAEHLWERK_URL the start page shows no
+# running score and there is no check-in by phone.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []` because kustomize refuses an empty kustomization.yaml (see
+# schmetterpause-admin-off).
+patches: []

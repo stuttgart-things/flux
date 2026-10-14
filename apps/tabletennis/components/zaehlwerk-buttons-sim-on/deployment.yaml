@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: buttons
-          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.12.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.18.0}
           env:
             # The hub calls zaehlwerk by its Service, like the piezo-sim.
             - name: ZAEHLWERK_URL
@@ -41,6 +41,16 @@ spec:
               value: ":8084"
             - name: PIEZO_CONTROL_URL
               value: "${ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
+            # The bearer the hub sends with a fob check-in (v0.18.0): the
+            # value zaehlwerk-checkin-sops writes into zaehlwerk's own Secret.
+            # Optional, so without that switch the key is absent, the page's
+            # fobs are refused (503) and points still score.
+            - name: CHECKIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: zaehlwerk-panel
+                  key: CHECKIN_TOKEN
+                  optional: true
           ports:
             - name: http
               containerPort: 8084

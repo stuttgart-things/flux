@@ -1,0 +1,83 @@
+---
+# schmetterpause-zaehlwerk-on -- schmetterpause knows its Zählwerk
+# (SP_ZAEHLWERK_URL). Selected with TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: on;
+# the address is TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL, by default zaehlwerk's
+# HTTPRoute on the same domain.
+#
+# TWO USES OF ONE ADDRESS, and both have to reach it:
+#   * the browser: the start page shows the running score from zaehlwerk's live
+#     stream. The address must resolve for players, and schmetterpause's origin
+#     must be in zaehlwerk's ALLOWED_ORIGINS (TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS,
+#     by default schmetterpause's own HTTPRoute).
+#   * the pod: with the scoreboard token set (the scoreboard switch), the
+#     phone check-in pages /table/left and /table/right are on, and
+#     schmetterpause itself calls POST <address>/checkin/claim (schmetterpause
+#     ADR-0026, zaehlwerk ADR-0011).
+#
+# NOT A SECRET, so one component for both credential modes, like the admin
+# switch. REQUIRES SCHMETTERPAUSE v0.17.0 OR LATER for check-in by phone and
+# ZAEHLWERK v0.18.0 for /checkin/claim; an older zaehlwerk answers the claim
+# with 404 and the page says the table cannot be reached.
+#
+# THE CLUSTER CA. The default address goes over the HTTPRoute, whose
+# certificate the cluster's CA signs. The published base mounts no CA bundle
+# (unlike zaehlwerk's), so without the second patch below every claim fails
+# with "x509: certificate signed by unknown authority" while the page loads
+# fine. The patch mounts trust-manager's bundle the way zaehlwerk's base does:
+# an OPTIONAL ConfigMap (a cluster without trust-manager still starts the pod)
+# at a directory named in SSL_CERT_DIR, which ADDS to the image's public roots
+# where SSL_CERT_FILE would replace them.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      # ADDED: the base renders the key only when its own zaehlwerkURL is set,
+      # and the published profile leaves it empty. Scheme and host only --
+      # schmetterpause refuses to start on a path.
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: schmetterpause-config
+          patch: |
+            - op: add
+              path: /data/SP_ZAEHLWERK_URL
+              value: "${SCHMETTERPAUSE_ZAEHLWERK_URL:-https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}}"
+      # Strategic merge: containers and volumes merge by name, so the base's
+      # env (SP_DATABASE_URL) and the migrate init container stay as they are.
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: schmetterpause
+          patch: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: schmetterpause
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: schmetterpause
+                      env:
+                        - name: SSL_CERT_DIR
+                          value: /etc/ssl/cluster-trust
+                      volumeMounts:
+                        - name: cluster-trust
+                          mountPath: /etc/ssl/cluster-trust
+                          readOnly: true
+                  volumes:
+                    - name: cluster-trust
+                      configMap:
+                        name: cluster-trust-bundle
+                        optional: true
+                        items:
+                          - key: trust-bundle.pem
+                            path: ca.pem
