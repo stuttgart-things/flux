@@ -1,0 +1,43 @@
+---
+# schmetterpause-fobs-sops -- key fobs on schmetterpause, for the sops
+# credential mode (profiles/sops): a player links a fob on the profile page,
+# and zaehlwerk's hub resolves a fob held to the reader to that player
+# (schmetterpause ADR-0025). Selected with TABLETENNIS_FOB_CHECKIN: sops, which
+# also selects zaehlwerk-checkin-sops -- the two ends of check-in by fob.
+#
+# REQUIRES SCHMETTERPAUSE_RFID_UID_KEY, and SCHMETTERPAUSE v0.17.0 OR LATER
+# (earlier images ignore the key). It keys the hash a fob's UID is stored
+# under; the UID itself is never stored. AT LEAST 32 CHARACTERS, or
+# schmetterpause refuses to start: `openssl rand -base64 48` (substituted into
+# YAML unquoted, which base64 survives). A NEW KEY UNLINKS EVERY FOB -- treat
+# it like the session key and never rotate it casually.
+#
+# Unset, it arrives as "" (a Secret's stringData stores YAML null as ""), and
+# schmetterpause runs without fobs. There is no default on purpose: a known key
+# makes the stored hashes reversible for the few UIDs a fob can have.
+#
+# The Secret is read through envFrom, so the key needs nothing else to reach
+# the container. Only the sops variant exists: the ESO path has no fob switch.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  # Guarded like schmetterpause-scoreboard-sops: on a build that is not in the
+  # sops mode the test fails it rather than writing into a Secret nobody
+  # applies (flux#526).
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+  # The Secret is in this build (../schmetterpause/sops/secrets.yaml).
+  - target:
+      version: v1
+      kind: Secret
+      name: schmetterpause-app
+    patch: |
+      - op: add
+        path: /stringData/SP_RFID_UID_KEY
+        value: ${SCHMETTERPAUSE_RFID_UID_KEY}

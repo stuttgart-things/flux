@@ -1,0 +1,12 @@
+---
+# schmetterpause-fobs-off -- no key fobs: the default. Selected through
+# TABLETENNIS_FOB_CHECKIN (default off) on the tabletennis-sops* bundles.
+#
+# Empty on purpose. Without SP_RFID_UID_KEY schmetterpause offers no fob
+# linking and resolves no fob (its ADR-0025), so "off" is what the base
+# already renders.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []` because kustomize refuses an empty kustomization.yaml (see
+# schmetterpause-scoreboard-off).
+patches: []

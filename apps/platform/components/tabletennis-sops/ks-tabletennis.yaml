@@ -24,7 +24,10 @@
 # The monitoring and policy switches of ../tabletennis are NOT here: they have
 # no sops variants, and neither has been run on this path. The admin switch,
 # the piezo-sim and the table mock (buttons-sim) are, because none of them
-# carries a credential.
+# carries a credential. Check-in by fob is one switch for both ends,
+# TABLETENNIS_FOB_CHECKIN (off | sops), for the same reason as the scoreboard;
+# schmetterpause's Zählwerk address (TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK:
+# off | on) carries none and works on either credential mode.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -61,6 +64,20 @@ spec:
     # variants, whose credentials-mode test refuses to build here.
     - ../../components/schmetterpause-scoreboard-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
     - ../../components/zaehlwerk-handover-${TABLETENNIS_SCOREBOARD_HANDOVER:-off}
+    # Check-in by fob: off or sops. ONE variable for both ends, like the
+    # scoreboard and the handover: schmetterpause links and resolves fobs
+    # (SCHMETTERPAUSE_RFID_UID_KEY), zaehlwerk takes the hub's check-ins
+    # (ZAEHLWERK_CHECKIN_TOKEN; the table mock reads the same key). Either
+    # alone checks nobody in. Needs TABLETENNIS_SCOREBOARD_HANDOVER: sops,
+    # through which zaehlwerk resolves the fob and reports the match.
+    - ../../components/schmetterpause-fobs-${TABLETENNIS_FOB_CHECKIN:-off}
+    - ../../components/zaehlwerk-checkin-${TABLETENNIS_FOB_CHECKIN:-off}
+    # schmetterpause's Zählwerk (SP_ZAEHLWERK_URL): off or on. The running
+    # score on the start page, and with the scoreboard token check-in by phone
+    # (/table/left|right), where schmetterpause calls zaehlwerk itself -- so
+    # the component also mounts trust-manager's CA bundle. No credential, so
+    # the same component as the ESO path would use.
+    - ../../components/schmetterpause-zaehlwerk-${TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK:-off}
     # The first admin, granted at every start (schmetterpause ADR-0008): off or
     # on, with the name in TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN -- the same
     # components as ../tabletennis (not a secret: the name grants nothing
@@ -87,7 +104,7 @@ spec:
       # same values as ../tabletennis.
       ZAEHLWERK_PIEZO_VERSION: "${TABLETENNIS_ZAEHLWERK_PIEZO_VERSION:-v0.11.0}"
       ZAEHLWERK_PIEZO_PACE: "${TABLETENNIS_ZAEHLWERK_PIEZO_PACE:-1s}"
-      ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.12.0}"
+      ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.18.0}"
       ZAEHLWERK_BUTTONS_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}"
       ZAEHLWERK_BUTTONS_PIEZO_URL: "${TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
       ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
@@ -103,6 +120,12 @@ spec:
       #
       # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS above.
       ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
+      # Where schmetterpause finds zaehlwerk, read only by
+      # schmetterpause-zaehlwerk-on: by browsers AND by the pod, so an address
+      # both resolve. zaehlwerk's HTTPRoute by default.
+      #
+      # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS above.
+      SCHMETTERPAUSE_ZAEHLWERK_URL: "${TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL:-https://${TABLETENNIS_ZAEHLWERK_HOSTNAME:-zaehlwerk}.${INFRA_DOMAIN}}"
       # Read only by schmetterpause-admin-on; "none" is the admin component at
       # `off` (its default), never an empty value here. Required only with
       # TABLETENNIS_SCHMETTERPAUSE_ADMIN: on -- hence a neutral default instead
@@ -113,12 +136,16 @@ spec:
     substituteFrom:
       # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SESSION_KEY
       # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
-      #   ZAEHLWERK_REDIS_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN
+      #   ZAEHLWERK_REDIS_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN,
+      #   SCHMETTERPAUSE_RFID_UID_KEY, ZAEHLWERK_CHECKIN_TOKEN
       # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
       # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
       # SCHMETTERPAUSE_SCOREBOARD_TOKEN: read only with
       # TABLETENNIS_SCOREBOARD_HANDOVER: sops, by both sides (one credential).
       # `openssl rand -hex 32`: it is substituted into YAML unquoted.
+      # SCHMETTERPAUSE_RFID_UID_KEY and ZAEHLWERK_CHECKIN_TOKEN: read only with
+      # TABLETENNIS_FOB_CHECKIN: sops. The key at least 32 characters, and a
+      # new one unlinks every fob; `openssl rand -base64 48` for both.
       - kind: Secret
         name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
         optional: false
