@@ -119,6 +119,8 @@ restarts a few times; it settles after the first sync.
 | `CLUSTERSCOPE_REFRESH` | `60` | Live refresh interval (seconds) |
 | `CLUSTERSCOPE_KUBECONFIG_CLUSTERS` | `^$` (none) | vault-kubeconfigs: regexp over Vault entry names |
 | `CLUSTERSCOPE_KUBECONFIG_STORE` | `vault-kubeconfigs` | vault-kubeconfigs: ClusterSecretStore |
+| `CLUSTERSCOPE_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | trust-manager CA bundle for the endpoint probes (optional) |
+| `CLUSTERSCOPE_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | key in that ConfigMap |
 | `CLUSTERSCOPE_ESO_REFRESH_INTERVAL` | `1h` | ExternalSecret refresh |
 | `GIT_SYNC_AUTH_SECRET` | `git-sync-auth` | Secret with username/password for git-sync (optional) |
 | `GIT_SYNC_AUTH_STORE` | *(required for vault-git-auth)* | vault-git-auth: ClusterSecretStore |

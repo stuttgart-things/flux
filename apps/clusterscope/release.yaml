@@ -58,6 +58,36 @@ spec:
                     - '-kubeconfig-dir=${CLUSTERSCOPE_KUBECONFIG_DIR:-}'
                     - '-probe=${CLUSTERSCOPE_PROBE:-false}'
                     - '-refresh=${CLUSTERSCOPE_REFRESH:-60}'
+    # Trust the lab CAs for the endpoint probes (-probe): the trust-manager
+    # bundle (default CAs + lab CAs) via SSL_CERT_DIR. Optional — without
+    # trust-manager the image's own CA file still applies (Go loads it
+    # regardless of SSL_CERT_DIR).
+    - target:
+        kind: Deployment
+        name: clusterscope
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: clusterscope
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: trust-bundle
+                  configMap:
+                    name: ${CLUSTERSCOPE_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+                    optional: true
+              containers:
+                - name: clusterscope
+                  env:
+                    - name: SSL_CERT_DIR
+                      value: /etc/ssl/custom
+                  volumeMounts:
+                    - name: trust-bundle
+                      mountPath: /etc/ssl/custom/${CLUSTERSCOPE_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      subPath: ${CLUSTERSCOPE_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      readOnly: true
     # Add git-sync sidecar container
     # Auth for private repos: a Secret with username + password (HTTPS token),
     # from Vault via components/vault-git-auth or created by hand:
