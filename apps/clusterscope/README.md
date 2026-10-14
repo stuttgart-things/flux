@@ -86,7 +86,7 @@ spec:
       CLUSTERSCOPE_KUBECONFIG_DIR: /kubeconfigs
       CLUSTERSCOPE_KUBECONFIG_STORE: vault-kubeconfigs
       CLUSTERSCOPE_KUBECONFIG_CLUSTERS: ^(infra-sthings|homerun2-dev2)$
-      GIT_SYNC_REPO: https://github.com/stuttgart-things/stuttgart-things.git
+      GIT_SYNC_REPO: https://github.com/stuttgart-things/stuttgart-things  # no ".git": the link is named after it
       GIT_SYNC_DIR: /data/stuttgart-things/clusters/labul
       GIT_SYNC_AUTH_STORE: vault-homerun2-cd
       GIT_SYNC_AUTH_PATH: homerun2-cd/data/kargo
