@@ -1,0 +1,44 @@
+---
+# Opt-in: clusterscope -config from a ConfigMap. Set
+#   CLUSTERSCOPE_CONFIG_FILE=/etc/clusterscope/config.yaml
+#   CLUSTERSCOPE_CONFIG='{"roots":[{"path":"/data/<repo>/clusters"}, …], "clusters":{…}}'
+# Format: clusterscope docs/lab.md (roots: path, name, lab, include;
+# clusters: <dir>: {name, lab}). clusterscope reads it at startup; the
+# reloader annotation restarts the pod when it changes (where reloader runs).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - configmap.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: clusterscope-deploy
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: clusterscope
+          # Strategic merge by container name (see vault-kubeconfigs).
+          patch: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: clusterscope
+              annotations:
+                configmap.reloader.stakater.com/reload: clusterscope-config
+            spec:
+              template:
+                spec:
+                  containers:
+                    - name: clusterscope
+                      volumeMounts:
+                        - name: config
+                          mountPath: /etc/clusterscope
+                          readOnly: true
+                  volumes:
+                    - name: config
+                      configMap:
+                        name: clusterscope-config

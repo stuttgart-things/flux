@@ -11,7 +11,9 @@ apps/clusterscope/
 ├── httproute.yaml       # HTTPRoute (Gateway API, variable-substituted)
 ├── components/
 │   ├── vault-kubeconfigs/  # opt-in: kubeconfigs of the lab's clusters from Vault (live mode)
-│   └── vault-git-auth/     # opt-in: git-sync credentials from Vault (private repos)
+│   ├── vault-git-auth/     # opt-in: git-sync credentials from Vault (private repos)
+│   ├── config/             # opt-in: -config (several repos, cluster name / lab overrides)
+│   └── git-sync-extra/     # opt-in: a second repository (/data-extra)
 └── README.md
 ```
 
@@ -48,7 +50,7 @@ spec:
   postBuild:
     substitute:
       CLUSTERSCOPE_NAMESPACE: clusterscope
-      CLUSTERSCOPE_VERSION: v0.23.1
+      CLUSTERSCOPE_VERSION: v0.24.0
       CLUSTERSCOPE_TECH: flux
 
       # git-sync sidecar
@@ -78,7 +80,7 @@ spec:
     - components/vault-git-auth
   postBuild:
     substitute:
-      CLUSTERSCOPE_VERSION: v0.23.1
+      CLUSTERSCOPE_VERSION: v0.24.0
       CLUSTERSCOPE_LAB: labul
       CLUSTERSCOPE_LIVE: "true"
       CLUSTERSCOPE_PROBE: "true"
@@ -103,12 +105,41 @@ and picks them up once ESO has synced.
 Until git-sync has cloned the repo, `-root` does not exist and clusterscope
 restarts a few times; it settles after the first sync.
 
+### Clusters from a second repo (`components/config` + `components/git-sync-extra`)
+
+When the lab's cluster directories live in two repos, or a directory is not
+named like its cluster, add both components:
+
+```yaml
+  components:
+    - components/vault-kubeconfigs
+    - components/vault-git-auth
+    - components/config
+    - components/git-sync-extra
+  postBuild:
+    substitute:
+      CLUSTERSCOPE_VERSION: v0.24.0
+      CLUSTERSCOPE_CONFIG_FILE: /etc/clusterscope/config.yaml
+      # ONE line of JSON — see clusterscope docs/lab.md for the format
+      CLUSTERSCOPE_CONFIG: '{"roots":[{"path":"/data/stuttgart-things/clusters/labul"},{"path":"/data-extra/harvester/clusters","name":"harvester","include":["edge-test2"]}],"clusters":{"edge-test2":{"name":"edge-tt-test2","lab":"labul"}}}'
+      GIT_SYNC_EXTRA_REPO: https://github.com/stuttgart-things/harvester
+```
+
+The second repo is cloned to `/data-extra/<last URL segment>` by its own
+git-sync on its own volume. `-config` replaces `-root`; roots that are not
+cloned yet are picked up once they appear.
+
 ## Substitution variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `CLUSTERSCOPE_NAMESPACE` | `clusterscope` | Kubernetes namespace |
-| `CLUSTERSCOPE_VERSION` | `v0.23.1` | OCI artifact tag (from v0.23.1 on, the base pins the image of the same version) |
+| `CLUSTERSCOPE_VERSION` | `v0.24.0` | OCI artifact tag (from v0.23.1 on, the base pins the image of the same version; `-config` needs v0.24.0) |
+| `CLUSTERSCOPE_CONFIG_FILE` | — | `/etc/clusterscope/config.yaml` with components/config |
+| `CLUSTERSCOPE_CONFIG` | *(required for config)* | config as one line of JSON |
+| `GIT_SYNC_EXTRA_REPO` | *(required for git-sync-extra)* | second repository URL (without `.git`) |
+| `GIT_SYNC_EXTRA_BRANCH` | `main` | git-sync-extra: ref |
+| `GIT_SYNC_EXTRA_PERIOD` | `120s` | git-sync-extra: interval |
 | `CLUSTERSCOPE_TECH` | `flux` | GitOps tech: `flux` or `argocd` |
 | `CLUSTERSCOPE_PORT` | `8080` | HTTP serve port |
 | `CLUSTERSCOPE_LAB` | — | Lab name when the path has no `clusters/<lab>/…` |

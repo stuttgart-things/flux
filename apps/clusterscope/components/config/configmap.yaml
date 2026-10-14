@@ -1,0 +1,12 @@
+---
+# The -config file: several roots (repos) and per-directory cluster name /
+# lab overrides. CLUSTERSCOPE_CONFIG is ONE line of JSON (JSON is YAML), so
+# the substitution cannot break the block scalar's indentation.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clusterscope-config
+  namespace: ${CLUSTERSCOPE_NAMESPACE:-clusterscope}
+data:
+  config.yaml: |
+    ${CLUSTERSCOPE_CONFIG}
