@@ -1,0 +1,10 @@
+---
+# Opt-in: blackbox probes for every endpoint clusterscope lists. Needs the
+# Prometheus Operator ScrapeConfig CRD and a blackbox exporter next to the
+# Prometheus; the ScrapeConfig is created in the Prometheus namespace with the
+# label its scrapeConfigSelector matches. Requires CLUSTERSCOPE_LIVE=true
+# (endpoints come from the live HTTPRoute inventory).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - scrapeconfig.yaml

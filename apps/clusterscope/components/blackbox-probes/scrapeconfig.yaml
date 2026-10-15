@@ -1,0 +1,31 @@
+# Every HTTPRoute URL clusterscope knows (its /api/targets, http_sd format)
+# becomes a blackbox probe — new routes in the lab are watched without a
+# per-app target list. Target labels (cluster, namespace, route, app) come
+# from clusterscope; probe_source tells these probes apart from hand-written
+# ones. The blackbox module decides what counts as up (see README).
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: clusterscope-endpoints
+  namespace: ${CLUSTERSCOPE_BLACKBOX_NAMESPACE:-monitoring}
+  labels:
+    release: ${CLUSTERSCOPE_BLACKBOX_PROMETHEUS_RELEASE:-kube-prometheus-stack}
+spec:
+  httpSDConfigs:
+    - url: http://clusterscope.${CLUSTERSCOPE_NAMESPACE:-clusterscope}.svc:${CLUSTERSCOPE_PORT:-8080}/api/targets
+      refreshInterval: ${CLUSTERSCOPE_BLACKBOX_SD_REFRESH:-5m}
+  metricsPath: /probe
+  params:
+    module:
+      - ${CLUSTERSCOPE_BLACKBOX_MODULE:-http_2xx}
+  scrapeInterval: ${CLUSTERSCOPE_BLACKBOX_INTERVAL:-60s}
+  scrapeTimeout: 30s
+  relabelings:
+    - sourceLabels: [__address__]
+      targetLabel: __param_target
+    - sourceLabels: [__param_target]
+      targetLabel: instance
+    - targetLabel: __address__
+      replacement: ${CLUSTERSCOPE_BLACKBOX_ADDRESS:-blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc:9115}
+    - targetLabel: probe_source
+      replacement: clusterscope
