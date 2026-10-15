@@ -13,7 +13,8 @@ apps/clusterscope/
 │   ├── vault-kubeconfigs/  # opt-in: kubeconfigs of the lab's clusters from Vault (live mode)
 │   ├── vault-git-auth/     # opt-in: git-sync credentials from Vault (private repos)
 │   ├── config/             # opt-in: -config (several repos, cluster name / lab overrides)
-│   └── git-sync-extra/     # opt-in: a second repository (/data-extra)
+│   ├── git-sync-extra/     # opt-in: a second repository (/data-extra)
+│   └── blackbox-probes/    # opt-in: ScrapeConfig probing /api/targets via blackbox
 └── README.md
 ```
 
@@ -129,6 +130,27 @@ The second repo is cloned to `/data-extra/<last URL segment>` by its own
 git-sync on its own volume. `-config` replaces `-root`; roots that are not
 cloned yet are picked up once they appear.
 
+### Blackbox probes for every endpoint (`components/blackbox-probes`)
+
+With live mode on, clusterscope serves every HTTPRoute URL of the lab at
+`/api/targets` (Prometheus `http_sd` format, labels `cluster`, `namespace`,
+`route`, `app`). This component adds a Prometheus Operator `ScrapeConfig` that
+probes each of them through an existing blackbox exporter, so new routes are
+watched without a per-app target list:
+
+```yaml
+  components:
+    - components/blackbox-probes
+  postBuild:
+    substitute:
+      CLUSTERSCOPE_BLACKBOX_MODULE: http_reachable
+```
+
+The series carry `probe_source="clusterscope"`. Pick a module that matches
+clusterscope's own probe: a route counts as reachable when it answers below
+500, including `401`/`403` behind a login and `404` on an app without a root
+page — `http_2xx` would page for those.
+
 ## Substitution variables
 
 | Variable | Default | Description |
@@ -149,6 +171,12 @@ cloned yet are picked up once they appear.
 | `CLUSTERSCOPE_PROBE` | `false` | Probe every HTTPRoute URL on each refresh |
 | `CLUSTERSCOPE_REFRESH` | `60` | Live refresh interval (seconds) |
 | `CLUSTERSCOPE_KUBECONFIG_CLUSTERS` | `^$` (none) | vault-kubeconfigs: regexp over Vault entry names |
+| `CLUSTERSCOPE_BLACKBOX_MODULE` | `http_2xx` | blackbox-probes: blackbox module for every endpoint |
+| `CLUSTERSCOPE_BLACKBOX_ADDRESS` | `blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc:9115` | blackbox-probes: exporter address |
+| `CLUSTERSCOPE_BLACKBOX_NAMESPACE` | `monitoring` | blackbox-probes: namespace of the ScrapeConfig |
+| `CLUSTERSCOPE_BLACKBOX_PROMETHEUS_RELEASE` | `kube-prometheus-stack` | blackbox-probes: `release` label the Prometheus selects |
+| `CLUSTERSCOPE_BLACKBOX_INTERVAL` | `60s` | blackbox-probes: probe interval |
+| `CLUSTERSCOPE_BLACKBOX_SD_REFRESH` | `5m` | blackbox-probes: how often the target list is re-read |
 | `CLUSTERSCOPE_KUBECONFIG_STORE` | `vault-kubeconfigs` | vault-kubeconfigs: ClusterSecretStore |
 | `CLUSTERSCOPE_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | trust-manager CA bundle for the endpoint probes (optional) |
 | `CLUSTERSCOPE_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | key in that ConfigMap |
