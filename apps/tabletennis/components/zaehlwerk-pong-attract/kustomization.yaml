@@ -1,0 +1,36 @@
+---
+# zaehlwerk-pong-attract -- everything `on` ships, plus attract mode. Selected
+# through TABLETENNIS_ZAEHLWERK_PONG: attract.
+#
+# Two bots play a demo by themselves once the table has been free for
+# ZAEHLWERK_PONG_ATTRACT_AFTER (default 10m), so the panel stays alive at a
+# fair or in the office while nobody plays. A real match started at the table
+# ends the demo at once (zaehlwerk ADR-0008).
+#
+# A variant rather than a variable on `on`: the game switches attract mode off
+# by leaving PONG_ATTRACT_AFTER unset, it refuses an empty or zero duration,
+# and an empty value cannot be carried through postBuild.substitute (it renders
+# as YAML null and fails the whole layer, hack/check-substitute-strings.py). So
+# "off" is the variable being absent, which only a component can express.
+# Includes `on` rather than repeating it, like schmetterpause-monitoring-backup.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+components:
+  - ../zaehlwerk-pong-on
+patches:
+  - target:
+      kind: Deployment
+      name: zaehlwerk-pong
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: zaehlwerk-pong
+      spec:
+        template:
+          spec:
+            containers:
+              - name: pong
+                env:
+                  - name: PONG_ATTRACT_AFTER
+                    value: "${ZAEHLWERK_PONG_ATTRACT_AFTER:-10m}"

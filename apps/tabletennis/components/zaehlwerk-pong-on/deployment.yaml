@@ -1,0 +1,87 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zaehlwerk-pong
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  labels:
+    app.kubernetes.io/name: zaehlwerk-pong
+    app.kubernetes.io/part-of: zaehlwerk
+spec:
+  # One: a game is in the memory of the pod playing it, and a browser game's
+  # token is known to that pod only.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zaehlwerk-pong
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: zaehlwerk-pong
+        app.kubernetes.io/part-of: zaehlwerk
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pong
+          # The same tag as zaehlwerk: one release run builds both. Keep the
+          # default equal to components/zaehlwerk/requirements.yaml's: the
+          # sops bundles set no ZAEHLWERK_VERSION, so both fall back to it.
+          image: ghcr.io/stuttgart-things/zaehlwerk-pong:${ZAEHLWERK_VERSION:-v0.18.0}
+          env:
+            # The game calls zaehlwerk by its Service, like the buttons sim.
+            - name: ZAEHLWERK_URL
+              value: http://zaehlwerk
+            - name: HTTP_ADDR
+              value: ":8081"
+            # Fixed, not substituted: a number in postBuild.substitute fails
+            # the whole layer (hack/check-substitute-strings.py). 3 is also
+            # the game's own default.
+            - name: PONG_BEST_OF
+              value: "3"
+            # leicht, mittel or schwer -- or two of them, comma-separated, one
+            # per bot.
+            - name: PONG_BOT_SKILL
+              value: "${ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
+            # PONG_ATTRACT_AFTER is left out on purpose: unset is how the game
+            # switches attract mode off, and an empty value cannot be carried
+            # through postBuild.substitute. ../zaehlwerk-pong-attract adds it.
+          ports:
+            - name: http
+              containerPort: 8081
+          # /healthz says the process is up and does not ask zaehlwerk: a
+          # zaehlwerk that is down is a game that cannot start, not a pod to
+          # restart.
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi

@@ -91,6 +91,12 @@ spec:
     # that also pauses the piezo board: off or on. A component for the same
     # reason as the piezo-sim: "off" is the Deployment being absent.
     - ../../components/zaehlwerk-buttons-sim-${TABLETENNIS_ZAEHLWERK_BUTTONS_SIM:-off}
+    # The game next to zaehlwerk, playing demos against it: off, on (the game,
+    # browser play behind its own route) or attract (on, plus a demo by itself
+    # once the table has been free for ZAEHLWERK_PONG_ATTRACT_AFTER). A
+    # component for the same reason as the sims -- and attract is a variant
+    # because "off" is PONG_ATTRACT_AFTER being absent, never an empty value.
+    - ../../components/zaehlwerk-pong-${TABLETENNIS_ZAEHLWERK_PONG:-off}
   postBuild:
     substitute:
       # ---- identical to ../tabletennis ----------------------------------
@@ -115,6 +121,12 @@ spec:
       ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.18.0}"
       ZAEHLWERK_BUTTONS_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}"
       ZAEHLWERK_BUTTONS_PIEZO_URL: "${TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
+      # Read only by zaehlwerk-pong-on/-attract. The image follows
+      # ZAEHLWERK_VERSION (built in the same release run, v0.16.0+), so there
+      # is no version of its own.
+      ZAEHLWERK_PONG_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}"
+      ZAEHLWERK_PONG_BOT_SKILL: "${TABLETENNIS_ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
+      ZAEHLWERK_PONG_ATTRACT_AFTER: "${TABLETENNIS_ZAEHLWERK_PONG_ATTRACT_AFTER:-10m}"
       SECRET_STORE_NAME: "${TABLETENNIS_SECRET_STORE:-set-TABLETENNIS_SECRET_STORE}"
       # The display name the admin flag lands on, read only by the `on` admin
       # variant. The person has to have joined first; a name nobody carries is a

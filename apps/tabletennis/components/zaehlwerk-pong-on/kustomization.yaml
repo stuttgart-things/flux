@@ -1,0 +1,40 @@
+---
+# zaehlwerk-pong-on -- the game next to zaehlwerk (zaehlwerk cmd/zaehlwerk-pong,
+# image zaehlwerk-pong, zaehlwerk ADR-0006). Selected with
+# TABLETENNIS_ZAEHLWERK_PONG: on; `attract` is this plus attract mode
+# (../zaehlwerk-pong-attract).
+#
+# A table tennis game that plays whole matches against zaehlwerk through the
+# same ingest contract as the buttons: in the browser at
+# https://<ZAEHLWERK_PONG_HOSTNAME>.<DOMAIN> (two people at one device, against
+# the computer, on two devices -- ADR-0009 -- or two bots to watch), and with
+# attract mode by itself once the table has been free for a while.
+#
+# EVERY PONG MATCH IS A DEMO (zaehlwerk ADR-0008). It starts its match with
+# demo: true and never with a player or operator id, so nothing it plays is
+# reported to schmetterpause; it never joins a running match, and a real match
+# started at the table ends the demo at once.
+#
+# The game talks to zaehlwerk server-side, by its Service (ZAEHLWERK_URL), so
+# it needs no ALLOWED_ORIGINS entry. The HTTPRoute is only for playing in a
+# browser; attract mode needs none, the panel shows the demo. Like zaehlwerk's
+# own route it is the access control -- the game has no login, and whoever
+# reaches it can take the table from a demo (never from a match) -- so it sits
+# on the same gateway and listener.
+#
+# Why flux renders it: zaehlwerk's published base (zaehlwerk-kustomize,
+# kcl/profiles/base.yaml) leaves config.pongEnabled off, and kustomize cannot
+# switch on a resource that was never rendered. The shapes follow zaehlwerk's
+# kcl/pong.k.
+#
+# REQUIRES ZAEHLWERK v0.16.0 OR LATER: the image is built and tagged with
+# zaehlwerk in the same release run, and exists only from v0.16.0 on. Its tag
+# is ZAEHLWERK_VERSION, not a variable of its own -- the two are built from one
+# commit. One replica and Recreate, as in the KCL: a game lives in the pod's
+# memory, and two pods would be two demos fighting over one table.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - deployment.yaml
+  - service.yaml
+  - httproute.yaml
