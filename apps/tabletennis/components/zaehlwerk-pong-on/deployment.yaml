@@ -35,7 +35,7 @@ spec:
           # The same tag as zaehlwerk: one release run builds both. Keep the
           # default equal to components/zaehlwerk/requirements.yaml's: the
           # sops bundles set no ZAEHLWERK_VERSION, so both fall back to it.
-          image: ghcr.io/stuttgart-things/zaehlwerk-pong:${ZAEHLWERK_VERSION:-v0.21.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-pong:${ZAEHLWERK_VERSION:-v0.22.0}
           env:
             # The game calls zaehlwerk by its Service, like the buttons sim.
             - name: ZAEHLWERK_URL
@@ -43,17 +43,45 @@ spec:
             - name: HTTP_ADDR
               value: ":8081"
             # Fixed, not substituted: a number in postBuild.substitute fails
-            # the whole layer (hack/check-substitute-strings.py). 3 is also
-            # the game's own default.
+            # the whole layer (hack/check-substitute-strings.py). One set to
+            # eleven: the length of a demo and the screensaver, and the one
+            # the lobby starts on; the lobby also offers best of 3 and 5
+            # (v0.22.0). The game's own default is 3.
             - name: PONG_BEST_OF
-              value: "3"
+              value: "1"
             # leicht, mittel or schwer -- or two of them, comma-separated, one
             # per bot.
             - name: PONG_BOT_SKILL
               value: "${ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
+            # The names the lobby offers (v0.22.0): zaehlwerk's own
+            # Schmetterpause and token, both optional, as the buttons sim
+            # reads them. Names only -- a pong game is a demo and is never
+            # reported (zaehlwerk ADR-0008). Without them the name fields
+            # are free text, as before.
+            - name: SCHMETTERPAUSE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: zaehlwerk-config
+                  key: SCHMETTERPAUSE_URL
+                  optional: true
+            - name: SCHMETTERPAUSE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: zaehlwerk-panel
+                  key: SCHMETTERPAUSE_TOKEN
+                  optional: true
+            # SCHMETTERPAUSE_URL may be an https host behind the cluster's
+            # own CA: trust-manager's bundle, as zaehlwerk and the buttons
+            # sim mount it, optional where there is none.
+            - name: SSL_CERT_DIR
+              value: /etc/ssl/cluster-trust
             # PONG_ATTRACT_AFTER is left out on purpose: unset is how the game
             # switches attract mode off, and an empty value cannot be carried
             # through postBuild.substitute. ../zaehlwerk-pong-attract adds it.
+          volumeMounts:
+            - name: cluster-trust
+              mountPath: /etc/ssl/cluster-trust
+              readOnly: true
           ports:
             - name: http
               containerPort: 8081
@@ -85,3 +113,11 @@ spec:
             limits:
               cpu: 200m
               memory: 64Mi
+      volumes:
+        - name: cluster-trust
+          configMap:
+            name: cluster-trust-bundle
+            optional: true
+            items:
+              - key: trust-bundle.pem
+                path: ca.pem

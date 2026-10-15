@@ -28,3 +28,23 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+# The scoring page links the table mock as "Buttons" (zaehlwerk v0.22.0):
+# BUTTONS_URL on zaehlwerk-config, the route's host above, as
+# zaehlwerk-pong-on sets PONG_URL. A ConfigMap key, so both credential modes
+# get it; older tags ignore it.
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/BUTTONS_URL
+              value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${DOMAIN}"
