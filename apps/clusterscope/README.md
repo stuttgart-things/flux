@@ -51,7 +51,7 @@ spec:
   postBuild:
     substitute:
       CLUSTERSCOPE_NAMESPACE: clusterscope
-      CLUSTERSCOPE_VERSION: v0.24.0
+      CLUSTERSCOPE_VERSION: v0.25.1
       CLUSTERSCOPE_TECH: flux
 
       # git-sync sidecar
@@ -81,7 +81,7 @@ spec:
     - components/vault-git-auth
   postBuild:
     substitute:
-      CLUSTERSCOPE_VERSION: v0.24.0
+      CLUSTERSCOPE_VERSION: v0.25.1
       CLUSTERSCOPE_LAB: labul
       CLUSTERSCOPE_LIVE: "true"
       CLUSTERSCOPE_PROBE: "true"
@@ -119,7 +119,7 @@ named like its cluster, add both components:
     - components/git-sync-extra
   postBuild:
     substitute:
-      CLUSTERSCOPE_VERSION: v0.24.0
+      CLUSTERSCOPE_VERSION: v0.25.1
       CLUSTERSCOPE_CONFIG_FILE: /etc/clusterscope/config.yaml
       # ONE line of JSON — see clusterscope docs/lab.md for the format
       CLUSTERSCOPE_CONFIG: '{"roots":[{"path":"/data/stuttgart-things/clusters/labul"},{"path":"/data-extra/harvester/clusters","name":"harvester","include":["edge-test2"]}],"clusters":{"edge-test2":{"name":"edge-tt-test2","lab":"labul"}}}'
@@ -129,6 +129,14 @@ named like its cluster, add both components:
 The second repo is cloned to `/data-extra/<last URL segment>` by its own
 git-sync on its own volume. `-config` replaces `-root`; roots that are not
 cloned yet are picked up once they appear.
+
+The same `-config` can name the lab's clusterbook (v0.25.0+): its IP / DNS
+allocations are matched against the clusters, and allocations without a
+cluster show up as findings:
+
+```yaml
+      CLUSTERSCOPE_CONFIG: '{"roots":[…],"clusterbooks":[{"url":"https://clusterbook.infra.sthings-vsphere.labul.sva.de","lab":"labul"}]}'
+```
 
 ### Blackbox probes for every endpoint (`components/blackbox-probes`)
 
@@ -156,7 +164,7 @@ page — `http_2xx` would page for those.
 | Variable | Default | Description |
 |---|---|---|
 | `CLUSTERSCOPE_NAMESPACE` | `clusterscope` | Kubernetes namespace |
-| `CLUSTERSCOPE_VERSION` | `v0.24.0` | OCI artifact tag (from v0.23.1 on, the base pins the image of the same version; `-config` needs v0.24.0) |
+| `CLUSTERSCOPE_VERSION` | `v0.25.1` | OCI artifact tag (from v0.23.1 on, the base pins the image of the same version; `-config` needs v0.24.0, `clusterbooks` v0.25.0) |
 | `CLUSTERSCOPE_CONFIG_FILE` | — | `/etc/clusterscope/config.yaml` with components/config |
 | `CLUSTERSCOPE_CONFIG` | *(required for config)* | config as one line of JSON |
 | `GIT_SYNC_EXTRA_REPO` | *(required for git-sync-extra)* | second repository URL (without `.git`) |
