@@ -184,7 +184,7 @@ written down.
 | `TABLETENNIS_SCHMETTERPAUSE_POLICY` | `off`, `on` | Kyverno's check on the application image's CI signature |
 | `TABLETENNIS_ZAEHLWERK_PONG` | `off`, `on`, `attract` | The game next to zaehlwerk (zaehlwerk ADR-0006): whole matches through the buttons' ingest contract, played in a browser at `https://${TABLETENNIS_ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.<domain>` (one device, against the computer, two devices, or two bots). `attract` adds attract mode: two bots play by themselves once the table has been free for `TABLETENNIS_ZAEHLWERK_PONG_ATTRACT_AFTER` (default `10m`) — a variant, because the game's "off" is that variable being absent. Every pong match is a demo, never reported to schmetterpause, and a real match takes the table from it (zaehlwerk ADR-0008); the page has no login, so it sits on zaehlwerk's gateway. The bots' skill is `TABLETENNIS_ZAEHLWERK_PONG_BOT_SKILL` (`mittel`; `leicht`, `schwer`, or two comma-separated); best of 3, fixed. The image `zaehlwerk-pong` has zaehlwerk's tag (`ZAEHLWERK_VERSION`) and exists from v0.16.0 on; zaehlwerk's published base does not render it. Also on the `tabletennis-sops*` bundles |
 | `TABLETENNIS_ZAEHLWERK_PIEZO_SIM` | `off`, `on` | The piezo board simulator next to zaehlwerk: plays every match started on the scoring page. A won match is handed over like any other, so demo/test clusters only. Needs zaehlwerk ≥ v0.8.0; tuned with `TABLETENNIS_ZAEHLWERK_PIEZO_VERSION` (default `v0.11.0`), `…_PIEZO_PACE` (`1s`); the board plays best of 3 |. From v0.11.0 it serves a control endpoint on its Service `zaehlwerk-piezo-sim:8081`, which the table mock below pauses and tunes
-| `TABLETENNIS_ZAEHLWERK_BUTTONS_SIM` | `off`, `on` | The table mock next to zaehlwerk: two emulated buttons and their hub, pressed on a page at `https://${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.<domain>`, with switches for the radio's and the hub's faults. The page also pauses and tunes a piezo board at `TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL` (default: the piezo-sim's Service; with the piezo-sim off it reports the board as not answering). It takes points back without a login and scores into the running match, so demo/test/lab clusters only. Needs zaehlwerk ≥ v0.10.0, the piezo section v0.11.0; image `TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION` (default `v0.18.0`; from v0.12.0 the page can switch to a display device, from v0.18.0 it holds fobs to the reader). Both switches also exist on the `tabletennis-sops*` bundles |
+| `TABLETENNIS_ZAEHLWERK_BUTTONS_SIM` | `off`, `on` | The table mock next to zaehlwerk: two emulated buttons and their hub, pressed on a page at `https://${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.<domain>`, with switches for the radio's and the hub's faults. The page also pauses and tunes a piezo board at `TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL` (default: the piezo-sim's Service; with the piezo-sim off it reports the board as not answering). It takes points back without a login and scores into the running match, so demo/test/lab clusters only. Needs zaehlwerk ≥ v0.10.0, the piezo section v0.11.0; image `TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION` (default `v0.20.0`; from v0.12.0 the page can switch to a display device, from v0.18.0 it holds fobs to the reader, from v0.20.0 one per player of zaehlwerk's schmetterpause and with zaehlwerk's undo event, so keep it at zaehlwerk's version). Both switches also exist on the `tabletennis-sops*` bundles |
 
 **`TABLETENNIS_ZAEHLWERK_SET_OPENER`** is a plain value, not a switch: who serves
 first in the sets after the first, as zaehlwerk's `SET_OPENER` (v0.14.0,
@@ -233,11 +233,14 @@ scoreboard and the handover on.
   to zaehlwerk's `/ingest/checkin` with `CHECKIN_TOKEN` as bearer; zaehlwerk
   resolves the fob at schmetterpause, which knows fobs only with
   `SP_RFID_UID_KEY`. Either key alone checks nobody in, hence one switch. The
-  published zaehlwerk base (up to v0.18.0) hands Secret keys to the container
-  one by one and does not name `CHECKIN_TOKEN`, so `zaehlwerk-checkin-sops`
-  adds that env entry itself. The table mock (`zaehlwerk-buttons-sim-on`)
-  reads the same key from `zaehlwerk-panel`, optionally: it holds the page's
-  fake fobs to the reader once the switch is on.
+  published zaehlwerk base hands Secret keys to the container one by one and
+  names `CHECKIN_TOKEN` from v0.19.0 on, so zaehlwerk v0.19.0+ is required
+  (up to v0.18.0 `zaehlwerk-checkin-sops` added the env entry itself). The
+  table mock (`zaehlwerk-buttons-sim-on`) reads the same key from
+  `zaehlwerk-panel`, optionally: it holds the page's fobs to the reader once
+  the switch is on. From v0.20.0 it offers one fob per player, read from
+  zaehlwerk's `SCHMETTERPAUSE_URL` with its `SCHMETTERPAUSE_TOKEN`; a player's
+  fob is unknown to a real schmetterpause until that player links it.
 * **By phone** — `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'`. The QR code of
   a half opens `/table/left` or `/table/right` on schmetterpause, which claims
   the half at zaehlwerk's `POST /checkin/claim` with the scoreboard token. No
@@ -263,7 +266,7 @@ TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'
 | the scoreboard | schmetterpause **v0.10.0+** — in v0.9.0 the handlers do not exist |
 | the handover | zaehlwerk **v0.5.0+** — earlier tags do not mount the trust-manager bundle, so every call over the HTTPRoute fails on the cluster CA while the pod looks healthy |
 | an observer keeping score | schmetterpause **v0.14.0+** (`GET /api/operators`, its ADR-0023) and zaehlwerk **v0.6.0+**, which offers observers in *Keeping score*. Either alone changes nothing: the older side falls back to the player list |
-| check-in by fob or phone | schmetterpause **v0.17.0+** and zaehlwerk **v0.18.0+** (`/ingest/checkin` with `CHECKIN_TOKEN`, `/checkin/claim`); the table mock's fobs need `zaehlwerk-buttons` **v0.18.0+** |
+| check-in by fob or phone | schmetterpause **v0.17.0+** and zaehlwerk **v0.19.0+** (`/ingest/checkin` with `CHECKIN_TOKEN` from the base, `/checkin/claim`); the table mock's fobs need `zaehlwerk-buttons` **v0.18.0+**, a fob per player **v0.20.0+** |
 | monitoring | schmetterpause **v0.8.0+** — the release that added the `metrics` container port |
 | the policy | schmetterpause **v0.9.0+**, and a Kyverno serving `policies.kyverno.io/v1` |
 
