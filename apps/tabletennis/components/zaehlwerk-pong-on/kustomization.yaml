@@ -32,9 +32,36 @@
 # is ZAEHLWERK_VERSION, not a variable of its own -- the two are built from one
 # commit. One replica and Recreate, as in the KCL: a game lives in the pod's
 # memory, and two pods would be two demos fighting over one table.
+#
+# THE SCREENSAVER (zaehlwerk ADR-0013, v0.21.0): zaehlwerk's watch screen
+# shows the game's /screensaver in a frame once the side select has been idle
+# for WATCH_SCREENSAVER_AFTER (zaehlwerk's default, 3m), and a check-in takes
+# the screen back. It needs PONG_URL, the address a BROWSER at the table
+# reaches the game at -- so the HTTPRoute's host, never the Service: zaehlwerk
+# itself never calls it. Set here because this is where the route is, into
+# the child Kustomization's patches as zaehlwerk-handover-on sets its URL; a
+# ConfigMap key rather than a Secret, so both credential modes get it. The
+# side select itself only exists with check-in on; without it PONG_URL is
+# read and changes nothing.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/PONG_URL
+              value: "https://${ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.${DOMAIN}"
