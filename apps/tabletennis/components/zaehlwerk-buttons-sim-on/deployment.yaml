@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: buttons
-          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.18.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.20.0}
           env:
             # The hub calls zaehlwerk by its Service, like the piezo-sim.
             - name: ZAEHLWERK_URL
@@ -51,6 +51,30 @@ spec:
                   name: zaehlwerk-panel
                   key: CHECKIN_TOKEN
                   optional: true
+            # The players the page offers a fob for (v0.20.0): zaehlwerk's
+            # own Schmetterpause and token, both optional. Without them the
+            # page offers only the two fobs that belong to nobody.
+            - name: SCHMETTERPAUSE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: zaehlwerk-config
+                  key: SCHMETTERPAUSE_URL
+                  optional: true
+            - name: SCHMETTERPAUSE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: zaehlwerk-panel
+                  key: SCHMETTERPAUSE_TOKEN
+                  optional: true
+            # SCHMETTERPAUSE_URL may be an https host behind the cluster's
+            # own CA, as zaehlwerk's is: trust-manager's bundle, the way
+            # zaehlwerk mounts it, optional where there is none.
+            - name: SSL_CERT_DIR
+              value: /etc/ssl/cluster-trust
+          volumeMounts:
+            - name: cluster-trust
+              mountPath: /etc/ssl/cluster-trust
+              readOnly: true
           ports:
             - name: http
               containerPort: 8084
@@ -75,3 +99,11 @@ spec:
               memory: 16Mi
             limits:
               memory: 64Mi
+      volumes:
+        - name: cluster-trust
+          configMap:
+            name: cluster-trust-bundle
+            optional: true
+            items:
+              - key: trust-bundle.pem
+                path: ca.pem

@@ -114,7 +114,8 @@ rather than pruning it.
   a new key unlinks every fob), zaehlwerk takes the hub's check-ins
   (`ZAEHLWERK_CHECKIN_TOKEN` → `CHECKIN_TOKEN`, which the table mock reads
   from the same Secret). Needs `TABLETENNIS_SCOREBOARD_HANDOVER: sops`,
-  schmetterpause v0.17.0 and zaehlwerk v0.18.0.
+  schmetterpause v0.17.0 and zaehlwerk v0.19.0 (the env entry for
+  `CHECKIN_TOKEN` comes from its base).
 - `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'` (default `off`) sets
   schmetterpause's `SP_ZAEHLWERK_URL` to
   `TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL` (default zaehlwerk's HTTPRoute):
