@@ -10,6 +10,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-sops` | `profiles/sops`, then `profiles/sops-routes` | **instead of `homerun2`**, for a cluster without external-secrets: the whole sops stack (redis-stack, omni-pitcher, core-catcher, scout, led-catcher, light-catcher + wled-mock, demo-pitcher, notification-catcher with `notify-none`, config-viewer), credentials from a `substituteFrom` Secret (`homerun2-sops-secrets`). Do not combine with the other `homerun2-*` components, which read the store |
 | `homerun2-demo-pitcher` | `profiles/platform-demo-pitcher` | demo-pitcher (waits on `homerun2`) |
 | `homerun2-light-catcher` | `profiles/platform-light-catcher` | light-catcher and wled-mock (waits on `homerun2`) |
+| `homerun2-sound-catcher` | `profiles/platform-sound-catcher`, then `profiles/platform-sound-catcher-routes` | sound-catcher with its browser player: messages as clips and spoken announcements (Piper), heard on the player page. Browser sink only, one replica; the office speaker is a native install on a LattePanda, see [homerun2-sound-catcher](https://github.com/stuttgart-things/homerun2-sound-catcher). Its route gives `/api/events` (SSE) no request timeout (waits on `homerun2`) |
 | `homerun2-config-viewer` | `profiles/platform-config-viewer` | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis-sops` | `profiles/sops-light-catcher-tabletennis`, then `profiles/platform-light-catcher-tabletennis-routes` | **instead of `homerun2-light-catcher-tabletennis`**, next to `homerun2-sops`: the same instance, with the redis password from a `substituteFrom` Secret (`homerun2-light-catcher-tabletennis-sops-secrets`, key `HOMERUN2_REDIS_PASSWORD_B64` -- homerun2-sops' value) (waits on `homerun2`) |
@@ -46,6 +47,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `wled-mock` | OCIRepository + Flux Kustomization | WLED mock server with dashboard (for dev/testing) |
 | `demo-pitcher` | OCIRepository + Flux Kustomization | Web UI for manually pitching demo messages to Redis Streams |
 | `led-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer for LED display output |
+| `sound-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer playing messages as clips and spoken announcements on a browser player page |
 | `git-pitcher` | OCIRepository + Flux Kustomization | Watches Git repositories and pitches events to Redis Streams |
 | `notification-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer that forwards messages as notifications |
 | `config-viewer` | OCIRepository + Flux Kustomization | Read-only view of which alert triggers what in which catcher (reads the Kubernetes API, not Redis) |
@@ -183,6 +185,18 @@ Shares the version variables above.
 | `HOMERUN2_LED_CATCHER_PROFILE_CM` | `homerun2-led-catcher-profile` | no | ConfigMap (key `profile.yaml`) mounted as the display profile; the default is the base's own |
 | `HOMERUN2_LED_CATCHER_IDLE` | `off` | no | Idle screen: `off` or `clock` |
 | `HOMERUN2_LED_CATCHER_TZ` | `UTC` | no | Time zone of the idle clock and the card's HH:MM, e.g. `Europe/Berlin` |
+
+### Sound Catcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_SOUND_CATCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_SOUND_CATCHER_HOSTNAME` | `sound-catcher` | no | HTTPRoute hostname prefix of the player page |
+| `HOMERUN2_SOUND_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated |
+| `HOMERUN2_SOUND_CATCHER_PROFILE_CM` | `homerun2-sound-catcher-profile` | no | ConfigMap (key `profile.yaml`) with the sound rules; the default is the base's own |
+| `HOMERUN2_SOUND_CATCHER_SUSPEND` | `false` | no | Suspend both Kustomizations |
+
+The redis password comes from the store like the other catchers' (`eso/`) or from `HOMERUN2_REDIS_PASSWORD_B64` (`sops/`). The `/play` token and S3 sounds are not wired yet: both are optional in the Deployment, and an ExternalSecret for a store entry that does not exist would hold the Kustomization not-Ready.
 
 ### Git Pitcher
 

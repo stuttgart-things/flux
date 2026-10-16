@@ -1,0 +1,12 @@
+---
+# sound-catcher: the redis password from a ClusterSecretStore, entry
+# ${HOMERUN2_SECRET_PATH} (property redis-password), as for the other catchers.
+#
+# Not here: the /play token and the S3 keys. Both are optional in the
+# Deployment (secretKeyRef optional), and an ExternalSecret for a property the
+# store does not have stays not-Ready -- which would hold the whole
+# Kustomization (wait: true) and its routes. Add them once the entries exist.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml

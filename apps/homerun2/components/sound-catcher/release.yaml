@@ -1,0 +1,102 @@
+---
+# sound-catcher, browser sink only: in a pod there is no speaker, the player
+# page behind the route is where announcements are heard. The KCL base already
+# runs one replica with Recreate -- its history lives in the pod, and two pods
+# would split the consumer group's messages.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-sound-catcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: homerun2-sound-catcher-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  patches:
+    # Roll the pod when a referenced ConfigMap/Secret changes: the catcher
+    # reads its config at start only. REQUIRES Reloader on the cluster
+    # (infra/reloader) -- without it this does nothing.
+    - target:
+        kind: Deployment
+        name: homerun2-sound-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-sound-catcher
+          annotations:
+            reloader.stakater.com/auto: "true"
+    # Remove the KCL-generated HTTPRoute (we provide our own via the component)
+    - target:
+        kind: HTTPRoute
+        name: homerun2-sound-catcher
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: homerun2-sound-catcher
+        $patch: delete
+    # Override the container image tag
+    - target:
+        kind: Deployment
+        name: homerun2-sound-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-sound-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-sound-catcher
+                  image: ghcr.io/stuttgart-things/homerun2-sound-catcher:${HOMERUN2_SOUND_CATCHER_VERSION:-v0.1.0}
+    # Redis connection and what to listen to
+    - target:
+        kind: Deployment
+        name: homerun2-sound-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-sound-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-sound-catcher
+                  env:
+                    - name: REDIS_ADDR
+                      value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+                    - name: REDIS_PORT
+                      value: "6379"
+                    # Comma-separated, e.g. messages,alerts.
+                    - name: REDIS_STREAMS
+                      value: "${HOMERUN2_SOUND_CATCHER_STREAMS:=messages}"
+                    - name: SOUND_SINKS
+                      value: browser
+    # The profile -- which message gets which sound or announcement -- is the
+    # caller's to supply, as for led-catcher. Unset, the Deployment mounts the
+    # base's own ConfigMap. Set it to a ConfigMap the cluster repo ships (key
+    # profile.yaml).
+    - target:
+        kind: Deployment
+        name: homerun2-sound-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-sound-catcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: profile
+                  configMap:
+                    name: ${HOMERUN2_SOUND_CATCHER_PROFILE_CM:-homerun2-sound-catcher-profile}
