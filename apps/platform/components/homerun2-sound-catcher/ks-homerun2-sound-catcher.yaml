@@ -1,0 +1,41 @@
+---
+# sound-catcher: plays homerun2 messages as clips and spoken announcements on
+# its player page (browser sink; no speaker in a pod)
+# → ./apps/homerun2/profiles/platform-sound-catcher
+#
+# REQUIRES ../homerun2 (namespace and redis).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-sound-catcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SOUND_CATCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/platform-sound-catcher
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
+      # One variable for the image and its -kustomize artifact, as for
+      # led-catcher: renovate moves both in one PR.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-sound-catcher
+      HOMERUN2_SOUND_CATCHER_VERSION: "${HOMERUN2_SOUND_CATCHER_VERSION:-v0.1.0}"
+      HOMERUN2_SOUND_CATCHER_STREAMS: "${HOMERUN2_SOUND_CATCHER_STREAMS:-messages}"
+      HOMERUN2_SOUND_CATCHER_PROFILE_CM: "${HOMERUN2_SOUND_CATCHER_PROFILE_CM:-homerun2-sound-catcher-profile}"

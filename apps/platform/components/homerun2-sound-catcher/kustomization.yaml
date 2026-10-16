@@ -1,0 +1,7 @@
+---
+# homerun2-sound-catcher -- sound-catcher, browser sink only
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-sound-catcher.yaml
+  - ks-homerun2-sound-catcher-routes.yaml

@@ -1,0 +1,8 @@
+---
+# sound-catcher: the redis password as a plain Secret substituted from the
+# consumer's substituteFrom Secret (HOMERUN2_REDIS_PASSWORD_B64). eso/ is the
+# alternative.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml
