@@ -56,7 +56,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-sound-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-sound-catcher:${HOMERUN2_SOUND_CATCHER_VERSION:-v0.1.0}
+                  image: ghcr.io/stuttgart-things/homerun2-sound-catcher:${HOMERUN2_SOUND_CATCHER_VERSION:-v0.2.0}
     # Redis connection and what to listen to
     - target:
         kind: Deployment
