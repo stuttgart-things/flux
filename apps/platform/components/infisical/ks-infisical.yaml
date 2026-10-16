@@ -1,0 +1,61 @@
+---
+# Infisical → ./apps/infisical
+#
+# dependsOn cilium-gateway for the HTTPRoute. The chart's own Ingress (and its
+# bundled ingress-nginx) is off; the route points at the `infisical` Service on
+# 8080.
+#
+# REQUIRES a StorageClass that exists here (the bundled PostgreSQL and Redis
+# PVCs), and a Secret with the four keys below. INFISICAL_ENCRYPTION_KEY
+# encrypts every stored secret: a re-generated one makes the database
+# unreadable, so keep it with --existing-secrets.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infisical
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${INFISICAL_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/infisical
+  postBuild:
+    substitute:
+      INFISICAL_NAMESPACE: "${INFISICAL_NAMESPACE:-infisical}"
+      # renovate: datasource=helm depName=infisical-standalone registryUrl=https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+      INFISICAL_VERSION: "${INFISICAL_VERSION:-1.11.0}"
+      # REQUIRED. A PVC that never binds leaves PostgreSQL Pending and
+      # Infisical crash-looping on its DB connection.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else. A StorageClass that is merely absent binds nothing and
+      # says nothing, so the placeholder is the louder failure.
+      INFISICAL_STORAGE_CLASS: "${INFISICAL_STORAGE_CLASS:-set-INFISICAL_STORAGE_CLASS}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # The base has no default: an unset HOSTNAME renders `.<domain>`, and
+      # SITE_URL with it.
+      HOSTNAME: "${INFISICAL_HOSTNAME:-infisical}"
+    substituteFrom:
+      # substituteFrom-keys: INFISICAL_AUTH_SECRET, INFISICAL_DB_PASSWORD,
+      # INFISICAL_ENCRYPTION_KEY, INFISICAL_REDIS_PASSWORD
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all.
+      # See #331.
+      - kind: Secret
+        name: ${INFISICAL_SECRET:-infisical-secrets}
+        optional: false

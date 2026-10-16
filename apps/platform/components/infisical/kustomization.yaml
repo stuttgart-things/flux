@@ -1,0 +1,10 @@
+---
+# infisical
+#
+# REQUIRES cilium-gateway from the infra bundle, a real
+# INFISICAL_STORAGE_CLASS, and a Secret with the root keys and DB/Redis
+# passwords.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-infisical.yaml

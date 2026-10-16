@@ -1,0 +1,62 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: infisical
+  namespace: ${INFISICAL_NAMESPACE:-infisical}
+spec:
+  interval: 30m
+  timeout: 15m
+  chart:
+    spec:
+      chart: infisical-standalone
+      # renovate: datasource=helm depName=infisical-standalone registryUrl=https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
+      version: ${INFISICAL_VERSION:-1.11.0}
+      sourceRef:
+        kind: HelmRepository
+        name: infisical
+        namespace: ${INFISICAL_NAMESPACE:-infisical}
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    global:
+      # passed down to the bundled postgresql and redis subcharts
+      storageClass: ${INFISICAL_STORAGE_CLASS:-nfs4-csi}
+    infisical:
+      # without it the chart names the Service infisical-infisical-standalone-infisical
+      fullnameOverride: infisical
+      replicaCount: ${INFISICAL_REPLICAS:-2}
+      kubeSecretRef: infisical-secrets # pragma: allowlist secret
+      image:
+        repository: infisical/infisical
+        # renovate: datasource=docker depName=infisical/infisical
+        tag: ${INFISICAL_IMAGE_TAG:-v0.158.0}
+    # exposed through httproute.yaml (Gateway API) instead
+    ingress:
+      enabled: false
+      nginx:
+        enabled: false
+    postgresql:
+      enabled: true
+      auth:
+        username: infisical
+        # quoted; alnum only -- the chart builds DB_CONNECTION_URI from it
+        password: "${INFISICAL_DB_PASSWORD}"
+        database: infisicalDB
+      primary:
+        persistence:
+          size: ${INFISICAL_DB_STORAGE_SIZE:-8Gi}
+    redis:
+      enabled: true
+      architecture: standalone
+      auth:
+        # quoted; alnum only -- the chart builds REDIS_URL from it
+        password: "${INFISICAL_REDIS_PASSWORD}"
+      master:
+        persistence:
+          size: ${INFISICAL_REDIS_STORAGE_SIZE:-2Gi}

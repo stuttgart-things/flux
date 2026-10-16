@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${INFISICAL_NAMESPACE:-infisical}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: infisical
+  namespace: ${INFISICAL_NAMESPACE:-infisical}
+spec:
+  interval: 1h
+  url: https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
