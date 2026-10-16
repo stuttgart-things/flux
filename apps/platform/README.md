@@ -19,6 +19,7 @@ apps/platform/
     ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
+    ├── infisical/   → ./apps/infisical   (requires cilium-gateway, a StorageClass + a Secret)
     ├── backstage-rag-postgres/ → ./apps/backstage-rag-postgres
     │                  (requires backstage, cnpg-operator, cnpg-barman-cloud, velero, the ESO vault store)
     ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
@@ -152,15 +153,15 @@ how a platform delivers things. A consumer that selected
 
 ## The apps that need a Secret you must supply
 
-`rancher`, `minio`, `backstage`, `redis-stack`, `harbor`, `keycloak` and
-`openldap` use
+`rancher`, `minio`, `backstage`, `redis-stack`, `harbor`, `keycloak`,
+`openldap` and `infisical` use
 `substituteFrom` with `optional: false`. That is on purpose: left optional, Flux proceeds with the
 variables unset and installs a MinIO with an empty admin password, and reports
 success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor` and `minio` carry a `profile.yaml` next to their `ks-*.yaml`
+`keycloak`, `harbor`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
 (the infra bundle's profiles are listed in
 [`infra/platform`](../../infra/platform/README.md#appprofiles)).
 It lists the vars a cluster may set for the app, which of them are required, and

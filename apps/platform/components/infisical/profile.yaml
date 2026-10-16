@@ -1,0 +1,31 @@
+---
+# AppProfile: what a cluster sets for infisical, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: infisical
+spec:
+  bundle: apps-platform
+  component: ../components/infisical
+  vars:
+    INFISICAL_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    INFISICAL_HOSTNAME: {}
+    INFISICAL_NAMESPACE: {}
+    INFISICAL_VERSION: {}
+    INFISICAL_SUSPEND: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: infisical-secrets
+      data:
+        # encrypts every stored secret -- generated once, never rotated by a
+        # re-render (keep it with --existing-secrets). 32 hex = rand -hex 16.
+        INFISICAL_ENCRYPTION_KEY: { generate: { type: hex, length: 32 } }
+        # signs sessions; openssl rand -base64 32
+        INFISICAL_AUTH_SECRET: { generate: { type: base64, length: 32 } }
+        # alnum: the chart builds DB_CONNECTION_URI / REDIS_URL from these,
+        # where ! # % @ would break the URL.
+        INFISICAL_DB_PASSWORD: { generate: { type: alnum, length: 32 } }
+        INFISICAL_REDIS_PASSWORD: { generate: { type: alnum, length: 32 } }
