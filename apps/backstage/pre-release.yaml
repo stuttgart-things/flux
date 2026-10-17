@@ -55,7 +55,7 @@ spec:
                 user: $${POSTGRES_USER}
                 password: $${POSTGRES_PASSWORD}
               plugin:
-                # Roadie RAG-AI (sthings-backstage >= v1.8.0) keeps its
+                # Roadie RAG-AI (sthings-backstage >= v1.9.0) keeps its
                 # embeddings in its own pgvector Postgres, apps/backstage-rag-postgres.
                 # Only used when ragAi.enabled is true.
                 rag-ai:
@@ -68,14 +68,14 @@ spec:
                     database: ${BACKSTAGE_RAG_PG_DATABASE:-backstage_rag}
                     user: $${RAG_PG_USER:-rag}
                     password: $${RAG_PG_PASSWORD:-}
-            # RAG-AI is optional: without rag-postgres or the OpenRouter key the
+            # RAG-AI is optional: without rag-postgres or the LLM API key the
             # backend starts without it instead of failing.
             startup:
               plugins:
                 rag-ai:
                   onPluginBootFailure: continue
                   modules:
-                    openrouter:
+                    llm:
                       onPluginModuleBootFailure: continue
           integrations:
             github:
@@ -140,10 +140,10 @@ spec:
           ragAi:
             enabled: ${BACKSTAGE_RAG_AI_ENABLED:-false}
             llm:
-              baseUrl: ${BACKSTAGE_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-              apiKey: $${OPENROUTER_API_KEY:-}
+              baseUrl: ${BACKSTAGE_LLM_BASE_URL:-https://openrouter.ai/api/v1}
+              apiKey: $${LLM_API_KEY:-}
               # Most reliable first; OpenRouter falls back to the next ones.
-              models: ${BACKSTAGE_OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
+              models: ${BACKSTAGE_LLM_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}
               maxTokens: ${BACKSTAGE_LLM_MAX_TOKENS:-4000}
           ai:
             supportedSources: ['catalog', 'tech-docs']
@@ -159,11 +159,11 @@ spec:
               # Free OpenRouter models allow 20 requests/minute.
               concurrencyLimit: 2
               openai:
-                openAiBaseUrl: ${BACKSTAGE_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
-                openAiApiKey: $${OPENROUTER_API_KEY:-}
+                openAiBaseUrl: ${BACKSTAGE_LLM_BASE_URL:-https://openrouter.ai/api/v1}
+                openAiApiKey: $${LLM_API_KEY:-}
                 # Changing the model changes the vector size: truncate the
                 # embeddings table and re-index afterwards.
-                modelName: ${BACKSTAGE_OPENROUTER_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}
+                modelName: ${BACKSTAGE_LLM_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}
                 # nemotron-3-embed-1b:free takes at most 256 texts per request.
                 batchSize: 128
             storage:
@@ -198,4 +198,4 @@ spec:
           ZITADEL_CLIENT_SECRET: ${BACKSTAGE_ZITADEL_CLIENT_SECRET:-}
           # RAG-AI chat + embeddings key. Empty default: RAG-AI stays off
           # (or reports 503) without it, the rest of Backstage is unaffected.
-          OPENROUTER_API_KEY: "${BACKSTAGE_OPENROUTER_API_KEY:-}"
+          LLM_API_KEY: "${BACKSTAGE_LLM_API_KEY:-}"

@@ -309,14 +309,14 @@ spec:
 | `DOMAIN` | *(required)* | Cluster base domain (Backstage will be at `backstage.<DOMAIN>`) |
 | `GATEWAY_NAME` | *(required)* | Name of the existing Gateway API Gateway resource |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |
-| `BACKSTAGE_RAG_AI_ENABLED` | `false` | Turn on Roadie RAG-AI ("Ask AI", image >= `v1.8.0`), see [RAG-AI](#optional-rag-ai) |
+| `BACKSTAGE_RAG_AI_ENABLED` | `false` | Turn on Roadie RAG-AI ("Ask AI", image >= `v1.9.0`), see [RAG-AI](#optional-rag-ai) |
 | `BACKSTAGE_RAG_PG_HOST` | `rag-postgres-rw` | RAG database service (apps/backstage-rag-postgres) |
 | `BACKSTAGE_RAG_PG_PORT` | `5432` | RAG database port |
 | `BACKSTAGE_RAG_PG_DATABASE` | `backstage_rag` | RAG database name |
 | `BACKSTAGE_RAG_PG_SECRET` | `rag-postgres-creds` | Secret with the RAG owner `username`/`password` |
-| `BACKSTAGE_OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI-compatible endpoint for chat and embeddings |
-| `BACKSTAGE_OPENROUTER_MODEL` | three free models | Comma-separated chat models, most reliable first |
-| `BACKSTAGE_OPENROUTER_EMBEDDINGS_MODEL` | `nvidia/nemotron-3-embed-1b:free` | Embeddings model; changing it means re-indexing |
+| `BACKSTAGE_LLM_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI-compatible endpoint for chat and embeddings (OpenRouter, Ollama `/v1`, vLLM, LiteLLM) |
+| `BACKSTAGE_LLM_MODEL` | three free models | Comma-separated chat models, most reliable first |
+| `BACKSTAGE_LLM_EMBEDDINGS_MODEL` | `nvidia/nemotron-3-embed-1b:free` | Embeddings model; changing it means re-indexing |
 | `BACKSTAGE_LLM_MAX_TOKENS` | `4000` | Max answer tokens |
 
 ### Secret Variables (set in `backstage-secrets-subst` Secret)
@@ -329,7 +329,7 @@ spec:
 | `BACKSTAGE_BACKEND_SECRET` | Signing key for Backstage backend auth |
 | `BACKSTAGE_POSTGRESQL_PASSWORD` | Password for the bundled PostgreSQL instance |
 | `BACKSTAGE_EXTERNAL_ACCESS_TOKEN` | Static external-access token for the `dapr-workflow-service` subject (restricted to `scaffolder` + `catalog` plugins). Consumed by the dapr-workflows/backstage-template-execution app. |
-| `BACKSTAGE_OPENROUTER_API_KEY` | Optional. OpenRouter key for RAG-AI; without it RAG-AI answers 503 and the rest of Backstage is unaffected |
+| `BACKSTAGE_LLM_API_KEY` | Optional. API key of the LLM endpoint (OpenRouter by default) for RAG-AI; without it RAG-AI answers 503 and the rest of Backstage is unaffected |
 
 ### Helm Override (set in `backstage-helm-overrides` ConfigMap)
 
@@ -339,17 +339,22 @@ spec:
 
 ## Optional: RAG-AI
 
-sthings-backstage `v1.8.0` ships the Roadie RAG-AI plugin (questions on catalog
-and TechDocs, "Ask AI" in the sidebar). It is off by default; nothing changes
-for a cluster that does not set `BACKSTAGE_RAG_AI_ENABLED`.
+sthings-backstage ships the Roadie RAG-AI plugin (questions on catalog and
+TechDocs, "Ask AI" in the sidebar). It is off by default; nothing changes for a
+cluster that does not set `BACKSTAGE_RAG_AI_ENABLED`, whatever the image.
+
+Turning it on needs image **`>= v1.9.0`**: this config uses the `LLM_*` names
+and the backend module `llm` of sthings-backstage#170. On `v1.8.0` the module
+was still called `openrouter`, so `backend.startup` would not cover it and a
+missing key would stop the backend.
 
 To turn it on:
 
 1. Deploy [`apps/backstage-rag-postgres`](../backstage-rag-postgres) into the
    same namespace. Its `rag-postgres-creds` Secret is read directly by the
    Backstage pod (`RAG_PG_USER` / `RAG_PG_PASSWORD`).
-2. Add `BACKSTAGE_OPENROUTER_API_KEY` to the substitution Secret.
-3. Set `BACKSTAGE_RAG_AI_ENABLED: "true"` and an image tag `>= v1.8.0`. Through
+2. Add `BACKSTAGE_LLM_API_KEY` to the substitution Secret.
+3. Set `BACKSTAGE_RAG_AI_ENABLED: "true"` and an image tag `>= v1.9.0`. Through
    the platform bundle (`apps/platform/components/backstage`) the variable is
    passed on, so setting it on the cluster is enough.
 4. **Restart Backstage once rag-postgres is Ready.** On the first rollout
@@ -378,6 +383,15 @@ To turn it on:
      https://backstage.<DOMAIN>/api/rag-ai/embeddings/catalog \
      -H 'Content-Type: application/json' -d '{"entityFilter":{"kind":"component"}}'
    ```
+
+**Data privacy:** every question and every indexing run sends catalog entities
+and TechDocs pages to the LLM endpoint -- the content leaves the cluster. With
+the default free OpenRouter models it goes to third-party providers that may log
+prompts or train on them. Acceptable for public/demo content (`sthings-dev`);
+for internal documentation turn RAG-AI on only as a conscious decision, or point
+`BACKSTAGE_LLM_BASE_URL` at an endpoint you run (e.g. Ollama:
+`http://ollama.<ns>.svc:11434/v1`, `BACKSTAGE_LLM_API_KEY` any non-empty value,
+then re-index after changing `BACKSTAGE_LLM_EMBEDDINGS_MODEL`).
 
 If the database or the key is missing, the backend starts without RAG-AI
 (`backend.startup ... onPluginBootFailure: continue`) instead of failing.

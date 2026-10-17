@@ -216,11 +216,11 @@ spec:
         # RAG-AI (off unless BACKSTAGE_RAG_AI_ENABLED=true). optional, so the
         # pod still starts in clusters without apps/backstage-rag-postgres or
         # without the key -- the plugin is then skipped, not the backend.
-        - name: OPENROUTER_API_KEY
+        - name: LLM_API_KEY
           valueFrom:
             secretKeyRef:
               name: backstage-secrets
-              key: OPENROUTER_API_KEY
+              key: LLM_API_KEY
               optional: true
         - name: RAG_PG_USER
           valueFrom:
