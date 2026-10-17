@@ -31,6 +31,10 @@ spec:
       # extension absent from the database the RAG plugin actually connects to.
       postInitApplicationSQL:
         - CREATE EXTENSION IF NOT EXISTS vector;
+        # The RAG-AI plugin's migration also creates uuid-ossp. It is a trusted
+        # extension, so the owner could do it itself; creating it here keeps
+        # the plugin's first start independent of that.
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
   storage:
     size: ${RAG_PG_STORAGE_SIZE:-5Gi}
