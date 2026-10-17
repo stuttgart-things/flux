@@ -213,6 +213,27 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: EXTERNAL_ACCESS_TOKEN
+        # RAG-AI (off unless BACKSTAGE_RAG_AI_ENABLED=true). optional, so the
+        # pod still starts in clusters without apps/backstage-rag-postgres or
+        # without the key -- the plugin is then skipped, not the backend.
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: OPENROUTER_API_KEY
+              optional: true
+        - name: RAG_PG_USER
+          valueFrom:
+            secretKeyRef:
+              name: ${BACKSTAGE_RAG_PG_SECRET:-rag-postgres-creds}
+              key: username
+              optional: true
+        - name: RAG_PG_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ${BACKSTAGE_RAG_PG_SECRET:-rag-postgres-creds}
+              key: password
+              optional: true
       extraAppConfig:
         - filename: app-config.extra.yaml
           configMapRef: backstage-app-config
