@@ -105,10 +105,31 @@ spec:
       # github sign-in resolver matches a GitHub username against a User entity,
       # so this decides who can sign in, not just what is listed.
       BACKSTAGE_CATALOG_ORG: "${BACKSTAGE_CATALOG_ORG:-sthings-dev}"
+
+      # ---- RAG-AI (optional, needs backstage-rag-postgres) ---------------
+      # passthrough-override: the switch is passed WITH its quotes. A bare
+      # `true`/`false` is what kustomize leaves after stripping the quotes of
+      # "${...}", and a bool in postBuild.substitute (map[string]string) is
+      # rejected by the API server -- failing apps-platform with every sibling,
+      # like BACKSTAGE_REPLICAS below. Quoted, the value stays a string here and
+      # lands as `enabled: "true"` in the base's app-config, which Backstage
+      # reads as a boolean. A cluster sets BACKSTAGE_RAG_AI_ENABLED: "true".
+      BACKSTAGE_RAG_AI_ENABLED: '"${BACKSTAGE_RAG_AI_ENABLED:-false}"'
+      BACKSTAGE_RAG_PG_HOST: "${BACKSTAGE_RAG_PG_HOST:-rag-postgres-rw}"
+      # Same variable and default as the backstage-rag-postgres component.
+      BACKSTAGE_RAG_PG_DATABASE: "${RAG_PG_DATABASE:-backstage_rag}"
+      BACKSTAGE_RAG_PG_SECRET: "${BACKSTAGE_RAG_PG_SECRET:-rag-postgres-creds}"
+      BACKSTAGE_OPENROUTER_BASE_URL: "${BACKSTAGE_OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}"
+      BACKSTAGE_OPENROUTER_MODEL: "${BACKSTAGE_OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free,google/gemma-4-31b-it:free,nvidia/nemotron-3-ultra-550b-a55b:free}"
+      BACKSTAGE_OPENROUTER_EMBEDDINGS_MODEL: "${BACKSTAGE_OPENROUTER_EMBEDDINGS_MODEL:-nvidia/nemotron-3-embed-1b:free}"
+      # BACKSTAGE_RAG_PG_PORT and BACKSTAGE_LLM_MAX_TOKENS are deliberately NOT
+      # threaded: ints, same reason as BACKSTAGE_REPLICAS. The base's defaults
+      # (5432, 4000) stand.
     substituteFrom:
       # substituteFrom-keys: BACKSTAGE_GITHUB_TOKEN, BACKSTAGE_GITHUB_CLIENT_ID,
       # BACKSTAGE_GITHUB_CLIENT_SECRET, BACKSTAGE_BACKEND_SECRET,
       # BACKSTAGE_POSTGRESQL_PASSWORD, BACKSTAGE_EXTERNAL_ACCESS_TOKEN
+      # substituteFrom-optional-keys: BACKSTAGE_OPENROUTER_API_KEY
       #
       # optional: false guards the SOURCE, not the KEYS. Flux fails this
       # Kustomization when the Secret is absent -- and substitutes an empty

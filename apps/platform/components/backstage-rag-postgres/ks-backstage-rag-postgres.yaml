@@ -19,6 +19,11 @@
 #   <RAG_ESO_CREDS_PATH>   username, password        (the DB owner)
 #   <RAG_ESO_S3_PATH>      access_key, secret_key    (bucket-scoped S3 user)
 # and the pgvector image pushed to GHCR (see the base's README).
+#
+# FIRST ROLLOUT: backstage starts before this (it owns the namespace), without
+# rag-postgres-creds, and skips RAG-AI quietly. Once this is Ready, restart it
+# once: kubectl -n portal rollout restart deploy/backstage-deployment
+# (apps/backstage README, "Optional: RAG-AI").
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

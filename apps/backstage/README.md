@@ -349,8 +349,24 @@ To turn it on:
    same namespace. Its `rag-postgres-creds` Secret is read directly by the
    Backstage pod (`RAG_PG_USER` / `RAG_PG_PASSWORD`).
 2. Add `BACKSTAGE_OPENROUTER_API_KEY` to the substitution Secret.
-3. Set `BACKSTAGE_RAG_AI_ENABLED: "true"` and an image tag `>= v1.8.0`.
-4. Index once (and after documentation changes). RAG-AI does not index on its
+3. Set `BACKSTAGE_RAG_AI_ENABLED: "true"` and an image tag `>= v1.8.0`. Through
+   the platform bundle (`apps/platform/components/backstage`) the variable is
+   passed on, so setting it on the cluster is enough.
+4. **Restart Backstage once rag-postgres is Ready.** On the first rollout
+   Backstage starts before it: `backstage-rag-postgres` `dependsOn: backstage`
+   (which owns the namespace), so `rag-postgres-creds` does not exist yet, the
+   optional env vars stay empty, the plugin fails at boot and `continue` keeps
+   that quiet -- "Ask AI" then answers 503 until the next restart. After the
+   first sync of backstage-rag-postgres:
+
+   ```bash
+   kubectl -n portal wait cluster.postgresql.cnpg.io/rag-postgres --for=condition=Ready --timeout=15m
+   kubectl -n portal rollout restart deploy/backstage-deployment
+   kubectl -n portal logs deploy/backstage-deployment | grep 'RAG-AI enabled'
+   ```
+
+   Later restarts need nothing: the Secret and the database are there.
+5. Index once (and after documentation changes). RAG-AI does not index on its
    own; the call needs a Backstage user token (the static external-access
    token is restricted to scaffolder and catalog):
 
