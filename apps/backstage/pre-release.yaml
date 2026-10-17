@@ -99,12 +99,25 @@ spec:
                   '^/api/proxy/machinery-registry': ''
                 allowedHeaders: ['*']
                 credentials: 'dangerously-allow-unauthenticated'
+          # TechDocs: built in the pod by default. builder external + publisher
+          # awsS3 reads docs that CI built and uploaded instead (the techdocs
+          # Dagger module); see the README, "Optional: TechDocs from CI".
           techdocs:
-            builder: 'local'
+            builder: '${BACKSTAGE_TECHDOCS_BUILDER:-local}'
             generator:
               runIn: 'local'
             publisher:
-              type: 'local'
+              type: '${BACKSTAGE_TECHDOCS_PUBLISHER:-local}'
+              # Only read with type awsS3.
+              awsS3:
+                bucketName: '${BACKSTAGE_TECHDOCS_S3_BUCKET:-techdocs}'
+                endpoint: '${BACKSTAGE_TECHDOCS_S3_ENDPOINT:-}'
+                region: '${BACKSTAGE_TECHDOCS_S3_REGION:-us-east-1}'
+                # MinIO serves buckets by path, not by virtual host.
+                s3ForcePathStyle: true
+                credentials:
+                  accessKeyId: $${TECHDOCS_S3_ACCESS_KEY_ID:-}
+                  secretAccessKey: $${TECHDOCS_S3_SECRET_ACCESS_KEY:-}
           auth:
             environment: development
             providers:
@@ -199,3 +212,7 @@ spec:
           # RAG-AI chat + embeddings key. Empty default: RAG-AI stays off
           # (or reports 503) without it, the rest of Backstage is unaffected.
           LLM_API_KEY: "${BACKSTAGE_LLM_API_KEY:-}"
+          # Read-only S3 user for TechDocs from CI (publisher awsS3). Empty
+          # defaults: unused with the default local publisher.
+          TECHDOCS_S3_ACCESS_KEY_ID: "${BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID:-}"
+          TECHDOCS_S3_SECRET_ACCESS_KEY: "${BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY:-}"

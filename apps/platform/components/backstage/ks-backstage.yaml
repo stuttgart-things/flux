@@ -125,11 +125,24 @@ spec:
       # BACKSTAGE_RAG_PG_PORT and BACKSTAGE_LLM_MAX_TOKENS are deliberately NOT
       # threaded: ints, same reason as BACKSTAGE_REPLICAS. The base's defaults
       # (5432, 4000) stand.
+
+      # ---- TechDocs from CI (optional) -----------------------------------
+      # local/local builds in the pod, as before. external/awsS3 reads what the
+      # techdocs Dagger module published; set the endpoint then.
+      BACKSTAGE_TECHDOCS_BUILDER: "${BACKSTAGE_TECHDOCS_BUILDER:-local}"
+      BACKSTAGE_TECHDOCS_PUBLISHER: "${BACKSTAGE_TECHDOCS_PUBLISHER:-local}"
+      BACKSTAGE_TECHDOCS_S3_BUCKET: "${BACKSTAGE_TECHDOCS_S3_BUCKET:-techdocs}"
+      # passthrough-override: an empty default would land as null, which the
+      # API server rejects (hack/check-substitute-strings.py). Unused with the
+      # local publisher; with awsS3 the placeholder names what to set.
+      BACKSTAGE_TECHDOCS_S3_ENDPOINT: "${BACKSTAGE_TECHDOCS_S3_ENDPOINT:-https://set-BACKSTAGE_TECHDOCS_S3_ENDPOINT.invalid}"
+      BACKSTAGE_TECHDOCS_S3_REGION: "${BACKSTAGE_TECHDOCS_S3_REGION:-us-east-1}"
     substituteFrom:
       # substituteFrom-keys: BACKSTAGE_GITHUB_TOKEN, BACKSTAGE_GITHUB_CLIENT_ID,
       # BACKSTAGE_GITHUB_CLIENT_SECRET, BACKSTAGE_BACKEND_SECRET,
       # BACKSTAGE_POSTGRESQL_PASSWORD, BACKSTAGE_EXTERNAL_ACCESS_TOKEN
-      # substituteFrom-optional-keys: BACKSTAGE_LLM_API_KEY
+      # substituteFrom-optional-keys: BACKSTAGE_LLM_API_KEY,
+      # BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID, BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY
       #
       # optional: false guards the SOURCE, not the KEYS. Flux fails this
       # Kustomization when the Secret is absent -- and substitutes an empty

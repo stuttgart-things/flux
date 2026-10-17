@@ -318,6 +318,11 @@ spec:
 | `BACKSTAGE_LLM_MODEL` | three free models | Comma-separated chat models, most reliable first |
 | `BACKSTAGE_LLM_EMBEDDINGS_MODEL` | `nvidia/nemotron-3-embed-1b:free` | Embeddings model; changing it means re-indexing |
 | `BACKSTAGE_LLM_MAX_TOKENS` | `4000` | Max answer tokens |
+| `BACKSTAGE_TECHDOCS_BUILDER` | `local` | `external`: Backstage builds no docs, it reads what CI published, see [TechDocs from CI](#optional-techdocs-from-ci) |
+| `BACKSTAGE_TECHDOCS_PUBLISHER` | `local` | `awsS3`: read the docs from S3/MinIO |
+| `BACKSTAGE_TECHDOCS_S3_BUCKET` | `techdocs` | Bucket CI publishes to |
+| `BACKSTAGE_TECHDOCS_S3_ENDPOINT` | *(none)* | S3 endpoint; required with `awsS3`, e.g. the in-cluster MinIO `http://minio-deployment.minio.svc.cluster.local:9000` |
+| `BACKSTAGE_TECHDOCS_S3_REGION` | `us-east-1` | Region; MinIO accepts any |
 
 ### Secret Variables (set in `backstage-secrets-subst` Secret)
 
@@ -330,6 +335,8 @@ spec:
 | `BACKSTAGE_POSTGRESQL_PASSWORD` | Password for the bundled PostgreSQL instance |
 | `BACKSTAGE_EXTERNAL_ACCESS_TOKEN` | Static external-access token for the `dapr-workflow-service` subject (restricted to `scaffolder` + `catalog` plugins). Consumed by the dapr-workflows/backstage-template-execution app. |
 | `BACKSTAGE_LLM_API_KEY` | Optional. API key of the LLM endpoint (OpenRouter by default) for RAG-AI; without it RAG-AI answers 503 and the rest of Backstage is unaffected |
+| `BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID` | Optional. Read-only S3 user for TechDocs from CI (`awsS3` publisher) |
+| `BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY` | Optional. Its secret key |
 
 ### Helm Override (set in `backstage-helm-overrides` ConfigMap)
 
@@ -396,6 +403,37 @@ then re-index after changing `BACKSTAGE_LLM_EMBEDDINGS_MODEL`).
 If the database or the key is missing, the backend starts without RAG-AI
 (`backend.startup ... onPluginBootFailure: continue`) instead of failing.
 Details: the sthings-backstage README, section "RAG-AI".
+
+## Optional: TechDocs from CI
+
+By default Backstage builds every repo's TechDocs itself, in its own pod
+(`builder: local`, mkdocs in the image), on the first visit and again after
+each restart. With `builder: external` it builds nothing: each repo's CI builds
+its docs with the [techdocs Dagger module](https://github.com/stuttgart-things/dagger/tree/main/techdocs)
+and uploads them to a bucket, and Backstage only reads the HTML.
+
+1. Create a bucket (default `techdocs`) and two scoped users on the MinIO:
+   one CI user (read, write, delete on the bucket), one read-only user for
+   Backstage.
+2. In each repo with docs, call the reusable workflow
+   `stuttgart-things/github-workflow-templates/.github/workflows/call-techdocs.yaml`:
+   `publish: false` on pull requests (a broken `mkdocs.yml` fails the PR),
+   `publish: true` on `main` with the CI user's keys.
+3. Put the read-only user's keys into the substitution Secret as
+   `BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID` / `BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY`.
+4. Set on the cluster:
+   ```yaml
+   BACKSTAGE_TECHDOCS_BUILDER: external
+   BACKSTAGE_TECHDOCS_PUBLISHER: awsS3
+   BACKSTAGE_TECHDOCS_S3_ENDPOINT: http://minio-deployment.minio.svc.cluster.local:9000
+   ```
+   In-cluster plain HTTP needs no CA; an external `https://` endpoint signed by
+   Vault PKI needs [Internal CA Trust](#optional-internal-ca-trust-vault-pki).
+
+A repo whose CI has not published yet shows "documentation not found" instead
+of building on the spot. Docs are found under `<bucket>/<namespace>/<kind>/<name>/`,
+lower-cased, from the entity in `catalog-info.yaml` that carries
+`backstage.io/techdocs-ref`.
 
 ## Optional: Internal CA Trust (Vault PKI)
 
