@@ -1,0 +1,18 @@
+---
+# notify-tabletennis-results-with-demos -- notify-tabletennis-results for
+# TESTING: the same won-match output, demo matches included.
+#
+# A demo is a zaehlwerk-pong match (zaehlwerk ADR-0008): a game on the panel,
+# a person against a bot or two bots, also the bot games the service plays by
+# itself with no tab open (ADR-0014). zaehlwerk tags them `demo=1` and tells
+# the kinds apart nowhere, so this variant posts every one of them -- on a
+# cluster where bot games run, a card every few minutes. Use it to check the
+# webhook and the card without a real match, then go back to
+# tabletennis-results.
+#
+# Same streams as tabletennis-results (HOMERUN2_NOTIFICATION_CATCHER_STREAMS:
+# tabletennis), and same ConfigMap: exactly one notify-* per build.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - notify.yaml

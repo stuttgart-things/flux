@@ -49,6 +49,8 @@ spec:
     # Where messages go: the routing file, a notify-* directory of
     # components/notification-catcher:
     #   tabletennis-results                     streams: tabletennis
+    #   tabletennis-results-with-demos          streams: tabletennis
+    #     (pong/demo matches too, for testing)
     #   tabletennis-results-and-cluster-builds  streams: tabletennis,messages
     #     (adds cluster-build-watch's cards, dapr-workflows#49)
     #   none                                    no outputs: consume and log,
