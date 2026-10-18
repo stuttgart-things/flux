@@ -192,6 +192,16 @@ zaehlwerk ADR-0005). `alternate` (default) is the rulebook, ITTF 2.13.6; `loser`
 is the house rule where whoever lost the previous set opens the next one. A
 match can still choose its own through the API.
 
+**`TABLETENNIS_LINK_DOMAIN`** is a plain value too: the domain the pages' links
+send a browser to, `INFRA_DOMAIN` by default. It covers zaehlwerk's *Buttons* and *Pong*
+links (`BUTTONS_URL`, `PONG_URL`, so also the screensaver's address) and the
+buttons page's way back to zaehlwerk. Set it where the same hostnames also have
+routes on another Gateway, for example a public one with a Let's Encrypt wildcard next
+to the internal one. The cluster still has to provide those routes. Links only:
+nothing calls these addresses, and this layer's own routes stay on `INFRA_DOMAIN`.
+zaehlwerk's *Schmetterpause* link is `TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL`, which
+zaehlwerk also calls, see below.
+
 ### The scoreboard and the handover are one feature
 
 `schmetterpause-scoreboard-on` opens the surface; `zaehlwerk-handover-on` is the

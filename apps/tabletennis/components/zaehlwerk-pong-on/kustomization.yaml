@@ -64,4 +64,4 @@ patches:
           patch: |
             - op: add
               path: /data/PONG_URL
-              value: "https://${ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.${DOMAIN}"
+              value: "https://${ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.${LINK_DOMAIN:-${DOMAIN}}"

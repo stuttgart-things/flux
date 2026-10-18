@@ -36,7 +36,7 @@ spec:
             # What the page links to for starting a match: the browser's way
             # in, not the Service name above.
             - name: ZAEHLWERK_PUBLIC_URL
-              value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}"
+              value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${LINK_DOMAIN:-${DOMAIN}}"
             - name: BUTTONS_ADDR
               value: ":8084"
             - name: PIEZO_CONTROL_URL
