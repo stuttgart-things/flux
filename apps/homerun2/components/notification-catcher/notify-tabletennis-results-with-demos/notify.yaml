@@ -1,0 +1,34 @@
+---
+# Same ConfigMap as notify-tabletennis-results (the catcher mounts
+# homerun2-notification-catcher-notify); select one variant, never both.
+#
+# $${TEAMS_WEBHOOK_URL}, doubled on purpose -- see notify-tabletennis-results:
+# `$$` is Flux's postBuild escape, so the catcher receives the literal
+# ${TEAMS_WEBHOOK_URL} and fills it from its own environment at start.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homerun2-notification-catcher-notify
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+data:
+  config.yaml: |
+    outputs:
+      # A won match, demo or not: notify-tabletennis-results without its
+      # tags_exclude. Keep the rest in step with it.
+      - name: teams-tabletennis-results
+        type: msteams
+        webhook_url: "$${TEAMS_WEBHOOK_URL}"
+        filters:
+          match:
+            system: tabletennis
+          tags_contain: [transition=match_won]
+        # notify-tabletennis-results' card plus a Demo row, which shows only
+        # on a demo (its value is the tag's, `1`; a real match has no tag).
+        card:
+          facts:
+            - { title: Spieler A, tag: player_a }
+            - { title: Spieler B, tag: player_b }
+            - { title: Sätze, tag: sets }
+            - { title: Satzergebnisse, tag: played }
+            - { title: Demo, tag: demo }
+            - { title: Zeit, field: timestamp }

@@ -36,6 +36,22 @@ A new instance does not post old results: from v3.0.2 a new consumer group
 starts at `$`, only messages pitched after it exists (upstream #43). A restart
 keeps its position.
 
+## Demo matches too, for testing (`tabletennis-results-with-demos`)
+
+`tabletennis-results` leaves demo matches out (`tags_exclude: [demo=1]`). A
+demo is every zaehlwerk-pong match -- a person against a bot, two bots, and
+the bot games the service plays by itself (zaehlwerk ADR-0008, ADR-0014) --
+and zaehlwerk tells these apart nowhere. `tabletennis-results-with-demos` is
+the same output without the exclusion, plus a `Demo` row on the card: a pong
+game posts a card, so the webhook and the card can be checked without a real
+match. Where bot games run, that is a card every few minutes -- go back to
+`tabletennis-results` after the test.
+
+```yaml
+HOMERUN2_SOPS_NOTIFY: tabletennis-results-with-demos   # or ..._ROUTING
+HOMERUN2_NOTIFICATION_CATCHER_STREAMS: tabletennis
+```
+
 ## Cluster builds too (`tabletennis-results-and-cluster-builds`)
 
 The same results output, unchanged, plus `teams-cluster-build-watch`: every

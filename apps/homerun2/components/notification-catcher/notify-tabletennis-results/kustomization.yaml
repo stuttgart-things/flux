@@ -10,7 +10,10 @@
 # The card, from the catcher's internal/notify/teams.go:
 #   title  WIN 2:0 (the panel's 10-character form)
 #   body   <a> 2 : 0 <b> -- <winner> wins
-#   facts  severity, system, author zaehlwerk, tags, time
+#   facts  Spieler A/B, Sätze, Satzergebnisse, Zeit (card.facts, v3.1.0+)
+#
+# Demo matches (zaehlwerk-pong, `demo=1`) are left out; to post them too, for
+# a test, select notify-tabletennis-results-with-demos instead.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
