@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: buttons
-          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.25.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-buttons:${ZAEHLWERK_BUTTONS_VERSION:-v0.26.0}
           env:
             # The hub calls zaehlwerk by its Service, like the piezo-sim.
             - name: ZAEHLWERK_URL
@@ -36,7 +36,7 @@ spec:
             # What the page links to for starting a match: the browser's way
             # in, not the Service name above.
             - name: ZAEHLWERK_PUBLIC_URL
-              value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${DOMAIN}"
+              value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${LINK_DOMAIN:-${DOMAIN}}"
             - name: BUTTONS_ADDR
               value: ":8084"
             - name: PIEZO_CONTROL_URL

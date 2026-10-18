@@ -47,4 +47,4 @@ patches:
           patch: |
             - op: add
               path: /data/BUTTONS_URL
-              value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${DOMAIN}"
+              value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${LINK_DOMAIN:-${DOMAIN}}"
