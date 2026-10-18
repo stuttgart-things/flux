@@ -81,7 +81,7 @@ jobs:
       # so not pushing to main is what lets the gate enforce without a PAT (#215).
       - name: semantic-release
         id: semantic
-        uses: cycjimmy/semantic-release-action@v8.0.1
+        uses: cycjimmy/semantic-release-action@v8.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
