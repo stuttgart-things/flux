@@ -15,7 +15,11 @@
 # The notification-catcher's routing file is rendered IN THIS BUILD, next to
 # its namespace (components/notification-catcher/notify-*). Default `none`:
 # the catcher consumes and logs, nothing leaves the cluster.
-# HOMERUN2_SOPS_NOTIFY picks another notify-* variant.
+# HOMERUN2_SOPS_NOTIFY picks another notify-* variant. Set the streams to match
+# it (HOMERUN2_NOTIFICATION_CATCHER_STREAMS, e.g. `tabletennis` for
+# tabletennis-results), and HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: off once the
+# would-sends of one real match look right -- the same two switches as
+# ../homerun2-notification-catcher on an external-secrets cluster.
 #
 # REQUIRES a StorageClass (HOMERUN2_REDIS_STORAGE_CLASS) and the Secret below.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -43,6 +47,9 @@ spec:
     # none | tabletennis-results | tabletennis-results-and-cluster-builds.
     # Exactly one: each renders the same ConfigMap.
     - ../../components/notification-catcher/notify-${HOMERUN2_SOPS_NOTIFY:-none}
+    # on (default) or off. A component, not a value: DRY_RUN is a bool, and a
+    # bool cannot pass through postBuild.substitute -- see dry-run-on.
+    - ../../components/notification-catcher/dry-run-${HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN:-on}
   postBuild:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
@@ -55,6 +62,10 @@ spec:
       # stream), and an empty postBuild.substitute value renders as YAML null
       # and fails the whole Kustomization. `messages` is that configured stream.
       HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS: "${HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS:-messages}"
+      # The streams the notification-catcher reads -- match the notify-*
+      # variant: zaehlwerk's results arrive on `tabletennis`. The default is
+      # the catcher component's own.
+      HOMERUN2_NOTIFICATION_CATCHER_STREAMS: "${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:-messages,alerts}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64, TEAMS_WEBHOOK_URL
       # substituteFrom-optional-keys: HOMERUN2_OMNI_PITCHER_AUTH_TOKEN,
