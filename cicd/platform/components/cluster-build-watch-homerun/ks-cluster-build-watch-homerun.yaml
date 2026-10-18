@@ -67,8 +67,9 @@ spec:
       DAPR_CBW_REDIS_HOST: "${CLUSTER_BUILD_WATCH_REDIS_HOST:-redis-stack.dapr-redis:6379}"
 
       # ---- homerun2 sink ----
-      # omni-pitcher on LabDA labda-dev-a (namespace homerun2).
-      DAPR_CBW_HOMERUN_PITCH_URL: "${CLUSTER_BUILD_WATCH_HOMERUN_PITCH_URL:-https://omni-pitcher.labda-dev-a.4sthings.tiab.ssc.sva.de/pitch}"
+      # omni-pitcher on LabDA sthings-app (namespace homerun2; labda-dev-a until
+      # 2026-10-18, stuttgart-things#3715).
+      DAPR_CBW_HOMERUN_PITCH_URL: "${CLUSTER_BUILD_WATCH_HOMERUN_PITCH_URL:-https://omni-pitcher.sthings-app.4sthings.tiab.ssc.sva.de/pitch}"
       DAPR_CBW_HOMERUN_TOKEN_PROPERTY: "${CLUSTER_BUILD_WATCH_HOMERUN_TOKEN_PROPERTY:-homerun_auth_token}"
       # Same store and Vault entry as dapr-workflows (ks-dapr-workflows.yaml),
       # read through the same cluster variables, so one KV entry holds every
