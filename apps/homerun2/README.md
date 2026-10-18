@@ -158,6 +158,7 @@ Shares the version variables above.
 |----------|---------|----------|---------|
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE` | `homerun2-tabletennis` | no | Namespace of this instance |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` | `http://homerun2-wled-mock.homerun2.svc.cluster.local` | no | The WLED device at the table |
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM` | `homerun2-light-catcher-profile` | no | ConfigMap (key `profile.yaml`, in the instance's namespace) mounted as the profile; the default is the component's own |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME` | `light-catcher-tabletennis` | no | HTTPRoute hostname prefix |
 
 ### WLED Mock

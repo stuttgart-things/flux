@@ -22,6 +22,21 @@ data:
           match:
             system: tabletennis
           tags_contain: [transition=match_won]
+          # Not a demo or bot game (zaehlwerk ADR-0008/0014: `demo=1`, absent
+          # on a real match). Needs notification-catcher v3.1.0+; an older one
+          # ignores the key and posts demos too.
+          tags_exclude: [demo=1]
+        # Title and message stay zaehlwerk's ("WIN 3:1", "Anna 3 : 1 Ben --
+        # Anna wins"); below them one row per tag instead of the raw tag
+        # string. `played` is the sets in order, space-separated ("11-7
+        # 9-11 11-5 11-9"). Rows with no value are left out. v3.1.0+ too.
+        card:
+          facts:
+            - { title: Spieler A, tag: player_a }
+            - { title: Spieler B, tag: player_b }
+            - { title: Sätze, tag: sets }
+            - { title: Satzergebnisse, tag: played }
+            - { title: Zeit, field: timestamp }
       # cluster-build-watch's homerun sink: author and system are both
       # cluster-build-watch; every checkpoint, no severity floor, so a
       # Ready build gets its card as well as a failed or hanging one.

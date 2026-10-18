@@ -134,3 +134,25 @@ spec:
                 color: red
                 segments: [0]
                 endpoint: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}
+    # The profile above is the default. A cluster with its own effects -- a
+    # real device, its own speeds and palettes -- names a ConfigMap (key
+    # profile.yaml) in THIS instance's namespace, and the Deployment mounts
+    # that instead. The patched base ConfigMap stays in place, just unmounted;
+    # ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT} then does nothing.
+    # The catcher re-reads the mounted profile on every message, so a change
+    # needs no restart.
+    - target:
+        kind: Deployment
+        name: homerun2-light-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-light-catcher
+        spec:
+          template:
+            spec:
+              volumes:
+                - name: profile
+                  configMap:
+                    name: ${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM:-homerun2-light-catcher-profile}

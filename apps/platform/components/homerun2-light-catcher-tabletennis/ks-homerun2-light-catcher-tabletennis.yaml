@@ -35,6 +35,9 @@ spec:
       # The homerun2 wled-mock unless the cluster has a strip. Written out rather
       # than built from HOMERUN2_NAMESPACE: a default cannot nest a reference.
       HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT:-http://homerun2-wled-mock.homerun2.svc.cluster.local}"
+      # A profile ConfigMap of the cluster's own, in this instance's namespace;
+      # the default is the profile in the component (and the endpoint above).
+      HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM:-homerun2-light-catcher-profile}"
       # No safe default: stores are named per cluster (vault-<cluster>).
       HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
       HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"

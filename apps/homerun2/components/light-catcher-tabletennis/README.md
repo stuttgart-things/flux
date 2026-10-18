@@ -60,6 +60,7 @@ it.
 | `HOMERUN2_NAMESPACE` | `homerun2` | Where redis runs |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_NAMESPACE` | `homerun2-tabletennis` | This instance's namespace |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` | `http://homerun2-wled-mock.homerun2.svc.cluster.local` | The WLED device the effects go to |
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM` | `homerun2-light-catcher-profile` | ConfigMap (key `profile.yaml`) in this instance's namespace, mounted as the profile. The default is the profile above; a cluster's own replaces it, endpoint included |
 | `HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | OCI kustomize artifact version, shared with `light-catcher` |
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | Container image tag, shared with `light-catcher` |
 | `HOMERUN2_SECRET_STORE` | *(required)* | ClusterSecretStore for `eso/` |
@@ -72,4 +73,4 @@ it.
 
 - Removes the base's HTTPRoute (`route/` brings one with this hostname) and its placeholder redis Secret (`eso/` or `sops/` brings the real one)
 - Points `REDIS_ADDR` at the homerun2 namespace, `REDIS_STREAM` at `tabletennis`, and uses consumer group `homerun2-light-catcher-tabletennis`
-- Replaces the profile ConfigMap with the table's effects
+- Replaces the profile ConfigMap with the table's effects, and mounts `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM` instead when a cluster ships its own
