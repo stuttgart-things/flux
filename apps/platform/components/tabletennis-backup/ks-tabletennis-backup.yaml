@@ -121,6 +121,7 @@ spec:
       ZAEHLWERK_BUTTONS_VERSION: "${TABLETENNIS_ZAEHLWERK_BUTTONS_VERSION:-v0.28.0}"
       ZAEHLWERK_BUTTONS_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}"
       ZAEHLWERK_BUTTONS_PIEZO_URL: "${TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
+      ZAEHLWERK_BUTTONS_DEVICE: "${TABLETENNIS_ZAEHLWERK_BUTTONS_DEVICE:-button}"
       # Read only by zaehlwerk-pong-on/-attract. The image follows
       # ZAEHLWERK_VERSION (built in the same release run, v0.16.0+), so there
       # is no version of its own.
