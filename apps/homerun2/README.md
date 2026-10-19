@@ -152,6 +152,7 @@ Version defaults are not repeated in these tables. Each component pins them in `
 | `HOMERUN2_LIGHT_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_LIGHT_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated, e.g. `messages,alerts` |
 | `HOMERUN2_LIGHT_CATCHER_PROFILE_CM` | `homerun2-light-catcher-profile` | no | ConfigMap name containing the profile (effects and WLED endpoints); the default drives the wled-mock |
+| `HOMERUN2_LIGHT_CATCHER_BASE_PATH` | *(empty)* | no | URL prefix of the dashboard, e.g. `/light` behind homerun2-portal (light-catcher v1.9.0+); empty serves at the root |
 | `HOMERUN2_LIGHT_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### Light Catcher (tabletennis)
