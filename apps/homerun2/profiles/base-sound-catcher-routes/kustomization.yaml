@@ -1,0 +1,15 @@
+---
+# HTTPRoutes for profiles/base-sound-catcher, applied after it is Ready.
+#
+# Separate for the reason profiles/base-routes and profiles/platform-routes are:
+# Cilium resolves a route's backendRefs once, so a route applied beside the
+# Kustomization that later creates its Service serves HTTP 500 for good while
+# every Kustomization reports Ready.
+#
+# Substitutes DOMAIN, GATEWAY_NAME, GATEWAY_NAMESPACE,
+# HOMERUN2_SOUND_CATCHER_HOSTNAME and HOMERUN2_SOUND_CATCHER_BASE_PATH (the
+# event-stream rule sits under it).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/sound-catcher/route

@@ -64,6 +64,8 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | `profiles/sops` | profiles/base + led-catcher, light-catcher, wled-mock, demo-pitcher, config-viewer | The whole stack on the sops path, as one Kustomization. Needs only the Secret keys `profiles/base` needs |
 | `profiles/sops-routes` | HTTPRoutes for all eight of them | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
 | `profiles/sops-light-catcher-tabletennis` | light-catcher-tabletennis + its `sops/` | **Add-on** to `profiles/sops`: the table tennis light-catcher in its own namespace. Needs `HOMERUN2_REDIS_PASSWORD_B64`; its route is `profiles/platform-light-catcher-tabletennis-routes` |
+| `profiles/base-sound-catcher` | sound-catcher + its `sops/` | **Add-on** to `profiles/base`: the sops counterpart to `profiles/platform-sound-catcher`. Needs `HOMERUN2_REDIS_PASSWORD_B64` |
+| `profiles/base-sound-catcher-routes` | HTTPRoute for sound-catcher | **Add-on** to `profiles/base-sound-catcher`: a second Kustomization with `dependsOn` on it |
 | `profiles/portal` | portal | **Add-on** to any profile: holds no secrets, so it fits the eso and the sops path alike. Each service in `HOMERUN2_PORTAL_SERVICES` must run with `BASE_PATH=/<key>` |
 | `profiles/portal-routes` | HTTPRoute for portal | **Add-on** to `profiles/portal`: a second Kustomization with `dependsOn` on it |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |

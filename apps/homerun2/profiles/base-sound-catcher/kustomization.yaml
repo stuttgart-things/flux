@@ -1,0 +1,19 @@
+---
+# sound-catcher (browser sink) on top of profiles/base, with the redis password
+# from the consumer's substituteFrom Secret rather than a ClusterSecretStore.
+#
+# The sops counterpart to profiles/platform-sound-catcher, and it exists for the
+# reason base-led-catcher does: components are not standalone-buildable, so a
+# Flux Kustomization cannot point at components/sound-catcher directly, and the
+# only profile carrying it selected the eso/ variant. components/sound-catcher
+# /sops was already there and unselected.
+#
+# Needs HOMERUN2_REDIS_PASSWORD_B64, which profiles/base already requires, so a
+# consumer running base needs nothing new. HTTPRoutes are in
+# profiles/base-sound-catcher-routes; apply them from a Kustomization that
+# dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/sound-catcher
+  - ../../components/sound-catcher/sops
