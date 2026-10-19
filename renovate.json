@@ -132,6 +132,17 @@
       "allowedVersions": "!/^v1\\.0\\.0$/"
     },
     {
+      "description": "Skip the orphaned homerun2-sound-catcher v1.0.0 (image and kustomize artifact). It was built 2026-10-16 from the repository's initial commit, before the v0.x releases -- homerun2-sound-catcher has no v1.0.0 git tag or release -- and has no BASE_PATH. stuttgart-things/stuttgart-things#3829 pinned it on platform-sthings and homerun2-portal's /sound/ answered 404. A real v1.0.1 still comes through.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/stuttgart-things/homerun2-sound-catcher",
+        "ghcr.io/stuttgart-things/homerun2-sound-catcher-kustomize"
+      ],
+      "allowedVersions": "!/^v1\\.0\\.0$/"
+    },
+    {
       "description": "Hold the redis chart at 17.x. 22.x refuses our redis-stack-server/redis-sentinel images without global.security.allowInsecureImages, moves the password to REDIS_PASSWORD_FILE and adds readOnlyRootFilesystem -- none of it tested with our start scripts. Every consumer runs 17.1.4 (apps/platform/components/homerun2/ks-homerun2-redis.yaml holds it on purpose); stuttgart-things/flux#355 was the renovate PR. Migrate deliberately, not via renovate.",
       "matchDatasources": [
         "docker"
