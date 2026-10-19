@@ -29,7 +29,7 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    operator.tekton.dev/release: v0.79.0
+    operator.tekton.dev/release: v0.81.2
   name: config-logging
   namespace: tekton-operator
 ---
@@ -40,7 +40,7 @@ data:
 kind: ConfigMap
 metadata:
   labels:
-    operator.tekton.dev/release: v0.79.0
+    operator.tekton.dev/release: v0.81.2
   name: tekton-config-defaults
   namespace: tekton-operator
 ---
@@ -55,6 +55,7 @@ data:
     #                              #
 
     ################################
+
 
     # This block is not actually functional configuration,
 
@@ -72,38 +73,77 @@ data:
 
     # to actually change the configuration.
 
-    # metrics.backend-destination field specifies the system metrics destination.
 
-    # It supports either prometheus (the default) or stackdriver.
+    # OpenTelemetry Metrics Configuration
 
-    # Note: Using Stackdriver will incur additional charges.
+    # Protocol for metrics export (prometheus, grpc, http/protobuf, none)
 
-    metrics.backend-destination: prometheus
+    # Default: prometheus
 
-    # metrics.stackdriver-project-id field specifies the Stackdriver project ID. This
+    metrics-protocol: prometheus
 
-    # field is optional. When running on GCE, application default credentials will
-    be
 
-    # used and metrics will be sent to the cluster''s project if this field is
+    # Metrics endpoint (for grpc/http protocols)
 
-    # not provided.
+    # Default: empty (uses default OTLP endpoint)
 
-    metrics.stackdriver-project-id: "<your stackdriver project id>"
+    metrics-endpoint: ""
 
-    # metrics.allow-stackdriver-custom-metrics indicates whether it is allowed
 
-    # to send metrics to Stackdriver using "global" resource type and custom
+    # Metrics export interval (e.g., "30s", "1m")
 
-    # metric type. Setting this flag to "true" could cause extra Stackdriver
+    # Default: empty (uses SDK default)
 
-    # charge.  If metrics.backend-destination is not Stackdriver, this is
+    metrics-export-interval: ""
 
-    # ignored.
 
-    metrics.allow-stackdriver-custom-metrics: "false"
+    # OpenTelemetry Tracing Configuration
+
+    # Protocol for tracing export (grpc, http/protobuf, none, stdout)
+
+    # Default: none
+
+    tracing-protocol: none
+
+
+    # Tracing endpoint (for grpc/http protocols)
+
+    # Default: empty
+
+    tracing-endpoint: ""
+
+
+    # Tracing sampling rate (0.0 to 1.0)
+
+    # Default: 1.0 (100% sampling)
+
+    tracing-sampling-rate: "1.0"
+
+
+    # Runtime Configuration
+
+    # Enable profiling (enabled, disabled)
+
+    # Default: disabled
+
+    runtime-profiling: disabled
+
+
+    # Runtime export interval (e.g., "15s")
+
+    # Default: 15s
+
+    runtime-export-interval: "15s"
+
+
+    # Note: Legacy OpenCensus configuration keys (metrics.backend-destination,
+
+    # metrics.stackdriver-project-id, metrics.allow-stackdriver-custom-metrics)
+
+    # are no longer recognized. Use the OpenTelemetry options above.
 
     '
+  metrics-protocol: prometheus
 kind: ConfigMap
 metadata:
   labels:
@@ -174,13 +214,13 @@ kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: default
-    operator.tekton.dev/release: v0.79.0
+    operator.tekton.dev/release: v0.81.2
   name: tekton-operator-controller-config-leader-election
   namespace: tekton-operator
 ---
 apiVersion: v1
 data:
-  version: v0.79.0
+  version: v0.81.2
 kind: ConfigMap
 metadata:
   labels:
@@ -251,7 +291,7 @@ kind: ConfigMap
 metadata:
   labels:
     app.kubernetes.io/instance: default
-    operator.tekton.dev/release: devel
+    operator.tekton.dev/release: v0.81.2
   name: tekton-operator-webhook-config-leader-election
   namespace: tekton-operator
 ---

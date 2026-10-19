@@ -3,7 +3,19 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - namespace.yaml
-  - crds.yaml
+  - crd-manualapprovalgates.yaml
+  - crd-openshiftpipelinesascodes.yaml
+  - crd-syncerservices.yaml
+  - crd-tektonchains.yaml
+  - crd-tektonconfigs.yaml
+  - crd-tektondashboards.yaml
+  - crd-tektoninstallersets.yaml
+  - crd-tektonmulticlusterproxyaaes.yaml
+  - crd-tektonpipelines.yaml
+  - crd-tektonpruners.yaml
+  - crd-tektonresults.yaml
+  - crd-tektonschedulers.yaml
+  - crd-tektontriggers.yaml
   - rbac.yaml
   - config.yaml
   - deployment.yaml

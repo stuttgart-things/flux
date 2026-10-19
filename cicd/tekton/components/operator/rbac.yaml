@@ -39,21 +39,6 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: tekton-multicluster-proxy-aae-role
-rules:
-- apiGroups:
-  - kueue.x-k8s.io
-  resources:
-  - workloads
-  - multikueueclusters
-  verbs:
-  - get
-  - list
-  - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
   name: tekton-operator
 rules:
 - apiGroups:
@@ -91,6 +76,18 @@ rules:
   resources:
   - ingresses
   - ingresses/status
+  verbs:
+  - delete
+  - create
+  - patch
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
   verbs:
   - delete
   - create
@@ -154,6 +151,8 @@ rules:
   - delete
   - list
   - watch
+  - bind
+  - escalate
 - apiGroups:
   - ''
   resources:
@@ -466,6 +465,26 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  name: tekton-pac-controller-role
+rules:
+- apiGroups:
+  - pipelinesascode.tekton.dev
+  resources:
+  - repositories
+  - webhooks
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+  - deletecollection
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
   name: tekton-result-read-role
 rules:
 - apiGroups:
@@ -490,6 +509,7 @@ rules:
   - workloads/finalizers
   - workloads/status
   - workloadpriorityclasses
+  - multikueueclusters
   verbs:
   - get
   - list
@@ -553,11 +573,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: tekton-multicluster-proxy-aae-rolebinding
+  name: tekton-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: tekton-multicluster-proxy-aae-role
+  name: tekton-operator
 subjects:
 - kind: ServiceAccount
   name: tekton-operator
@@ -566,11 +586,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: tekton-operator
+  name: tekton-pac-controller-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: tekton-operator
+  name: tekton-pac-controller-role
 subjects:
 - kind: ServiceAccount
   name: tekton-operator
@@ -598,6 +618,6 @@ roleRef:
   kind: ClusterRole
   name: tekton-scheduler-role
 subjects:
-- apiGroup: rbac.authorization.k8s.io
-  kind: Group
-  name: system:authenticated
+- kind: ServiceAccount
+  name: tekton-operator
+  namespace: tekton-operator
