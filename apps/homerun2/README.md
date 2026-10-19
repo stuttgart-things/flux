@@ -131,6 +131,7 @@ Version defaults are not repeated in these tables. Each component pins them in `
 |----------|---------|----------|---------|
 | `HOMERUN2_CORE_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CORE_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag (use `-web` suffix for web mode) |
+| `HOMERUN2_CORE_CATCHER_BASE_PATH` | *(empty)* | no | `BASE_PATH`, e.g. `/core` behind homerun2-portal (v1.1.0 or later). Set, the dashboard answers only under it, on its own hostname too (`/` redirects there); `/health` stays at the root |
 | `HOMERUN2_CORE_CATCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
 
 ### K8s Pitcher
