@@ -96,3 +96,9 @@ spec:
                       value: "6379"
                     - name: CATCHER_MODE
                       value: "web"
+                    # URL prefix behind homerun2-portal, which serves the
+                    # dashboard under /core/ (v1.1.0 or later). Set, the app
+                    # answers only under it -- also on its own hostname, where
+                    # / redirects there. Empty serves at the root.
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_CORE_CATCHER_BASE_PATH:=}"
