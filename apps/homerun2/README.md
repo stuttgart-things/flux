@@ -220,6 +220,7 @@ The redis password comes from the store like the other catchers' (`eso/`) or fro
 | `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
 | `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
+| `HOMERUN2_CONFIG_VIEWER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/config` behind homerun2-portal (v0.3.0+); `/health` and `/healthz` stay at the root |
 
 ### Portal
 
