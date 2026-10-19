@@ -120,3 +120,10 @@ spec:
                     # in their own stream adds it here, e.g. messages,alerts.
                     - name: REDIS_STREAMS
                       value: "${HOMERUN2_LIGHT_CATCHER_STREAMS:=messages}"
+                    # URL prefix behind homerun2-portal, which serves the
+                    # dashboard under /light/ (v1.9.0 or later). Set, the
+                    # dashboard answers only under it -- also on its own
+                    # hostname, where / redirects there. Empty serves at the
+                    # root; /health and /healthz stay at the root either way.
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_LIGHT_CATCHER_BASE_PATH:=}"
