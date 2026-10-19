@@ -118,3 +118,11 @@ spec:
                         secretKeyRef:
                           name: homerun2-omni-pitcher-token
                           key: auth-token
+                    # URL prefix behind homerun2-portal, which serves the
+                    # composer under /pitch/ (v2.1.0 or later). Set, the whole
+                    # surface moves under it -- the /pitch API too, which
+                    # becomes <prefix>/pitch -- also on its own hostname,
+                    # where / redirects there. Empty serves at the root;
+                    # /health stays at the root either way.
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_DEMO_PITCHER_BASE_PATH:=}"
