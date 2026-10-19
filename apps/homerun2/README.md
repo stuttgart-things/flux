@@ -186,6 +186,7 @@ Shares the version variables above.
 | `HOMERUN2_LED_CATCHER_PROFILE_CM` | `homerun2-led-catcher-profile` | no | ConfigMap (key `profile.yaml`) mounted as the display profile; the default is the base's own |
 | `HOMERUN2_LED_CATCHER_IDLE` | `off` | no | Idle screen: `off` or `clock` |
 | `HOMERUN2_LED_CATCHER_TZ` | `UTC` | no | Time zone of the idle clock and the card's HH:MM, e.g. `Europe/Berlin` |
+| `HOMERUN2_LED_CATCHER_BASE_PATH` | *(empty)* | no | `BASE_PATH`, e.g. `/led` behind homerun2-portal. Set, the app answers only under it, on its own hostname too (`led-catcher.<domain>/led/`); `/healthz` stays at the root |
 
 ### Sound Catcher
 

@@ -53,7 +53,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-led-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.16.0}
+                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.18.1}
     # Override Redis connection
     - target:
         kind: Deployment
@@ -90,6 +90,12 @@ spec:
                       value: "${HOMERUN2_LED_CATCHER_IDLE:=off}"
                     - name: TZ
                       value: "${HOMERUN2_LED_CATCHER_TZ:=UTC}"
+                    # URL prefix behind homerun2-portal, which serves the
+                    # simulator under /led/ (v0.18.0 or later). Set, the app
+                    # answers only under it -- also on its own hostname.
+                    # Empty serves at the root.
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_LED_CATCHER_BASE_PATH:=}"
     # The profile -- which display rule for which event -- is the caller's to
     # supply, as for light-catcher. Unset, the Deployment mounts the base's own
     # ConfigMap. Set it to a ConfigMap the cluster repo ships (key
