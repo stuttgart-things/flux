@@ -1,0 +1,10 @@
+---
+# HTTPRoute for profiles/portal, applied after it is Ready (Cilium resolves a
+# route's backendRefs once; see profiles/base-led-catcher-routes).
+#
+# Substitutes DOMAIN, GATEWAY_NAME, GATEWAY_NAMESPACE and
+# HOMERUN2_PORTAL_HOSTNAME.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/portal/route

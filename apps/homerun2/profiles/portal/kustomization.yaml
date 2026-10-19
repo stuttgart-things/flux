@@ -1,0 +1,11 @@
+---
+# The portal on its own, as an add-on to any profile (base, sops, platform):
+# it holds no secrets, so there is no eso/sops variant to choose.
+#
+# Set HOMERUN2_PORTAL_SERVICES to the services it should front, and run each
+# of them with BASE_PATH=/<key>. HTTPRoute is in profiles/portal-routes; apply
+# it from a Kustomization that dependsOn this one.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/portal
