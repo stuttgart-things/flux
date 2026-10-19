@@ -1,0 +1,7 @@
+---
+# portal: its HTTPRoute, as a component of its own -- applied after the app's
+# Kustomization is Ready, for the reason in ../../led-catcher/route.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

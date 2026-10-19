@@ -51,6 +51,7 @@ Homerun2 application stack using Kustomize Components pattern. Deploys Redis Sta
 | `git-pitcher` | OCIRepository + Flux Kustomization | Watches Git repositories and pitches events to Redis Streams |
 | `notification-catcher` | OCIRepository + Flux Kustomization | Redis Streams consumer that forwards messages as notifications |
 | `config-viewer` | OCIRepository + Flux Kustomization | Read-only view of which alert triggers what in which catcher (reads the Kubernetes API, not Redis) |
+| `portal` | OCIRepository + Flux Kustomization | Single web frontend: shell with service status, reverse proxy serving each service UI under `/<key>/` |
 
 ## Profiles
 
@@ -63,6 +64,8 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | `profiles/sops` | profiles/base + led-catcher, light-catcher, wled-mock, demo-pitcher, config-viewer | The whole stack on the sops path, as one Kustomization. Needs only the Secret keys `profiles/base` needs |
 | `profiles/sops-routes` | HTTPRoutes for all eight of them | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
 | `profiles/sops-light-catcher-tabletennis` | light-catcher-tabletennis + its `sops/` | **Add-on** to `profiles/sops`: the table tennis light-catcher in its own namespace. Needs `HOMERUN2_REDIS_PASSWORD_B64`; its route is `profiles/platform-light-catcher-tabletennis-routes` |
+| `profiles/portal` | portal | **Add-on** to any profile: holds no secrets, so it fits the eso and the sops path alike. Each service in `HOMERUN2_PORTAL_SERVICES` must run with `BASE_PATH=/<key>` |
+| `profiles/portal-routes` | HTTPRoute for portal | **Add-on** to `profiles/portal`: a second Kustomization with `dependsOn` on it |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
 | *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
 
@@ -212,6 +215,14 @@ The redis password comes from the store like the other catchers' (`eso/`) or fro
 | `HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
 | `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
+
+### Portal
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_PORTAL_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
+| `HOMERUN2_PORTAL_HOSTNAME` | `portal` | no | HTTPRoute hostname prefix; the portal takes the whole hostname |
+| `HOMERUN2_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | no | `PORTAL_SERVICES`: comma-separated `key=url` (or `key\|Title=url`), in navigation order. Each service is served under `/<key>/` and must run with `BASE_PATH=/<key>` (led-catcher: v0.18.0 or later) |
 
 ### Scout
 

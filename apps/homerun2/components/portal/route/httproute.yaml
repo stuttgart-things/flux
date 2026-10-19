@@ -1,0 +1,22 @@
+---
+# The portal takes the whole hostname: its own pages at /, every service
+# under /<key>/ through its reverse proxy.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: homerun2-portal
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - ${HOMERUN2_PORTAL_HOSTNAME:-portal}.${DOMAIN}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: homerun2-portal
+          port: 80
