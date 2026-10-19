@@ -36,3 +36,5 @@ spec:
       HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.2.3}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer
       HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.2.3}"
+      # /config behind homerun2-portal (v0.3.0+); empty serves at the root.
+      HOMERUN2_CONFIG_VIEWER_BASE_PATH: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:=}"

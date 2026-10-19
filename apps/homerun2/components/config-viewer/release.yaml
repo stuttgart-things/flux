@@ -40,3 +40,11 @@ spec:
               containers:
                 - name: homerun2-config-viewer
                   image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.2.3}
+                  # URL prefix behind homerun2-portal, which serves the UI
+                  # under /config/ (v0.3.0 or later). Set, the UI and its API
+                  # answer only under it -- also on its own hostname, where /
+                  # redirects there. Empty serves at the root; /health and
+                  # /healthz stay at the root either way.
+                  env:
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:=}"
