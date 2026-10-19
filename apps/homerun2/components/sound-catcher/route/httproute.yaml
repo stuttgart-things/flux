@@ -14,10 +14,11 @@ spec:
     # The player page's event stream (SSE) is one long response. Without a
     # timeout of its own, Envoy ends it after its route default and the page
     # reconnects again and again (it catches up, but with gaps). 0s: none.
+    # Under the catcher's BASE_PATH, as the page asks for it there.
     - matches:
         - path:
             type: PathPrefix
-            value: /api/events
+            value: ${HOMERUN2_SOUND_CATCHER_BASE_PATH:=}/api/events
       timeouts:
         request: 0s
       backendRefs:

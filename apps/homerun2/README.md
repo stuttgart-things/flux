@@ -172,6 +172,7 @@ Shares the version variables above.
 |----------|---------|----------|---------|
 | `HOMERUN2_WLED_MOCK_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_WLED_MOCK_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+| `HOMERUN2_WLED_MOCK_BASE_PATH` | *(empty)* | no | URL prefix of the dashboard, e.g. `/wled` behind homerun2-portal (v1.10.0+). The WLED API `/json/...`, `/health` and `/healthz` stay at the root too |
 
 ### Demo Pitcher
 
@@ -201,6 +202,7 @@ Shares the version variables above.
 | `HOMERUN2_SOUND_CATCHER_HOSTNAME` | `sound-catcher` | no | HTTPRoute hostname prefix of the player page |
 | `HOMERUN2_SOUND_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated |
 | `HOMERUN2_SOUND_CATCHER_PROFILE_CM` | `homerun2-sound-catcher-profile` | no | ConfigMap (key `profile.yaml`) with the sound rules; the default is the base's own |
+| `HOMERUN2_SOUND_CATCHER_BASE_PATH` | *(empty)* | no | URL prefix of the player page, e.g. `/sound` behind homerun2-portal (v0.4.0+); `/health` stays at the root. Set it on the routes Kustomization too: its SSE rule matches `<BASE_PATH>/api/events` |
 | `HOMERUN2_SOUND_CATCHER_SUSPEND` | `false` | no | Suspend both Kustomizations |
 
 The redis password comes from the store like the other catchers' (`eso/`) or from `HOMERUN2_REDIS_PASSWORD_B64` (`sops/`). The `/play` token and S3 sounds are not wired yet: both are optional in the Deployment, and an ExternalSecret for a store entry that does not exist would hold the Kustomization not-Ready.
