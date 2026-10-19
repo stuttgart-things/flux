@@ -126,12 +126,18 @@ unchanged, so `components/dashboard-httproute` needs no change.
   New in v0.80: the operator's defaulting webhook sets
   `spec.platforms.kubernetes.pipelinesAsCode.enable: true` when the field is
   absent, and the operator then installs the PAC controller, watcher and webhook
-  into the target namespace (new CRD `openshiftpipelinesascodes`). To keep it
+  into the target namespace (new CRD `openshiftpipelinesascodes`). During the
+  upgrade itself the TektonConfig is applied while the v0.79 webhook still
+  serves, so PAC appears only on the NEXT write of the TektonConfig (next Flux
+  reconcile) -- seen on kind: three `pipelines-as-code-*` Deployments, Ready
+  after ~1 minute, `TektonConfig` back to `Ready`. To keep it
   off, set `platforms.kubernetes.pipelinesAsCode.enable: false` in the
   TektonConfig -- but only once the cluster runs v0.81: the v0.79 webhook rejects
   `spec.platforms.kubernetes` as an unknown field, and since `./cicd/tekton`
   applies operator and TektonConfig together, shipping both in one change would
-  fail the dry-run before the operator could be upgraded.
+  fail the dry-run before the operator could be upgraded. (Verified on kind:
+  `enable: false` on v0.81.2 removes the PAC CR and Deployments within ~20 s,
+  and the value is not flipped back by the defaulting webhook.)
 - **Operator-managed NetworkPolicies, on by default.** Pipelines, Triggers,
   Chains, Results, Pruner and the proxy-webhook get default-deny plus allow
   policies in the target namespace. Egress stays open (the "API server" rule is
@@ -199,10 +205,16 @@ TektonConfig   Components not in ready state: TektonTrigger: reconcile again and
 TektonTrigger  Ready=True   (all sub-conditions True, all three pods Running)
 ```
 
-That did **not** reproduce on operator **v0.79.0** (not re-measured on v0.81.2). After switching a live
+That did **not** reproduce on operator **v0.79.0** when switching a live
 cluster to `beta`: `TektonConfig` reported `beta`, `TektonTrigger` kept
 `stable`, every component stayed `Ready`, and the operator logged zero requeue
 messages.
+
+A **fresh** v0.79.0 install, however, did loop: on kind (2026-10-19) with this
+component's defaults, `TektonConfig` sat at `TektonTrigger: reconcile again and
+proceed` for 15 minutes while `TektonTrigger` itself was `Ready` with `stable`.
+After upgrading that same cluster to **v0.81.2** it went `Ready` within two
+minutes, `enable-api-fields: beta` on the pipeline and `stable` on Triggers.
 
 So the trade is no longer "beta risks a stuck operator" but "stable guarantees
 no AnsibleRun runs". If the loop returns on some operator version, set
