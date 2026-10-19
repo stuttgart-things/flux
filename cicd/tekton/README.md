@@ -1,6 +1,6 @@
 # stuttgart-things/flux/cicd/tekton
 
-Deploys the [Tekton Operator](https://tekton.dev/docs/operator/) v0.79.0 via vendored manifests + TektonConfig CR.
+Deploys the [Tekton Operator](https://tekton.dev/docs/operator/) v0.81.2 via vendored manifests + TektonConfig CR.
 
 ## Components
 
@@ -87,13 +87,63 @@ EOF
 
 ## Updating the Operator
 
-To update to a new version, download and re-split the release manifest:
+To update to a new version, re-vendor the upstream Kubernetes `release.yaml`
+(not `openshift-release.yaml`) with the script, then review the diff:
 
 ```bash
-VERSION=v0.79.0
-curl -sL "https://infra.tekton.dev/tekton-releases/operator/previous/${VERSION}/release.yaml" > /tmp/tekton-release.yaml
-# Then split by kind into components/operator/*.yaml
+hack/vendor-tekton-operator.py v0.81.2
+git diff --stat cicd/tekton/components/operator
 ```
+
+The script downloads
+`https://infra.tekton.dev/tekton-releases/operator/previous/<VERSION>/release.yaml`,
+splits it by kind into `components/operator/` (one `crd-<plural>.yaml` per CRD)
+and rewrites that directory's `kustomization.yaml`. Keep the directory flat:
+the Argo CD catalog (`stuttgart-things/argocd` `cicd/tekton/operator`) reads it
+as a `directory:` source with `recurse: false`, pinned to a flux tag -- move that
+pin after the release that carries the re-vendor.
+
+Then update the version in `components/operator/README.md` and here, and read
+the operator release notes between the old and new version for changes to the
+`TektonConfig` fields in `components/config/tekton-config.yaml`.
+
+### Upgrade notes v0.79.0 -> v0.81.2
+
+Bundled components move: Pipeline v1.10.0 -> v1.15.3, Triggers v0.35.0 -> v0.37.1,
+Dashboard v0.66.0 -> v0.71.0, Chains v0.26.2 -> v0.29.7, Results v0.18.0 -> v0.20.0,
+Pruner v0.3.5 -> v0.4.3. The Dashboard Service (`tekton-dashboard:9097`) is
+unchanged, so `components/dashboard-httproute` needs no change.
+
+- **CRDs now carry full OpenAPI schemas.** Up to v0.79 every CRD was
+  `x-kubernetes-preserve-unknown-fields: true`; now a misspelled or unknown
+  `TektonConfig` field is pruned by the API server instead of being kept. Every
+  field in `components/config/tekton-config.yaml` exists in the v0.81.2 schema
+  with the type the substitutions produce (`pruner.disabled` bool,
+  `pruner.keep-since` int, `pipeline.*` strings, `result.disabled` bool).
+- **`TektonHub` is gone** (CRD and reconciler). The CRD is no longer vendored, so
+  `prune: true` deletes it -- and any `TektonHub` objects with it.
+- **Pipelines-as-Code is installed by default on Kubernetes with `profile: all`.**
+  New in v0.80: the operator's defaulting webhook sets
+  `spec.platforms.kubernetes.pipelinesAsCode.enable: true` when the field is
+  absent, and the operator then installs the PAC controller, watcher and webhook
+  into the target namespace (new CRD `openshiftpipelinesascodes`). To keep it
+  off, set `platforms.kubernetes.pipelinesAsCode.enable: false` in the
+  TektonConfig -- but only once the cluster runs v0.81: the v0.79 webhook rejects
+  `spec.platforms.kubernetes` as an unknown field, and since `./cicd/tekton`
+  applies operator and TektonConfig together, shipping both in one change would
+  fail the dry-run before the operator could be upgraded.
+- **Operator-managed NetworkPolicies, on by default.** Pipelines, Triggers,
+  Chains, Results, Pruner and the proxy-webhook get default-deny plus allow
+  policies in the target namespace. Egress stays open (the "API server" rule is
+  allow-all), webhooks accept ingress from anywhere, but **metrics ingress is
+  allowed only from the namespace named `monitoring`** -- a Prometheus elsewhere
+  stops scraping these pods. Opt out with `spec.networkPolicy.disabled: true`
+  on the TektonConfig (propagated to every component; override single
+  policies by name with `spec.networkPolicy.policies`). Like the PAC switch,
+  that field is unknown to the v0.79 webhook -- set it only after the upgrade.
+- **Operator metrics moved to OpenTelemetry** (`kn_workqueue_*` instead of
+  `tekton_operator_lifecycle_*`); `tekton-config-observability` only ships an
+  `_example` here, so nothing to migrate.
 
 ## Profiles
 
@@ -149,7 +199,7 @@ TektonConfig   Components not in ready state: TektonTrigger: reconcile again and
 TektonTrigger  Ready=True   (all sub-conditions True, all three pods Running)
 ```
 
-That did **not** reproduce on operator **v0.79.0**. After switching a live
+That did **not** reproduce on operator **v0.79.0** (not re-measured on v0.81.2). After switching a live
 cluster to `beta`: `TektonConfig` reported `beta`, `TektonTrigger` kept
 `stable`, every component stayed `Ready`, and the operator logged zero requeue
 messages.

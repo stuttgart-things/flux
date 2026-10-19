@@ -1,8 +1,10 @@
 # tekton/components/operator
 
-Tekton Operator v0.79.0 — installs the operator that manages Tekton Pipelines, Triggers, Dashboard, and Chains.
+Tekton Operator v0.81.2 — installs the operator that manages Tekton Pipelines, Triggers, Dashboard, and Chains.
 
-Vendored from: `https://infra.tekton.dev/tekton-releases/operator/previous/v0.79.0/release.yaml`
+Vendored from: `https://infra.tekton.dev/tekton-releases/operator/previous/v0.81.2/release.yaml`
+(the Kubernetes `release.yaml`), split by `hack/vendor-tekton-operator.py v0.81.2` --
+do not edit these files by hand, re-run the script.
 
 ## Flux Kustomization
 
@@ -39,7 +41,7 @@ spec:
 | File | Contents |
 |---|---|
 | `namespace.yaml` | `tekton-operator` Namespace |
-| `crds.yaml` | 13 CRDs (TektonConfig, TektonPipeline, TektonTrigger, etc.) |
+| `crd-<plural>.yaml` | 13 CRDs, one per file (TektonConfig, TektonPipeline, TektonTrigger, etc.) -- a single file would exceed pre-commit's 500 KB limit |
 | `rbac.yaml` | ServiceAccount, Roles, ClusterRoles, Bindings (13 resources) |
 | `config.yaml` | ConfigMaps + webhook Secret (7 resources) |
 | `deployment.yaml` | Operator + Webhook Deployments and Services (4 resources) |

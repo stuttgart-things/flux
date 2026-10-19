@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     app: tekton-pipelines-controller
-    version: v0.79.0
+    version: v0.81.2
   name: tekton-operator
   namespace: tekton-operator
 spec:
@@ -22,8 +22,8 @@ metadata:
   labels:
     app: tekton-operator
     name: tekton-operator-webhook
-    operator.tekton.dev/release: devel
-    version: devel
+    operator.tekton.dev/release: v0.81.2
+    version: v0.81.2
   name: tekton-operator-webhook
   namespace: tekton-operator
 spec:
@@ -39,8 +39,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.79.0
-    version: v0.79.0
+    operator.tekton.dev/release: v0.81.2
+    version: v0.81.2
   name: tekton-operator
   namespace: tekton-operator
 spec:
@@ -57,7 +57,7 @@ spec:
       containers:
       - args:
         - -controllers
-        - tektonconfig,tektonpipeline,tektontrigger,tektonhub,tektonchain,tektonresult,tektondashboard,manualapprovalgate,tektonpruner,tektonscheduler,tektonmulticlusterproxyaae
+        - tektonconfig,tektonpipeline,tektontrigger,tektonchain,tektonresult,tektondashboard,manualapprovalgate,tektonpruner,tektonscheduler,tektonmulticlusterproxyaae,openshiftpipelinesascode
         - -unique-process-name
         - tekton-operator-lifecycle
         env:
@@ -74,13 +74,13 @@ spec:
         - name: OPERATOR_NAME
           value: tekton-operator
         - name: IMAGE_PIPELINES_PROXY
-          value: ghcr.io/tektoncd/operator/proxy-webhook-f6167da7bc41b96a27c5529f850e63d1:v0.79.0@sha256:fd1311731585e2be65571d04a6a6c5b822723236aa76a0768bb42f2477bee3f1
+          value: ghcr.io/tektoncd/operator/proxy-webhook-f6167da7bc41b96a27c5529f850e63d1:v0.81.2@sha256:7608451691bedad4b658c7744d7f7209f0836047d95528e290ac6d3c5e941fcd
         - name: IMAGE_JOB_PRUNER_TKN
           value: ghcr.io/tektoncd/plumbing/tkn@sha256:233de6c8b8583a34c2379fa98d42dba739146c9336e8d41b66030484357481ed
         - name: METRICS_DOMAIN
           value: tekton.dev/operator
         - name: VERSION
-          value: v0.79.0
+          value: v0.81.2
         - name: CONFIG_OBSERVABILITY_NAME
           value: tekton-config-observability
         - name: CONFIG_LEADERELECTION_NAME
@@ -95,7 +95,7 @@ spec:
             configMapKeyRef:
               key: DEFAULT_TARGET_NAMESPACE
               name: tekton-config-defaults
-        image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.79.0@sha256:bc90657a93a35b4046ef4fbfc236ecd38c0ea46feea20a44a69f44110731de01
+        image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.2@sha256:f7919734a3cca12033e46f31ff03f2686163c3414e81ad98bc89dea1b8667157
         imagePullPolicy: IfNotPresent
         name: tekton-operator-lifecycle
         securityContext:
@@ -127,12 +127,12 @@ spec:
         - name: PROFILING_PORT
           value: '9009'
         - name: VERSION
-          value: v0.79.0
+          value: v0.81.2
         - name: METRICS_DOMAIN
           value: tekton.dev/operator
         - name: CONFIG_LEADERELECTION_NAME
           value: tekton-operator-controller-config-leader-election
-        image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.79.0@sha256:bc90657a93a35b4046ef4fbfc236ecd38c0ea46feea20a44a69f44110731de01
+        image: ghcr.io/tektoncd/operator/operator-303303c315a48490ba6517859ef65b77:v0.81.2@sha256:f7919734a3cca12033e46f31ff03f2686163c3414e81ad98bc89dea1b8667157
         imagePullPolicy: IfNotPresent
         name: tekton-operator-cluster-operations
         securityContext:
@@ -149,8 +149,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    operator.tekton.dev/release: v0.79.0
-    version: v0.79.0
+    operator.tekton.dev/release: v0.81.2
+    version: v0.81.2
   name: tekton-operator-webhook
   namespace: tekton-operator
 spec:
@@ -186,7 +186,7 @@ spec:
           value: tekton-operator-webhook-certs
         - name: METRICS_DOMAIN
           value: tekton.dev/operator
-        image: ghcr.io/tektoncd/operator/webhook-f2bb711aa8f0c0892856a4cbf6d9ddd8:v0.79.0@sha256:1096920eeb1ad279f4f7e69cec6bf96d8b48a4f038b02f36f7b54ce073e6b0a5
+        image: ghcr.io/tektoncd/operator/webhook-f2bb711aa8f0c0892856a4cbf6d9ddd8:v0.81.2@sha256:d51fd5201809fb71b85a574c490ea2cba68fcb222d7b1734e2a404bf16d4e28e
         name: tekton-operator-webhook
         ports:
         - containerPort: 8443
