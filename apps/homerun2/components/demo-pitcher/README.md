@@ -14,6 +14,7 @@ Browser → demo-pitcher Web UI → Redis Streams → core-catcher / light-catch
 |----------|---------|----------|---------|
 | `HOMERUN2_DEMO_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+| `HOMERUN2_DEMO_PITCHER_BASE_PATH` | *(empty)* | no | URL prefix, e.g. `/pitch` behind homerun2-portal (v2.1.0+); moves the `/pitch` API to `<prefix>/pitch`. Empty serves at the root |
 | `HOMERUN2_REDIS_PASSWORD_B64` | - | yes | Base64-encoded Redis password (from `substituteFrom` Secret) |
 
 ## Resources

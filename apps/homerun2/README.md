@@ -182,6 +182,7 @@ Shares the version variables above.
 |----------|---------|----------|---------|
 | `HOMERUN2_DEMO_PITCHER_VERSION` | see `requirements.yaml` | no | OCI kustomize base + container image tag |
 | `HOMERUN2_DEMO_PITCHER_HOSTNAME` | - | yes | HTTPRoute hostname prefix |
+| `HOMERUN2_DEMO_PITCHER_BASE_PATH` | *(empty)* | no | URL prefix, e.g. `/pitch` behind homerun2-portal (v2.1.0+); the `/pitch` API moves to `<prefix>/pitch`, `/health` stays at the root |
 
 ### LED Catcher
 
