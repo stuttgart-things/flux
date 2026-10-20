@@ -48,3 +48,23 @@ patches:
             - op: add
               path: /data/BUTTONS_URL
               value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${LINK_DOMAIN:-${DOMAIN}}"
+  # Its part on the dev portal, when zaehlwerk-portal-on is selected too
+  # (it comes first in the bundles); a no-op target otherwise.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk-portal
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-portal-config
+          patch: |
+            - op: add
+              path: /data/BUTTONS_URL
+              value: "http://zaehlwerk-buttons-sim"
+            - op: add
+              path: /data/BUTTONS_PUBLIC_URL
+              value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${LINK_DOMAIN:-${DOMAIN}}"

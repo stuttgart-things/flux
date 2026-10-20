@@ -65,3 +65,23 @@ patches:
             - op: add
               path: /data/PONG_URL
               value: "https://${ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.${LINK_DOMAIN:-${DOMAIN}}"
+  # Its part on the dev portal, when zaehlwerk-portal-on is selected too
+  # (it comes first in the bundles); a no-op target otherwise.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk-portal
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-portal-config
+          patch: |
+            - op: add
+              path: /data/PONG_URL
+              value: "http://zaehlwerk-pong"
+            - op: add
+              path: /data/PONG_PUBLIC_URL
+              value: "https://${ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong}.${LINK_DOMAIN:-${DOMAIN}}"

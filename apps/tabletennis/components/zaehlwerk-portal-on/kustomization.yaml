@@ -1,0 +1,27 @@
+---
+# zaehlwerk-portal-on -- the dev portal next to zaehlwerk (zaehlwerk
+# tools/chain-mock/portal, image zaehlwerk-portal, base
+# zaehlwerk-portal-kustomize from zaehlwerk kcl/portal). Selected with
+# TABLETENNIS_ZAEHLWERK_PORTAL: on.
+#
+# One page for the table at https://<ZAEHLWERK_PORTAL_HOSTNAME>.<DOMAIN>:
+# whether zaehlwerk, schmetterpause and whichever of pong, the table mock and
+# the piezo-sim are selected are up; their own pages side by side in frames;
+# the running match with a button to end it; zaehlwerk's table stream as it
+# happens. Parts that are not selected are not on the page at all.
+#
+# THE PAGE ENDS MATCHES, and it is not behind a login -- no more than
+# zaehlwerk's own route allows, which is why it sits on the same gateway and
+# listener. For demo, test and lab clusters and the people at the table.
+#
+# A frame is the part's own page. A login cookie is not sent into a frame
+# from another site, so schmetterpause framed from here shows signed out
+# where its host is on another domain; "Open" above the frame opens it.
+#
+# REQUIRES ZAEHLWERK v0.29.0 OR LATER: the image and its base exist from that
+# release on.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - requirements.yaml
+  - release.yaml
