@@ -1,0 +1,15 @@
+---
+# The portal's own kustomize base, rendered from zaehlwerk kcl/portal and
+# published with every zaehlwerk release. Its own variable rather than
+# ZAEHLWERK_VERSION, as the sims have theirs: the portal is a tool, and a
+# cluster may hold it back or move it on without touching the scorekeeper.
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: zaehlwerk-portal-kustomize
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/zaehlwerk-portal-kustomize
+  ref:
+    tag: ${ZAEHLWERK_PORTAL_VERSION:-v0.29.0}

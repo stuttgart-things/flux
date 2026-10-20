@@ -1,0 +1,77 @@
+---
+# The portal next to zaehlwerk, from its own base. Patched the way zaehlwerk's
+# release.yaml patches its base: the route onto this layer's gateway and host,
+# and the ConfigMap's parts onto this cluster's addresses.
+#
+# Every part is a pair in zaehlwerk-portal-config: <PART>_URL, where the
+# portal calls it (a Service), and <PART>_PUBLIC_URL, what a browser frames
+# (a route). The base ships every <PART>_URL but zaehlwerk's as "off"; this
+# file sets the two that are always here -- zaehlwerk and schmetterpause --
+# and zaehlwerk-pong-on, zaehlwerk-buttons-sim-on and zaehlwerk-piezo-sim-on
+# each add their own part to the patches below when they are selected. Which
+# is why this component comes BEFORE those three in the bundles: kustomize
+# applies components in order, and a patch whose target is not there yet
+# matches nothing, silently.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: zaehlwerk-portal
+  namespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: zaehlwerk-portal-kustomize
+  prune: true
+  wait: true
+  targetNamespace: ${ZAEHLWERK_NAMESPACE:-zaehlwerk}
+  patches:
+    # parentRefs is a list on a CRD: replaced, not merged -- so sectionName
+    # too, as in zaehlwerk's release.yaml.
+    - target:
+        kind: HTTPRoute
+        name: zaehlwerk-portal
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: zaehlwerk-portal
+        spec:
+          parentRefs:
+            - name: ${GATEWAY_NAME}
+              namespace: ${GATEWAY_NAMESPACE:-default}
+              sectionName: https
+          hostnames:
+            - ${ZAEHLWERK_PORTAL_HOSTNAME:-zaehlwerk-portal}.${DOMAIN}
+    # zaehlwerk by its Service, framed at its route. schmetterpause at the
+    # address zaehlwerk reports to, for both: that is an HTTPS route the pod
+    # reaches through trust-manager's bundle (the base mounts it) and a
+    # browser reaches as well. Quoted: an unquoted substitution that comes out
+    # empty is YAML null (hack/check-substitute-strings.py).
+    - target:
+        kind: ConfigMap
+        name: zaehlwerk-portal-config
+      patch: |
+        - op: replace
+          path: /data/ZAEHLWERK_URL
+          value: "http://zaehlwerk"
+        - op: add
+          path: /data/ZAEHLWERK_PUBLIC_URL
+          value: "https://${ZAEHLWERK_HOSTNAME:-zaehlwerk}.${LINK_DOMAIN:-${DOMAIN}}"
+        - op: replace
+          path: /data/SCHMETTERPAUSE_URL
+          value: "${ZAEHLWERK_SCHMETTERPAUSE_URL:-https://${SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${DOMAIN}}"
+    # Roll the portal when a selected part changes its ConfigMap; it reads
+    # it only at start. No-op without the Reloader.
+    - target:
+        kind: Deployment
+        name: zaehlwerk-portal
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: zaehlwerk-portal
+          annotations:
+            reloader.stakater.com/auto: "true"

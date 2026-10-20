@@ -75,6 +75,10 @@ spec:
     # without that player's own PIN). A component because "none" is the empty
     # string, which renders as YAML null (hack/check-substitute-strings.py).
     - ../../components/schmetterpause-admin-${TABLETENNIS_SCHMETTERPAUSE_ADMIN:-off}
+    # The dev portal: off or on. Before the sims and the game, because
+    # those add their own part to its ConfigMap when selected and kustomize
+    # applies components in order (zaehlwerk-portal-on/release.yaml).
+    - ../../components/zaehlwerk-portal-${TABLETENNIS_ZAEHLWERK_PORTAL:-off}
     # The piezo board simulator and the table mock: off or on each. No
     # credentials in either, so the components of ../tabletennis apply here
     # unchanged -- there is nothing for a sops variant to carry.
@@ -108,6 +112,11 @@ spec:
       ZAEHLWERK_BUTTONS_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}"
       ZAEHLWERK_BUTTONS_PIEZO_URL: "${TABLETENNIS_ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
       ZAEHLWERK_BUTTONS_DEVICE: "${TABLETENNIS_ZAEHLWERK_BUTTONS_DEVICE:-button}"
+      # Read only by zaehlwerk-portal-on. Its own version, as the sims have:
+      # the base zaehlwerk-portal-kustomize, published with zaehlwerk v0.29.0+.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-portal-kustomize
+      ZAEHLWERK_PORTAL_VERSION: "${TABLETENNIS_ZAEHLWERK_PORTAL_VERSION:-v0.29.0}"
+      ZAEHLWERK_PORTAL_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_PORTAL_HOSTNAME:-zaehlwerk-portal}"
       # Read only by zaehlwerk-pong-on/-attract; the same values as
       # ../tabletennis. The image follows zaehlwerk's version default.
       # The domain the pages' links point a browser at: zaehlwerk's Buttons and
