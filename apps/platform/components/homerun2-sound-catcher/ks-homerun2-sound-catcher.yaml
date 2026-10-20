@@ -36,7 +36,7 @@ spec:
       # One variable for the image and its -kustomize artifact, as for
       # led-catcher: renovate moves both in one PR.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-sound-catcher
-      HOMERUN2_SOUND_CATCHER_VERSION: "${HOMERUN2_SOUND_CATCHER_VERSION:-v0.6.0}"
+      HOMERUN2_SOUND_CATCHER_VERSION: "${HOMERUN2_SOUND_CATCHER_VERSION:-v0.6.1}"
       HOMERUN2_SOUND_CATCHER_STREAMS: "${HOMERUN2_SOUND_CATCHER_STREAMS:-messages}"
       HOMERUN2_SOUND_CATCHER_PROFILE_CM: "${HOMERUN2_SOUND_CATCHER_PROFILE_CM:-homerun2-sound-catcher-profile}"
       # /sound behind homerun2-portal (v0.4.0+). "/" is the root: an empty
