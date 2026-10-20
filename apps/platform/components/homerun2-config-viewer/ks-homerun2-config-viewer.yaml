@@ -33,8 +33,9 @@ spec:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer-kustomize
-      HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.4.1}"
+      HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION: "${HOMERUN2_CONFIG_VIEWER_KUSTOMIZE_VERSION:-v0.7.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer
-      HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.4.1}"
-      # /config behind homerun2-portal (v0.3.0+); empty serves at the root.
-      HOMERUN2_CONFIG_VIEWER_BASE_PATH: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:=}"
+      HOMERUN2_CONFIG_VIEWER_VERSION: "${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.7.0}"
+      # /config behind homerun2-portal (v0.3.0+). "/" is the root: an empty
+      # default would land as YAML null and fail the bundle.
+      HOMERUN2_CONFIG_VIEWER_BASE_PATH: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:-/}"

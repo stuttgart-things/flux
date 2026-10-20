@@ -1,0 +1,47 @@
+---
+# homerun2-portal → ./apps/homerun2/profiles/portal
+#
+# One page for the homerun2 services: a card per service with its status and
+# whatever it offers as a fragment, and each service's own UI under /<key>/.
+# It holds no secrets, so it sits next to ../homerun2 and ../homerun2-sops
+# alike.
+#
+# The portal only proxies. Every service in HOMERUN2_PORTAL_SERVICES must run
+# with BASE_PATH=/<key>, set where that service is deployed: e.g.
+# HOMERUN2_LED_CATCHER_BASE_PATH=/led for `led=http://homerun2-led-catcher`.
+# A service in another namespace is named with it, e.g.
+# `table=http://homerun2-light-catcher.homerun2-tabletennis` for
+# ../homerun2-light-catcher-tabletennis(-sops).
+#
+# REQUIRES ../homerun2 or ../homerun2-sops (the namespace), and Reloader for a
+# change of HOMERUN2_PORTAL_SERVICES to roll the pod.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-portal
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_PORTAL_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/portal
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-portal-kustomize
+      HOMERUN2_PORTAL_VERSION: "${HOMERUN2_PORTAL_VERSION:-v0.6.0}"
+      # `key=url` or `key|Title=url`, comma-separated, in navigation order.
+      HOMERUN2_PORTAL_SERVICES: "${HOMERUN2_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"

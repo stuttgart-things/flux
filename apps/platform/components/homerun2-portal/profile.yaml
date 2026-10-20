@@ -1,0 +1,19 @@
+---
+# AppProfile: what a cluster sets for homerun2-portal. Read by blueprints
+# `render-cluster-apps`; kept true by hack/check-app-profiles.py (vars and
+# keys) and `kcl vet` (value shapes). No Secret: the portal only proxies.
+kind: AppProfile
+metadata:
+  name: homerun2-portal
+spec:
+  bundle: apps-platform
+  component: ../components/homerun2-portal
+  vars:
+    INFRA_DOMAIN: { required: true }
+    HOMERUN2_NAMESPACE: {}
+    HOMERUN2_PORTAL_SUSPEND: {}
+    HOMERUN2_PORTAL_VERSION: {}
+    HOMERUN2_PORTAL_SERVICES: {}
+    HOMERUN2_PORTAL_HOSTNAME: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}

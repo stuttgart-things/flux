@@ -39,7 +39,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-config-viewer
-                  image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.4.1}
+                  image: ghcr.io/stuttgart-things/homerun2-config-viewer:${HOMERUN2_CONFIG_VIEWER_VERSION:-v0.7.0}
                   # URL prefix behind homerun2-portal, which serves the UI
                   # under /config/ (v0.3.0 or later). Set, the UI and its API
                   # answer only under it -- also on its own hostname, where /

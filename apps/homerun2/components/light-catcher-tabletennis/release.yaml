@@ -62,7 +62,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-light-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.10.0}
+                  image: ghcr.io/stuttgart-things/homerun2-light-catcher:${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.14.0}
                   env:
                     # redis stays where homerun2 runs; only this catcher moved.
                     - name: REDIS_ADDR
@@ -77,6 +77,13 @@ spec:
                     # splitting the table's points between them.
                     - name: CONSUMER_GROUP
                       value: homerun2-light-catcher-tabletennis
+                    # URL prefix behind homerun2-portal, which can serve this
+                    # dashboard under its own key next to the other
+                    # light-catcher's (v1.9.0 or later). Its own variable: the
+                    # two would otherwise answer under the same prefix. Empty
+                    # (or /) serves at the root.
+                    - name: BASE_PATH
+                      value: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_BASE_PATH:=}"
     # The whole profile, replacing the base's wildcard rules.
     #
     # First match wins, in document order (light-catcher v1.0.2+). zaehlwerk
