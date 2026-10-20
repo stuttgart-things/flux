@@ -77,7 +77,10 @@ data:
             { "label": "Provider",     "path": "spec.provider" },
             { "label": "Stage",        "path": "status.stage" },
             { "label": "StatusReady",  "path": "status.ready" },
-            { "label": "ArgoRegister", "path": "spec.rancher.argocd.register" }
+            { "label": "ArgoRegister", "path": "spec.rancher.argocd.register" },
+            { "label": "UID",               "path": "metadata.uid" },
+            { "label": "DeletionTimestamp", "path": "metadata.deletionTimestamp" },
+            { "label": "ResourceRefs",      "path": "spec.crossplane.resourceRefs" }
           ]
         },
         "Application": {

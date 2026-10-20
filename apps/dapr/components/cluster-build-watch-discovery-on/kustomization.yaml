@@ -1,0 +1,68 @@
+---
+# cluster-build-watch-discovery-on -- the worker finds ClusterStack builds and
+# teardowns on machinery itself, nobody writes a ClusterBuildWatch per order
+# (stuttgart-things/stuttgart-things#3831, dapr-workflows#60). Selected with
+# CLUSTER_BUILD_WATCH_DISCOVERY: on.
+#
+# REQUIRES ../cluster-build-watch EARLIER in the same spec.components list --
+# the patch below targets the Flux Kustomization that component renders.
+#
+# WHAT HAS TO BE TRUE FIRST:
+#   * a worker image with discovery (dapr-workflows 1378ce7 or later) via
+#     CLUSTER_BUILD_WATCH_VERSION. An older image ignores the variables.
+#   * the machinery named by CLUSTER_BUILD_WATCH_DISCOVERY_SERVER serves the
+#     ClusterStack info fields UID, DeletionTimestamp and ResourceRefs
+#     (cicd/machinery/watch-config.yaml). Without UID discovery runs and
+#     starts nothing; the worker logs every skipped stack.
+#   * that machinery checks a token: switch CLUSTER_BUILD_WATCH_MACHINERY_AUTH
+#     on as well. Discovery uses the same token as machinery-sourced watches.
+#
+# A cluster that is ALSO watched through a ClusterBuildWatch gets two watches
+# (different instance IDs): list it in CLUSTER_BUILD_WATCH_DISCOVERY_EXCLUDE.
+# That variable is the only opt-out today -- machinery cannot deliver the
+# annotation cluster-build-watch.stuttgart-things.com/watch (paths are split
+# on every dot).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: dapr-cluster-build-watch
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Deployment
+            name: cluster-build-watch
+          # `test` first, as for the statestore, homerun and auth patches.
+          patch: |
+            - op: test
+              path: /spec/template/spec/containers/0/name
+              value: workflow
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CLUSTER_BUILD_WATCH_DISCOVERY
+                value: "on"
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CLUSTER_BUILD_WATCH_DISCOVERY_SERVER
+                value: "${DAPR_CBW_DISCOVERY_SERVER:-machinery-grpc.machinery.4sthings.tiab.ssc.sva.de:443}"
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CLUSTER_BUILD_WATCH_DISCOVERY_GITOPS
+                value: "${DAPR_CBW_DISCOVERY_GITOPS:-flux-system/machinery-xrs}"
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CLUSTER_BUILD_WATCH_DISCOVERY_EXCLUDE
+                value: "${DAPR_CBW_DISCOVERY_EXCLUDE:-none}"
+            - op: add
+              path: /spec/template/spec/containers/0/env/-
+              value:
+                name: CLUSTER_BUILD_WATCH_DISCOVERY_LOOKBACK
+                value: "${DAPR_CBW_DISCOVERY_LOOKBACK:-30m}"

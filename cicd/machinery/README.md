@@ -59,7 +59,7 @@ The kinds and fields come from `config.json` in the `machinery-watch-config` Con
 
 | kind | shown |
 |---|---|
-| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP; `Stage`, `StatusReady` (`status.ready`) and `ArgoRegister` (`spec.rancher.argocd.register`) also as info fields, so a gRPC client gets them as keys instead of parsing `connection_details` |
+| `ClusterStack` | `status.stage` — the one field to look at when a build is stuck — plus endpoint, domain and IP; `Stage`, `StatusReady` (`status.ready`) and `ArgoRegister` (`spec.rancher.argocd.register`) also as info fields, so a gRPC client gets them as keys instead of parsing `connection_details`; `UID`, `DeletionTimestamp` and `ResourceRefs` (`spec.crossplane.resourceRefs`) for cluster-build-watch's discovery and teardown watch (stuttgart-things#3831) |
 | `Kustomization` | Flux: last applied and attempted revision, path — whether an order in git has reached the cluster yet |
 | `Application` | Argo CD: project, sync and health status, last operation phase, revision(s), destination name/server — for the Argo checkpoint of cluster-build-watch (`Project` is the per-cluster AppProject; generated Applications carry no cluster label). Not served on clusters without Argo CD, which machinery tolerates (re-probed every 30 s) |
 | `Platform` | `readyComponents` / `componentCount`, so `3 / 4` is visible without opening the YAML |
