@@ -52,7 +52,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-portal
-                  image: ghcr.io/stuttgart-things/homerun2-portal:${HOMERUN2_PORTAL_VERSION:-v0.1.0}
+                  image: ghcr.io/stuttgart-things/homerun2-portal:${HOMERUN2_PORTAL_VERSION:-v0.2.0}
     # The services behind the portal, "key=url" each, in navigation order.
     # Each one is served under /<key>/ and must run with BASE_PATH=/<key>
     # (led-catcher v0.18.0 or later). The URLs are in-cluster; a short
