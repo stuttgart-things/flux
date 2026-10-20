@@ -1,0 +1,8 @@
+---
+# homerun2-portal -- one web frontend for homerun2: service status, and each
+# service UI under /<key>/ through its reverse proxy
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-portal.yaml
+  - ks-homerun2-portal-routes.yaml

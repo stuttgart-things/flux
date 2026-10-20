@@ -63,6 +63,17 @@ spec:
       # stream), and an empty postBuild.substitute value renders as YAML null
       # and fails the whole Kustomization. `messages` is that configured stream.
       HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS: "${HOMERUN2_LED_CATCHER_UI_STREAM_PRESETS:-messages}"
+      # BASE_PATH behind homerun2-portal, e.g. /led. "/" is the root to every
+      # homerun2 service (each normalises it to ""), and it is the default
+      # because an empty one cannot pass: kustomize drops the quotes, and an
+      # empty substitute value lands as YAML null and fails the bundle.
+      # passthrough-override: the components' own default is empty, see above.
+      HOMERUN2_LED_CATCHER_BASE_PATH: "${HOMERUN2_LED_CATCHER_BASE_PATH:-/}"
+      HOMERUN2_CORE_CATCHER_BASE_PATH: "${HOMERUN2_CORE_CATCHER_BASE_PATH:-/}"
+      HOMERUN2_LIGHT_CATCHER_BASE_PATH: "${HOMERUN2_LIGHT_CATCHER_BASE_PATH:-/}"
+      HOMERUN2_WLED_MOCK_BASE_PATH: "${HOMERUN2_WLED_MOCK_BASE_PATH:-/}"
+      HOMERUN2_DEMO_PITCHER_BASE_PATH: "${HOMERUN2_DEMO_PITCHER_BASE_PATH:-/}"
+      HOMERUN2_CONFIG_VIEWER_BASE_PATH: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:-/}"
       # The streams the notification-catcher reads -- match the notify-*
       # variant: zaehlwerk's results arrive on `tabletennis`. The default is
       # the catcher component's own.

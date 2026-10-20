@@ -14,6 +14,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-config-viewer` | `profiles/platform-config-viewer` | config-viewer: which alert triggers what in which catcher, read from the namespace through the Kubernetes API -- no credentials (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis-sops` | `profiles/sops-light-catcher-tabletennis`, then `profiles/platform-light-catcher-tabletennis-routes` | **instead of `homerun2-light-catcher-tabletennis`**, next to `homerun2-sops`: the same instance, with the redis password from a `substituteFrom` Secret (`homerun2-light-catcher-tabletennis-sops-secrets`, key `HOMERUN2_REDIS_PASSWORD_B64` -- homerun2-sops' value) (waits on `homerun2`) |
+| `homerun2-portal` | `profiles/portal`, then `profiles/portal-routes` | homerun2-portal: one page with every service's status and fragments, and each service's own UI under `/<key>/` through its reverse proxy (`HOMERUN2_PORTAL_SERVICES`). No secrets, so next to `homerun2` or `homerun2-sops` alike; each service it fronts runs with `HOMERUN2_<SERVICE>_BASE_PATH=/<key>` (waits on `homerun2`) |
 | `homerun2-notification-catcher` | `profiles/platform-notification-catcher` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval. **After a bump, a `PASS` means the new version answered**: each in-cluster probe waits until the service's `/health` reports the version the bundle sets, three times in a row, because the re-run starts in parallel with the rollout (flux#432). Not for wled-mock, whose `/healthz` reports no version, and not for the external probes, which check routes |
 
@@ -167,6 +168,7 @@ Shares the version variables above.
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_WLED_ENDPOINT` | `http://homerun2-wled-mock.homerun2.svc.cluster.local` | no | The WLED device at the table |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM` | `homerun2-light-catcher-profile` | no | ConfigMap (key `profile.yaml`, in the instance's namespace) mounted as the profile; the default is the component's own |
 | `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_HOSTNAME` | `light-catcher-tabletennis` | no | HTTPRoute hostname prefix |
+| `HOMERUN2_LIGHT_CATCHER_TABLETENNIS_BASE_PATH` | *(empty)* | no | URL prefix of this instance's dashboard, e.g. `/table` behind homerun2-portal (`table=http://homerun2-light-catcher.homerun2-tabletennis`); its own variable, so it does not share `/light` with the other light-catcher |
 
 ### WLED Mock
 
@@ -226,6 +228,8 @@ The redis password comes from the store like the other catchers' (`eso/`) or fro
 | `HOMERUN2_CONFIG_VIEWER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/config` behind homerun2-portal (v0.3.0+); `/health` and `/healthz` stay at the root |
 
 ### Portal
+
+**BASE_PATH through a bundle.** The bundle components pass each service's `HOMERUN2_<SERVICE>_BASE_PATH` through with `/` as the default, not empty: kustomize drops the quotes before Flux substitutes, so an empty default lands as YAML null and the API server refuses the whole bundle (`hack/check-substitute-strings.py`). Every homerun2 service reads `/` as the root. Applied directly (a `profiles/*` path, as on a cluster without the bundle), the variables keep their empty default.
 
 | Variable | Default | Required | Purpose |
 |----------|---------|----------|---------|

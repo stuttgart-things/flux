@@ -38,12 +38,16 @@ spec:
       # A profile ConfigMap of the cluster's own, in this instance's namespace;
       # the default is the profile in the component (and the endpoint above).
       HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_PROFILE_CM:-homerun2-light-catcher-profile}"
+      # BASE_PATH behind homerun2-portal, e.g. /table. "/" is the root: an
+      # empty default would land as YAML null and fail the bundle.
+      # passthrough-override: the component's own default is empty.
+      HOMERUN2_LIGHT_CATCHER_TABLETENNIS_BASE_PATH: "${HOMERUN2_LIGHT_CATCHER_TABLETENNIS_BASE_PATH:-/}"
       # No safe default: stores are named per cluster (vault-<cluster>).
       HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
       HOMERUN2_SECRET_PATH: "${HOMERUN2_SECRET_PATH:-homerun2}"
       # The same version variables as ../homerun2-light-catcher: one catcher, two
       # instances. v1.1.0 is the floor here -- the profile matches on tags.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
-      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.10.0}"
+      HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.14.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
-      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.10.0}"
+      HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.14.0}"

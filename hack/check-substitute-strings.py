@@ -37,9 +37,12 @@ BUNDLES = sorted(
     for d in ROOT.glob("*/platform")
     if (d / "root").is_dir() and (d / "components").is_dir()
 )
-# ${NAME:-default} / ${NAME} -- the whole value must be one reference for the
-# default to be what lands. A value mixing text and references is a string.
-REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-(.*))?\}$")
+# ${NAME:-default} / ${NAME:=default} / ${NAME} -- the whole value must be one
+# reference for the default to be what lands. A value mixing text and
+# references is a string. `:=` lands its default exactly as `:-` does: three
+# BASE_PATHs passed through as "${X:=}" resolved to null unnoticed until this
+# matched it too.
+REF = re.compile(r"^\$\{([A-Za-z_][A-Za-z0-9_]*)(?::[-=](.*))?\}$")
 
 
 def resolved(value):
