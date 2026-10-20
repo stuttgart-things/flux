@@ -49,7 +49,10 @@ patches:
               path: /data/BUTTONS_URL
               value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${LINK_DOMAIN:-${DOMAIN}}"
   # Its part on the dev portal, when zaehlwerk-portal-on is selected too
-  # (it comes first in the bundles); a no-op target otherwise.
+  # (it comes first in the bundles); a no-op target otherwise. The board the
+  # page runs goes on the portal as well, so a board that is not the
+  # piezo-sim (a lab's emulated ESP board) shows there too. With the
+  # piezo-sim on and the default URL that is the same value it sets itself.
   - target:
       group: kustomize.toolkit.fluxcd.io
       kind: Kustomization
@@ -68,3 +71,6 @@ patches:
             - op: add
               path: /data/BUTTONS_PUBLIC_URL
               value: "https://${ZAEHLWERK_BUTTONS_HOSTNAME:-zaehlwerk-buttons}.${LINK_DOMAIN:-${DOMAIN}}"
+            - op: add
+              path: /data/PIEZO_CONTROL_URL
+              value: "${ZAEHLWERK_BUTTONS_PIEZO_URL:-http://zaehlwerk-piezo-sim:8081}"
