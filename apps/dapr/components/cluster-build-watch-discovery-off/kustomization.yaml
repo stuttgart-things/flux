@@ -1,0 +1,12 @@
+---
+# cluster-build-watch-discovery-off -- the worker starts watches only from
+# ClusterBuildWatch objects: the default. Selected through
+# CLUSTER_BUILD_WATCH_DISCOVERY (default off) by both cluster-build-watch
+# variants in cicd/platform.
+#
+# Empty on purpose: without CLUSTER_BUILD_WATCH_DISCOVERY the worker runs no
+# discovery loop (dapr-workflows workflows/cluster-build-watch/discovery.go).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []` rather than nothing: kustomize refuses an empty kustomization.
+patches: []

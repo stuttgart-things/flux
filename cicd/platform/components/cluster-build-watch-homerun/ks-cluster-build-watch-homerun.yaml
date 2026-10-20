@@ -60,6 +60,9 @@ spec:
     # see ../components/cluster-build-watch-machinery-auth-on. Client side of
     # the cicd component machinery-auth; switch this on FIRST.
     - ../components/cluster-build-watch-machinery-auth-${CLUSTER_BUILD_WATCH_MACHINERY_AUTH:-off}
+    # Discovery of ClusterStack builds and teardowns on machinery: off
+    # (default) or on -- see ../components/cluster-build-watch-discovery-on.
+    - ../components/cluster-build-watch-discovery-${CLUSTER_BUILD_WATCH_DISCOVERY:-off}
   postBuild:
     substitute:
       DAPR_CBW_NAMESPACE: "${CLUSTER_BUILD_WATCH_NAMESPACE:-cluster-build-watch}"
@@ -86,6 +89,19 @@ spec:
       # machinery-auth) -- change both or neither.
       DAPR_CBW_MACHINERY_TOKEN_PATH: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PATH:-machinery-grpc}"
       DAPR_CBW_MACHINERY_TOKEN_PROPERTY: "${CLUSTER_BUILD_WATCH_MACHINERY_TOKEN_PROPERTY:-token}"
+
+      # ---- discovery (only read with ..._DISCOVERY: on) ----
+      # machinery holding the ClusterStacks (LabDA machinery through its
+      # Gateway), the Flux Kustomization of the gitops phase, comma-separated
+      # <namespace>/<name> globs never watched, and how old a stack may be at
+      # worker start. EXCLUDE defaults to `none`, which matches no
+      # <namespace>/<name>: substitute cannot carry an empty string. No Argo
+      # checkpoint for discovered builds yet (worker variable
+      # CLUSTER_BUILD_WATCH_DISCOVERY_ARGO_SERVER not wired).
+      DAPR_CBW_DISCOVERY_SERVER: "${CLUSTER_BUILD_WATCH_DISCOVERY_SERVER:-machinery-grpc.machinery.4sthings.tiab.ssc.sva.de:443}"
+      DAPR_CBW_DISCOVERY_GITOPS: "${CLUSTER_BUILD_WATCH_DISCOVERY_GITOPS:-flux-system/machinery-xrs}"
+      DAPR_CBW_DISCOVERY_EXCLUDE: "${CLUSTER_BUILD_WATCH_DISCOVERY_EXCLUDE:-none}"
+      DAPR_CBW_DISCOVERY_LOOKBACK: "${CLUSTER_BUILD_WATCH_DISCOVERY_LOOKBACK:-30m}"
     substituteFrom:
       # substituteFrom-keys: REDIS_PASSWORD
       - kind: Secret
