@@ -3,6 +3,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: ${NFS_CSI_NAMESPACE:-kube-system}
+  annotations:
+    # Shared namespace (kube-system): never delete it when this app is removed
+    # or its Kustomization is pruned -- only this app's objects go.
+    kustomize.toolkit.fluxcd.io/prune: disabled
   labels:
     toolkit.fluxcd.io/tenant: sthings-team
 ---
