@@ -59,6 +59,9 @@ spec:
       # reads as a slow redis. A sentinel names the variable to set.
       HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
       HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"
+      # Redis Stack image, per cluster: 7.4 writes RDB v12, which 7.2 cannot
+      # load -- each cluster switches on its own (stuttgart-things#3923).
+      HOMERUN2_REDIS_IMAGE_VERSION: "${HOMERUN2_REDIS_IMAGE_VERSION:-7.2.0-v18}"
       # passthrough-override: the base's default is empty (only the configured
       # stream), and an empty postBuild.substitute value renders as YAML null
       # and fails the whole Kustomization. `messages` is that configured stream.
