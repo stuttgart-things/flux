@@ -6,7 +6,8 @@
 # the pitcher loads this at startup (see internal/routing/loader.go in
 # stuttgart-things/homerun2-omni-pitcher).
 #
-# Alertmanager and Grafana both POST to /pitch/grafana; both go to the
+# Grafana POSTs to /pitch/grafana, Alertmanager to /pitch/grafana or (v2.4.0+)
+# /pitch/alertmanager; all of them go to the
 # `alerts` stream so homerun2-notification-catcher (which consumes that
 # stream by default) can fan them out to Teams / generic webhooks based on
 # its own YAML config.
@@ -33,6 +34,12 @@ data:
       # notification-catcher pipeline.
       - match:
           endpoint: /pitch/grafana
+        stream: alerts
+
+      # Alertmanager on omni-pitcher's own endpoint (v2.4.0+,
+      # homerun2-omni-pitcher#210). The /pitch/grafana rule does not match it.
+      - match:
+          endpoint: /pitch/alertmanager
         stream: alerts
 
       # zaehlwerk pitches its scores with system: tabletennis; they go to the
