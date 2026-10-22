@@ -43,7 +43,7 @@ spec:
     image:
       registry: ${HOMERUN2_REDIS_IMAGE_REGISTRY:-ghcr.io}
       repository: ${HOMERUN2_REDIS_IMAGE_REPOSITORY:-stuttgart-things/redis-stack-server}
-      tag: ${HOMERUN2_REDIS_IMAGE_VERSION:-7.2.0-v18}
+      tag: ${HOMERUN2_REDIS_IMAGE_VERSION:-7.4.0-v8}
     master:
       persistence:
         enabled: ${HOMERUN2_REDIS_PERSISTENCE_ENABLED:-true}

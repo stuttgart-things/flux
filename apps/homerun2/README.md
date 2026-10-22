@@ -115,7 +115,7 @@ Version defaults are not repeated in these tables. Each component pins them in `
 | `HOMERUN2_REDIS_STORAGE_SIZE` | `8Gi` | no | PVC size |
 | `HOMERUN2_REDIS_IMAGE_REGISTRY` | `ghcr.io` | no | Redis image registry |
 | `HOMERUN2_REDIS_IMAGE_REPOSITORY` | `stuttgart-things/redis-stack-server` | no | Redis image repository |
-| `HOMERUN2_REDIS_IMAGE_VERSION` | `7.2.0-v18` | no | Redis image tag |
+| `HOMERUN2_REDIS_IMAGE_VERSION` | `7.4.0-v8` | no | Redis image tag |
 | `HOMERUN2_REDIS_SENTINEL_REGISTRY` | `ghcr.io` | no | Sentinel image registry |
 | `HOMERUN2_REDIS_SENTINEL_REPOSITORY` | `stuttgart-things/redis-sentinel` | no | Sentinel image repository |
 | `HOMERUN2_REDIS_SENTINEL_VERSION` | `7.4.2-debian-12-r9` | no | Sentinel image tag |
@@ -430,7 +430,7 @@ spec:
       HOMERUN2_REDIS_STORAGE_SIZE: 8Gi
       HOMERUN2_REDIS_IMAGE_REGISTRY: ghcr.io
       HOMERUN2_REDIS_IMAGE_REPOSITORY: stuttgart-things/redis-stack-server
-      HOMERUN2_REDIS_IMAGE_VERSION: 7.2.0-v18
+      HOMERUN2_REDIS_IMAGE_VERSION: 7.4.0-v8
       HOMERUN2_REDIS_SENTINEL_REGISTRY: ghcr.io
       HOMERUN2_REDIS_SENTINEL_REPOSITORY: stuttgart-things/redis-sentinel
       HOMERUN2_REDIS_SENTINEL_VERSION: 7.4.2-debian-12-r9
@@ -556,7 +556,7 @@ spec:
       HOMERUN2_REDIS_STORAGE_SIZE: 8Gi
       HOMERUN2_REDIS_IMAGE_REGISTRY: ghcr.io
       HOMERUN2_REDIS_IMAGE_REPOSITORY: stuttgart-things/redis-stack-server
-      HOMERUN2_REDIS_IMAGE_VERSION: 7.2.0-v18
+      HOMERUN2_REDIS_IMAGE_VERSION: 7.4.0-v8
       HOMERUN2_REDIS_SENTINEL_REGISTRY: ghcr.io
       HOMERUN2_REDIS_SENTINEL_REPOSITORY: stuttgart-things/redis-sentinel
       HOMERUN2_REDIS_SENTINEL_VERSION: 7.4.2-debian-12-r9
