@@ -1,0 +1,25 @@
+---
+# AppProfile: what a cluster sets for homerun2-sound-catcher-sops, and the
+# Secret it needs. Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: homerun2-sound-catcher-sops
+spec:
+  bundle: apps-platform
+  component: ../components/homerun2-sound-catcher-sops
+  vars:
+    INFRA_DOMAIN: { required: true }
+    HOMERUN2_NAMESPACE: {}
+    HOMERUN2_SOUND_CATCHER_SUSPEND: {}
+    HOMERUN2_SOUND_CATCHER_VERSION: {}
+    HOMERUN2_SOUND_CATCHER_STREAMS: {}
+    HOMERUN2_SOUND_CATCHER_PROFILE_CM: {}
+    HOMERUN2_SOUND_CATCHER_BASE_PATH: {}
+    HOMERUN2_SOUND_CATCHER_HOSTNAME: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: homerun2-sound-catcher-sops-secrets
+      data:
+        HOMERUN2_REDIS_PASSWORD_B64: set-HOMERUN2_REDIS_PASSWORD_B64 # pragma: allowlist secret

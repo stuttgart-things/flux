@@ -1,0 +1,11 @@
+---
+# homerun2-sound-catcher-sops -- ../homerun2-sound-catcher for a cluster without
+# external-secrets: the same two children (homerun2-sound-catcher, -routes),
+# the redis password from a substituteFrom Secret. An ALTERNATIVE to
+# ../homerun2-sound-catcher, never both: they render the same names.
+# bundle-alternative-of: homerun2-sound-catcher
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-sound-catcher.yaml
+  - ks-homerun2-sound-catcher-routes.yaml

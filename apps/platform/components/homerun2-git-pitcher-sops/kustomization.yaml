@@ -1,0 +1,9 @@
+---
+# homerun2-git-pitcher-sops -- homerun2-git-pitcher on a cluster without
+# external-secrets: watches GitHub repositories and pitches their events to the
+# homerun2 Redis streams. Redis password and GitHub token from a substituteFrom
+# Secret. There is no external-secrets variant yet.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-git-pitcher.yaml

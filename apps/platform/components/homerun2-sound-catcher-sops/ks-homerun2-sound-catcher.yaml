@@ -1,0 +1,50 @@
+---
+# sound-catcher: plays homerun2 messages as clips and spoken announcements on
+# its player page (browser sink; no speaker in a pod)
+# → ./apps/homerun2/profiles/base-sound-catcher (components/sound-catcher/sops)
+#
+# REQUIRES ../homerun2-sops (namespace and redis).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-sound-catcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_SOUND_CATCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/base-sound-catcher
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # The same variables as ../homerun2-sound-catcher.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-sound-catcher
+      HOMERUN2_SOUND_CATCHER_VERSION: "${HOMERUN2_SOUND_CATCHER_VERSION:-v0.6.1}"
+      HOMERUN2_SOUND_CATCHER_STREAMS: "${HOMERUN2_SOUND_CATCHER_STREAMS:-messages}"
+      HOMERUN2_SOUND_CATCHER_PROFILE_CM: "${HOMERUN2_SOUND_CATCHER_PROFILE_CM:-homerun2-sound-catcher-profile}"
+      # /sound behind homerun2-portal. "/" is the root: an empty default would
+      # land as YAML null and fail the bundle.
+      # passthrough-override: the component's own default is empty.
+      HOMERUN2_SOUND_CATCHER_BASE_PATH: "${HOMERUN2_SOUND_CATCHER_BASE_PATH:-/}"
+    substituteFrom:
+      # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64
+      # base64 of the redis password -- the SAME value as homerun2-sops'. A
+      # Secret of its own, like ../homerun2-light-catcher-tabletennis-sops: one
+      # Secret per AppProfile entry. A cluster with one SOPS Secret for all of
+      # homerun2 points HOMERUN2_SOUND_CATCHER_SOPS_SECRET at that one.
+      - kind: Secret
+        name: ${HOMERUN2_SOUND_CATCHER_SOPS_SECRET:-homerun2-sound-catcher-sops-secrets}
+        optional: false

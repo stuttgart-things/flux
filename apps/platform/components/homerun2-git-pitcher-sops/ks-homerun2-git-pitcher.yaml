@@ -1,0 +1,45 @@
+---
+# git-pitcher → ./apps/homerun2/profiles/cicd (components/git-pitcher)
+#
+# REQUIRES ../homerun2-sops (namespace and redis) and a watch-config ConfigMap
+# in the homerun2 namespace (HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM): which
+# repositories to watch is the cluster's to say, so the component ships none.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-git-pitcher
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: homerun2
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_GIT_PITCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/cicd
+  postBuild:
+    substitute:
+      HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-git-pitcher-kustomize
+      HOMERUN2_GIT_PITCHER_VERSION: "${HOMERUN2_GIT_PITCHER_VERSION:-v1.3.1}"
+      HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM: "${HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM:-homerun2-git-pitcher-watch-config}"
+      HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM: "${HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}"
+    substituteFrom:
+      # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64, HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64
+      # Both base64 (they land in Secret `data:`); the redis password is the
+      # SAME value as homerun2-sops'. A Secret of its own per AppProfile entry,
+      # like ../homerun2-sound-catcher-sops; a cluster with one SOPS Secret for
+      # all of homerun2 points HOMERUN2_GIT_PITCHER_SOPS_SECRET at that one.
+      - kind: Secret
+        name: ${HOMERUN2_GIT_PITCHER_SOPS_SECRET:-homerun2-git-pitcher-sops-secrets}
+        optional: false

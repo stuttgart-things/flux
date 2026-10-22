@@ -1,0 +1,21 @@
+---
+# AppProfile: what a cluster sets for homerun2-git-pitcher-sops, and the Secret
+# it needs. Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: homerun2-git-pitcher-sops
+spec:
+  bundle: apps-platform
+  component: ../components/homerun2-git-pitcher-sops
+  vars:
+    HOMERUN2_NAMESPACE: {}
+    HOMERUN2_GIT_PITCHER_SUSPEND: {}
+    HOMERUN2_GIT_PITCHER_VERSION: {}
+    HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM: {}
+    HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM: {}
+  secrets:
+    - name: homerun2-git-pitcher-sops-secrets
+      data:
+        HOMERUN2_REDIS_PASSWORD_B64: set-HOMERUN2_REDIS_PASSWORD_B64 # pragma: allowlist secret
+        HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64: set-HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64 # pragma: allowlist secret
