@@ -95,6 +95,21 @@ Under the bundle's `eso` credentials the ExternalSecret still reads
 `teams-webhook-url`. Any value in the store entry satisfies it, because nothing
 uses it.
 
+## The cluster ships its own routing (`cluster`)
+
+`notify-cluster` renders no `homerun2-notification-catcher-notify` at all. For a
+cluster whose routing file lives in its own repo next to the bundle
+(platform-sthings, with its Teams outputs): any other variant renders the same
+ConfigMap inside the homerun2 build, and two Kustomizations owning one object
+overwrite each other on every apply.
+
+```yaml
+HOMERUN2_SOPS_NOTIFY: cluster
+```
+
+Forgetting the cluster-side ConfigMap is loud, not silent: the catcher mounts
+it and stays in ContainerCreating.
+
 ## Config changes roll the pod -- where Reloader runs
 
 The catcher reads `REDIS_STREAMS` (`-env`), the routing file (`-notify`) and

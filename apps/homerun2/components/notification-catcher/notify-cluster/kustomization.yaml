@@ -1,0 +1,18 @@
+---
+# notify-cluster -- NO routing file from the library: the cluster repo ships the
+# ConfigMap homerun2-notification-catcher-notify itself, next to the bundle
+# (platform-sthings does, with its Teams outputs). Every other notify-* variant
+# renders that ConfigMap inside the homerun2 build, and a cluster-supplied one
+# beside it means two Kustomizations owning one object -- each apply overwrites
+# the other, and the catcher's routing flips between them (stuttgart-things#3798).
+#
+# The catcher still needs the ConfigMap to start (it is mounted, see
+# notify-none): with this variant a cluster that forgets to ship it gets a pod
+# stuck in ContainerCreating, which is loud, rather than a silent empty routing.
+#
+# Selecting it:
+#   profiles/sops, profiles/base   ../../components/notification-catcher/notify-cluster
+#   apps/platform homerun2-sops    HOMERUN2_SOPS_NOTIFY: cluster
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources: []
