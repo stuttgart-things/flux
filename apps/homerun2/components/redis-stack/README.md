@@ -22,7 +22,7 @@ HelmRepository + HelmRelease
 | `HOMERUN2_REDIS_SENTINEL_VERSION` | `7.4.2-debian-12-r9` | Sentinel image tag |
 | `HOMERUN2_REDIS_IMAGE_REGISTRY` | `ghcr.io` | Redis image registry |
 | `HOMERUN2_REDIS_IMAGE_REPOSITORY` | `stuttgart-things/redis-stack-server` | Redis image repository |
-| `HOMERUN2_REDIS_IMAGE_VERSION` | `7.2.0-v18` | Redis image tag |
+| `HOMERUN2_REDIS_IMAGE_VERSION` | `7.4.0-v8` | Redis image tag |
 | `HOMERUN2_REDIS_PERSISTENCE_ENABLED` | `true` | Enable persistent storage |
 | `HOMERUN2_REDIS_STORAGE_CLASS` | `standard` | StorageClass for PVCs |
 | `HOMERUN2_REDIS_STORAGE_SIZE` | `8Gi` | PVC size |

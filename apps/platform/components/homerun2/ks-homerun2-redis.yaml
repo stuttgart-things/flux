@@ -47,6 +47,7 @@ spec:
       # reads as a slow redis. A sentinel names the variable to set.
       HOMERUN2_REDIS_STORAGE_CLASS: "${HOMERUN2_REDIS_STORAGE_CLASS:-set-HOMERUN2_REDIS_STORAGE_CLASS}"
       HOMERUN2_REDIS_STORAGE_SIZE: "${HOMERUN2_REDIS_STORAGE_SIZE:-8Gi}"
-      # Redis Stack image, per cluster: 7.4 writes RDB v12, which 7.2 cannot
-      # load -- each cluster switches on its own (stuttgart-things#3923).
-      HOMERUN2_REDIS_IMAGE_VERSION: "${HOMERUN2_REDIS_IMAGE_VERSION:-7.2.0-v18}"
+      # Redis Stack image. 7.4 since stuttgart-things#3923, once every known
+      # cluster ran it; it writes RDB v12, which 7.2 cannot load, so a cluster
+      # still on 7.2 data states 7.2.0-v18 here until it moves deliberately.
+      HOMERUN2_REDIS_IMAGE_VERSION: "${HOMERUN2_REDIS_IMAGE_VERSION:-7.4.0-v8}"
