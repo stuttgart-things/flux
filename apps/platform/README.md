@@ -33,6 +33,12 @@ apps/platform/
     ├── homerun2-light-catcher-tabletennis-sops/
     │                            → ./apps/homerun2/profiles/sops-light-catcher-tabletennis
     │                              (instead of homerun2-light-catcher-tabletennis; homerun2 + a Secret)
+    ├── homerun2-sound-catcher-sops/
+    │                            → ./apps/homerun2/profiles/base-sound-catcher
+    │                              (instead of homerun2-sound-catcher; homerun2 + a Secret)
+    ├── homerun2-git-pitcher-sops/
+    │                            → ./apps/homerun2/profiles/cicd
+    │                              (no ESO variant; homerun2 + a Secret + a watch-config ConfigMap)
     ├── tabletennis-sops/        → ./apps/tabletennis/profiles/sops   (instead of tabletennis; cnpg-operator + a Secret)
     └── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
 ```
@@ -66,6 +72,8 @@ a `substituteFrom` Secret in `flux-system` instead:
 |---|---|---|
 | `homerun2-sops` | `homerun2-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64`, `TEAMS_WEBHOOK_URL`; optional `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN`, `HOMERUN2_SCOUT_AUTH_TOKEN` | <!-- pragma: allowlist secret -->
 | `homerun2-light-catcher-tabletennis-sops` | `homerun2-light-catcher-tabletennis-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
+| `homerun2-sound-catcher-sops` | `homerun2-sound-catcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
+| `homerun2-git-pitcher-sops` | `homerun2-git-pitcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` (as `homerun2-sops`'), `HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`); optional `OPENBAO_TERRAFORM_PASSWORD`, `OPENBAO_ADMIN_PASSWORD` (both needed with `OPENBAO_INIT: self-init-userpass`) |
