@@ -1,0 +1,17 @@
+---
+# One ARC controller per cluster (chart gha-runner-scale-set-controller),
+# installed by Crossplane through the helm ClusterProviderConfig. The runner
+# scale sets are GithubRunnerSet XRs the CLUSTER declares, one per repository
+# -- a list Flux cannot loop over (see ../README.md).
+apiVersion: resources.stuttgart-things.com/v1alpha1
+kind: GithubArcController
+metadata:
+  name: github-arc-controller
+  namespace: ${GITHUB_ARC_XR_NAMESPACE:-crossplane-system}
+spec:
+  clusterName: ${GITHUB_ARC_CLUSTER_NAME:-in-cluster}
+  helmProviderConfigRef: ${GITHUB_ARC_HELM_PROVIDER_CONFIG:-in-cluster}
+  namespace: ${GITHUB_ARC_CONTROLLER_NAMESPACE:-arc-systems}
+  releaseName: ${GITHUB_ARC_CONTROLLER_RELEASE:-github-controller}
+  # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+  version: "${GITHUB_ARC_VERSION:-0.15.0}"

@@ -1,0 +1,29 @@
+---
+# The two ARC packages from stuttgart-things/crossplane-configurations
+# (cicd/github-arc-controller, cicd/github-runner-set). Same as the Argo CD
+# family's cicd/github-arc/resources in stuttgart-things/argocd.
+#
+# skipDependencyResolution: both packages dependsOn
+# xpkg.crossplane.io/crossplane-contrib/provider-helm, while the crossplane
+# component installs provider-helm from xpkg.upbound.io. The lock keys on the
+# source string, so resolving would install a SECOND provider-helm next to it,
+# both claiming the helm.m.crossplane.io CRDs. provider-helm, function-go-
+# templating and function-auto-ready all come from the crossplane component
+# this one depends on.
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: github-arc-controller
+spec:
+  # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/github-arc-controller
+  package: ghcr.io/stuttgart-things/crossplane-configurations/github-arc-controller:${GITHUB_ARC_CONTROLLER_CONFIG_VERSION:-v0.1.0}
+  skipDependencyResolution: true
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: github-runner-set
+spec:
+  # renovate: datasource=docker depName=ghcr.io/stuttgart-things/crossplane-configurations/github-runner-set
+  package: ghcr.io/stuttgart-things/crossplane-configurations/github-runner-set:${GITHUB_RUNNER_SET_CONFIG_VERSION:-v0.1.0}
+  skipDependencyResolution: true
