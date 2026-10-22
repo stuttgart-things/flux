@@ -1,0 +1,30 @@
+---
+# WHAT THE PACKAGES NEED AND CANNOT SHIP -- the cicd-platform twin of
+# ../../machinery/configs/preconditions.yaml (provider RBAC only; nothing here
+# reads an EnvironmentConfig).
+#
+# provider-helm with the InjectedIdentity ClusterProviderConfig `in-cluster`
+# installs charts into the cluster it runs on, so its ServiceAccount needs
+# rights there; without them every Release fails with
+#
+#   failed to create namespace for release: namespaces is forbidden:
+#   User "system:serviceaccount:crossplane-system:crossplane-contrib-provider-helm-..."
+#
+# (found on a kind test of this profile with the github-arc packages,
+# stuttgart-things/stuttgart-things#3798 wave 5; the Crossplane 1.x stack on
+# sthings-runner had the bindings created by hand).
+#
+# THE GROUP, NOT THE ServiceAccount: the SA name carries the package revision
+# and changes on every provider upgrade. cluster-admin, as on machinery.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crossplane-providers-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:${CROSSPLANE_NAMESPACE:-crossplane-system}
