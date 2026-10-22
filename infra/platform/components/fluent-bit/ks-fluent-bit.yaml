@@ -1,0 +1,35 @@
+---
+# fluent-bit -> ./infra/fluent-bit
+#
+# Ships every container log of the cluster to Loki, labelled
+# cluster=<FLUENT_BIT_CLUSTER_NAME>, to the Loki of the SAME cluster (the
+# loki component): plain HTTP to its gateway Service. For a Loki on another
+# cluster select fluent-bit-remote instead.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fluent-bit
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${FLUENT_BIT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/fluent-bit
+  postBuild:
+    substitute:
+      FLUENT_BIT_NAMESPACE: "${FLUENT_BIT_NAMESPACE:-logging}"
+      # renovate: datasource=docker depName=ghcr.io/fluent/helm-charts/fluent-bit
+      FLUENT_BIT_VERSION: "${FLUENT_BIT_VERSION:-0.58.3}"
+      FLUENT_BIT_CLUSTER_NAME: "${FLUENT_BIT_CLUSTER_NAME:-set-FLUENT_BIT_CLUSTER_NAME.invalid}" # REQUIRED
+      FLUENT_BIT_LOKI_HOST: "${FLUENT_BIT_LOKI_HOST:-loki-gateway.loki.svc.cluster.local}"

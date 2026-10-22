@@ -1,0 +1,45 @@
+---
+# loki -> ./infra/loki + components/httproute
+#
+# The central log store of a lab: monolithic Loki on a PVC, reachable
+# in-cluster at loki-gateway.<LOKI_NAMESPACE>.svc and from the other clusters
+# at <LOKI_HOSTNAME>.<INFRA_DOMAIN> through the cluster Gateway -- hence the
+# dependsOn. Feed it with the fluent-bit component, on this cluster and the
+# others. One per lab, not one per cluster.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: loki
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${LOKI_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/loki
+  components:
+    - components/httproute
+  postBuild:
+    substitute:
+      LOKI_NAMESPACE: "${LOKI_NAMESPACE:-loki}"
+      # renovate: datasource=docker depName=ghcr.io/grafana-community/helm-charts/loki
+      LOKI_VERSION: "${LOKI_VERSION:-19.1.0}"
+      LOKI_STORAGE_CLASS: "${LOKI_STORAGE_CLASS:-local-path}"
+      LOKI_STORAGE_SIZE: "${LOKI_STORAGE_SIZE:-20Gi}"
+      LOKI_RETENTION: "${LOKI_RETENTION:-168h}"
+      LOKI_HOSTNAME: "${LOKI_HOSTNAME:-loki}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
