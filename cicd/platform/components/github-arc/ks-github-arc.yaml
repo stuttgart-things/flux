@@ -1,0 +1,79 @@
+---
+# GitHub Actions Runner Controller through our Crossplane v2 packages
+# (crossplane-configurations: github-arc-controller, github-runner-set).
+# Needs the crossplane component (provider-helm v1, function-go-templating,
+# function-auto-ready, the helm ClusterProviderConfig in-cluster).
+#
+# Two children: the packages first, the controller XR once their XRDs exist
+# (a Configuration is Healthy when its XRD is established). The runner sets
+# are the cluster's own GithubRunnerSet XRs, one per repository -- see
+# cicd/github-arc/README.md for the shape; they dependsOn github-arc-controller.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: github-arc
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane-provider-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${GITHUB_ARC_SUSPEND:-false}
+  wait: true
+  healthCheckExprs:
+    - apiVersion: pkg.crossplane.io/v1
+      kind: Configuration
+      current: "has(status.conditions) && status.conditions.exists(e, e.type == 'Healthy' && e.status == 'True')"
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/github-arc/configurations
+  postBuild:
+    substitute:
+      GITHUB_ARC_CONTROLLER_CONFIG_VERSION: "${GITHUB_ARC_CONTROLLER_CONFIG_VERSION:-v0.1.0}"
+      GITHUB_RUNNER_SET_CONFIG_VERSION: "${GITHUB_RUNNER_SET_CONFIG_VERSION:-v0.1.0}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: github-arc-controller
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: github-arc
+  interval: 1h
+  retryInterval: 1m
+  timeout: 15m
+  force: false
+  prune: true
+  suspend: ${GITHUB_ARC_SUSPEND:-false}
+  wait: true
+  healthCheckExprs:
+    - apiVersion: resources.stuttgart-things.com/v1alpha1
+      kind: GithubArcController
+      current: "has(status.conditions) && status.conditions.exists(e, e.type == 'Ready' && e.status == 'True')"
+      failed: "has(status.conditions) && status.conditions.exists(e, e.type == 'Synced' && e.status == 'False')"
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/github-arc/controller
+  postBuild:
+    substitute:
+      GITHUB_ARC_XR_NAMESPACE: "${GITHUB_ARC_XR_NAMESPACE:-crossplane-system}"
+      GITHUB_ARC_CLUSTER_NAME: "${GITHUB_ARC_CLUSTER_NAME:-in-cluster}"
+      GITHUB_ARC_HELM_PROVIDER_CONFIG: "${GITHUB_ARC_HELM_PROVIDER_CONFIG:-in-cluster}"
+      GITHUB_ARC_CONTROLLER_NAMESPACE: "${GITHUB_ARC_CONTROLLER_NAMESPACE:-arc-systems}"
+      GITHUB_ARC_CONTROLLER_RELEASE: "${GITHUB_ARC_CONTROLLER_RELEASE:-github-controller}"
+      # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+      GITHUB_ARC_VERSION: "${GITHUB_ARC_VERSION:-0.15.0}"

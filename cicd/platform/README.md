@@ -16,6 +16,7 @@ cicd/platform/
     ├── crossplane-capabilities/ → …/capabilities/sets/${CROSSPLANE_CAPABILITY_SET}  (needs crossplane + sops-git)
     ├── crossplane-runtime-defaults/ → ./cicd/crossplane/runtime-defaults  (machinery profile WITHOUT fleet state only)
     ├── kro/                  → ./cicd/kro
+    ├── github-arc/           → ./cicd/github-arc/…    (needs crossplane; runner sets are the cluster's own XRs)
     ├── machinery/            → ./cicd/machinery       (needs crossplane-configs)
     ├── machinery-auth/       → ./cicd/machinery + auth (alternative of machinery: gRPC bearer-token auth ON)
     ├── machinery-argocd/     → ./cicd/machinery       (alternative: needs argo-cd instead, for Argo CD clusters without Crossplane)
