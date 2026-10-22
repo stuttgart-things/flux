@@ -19,5 +19,7 @@
 # `customresources` inside a HelmRelease, so nothing types them at apply time.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+resources:
+  - preconditions.yaml
 components:
   - ../../../components/configs
