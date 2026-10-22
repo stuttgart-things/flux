@@ -25,6 +25,12 @@ spec:
       masterSet: mymaster
       quorum: 1
       parallelSyncs: 1
+      # Seconds the start script asks the Service for a master before it
+      # starts as master itself. The chart's 220 s eats the startup probe
+      # budget (10 + 22 x 10 s): with one node the Service has no ready
+      # endpoint until this sentinel runs, and Cilium drops instead of
+      # rejecting -- killed in a loop (stuttgart-things#3923).
+      getMasterTimeout: 15
       service:
         type: ${DAPR_REDIS_SERVICE_TYPE:-ClusterIP}
       image:
