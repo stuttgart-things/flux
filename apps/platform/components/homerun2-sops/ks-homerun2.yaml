@@ -79,6 +79,7 @@ spec:
       HOMERUN2_WLED_MOCK_BASE_PATH: "${HOMERUN2_WLED_MOCK_BASE_PATH:-/}"
       HOMERUN2_DEMO_PITCHER_BASE_PATH: "${HOMERUN2_DEMO_PITCHER_BASE_PATH:-/}"
       HOMERUN2_CONFIG_VIEWER_BASE_PATH: "${HOMERUN2_CONFIG_VIEWER_BASE_PATH:-/}"
+      HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH: "${HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH:-/}"
       # The streams the notification-catcher reads -- match the notify-*
       # variant: zaehlwerk's results arrive on `tabletennis`. The default is
       # the catcher component's own.
@@ -115,9 +116,9 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
       HOMERUN2_LIGHT_CATCHER_VERSION: "${HOMERUN2_LIGHT_CATCHER_VERSION:-v1.14.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
-      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.1.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
-      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.1.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-omni-pitcher-kustomize
       HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.4.0}"
       HOMERUN2_REDIS_IMAGE_REGISTRY: "${HOMERUN2_REDIS_IMAGE_REGISTRY:-ghcr.io}"

@@ -74,7 +74,12 @@ spec:
       # platform-sthings catcher's (git PRs and Grafana alerts); this bundle
       # component exists for the table tennis results.
       HOMERUN2_NOTIFICATION_CATCHER_STREAMS: "${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:-tabletennis}"
+      # BASE_PATH of the read-only UI behind homerun2-portal, e.g. /notify.
+      # "/" is the root: an empty default would land as YAML null and fail
+      # the bundle.
+      # passthrough-override: the component's own default is empty, see above.
+      HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH: "${HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH:-/}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
-      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.1.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
-      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.1.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.13.0}"

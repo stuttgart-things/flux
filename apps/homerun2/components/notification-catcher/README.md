@@ -1,7 +1,11 @@
 # notification-catcher
 
 Reads homerun2 streams and posts what its routing file selects to Teams (and
-other webhooks). A pure consumer: no Service, no route.
+other webhooks). Its read-only UI (catcher v3.8.0+: the loaded routing config
+with secrets redacted, the event log of the last dispatched messages, the
+dead-letter tab) has a Service (`service.yaml`) and a route (`route/`, applied
+from the `-routes` profiles). `HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH=/notify`
+serves it behind homerun2-portal.
 
 ## Two ways to run it
 

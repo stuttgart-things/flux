@@ -15,7 +15,7 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis-sops` | `profiles/sops-light-catcher-tabletennis`, then `profiles/platform-light-catcher-tabletennis-routes` | **instead of `homerun2-light-catcher-tabletennis`**, next to `homerun2-sops`: the same instance, with the redis password from a `substituteFrom` Secret (`homerun2-light-catcher-tabletennis-sops-secrets`, key `HOMERUN2_REDIS_PASSWORD_B64` -- homerun2-sops' value) (waits on `homerun2`) |
 | `homerun2-portal` | `profiles/portal`, then `profiles/portal-routes` | homerun2-portal: one page with every service's status and fragments, and each service's own UI under `/<key>/` through its reverse proxy (`HOMERUN2_PORTAL_SERVICES`). No secrets, so next to `homerun2` or `homerun2-sops` alike; each service it fronts runs with `HOMERUN2_<SERVICE>_BASE_PATH=/<key>` (waits on `homerun2`) |
-| `homerun2-notification-catcher` | `profiles/platform-notification-catcher` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
+| `homerun2-notification-catcher` | `profiles/platform-notification-catcher`, then `profiles/platform-notification-catcher-routes` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval. **After a bump, a `PASS` means the new version answered**: each in-cluster probe waits until the service's `/health` reports the version the bundle sets, three times in a row, because the re-run starts in parallel with the rollout (flux#432). Not for wled-mock, whose `/healthz` reports no version, and not for the external probes, which check routes |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
@@ -61,9 +61,9 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | Profile | Components | Use case |
 |---------|------------|----------|
 | `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
-| `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
+| `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout, notification-catcher (UI) | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
 | `profiles/sops` | profiles/base + led-catcher, light-catcher, wled-mock, demo-pitcher, config-viewer | The whole stack on the sops path, as one Kustomization. Needs only the Secret keys `profiles/base` needs |
-| `profiles/sops-routes` | HTTPRoutes for all eight of them | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
+| `profiles/sops-routes` | HTTPRoutes for all nine of them (notification-catcher: its UI) | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
 | `profiles/sops-light-catcher-tabletennis` | light-catcher-tabletennis + its `sops/` | **Add-on** to `profiles/sops`: the table tennis light-catcher in its own namespace. Needs `HOMERUN2_REDIS_PASSWORD_B64`; its route is `profiles/platform-light-catcher-tabletennis-routes` |
 | `profiles/base-sound-catcher` | sound-catcher + its `sops/` | **Add-on** to `profiles/base`: the sops counterpart to `profiles/platform-sound-catcher`. Needs `HOMERUN2_REDIS_PASSWORD_B64` |
 | `profiles/base-sound-catcher-routes` | HTTPRoute for sound-catcher | **Add-on** to `profiles/base-sound-catcher`: a second Kustomization with `dependsOn` on it |
@@ -226,6 +226,18 @@ The redis password comes from the store like the other catchers' (`eso/`) or fro
 | `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
 | `HOMERUN2_CONFIG_VIEWER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/config` behind homerun2-portal (v0.3.0+); `/health` and `/healthz` stay at the root |
+
+### Notification Catcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_STREAMS` | `messages,alerts` | no | `REDIS_STREAMS`, comma-separated |
+| `HOMERUN2_NOTIFICATION_CATCHER_HOSTNAME` | `notification-catcher` | no | HTTPRoute hostname prefix of the read-only UI |
+| `HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/notify` behind homerun2-portal (`notify=http://homerun2-notification-catcher`); `/healthz`, `/health` and `/metrics` stay at the root. The portal shows the latest dispatched messages on its overview from the catcher release after v3.13.0 |
+
+The UI is always on (`HTTP_ADDR=:8080`, readiness on `/healthz`, Service in `components/notification-catcher/service.yaml`): the loaded routing config with secrets redacted, the event log with each output's result, the dead-letter tab. No token, like the other homerun2 UIs. See `components/notification-catcher/README.md` for routing, dry run and credentials.
 
 ### Portal
 
