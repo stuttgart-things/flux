@@ -1,0 +1,11 @@
+---
+# k8s-pitcher alone, pitching the events that matter to a central homerun2
+# cluster's omni-pitcher (#823), token from a ClusterSecretStore. For the
+# apps-platform bundle component homerun2-k8s-pitcher-remote; see
+# components/k8s-pitcher/remote for what a cluster has to set.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/k8s-pitcher
+  - ../../components/k8s-pitcher/remote
+  - ../../components/k8s-pitcher/eso

@@ -1,0 +1,72 @@
+---
+# The `important-events` preset of homerun2-k8s-pitcher (profiles/
+# important-events.yaml, homerun2-k8s-pitcher#88), pitching to the central
+# omni-pitcher. Keep it in step with the preset; the ClusterRole in
+# kustomization.yaml grants exactly the informers below.
+#
+# FailedScheduling and Unhealthy (probes) stay out: too noisy. No collectors,
+# no inventory on restart.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ${HOMERUN2_K8S_PITCHER_PROFILE_CM:-homerun2-k8s-pitcher-profile}
+  namespace: ${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2-flux}
+data:
+  profile.yaml: |
+    apiVersion: homerun2.sthings.io/v1alpha1
+    kind: K8sPitcherProfile
+    metadata:
+      name: important-events
+    spec:
+      # In-cluster there is no kubeconfig context; this names the cluster in
+      # every message (system k8s-<cluster>).
+      cluster: ${CLUSTER_NAME:-set-CLUSTER_NAME}
+      pitcher:
+        addr: ${HOMERUN2_CENTRAL_PITCHER_URL:-https://set-HOMERUN2_CENTRAL_PITCHER_URL.invalid/pitch}
+        insecure: false
+      auth:
+        tokenFrom:
+          secretKeyRef:
+            name: homerun2-k8s-pitcher-token
+            namespace: ${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2-flux}
+            key: auth-token
+      # The same object/reason or condition flip at most once per hour.
+      cooldown: 1h
+      # At most 20 messages per 10 minutes; anything above is replaced by one
+      # "k8s-pitcher: N events suppressed" warning per window.
+      rateLimit:
+        max: 20
+        per: 10m
+      informers:
+        # Nodes: NotReady <-> Ready
+        - group: ""
+          version: v1
+          resource: nodes
+          events: [update]
+          updates: conditions
+        # Flux: Ready flips
+        - group: kustomize.toolkit.fluxcd.io
+          version: v1
+          resource: kustomizations
+          events: [update]
+          updates: conditions
+        - group: helm.toolkit.fluxcd.io
+          version: v2
+          resource: helmreleases
+          events: [update]
+          updates: conditions
+        # Warning Events with an important reason
+        - group: ""
+          version: v1
+          resource: events
+          events: [add]
+          types: [Warning]
+          reasons:
+            - BackOff
+            - OOMKilling
+            - Evicted
+            - FailedMount
+            - FailedAttachVolume
+            - BackoffLimitExceeded
+            - ProvisioningFailed
+            - NodeNotReady

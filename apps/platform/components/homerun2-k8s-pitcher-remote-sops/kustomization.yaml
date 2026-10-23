@@ -1,0 +1,10 @@
+---
+# homerun2-k8s-pitcher-remote-sops -- ../homerun2-k8s-pitcher-remote on a
+# cluster without external-secrets: the central omni-pitcher's token comes
+# from a SOPS substituteFrom Secret instead of a ClusterSecretStore.
+# An ALTERNATIVE to ../homerun2-k8s-pitcher-remote, not an add-on: select one.
+# bundle-alternative-of: homerun2-k8s-pitcher-remote
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-k8s-pitcher-remote.yaml
