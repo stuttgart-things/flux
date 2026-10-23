@@ -62,6 +62,12 @@ spec:
                     - '-kubeconfig-dir=${CLUSTERSCOPE_KUBECONFIG_DIR:-}'
                     - '-probe=${CLUSTERSCOPE_PROBE:-false}'
                     - '-refresh=${CLUSTERSCOPE_REFRESH:-60}'
+                  # The base limits CPU to 500m; the live refresh fans out over
+                  # all clusters in a burst and was throttled in ~45% of the
+                  # CFS periods (CPUThrottlingHigh) at ~2% average use.
+                  resources:
+                    limits:
+                      cpu: "1"
     # Trust the lab CAs for the endpoint probes (-probe): the trust-manager
     # bundle (default CAs + lab CAs) via SSL_CERT_DIR. Optional — without
     # trust-manager the image's own CA file still applies (Go loads it
@@ -133,9 +139,11 @@ spec:
                           name: ${GIT_SYNC_AUTH_SECRET:-git-sync-auth}
                           key: password
                           optional: true
+                  # 100m throttled ~50% of the CFS periods (each sync is a
+                  # short git fetch/checkout burst).
                   resources:
                     limits:
-                      cpu: 100m
+                      cpu: 500m
                       memory: 128Mi
                     requests:
                       cpu: 10m
