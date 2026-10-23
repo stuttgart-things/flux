@@ -1,0 +1,10 @@
+---
+# homerun2-k8s-pitcher-remote -- only the k8s-pitcher, pitching the events
+# that matter to the omni-pitcher of a CENTRAL homerun2 cluster (#823); no
+# redis, no omni-pitcher, no catchers here. Token from a ClusterSecretStore.
+# ../homerun2-k8s-pitcher-remote-sops is the alternative without
+# external-secrets.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-homerun2-k8s-pitcher-remote.yaml

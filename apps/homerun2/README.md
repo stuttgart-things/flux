@@ -16,6 +16,8 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-light-catcher-tabletennis-sops` | `profiles/sops-light-catcher-tabletennis`, then `profiles/platform-light-catcher-tabletennis-routes` | **instead of `homerun2-light-catcher-tabletennis`**, next to `homerun2-sops`: the same instance, with the redis password from a `substituteFrom` Secret (`homerun2-light-catcher-tabletennis-sops-secrets`, key `HOMERUN2_REDIS_PASSWORD_B64` -- homerun2-sops' value) (waits on `homerun2`) |
 | `homerun2-portal` | `profiles/portal`, then `profiles/portal-routes` | homerun2-portal: one page with every service's status and fragments, and each service's own UI under `/<key>/` through its reverse proxy (`HOMERUN2_PORTAL_SERVICES`). No secrets, so next to `homerun2` or `homerun2-sops` alike; each service it fronts runs with `HOMERUN2_<SERVICE>_BASE_PATH=/<key>` (waits on `homerun2`) |
 | `homerun2-notification-catcher` | `profiles/platform-notification-catcher`, then `profiles/platform-notification-catcher-routes` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
+| `homerun2-k8s-pitcher-remote` | `profiles/k8s-pitcher-remote` | **on a cluster without homerun2 of its own**: only the k8s-pitcher, pitching the `important-events` preset (Warning Events with an important reason, Ready flips of nodes, Flux Kustomizations and HelmReleases; cooldown 1h, at most 20 per 10m) to a central homerun2 cluster's omni-pitcher (`HOMERUN2_CENTRAL_PITCHER_URL`, `CLUSTER_NAME`, both required). The central token from the store. Needs k8s-pitcher v1.3.0+. See `components/k8s-pitcher/README.md` |
+| `homerun2-k8s-pitcher-remote-sops` | `profiles/k8s-pitcher-remote-sops` | **instead of `homerun2-k8s-pitcher-remote`**, without external-secrets: the central token from a `substituteFrom` Secret (`homerun2-k8s-pitcher-remote-sops-secrets`, key `HOMERUN2_K8S_PITCHER_AUTH_TOKEN`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval. **After a bump, a `PASS` means the new version answered**: each in-cluster probe waits until the service's `/health` reports the version the bundle sets, three times in a row, because the re-run starts in parallel with the rollout (flux#432). Not for wled-mock, whose `/healthz` reports no version, and not for the external probes, which check routes |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
@@ -69,6 +71,8 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | `profiles/base-sound-catcher-routes` | HTTPRoute for sound-catcher | **Add-on** to `profiles/base-sound-catcher`: a second Kustomization with `dependsOn` on it |
 | `profiles/portal` | portal | **Add-on** to any profile: holds no secrets, so it fits the eso and the sops path alike. Each service in `HOMERUN2_PORTAL_SERVICES` must run with `BASE_PATH=/<key>` |
 | `profiles/portal-routes` | HTTPRoute for portal | **Add-on** to `profiles/portal`: a second Kustomization with `dependsOn` on it |
+| `profiles/k8s-pitcher-remote` | k8s-pitcher + its `remote/` and `eso/` | **Standalone**, on a cluster without homerun2: pitches important events to a central omni-pitcher, token from the store |
+| `profiles/k8s-pitcher-remote-sops` | k8s-pitcher + its `remote/` and `sops/` | The same, token from `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` (`substituteFrom`) |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
 | *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
 
@@ -146,6 +150,11 @@ Version defaults are not repeated in these tables. Each component pins them in `
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap name containing the K8sPitcherProfile YAML |
+| `HOMERUN2_CENTRAL_PITCHER_URL` | `https://set-HOMERUN2_CENTRAL_PITCHER_URL.invalid/pitch` | yes, with `remote/` | The central omni-pitcher's `/pitch` endpoint |
+| `CLUSTER_NAME` | `set-CLUSTER_NAME` | yes, with `remote/` | `spec.cluster`: names this cluster in every message |
+| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | - | yes, with `sops/` | Bearer token for the (central) omni-pitcher, from `substituteFrom` |
+
+With `eso/` the token comes from `${HOMERUN2_SECRET_STORE}`, entry `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}`, property `${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY}` -- the same variables as omni-pitcher's.
 
 ### Light Catcher
 

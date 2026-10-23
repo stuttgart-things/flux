@@ -1,0 +1,61 @@
+---
+# k8s-pitcher → central omni-pitcher → ./apps/homerun2/profiles/k8s-pitcher-remote
+#
+# A cluster that runs no homerun2 of its own pitches the `important-events`
+# preset to a central homerun2 cluster: Warning Events with a reason worth a
+# message (BackOff, OOMKilling, Evicted, FailedMount, ...) and Ready flips of
+# nodes, Flux Kustomizations and HelmReleases -- at most one per object and
+# reason an hour, at most 20 messages per 10 minutes. Every message names
+# CLUSTER_NAME (system k8s-<cluster>).
+#
+# The token is the CENTRAL omni-pitcher's, read from this cluster's
+# ClusterSecretStore: entry ${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}, property
+# ${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY} -- the variables ../homerun2 reads
+# for the same token, so the store layout is the same on both ends.
+#
+# REQUIRES external-secrets and a store, and trust-manager's
+# cluster-trust-bundle when the central endpoint has a private CA (the pitcher
+# verifies TLS; without the bundle every pitch fails).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homerun2-k8s-pitcher-remote
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: external-secrets
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${HOMERUN2_K8S_PITCHER_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/homerun2/profiles/k8s-pitcher-remote
+  postBuild:
+    substitute:
+      # The central omni-pitcher's pitch endpoint, e.g.
+      # https://omni-pitcher.homerun2-dev.sthings.lab/pitch. No safe default.
+      HOMERUN2_CENTRAL_PITCHER_URL: "${HOMERUN2_CENTRAL_PITCHER_URL:-https://set-HOMERUN2_CENTRAL_PITCHER_URL.invalid/pitch}" # REQUIRED
+      # spec.cluster: names this cluster in every message. No safe default.
+      CLUSTER_NAME: "${CLUSTER_NAME:-set-CLUSTER_NAME}" # REQUIRED
+      # passthrough-override: the component's homerun2-flux is the namespace
+      # of a k8s-pitcher beside a full homerun2 stack; alone it is homerun2.
+      HOMERUN2_K8S_PITCHER_NAMESPACE: "${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2}"
+      HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM: "${HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}"
+      # No safe default: stores are named per cluster (vault-<cluster>).
+      HOMERUN2_SECRET_STORE: "${HOMERUN2_SECRET_STORE:-set-HOMERUN2_SECRET_STORE}"
+      HOMERUN2_OMNI_PITCHER_TOKEN_PATH: "${HOMERUN2_OMNI_PITCHER_TOKEN_PATH:-homerun2}"
+      HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY: "${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY:-omni-pitcher-auth-token}"
+      # The kustomize artefact and the image (one variable, both tags). At
+      # least v1.3.0 (homerun2-k8s-pitcher#88): an older image ignores the
+      # profile's filters, cooldown and rate limit and pitches every Event.
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.3.0}"
