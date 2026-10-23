@@ -89,8 +89,9 @@ spec:
       # and redis storage passed and every service ran the library default
       # (notification-catcher v3.1.0 where a cluster ran v3.11.0). Defaults
       # are the components' own.
-      # Not here: HOMERUN2_LED_CATCHER_IDLE and HOMERUN2_REDIS_PERSISTENCE_ENABLED,
-      # whose defaults (off, true) are YAML bools and cannot pass a substitute.
+      # Not here: HOMERUN2_LED_CATCHER_IDLE, HOMERUN2_LED_CATCHER_DISPLAY_QUEUE and
+      # HOMERUN2_REDIS_PERSISTENCE_ENABLED, whose defaults (off, 1, true) are YAML
+      # bools or ints and cannot pass a substitute.
       # A cluster that wants the clock sets HOMERUN2_LED_CATCHER_IDLE: clock on
       # this child with a bundle patch.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-config-viewer-kustomize
