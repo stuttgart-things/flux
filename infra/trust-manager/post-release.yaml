@@ -56,9 +56,16 @@ spec:
           name: ${TRUST_BUNDLE_SECRET_NAME:-tls-ca}
         spec:
           sources:
+            # Rancher agents pin the sha256 of this bundle (CATTLE_CA_CHECKSUM)
+            # and refuse to start when it changes. The self-signed cluster CA
+            # renews every 60 days (cert-manager default), so a cluster whose
+            # Rancher certificate comes from the Vault/OpenBao PKI should point
+            # this at TRUST_BUNDLE_VAULT_CA_SECRET: trust-manager de-duplicates,
+            # and the bundle is the long-lived root alone. Unset = the cluster
+            # CA, as before.
             - secret:
-                name: ${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}
-                key: ${TRUST_BUNDLE_CA_KEY:-ca.crt}
+                name: ${TRUST_BUNDLE_SECRET_CA_SECRET:-${TRUST_BUNDLE_CA_SECRET:-cluster-ca-secret}}
+                key: ${TRUST_BUNDLE_SECRET_CA_KEY:-${TRUST_BUNDLE_CA_KEY:-ca.crt}}
             - secret:
                 name: ${TRUST_BUNDLE_VAULT_CA_SECRET:-vault-pki-ca}
                 key: ${TRUST_BUNDLE_VAULT_CA_KEY:-ca.crt}
