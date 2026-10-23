@@ -1,0 +1,75 @@
+---
+# fluent-bit as a DaemonSet: every container log of the node, enriched with
+# its Kubernetes metadata, pushed to Loki (./infra/loki) with the labels
+# cluster / namespace / pod / container.
+#
+# As it stands this pushes plain HTTP to Loki's gateway Service in the SAME
+# cluster (FLUENT_BIT_LOKI_HOST, default loki-gateway.loki.svc.cluster.local,
+# port 80). components/remote switches the output to HTTPS on 443 for a Loki
+# behind another cluster's Gateway (infra/loki components/httproute). Port and
+# tls are not variables: they would substitute to an int and a bool, and
+# postBuild.substitute only carries strings through a bundle.
+#
+# The [OUTPUT] below uses fluent-bit's record accessor ($kubernetes['...']);
+# without braces Flux leaves it alone.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: fluent-bit
+  namespace: ${FLUENT_BIT_NAMESPACE:-logging}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: fluent-bit
+      # renovate: datasource=docker depName=ghcr.io/fluent/helm-charts/fluent-bit
+      version: ${FLUENT_BIT_VERSION:-0.58.3}
+      sourceRef:
+        kind: HelmRepository
+        name: fluent
+        namespace: ${FLUENT_BIT_NAMESPACE:-logging}
+      interval: 12h
+  values:
+    kind: DaemonSet
+    # No helm test pod (busybox:latest).
+    testFramework:
+      enabled: false
+    # Control-plane nodes too: single-node clusters are the norm here.
+    tolerations:
+      - operator: Exists
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    config:
+      inputs: |
+        [INPUT]
+            Name tail
+            Path /var/log/containers/*.log
+            Exclude_Path /var/log/containers/fluent-bit-*.log
+            multiline.parser docker, cri
+            Tag kube.*
+            Mem_Buf_Limit 10MB
+            Skip_Long_Lines On
+            DB /var/log/fluent-bit-kube.db
+      filters: |
+        [FILTER]
+            Name kubernetes
+            Match kube.*
+            Merge_Log On
+            Keep_Log Off
+            K8S-Logging.Parser On
+            K8S-Logging.Exclude On
+      outputs: |
+        [OUTPUT]
+            Name loki
+            Match kube.*
+            Host ${FLUENT_BIT_LOKI_HOST:-loki-gateway.loki.svc.cluster.local}
+            Port 80
+            labels job=fluent-bit, cluster=${FLUENT_BIT_CLUSTER_NAME:-set-FLUENT_BIT_CLUSTER_NAME.invalid}
+            label_keys $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
+            remove_keys kubernetes, stream
+            line_format json
+            Retry_Limit 10

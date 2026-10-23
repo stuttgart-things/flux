@@ -1,0 +1,17 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${FLUENT_BIT_NAMESPACE:-logging}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: fluent
+  namespace: ${FLUENT_BIT_NAMESPACE:-logging}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/fluent/helm-charts

@@ -1,0 +1,7 @@
+---
+# Opt-in: loki.<DOMAIN> on the cluster Gateway, so fluent-bit on the OTHER
+# clusters can push (FLUENT_BIT_LOKI_HOST=loki.<DOMAIN>, port 443, tls on).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

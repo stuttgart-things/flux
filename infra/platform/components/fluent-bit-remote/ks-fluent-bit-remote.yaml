@@ -1,0 +1,40 @@
+---
+# fluent-bit -> ./infra/fluent-bit + components/remote
+#
+# Same child Kustomization as the fluent-bit component, for a cluster whose
+# Loki lives elsewhere: HTTPS on 443 to FLUENT_BIT_LOKI_HOST (the loki
+# component's route on that cluster, <LOKI_HOSTNAME>.<its INFRA_DOMAIN>),
+# verified against the CA bundle ConfigMap FLUENT_BIT_CA_CONFIGMAP -- which
+# must trust that Gateway's certificate.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: fluent-bit
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${FLUENT_BIT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/fluent-bit
+  components:
+    - components/remote
+  postBuild:
+    substitute:
+      FLUENT_BIT_NAMESPACE: "${FLUENT_BIT_NAMESPACE:-logging}"
+      # renovate: datasource=docker depName=ghcr.io/fluent/helm-charts/fluent-bit
+      FLUENT_BIT_VERSION: "${FLUENT_BIT_VERSION:-0.58.3}"
+      FLUENT_BIT_CLUSTER_NAME: "${FLUENT_BIT_CLUSTER_NAME:-set-FLUENT_BIT_CLUSTER_NAME.invalid}" # REQUIRED
+      FLUENT_BIT_LOKI_HOST: "${FLUENT_BIT_LOKI_HOST:-set-FLUENT_BIT_LOKI_HOST.invalid}" # REQUIRED
+      FLUENT_BIT_CA_CONFIGMAP: "${FLUENT_BIT_CA_CONFIGMAP:-cluster-trust-bundle}"
+      FLUENT_BIT_CA_KEY: "${FLUENT_BIT_CA_KEY:-trust-bundle.pem}"

@@ -1,0 +1,20 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${LOKI_NAMESPACE:-loki}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+# The OSS Loki chart. grafana/helm-charts' `loki` is Grafana Enterprise Logs
+# only since 7.0.0; the OSS chart moved to grafana-community on 2026-03-16
+# (grafana/loki#20705).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: grafana-community
+  namespace: ${LOKI_NAMESPACE:-loki}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://ghcr.io/grafana-community/helm-charts

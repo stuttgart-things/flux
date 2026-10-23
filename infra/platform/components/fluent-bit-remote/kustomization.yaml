@@ -1,0 +1,7 @@
+---
+# bundle-alternative-of: fluent-bit
+# Opt-in: fluent-bit pushing to a Loki on another cluster (instead of fluent-bit)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-fluent-bit-remote.yaml
