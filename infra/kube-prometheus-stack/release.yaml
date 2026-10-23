@@ -17,11 +17,20 @@ spec:
         name: prometheus-community
         namespace: ${KPS_NAMESPACE:-monitoring}
       interval: 12h
+  # The prometheus-operator CRDs sit in the crds subchart's crds/ directory,
+  # which Helm installs once and never upgrades -- and helm-controller's
+  # default for an upgrade is crds: Skip. An upgrade across operator versions
+  # (every few chart majors, see the chart's UPGRADE.md) then runs the new
+  # operator against the old CRDs. CreateReplace replaces them with the
+  # chart's on install and upgrade; a replace sends no last-applied
+  # annotation, so the "metadata.annotations: Too long" limit does not apply.
+  install:
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   values:
-    # CRDs (prometheus-operator) are rendered as normal templates by the
-    # chart's crds subchart. If a future upgrade fails with "metadata.
-    # annotations: Too long", install the CRDs via a separate Kustomization
-    # and set crds.enabled=false here -- see README.
+    # CRDs (prometheus-operator) come from the chart's crds subchart (see
+    # the CreateReplace note above).
     crds:
       enabled: true
 
