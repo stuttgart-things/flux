@@ -39,13 +39,15 @@ data:
         max: 20
         per: 10m
       informers:
-        # Nodes: NotReady <-> Ready
+        # Nodes: NotReady <-> Ready. updates: flips everywhere: Ready/Synced
+        # flips only, no "<Kind>/<name> update" on a spec (generation) change
+        # (homerun2-k8s-pitcher#93, v1.5.0).
         - group: ""
           version: v1
           resource: nodes
           events: [update]
-          updates: conditions
-        # Flux: only lasting failures (homerun2-k8s-pitcher#89, v1.4.0). On
+          updates: flips
+        # Flux: only lasting failures (homerun2-k8s-pitcher#89). On
         # the platform pilot (2026-10-23) every new flux revision flipped each
         # Kustomization Ready=Unknown (Progressing) / False (DependencyNotReady)
         # and back within seconds -- 37 Teams posts in an hour (flux#827).
@@ -55,7 +57,7 @@ data:
           version: v1
           resource: kustomizations
           events: [update]
-          updates: conditions
+          updates: flips
           ignoreStatuses: [Unknown]
           ignoreReasons: [Progressing, DependencyNotReady, ReconciliationInProgress]
           minDuration: 5m
@@ -63,7 +65,7 @@ data:
           version: v2
           resource: helmreleases
           events: [update]
-          updates: conditions
+          updates: flips
           ignoreStatuses: [Unknown]
           ignoreReasons: [Progressing, DependencyNotReady, ReconciliationInProgress]
           minDuration: 5m

@@ -25,10 +25,11 @@
 # central endpoint verifies with `insecure: false`. Without the bundle on this
 # cluster the pitches fail with an unknown-authority error.
 #
-# NEEDS k8s-pitcher v1.4.0 or later (homerun2-k8s-pitcher#88: types, reasons,
-# cooldown, rateLimit; #89: ignoreStatuses, ignoreReasons, minDuration). The
-# profile loader ignores fields it does not know, so an older image starts fine
-# and pitches EVERY Event and Flux flip -- a flood, not an error.
+# NEEDS k8s-pitcher v1.5.0 or later (homerun2-k8s-pitcher#88: types, reasons,
+# cooldown, rateLimit; #89: ignoreStatuses, ignoreReasons, minDuration; #93:
+# updates: flips). v1.4.x rejects `updates: flips` at start-up. Before v1.4.0
+# the loader ignores the fields it does not know, starts fine and pitches
+# EVERY Event and Flux flip -- a flood, not an error.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
