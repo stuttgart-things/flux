@@ -76,4 +76,4 @@ spec:
       GITHUB_ARC_CONTROLLER_NAMESPACE: "${GITHUB_ARC_CONTROLLER_NAMESPACE:-arc-systems}"
       GITHUB_ARC_CONTROLLER_RELEASE: "${GITHUB_ARC_CONTROLLER_RELEASE:-github-controller}"
       # renovate: datasource=docker depName=ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
-      GITHUB_ARC_VERSION: "${GITHUB_ARC_VERSION:-0.15.0}"
+      GITHUB_ARC_VERSION: "${GITHUB_ARC_VERSION:-0.15.1}"
