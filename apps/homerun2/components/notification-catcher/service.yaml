@@ -1,0 +1,23 @@
+---
+# The UI's Service. The kustomize base ships none (it is rendered with
+# config.httpEnabled off), and a patch in release.yaml cannot add one, so it
+# sits next to the Flux Kustomization. Selector = the base's selectorLabels.
+apiVersion: v1
+kind: Service
+metadata:
+  name: homerun2-notification-catcher
+  namespace: ${HOMERUN2_NAMESPACE:-homerun2}
+  labels:
+    app.kubernetes.io/name: homerun2-notification-catcher
+    app.kubernetes.io/instance: homerun2-notification-catcher
+    app.kubernetes.io/part-of: homerun2
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: homerun2-notification-catcher
+    app.kubernetes.io/instance: homerun2-notification-catcher
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

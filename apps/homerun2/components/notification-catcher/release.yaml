@@ -61,7 +61,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-notification-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.1.0}
+                  image: ghcr.io/stuttgart-things/homerun2-notification-catcher:${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.13.0}
 
     # First-reconciliation guard: every dispatched alert is logged
     # ("dry-run: would send …") instead of POSTing to Teams. Defaults to
@@ -116,3 +116,43 @@ spec:
           REDIS_PORT: "6379"
           REDIS_STREAM: messages
           REDIS_STREAMS: ${HOMERUN2_NOTIFICATION_CATCHER_STREAMS:=messages,alerts}
+          # The read-only UI (catcher v3.8.0+, docs/http-ui.md): the loaded
+          # routing config with secrets redacted, the event log of the last
+          # dispatched messages with each output's result, the dead-letter
+          # tab; /healthz and /metrics at the root. Service in service.yaml,
+          # HTTPRoute in ./route. No token: read-only, like the other homerun2
+          # UIs.
+          HTTP_ADDR: ":8080"
+          # URL prefix behind homerun2-portal, e.g. /notify: the portal then
+          # shows the latest dispatched messages on its overview. Set, the UI
+          # answers only under it -- also on its own hostname, where /
+          # redirects there. Empty (or "/") serves at the root.
+          BASE_PATH: "${HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH:=}"
+
+    # The UI's port, and readiness on /healthz -- a Redis ping, so the pod is
+    # not ready while Redis is away. No liveness probe: the catcher exits on
+    # its own when Redis stays away at startup (REDIS_STARTUP_TIMEOUT).
+    - target:
+        kind: Deployment
+        name: homerun2-notification-catcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-notification-catcher
+        spec:
+          template:
+            spec:
+              containers:
+                - name: homerun2-notification-catcher
+                  ports:
+                    - name: http
+                      containerPort: 8080
+                      protocol: TCP
+                  readinessProbe:
+                    httpGet:
+                      path: /healthz
+                      port: http
+                    periodSeconds: 10
+                    timeoutSeconds: 3
+                    failureThreshold: 3

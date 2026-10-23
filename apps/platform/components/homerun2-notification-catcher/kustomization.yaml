@@ -1,6 +1,8 @@
 ---
-# homerun2-notification-catcher -- posts selected homerun2 messages to Teams
+# homerun2-notification-catcher -- posts selected homerun2 messages to Teams;
+# its read-only UI gets a route of its own (-routes)
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - ks-homerun2-notification-catcher.yaml
+  - ks-homerun2-notification-catcher-routes.yaml

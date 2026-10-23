@@ -1,7 +1,7 @@
 ---
 # notification-catcher on top of profiles/platform (bundle component
-# homerun2-notification-catcher), credentials from the store. No route: it is
-# a pure consumer.
+# homerun2-notification-catcher), credentials from the store. The route of its
+# read-only UI is in profiles/platform-notification-catcher-routes.
 #
 # The routing file and the dry-run switch are chosen by the bundle component
 # (notify-*, dry-run-*), not here, so this path serves any routing.
