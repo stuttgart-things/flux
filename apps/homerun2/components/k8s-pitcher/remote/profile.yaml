@@ -1,9 +1,9 @@
 ---
 # The `important-events` preset of homerun2-k8s-pitcher (profiles/
 # important-events.yaml, homerun2-k8s-pitcher#88), pitching to the central
-# omni-pitcher, minus its Flux informers (see below). Otherwise keep it in
-# step with the preset; the ClusterRole in kustomization.yaml grants exactly
-# the informers below.
+# omni-pitcher. Its Flux informers report only lasting failures (see below);
+# otherwise keep it in step with the preset; the ClusterRole in
+# kustomization.yaml grants exactly the informers below.
 #
 # FailedScheduling and Unhealthy (probes) stay out: too noisy. No collectors,
 # no inventory on restart.
@@ -45,12 +45,28 @@ data:
           resource: nodes
           events: [update]
           updates: conditions
-        # NOT Flux Ready flips, unlike the upstream preset. On the platform
-        # pilot (2026-10-23) every new flux revision made each Kustomization
-        # flip Ready=Unknown (Progressing) / False (DependencyNotReady) and
-        # back within seconds: 32 warnings -- 37 Teams posts -- in an hour,
-        # one per object and flip, so neither cooldown nor rateLimit caught
-        # them. Back once the pitcher reports only lasting failures.
+        # Flux: only lasting failures (homerun2-k8s-pitcher#89, v1.4.0). On
+        # the platform pilot (2026-10-23) every new flux revision flipped each
+        # Kustomization Ready=Unknown (Progressing) / False (DependencyNotReady)
+        # and back within seconds -- 37 Teams posts in an hour (flux#827).
+        # Those flips are ignored now; a failure is pitched once it has lasted
+        # 5m, its recovery only if the failure was pitched.
+        - group: kustomize.toolkit.fluxcd.io
+          version: v1
+          resource: kustomizations
+          events: [update]
+          updates: conditions
+          ignoreStatuses: [Unknown]
+          ignoreReasons: [Progressing, DependencyNotReady, ReconciliationInProgress]
+          minDuration: 5m
+        - group: helm.toolkit.fluxcd.io
+          version: v2
+          resource: helmreleases
+          events: [update]
+          updates: conditions
+          ignoreStatuses: [Unknown]
+          ignoreReasons: [Progressing, DependencyNotReady, ReconciliationInProgress]
+          minDuration: 5m
         # Warning Events with an important reason
         - group: ""
           version: v1
