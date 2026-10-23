@@ -7,8 +7,9 @@
 #   - the namespace -- there is no redis-stack here to create it;
 #   - the profile ConfigMap ../ expects its caller to provide, as the
 #     `important-events` preset of homerun2-k8s-pitcher: Warning Events with a
-#     reason worth a message, and Ready flips of nodes, Flux Kustomizations and
-#     HelmReleases; cooldown 1h, at most 20 messages per 10m;
+#     reason worth a message, and Ready flips of nodes -- not of Flux
+#     Kustomizations and HelmReleases, see profile.yaml; cooldown 1h, at most
+#     20 messages per 10m;
 #   - a ClusterRole that grants exactly what that profile watches, in place of
 #     the artefact's (pods, deployments, replicasets and every Secret).
 #
@@ -56,12 +57,6 @@ patches:
             rules:
               - apiGroups: [""]
                 resources: [nodes, events]
-                verbs: [get, list, watch]
-              - apiGroups: [kustomize.toolkit.fluxcd.io]
-                resources: [kustomizations]
-                verbs: [get, list, watch]
-              - apiGroups: [helm.toolkit.fluxcd.io]
-                resources: [helmreleases]
                 verbs: [get, list, watch]
               # The bearer token (spec.auth.tokenFrom), read with a Get.
               - apiGroups: [""]
