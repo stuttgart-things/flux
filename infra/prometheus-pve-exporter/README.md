@@ -14,6 +14,7 @@ as a ConfigMap and auto-imported by the kps Grafana sidecar.
 | `service.yaml` | ClusterIP `:9221` (debugging / port-forward) |
 | `podmonitor.yaml` | scrape config; labelled `app.kubernetes.io/component: monitoring` to match the kps `podMonitorSelector` |
 | `dashboard.json` | Grafana dashboard (ConfigMap label `grafana_dashboard: "1"`) |
+| `dashboard-guests.json` | Grafana dashboard "Proxmox VE - tagged guests": only guests with the PVE tag in variable `tag` (default `stuttgart-things`), templates excluded -- status/CPU/RAM/disk table plus CPU, RAM, network and disk I/O per VM |
 
 ## Required substitutions (Flux `postBuild.substitute`)
 
