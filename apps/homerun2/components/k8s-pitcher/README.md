@@ -29,7 +29,7 @@ Three sub-components, each listed after this one:
 
 | Sub-component | Adds |
 |---|---|
-| `remote/` | the namespace, the profile ConfigMap (the `important-events` preset of homerun2-k8s-pitcher, `pitcher.addr: ${HOMERUN2_CENTRAL_PITCHER_URL}`, `spec.cluster: ${CLUSTER_NAME}`, `insecure: false`), and a ClusterRole replacing the artefact's with exactly what that profile watches: `nodes`, `events`, `kustomizations.kustomize.toolkit.fluxcd.io`, `helmreleases.helm.toolkit.fluxcd.io` (get/list/watch), plus `get` on the one Secret `homerun2-k8s-pitcher-token` |
+| `remote/` | the namespace, the profile ConfigMap (the `important-events` preset of homerun2-k8s-pitcher, `pitcher.addr: ${HOMERUN2_CENTRAL_PITCHER_URL}`, `spec.cluster: ${CLUSTER_NAME}`, `insecure: false`), and a ClusterRole replacing the artefact's with exactly what that profile watches: `nodes`, `events` (get/list/watch), plus `get` on the one Secret `homerun2-k8s-pitcher-token` |
 | `eso/` | the token Secret as an ExternalSecret: `${HOMERUN2_SECRET_STORE}`, entry `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}`, property `${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY}` |
 | `sops/` | the token Secret from `${HOMERUN2_K8S_PITCHER_AUTH_TOKEN}`, no default |
 

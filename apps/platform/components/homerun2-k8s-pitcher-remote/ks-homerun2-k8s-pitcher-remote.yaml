@@ -4,7 +4,7 @@
 # A cluster that runs no homerun2 of its own pitches the `important-events`
 # preset to a central homerun2 cluster: Warning Events with a reason worth a
 # message (BackOff, OOMKilling, Evicted, FailedMount, ...) and Ready flips of
-# nodes, Flux Kustomizations and HelmReleases -- at most one per object and
+# nodes -- at most one per object and
 # reason an hour, at most 20 messages per 10 minutes. Every message names
 # CLUSTER_NAME (system k8s-<cluster>).
 #
