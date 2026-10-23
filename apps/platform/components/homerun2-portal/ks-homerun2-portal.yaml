@@ -42,6 +42,6 @@ spec:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-portal-kustomize
-      HOMERUN2_PORTAL_VERSION: "${HOMERUN2_PORTAL_VERSION:-v0.6.0}"
+      HOMERUN2_PORTAL_VERSION: "${HOMERUN2_PORTAL_VERSION:-v0.8.0}"
       # `key=url` or `key|Title=url`, comma-separated, in navigation order.
       HOMERUN2_PORTAL_SERVICES: "${HOMERUN2_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"
