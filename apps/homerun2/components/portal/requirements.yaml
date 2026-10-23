@@ -8,4 +8,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/homerun2-portal-kustomize
   ref:
-    tag: ${HOMERUN2_PORTAL_VERSION:-v0.6.0}
+    tag: ${HOMERUN2_PORTAL_VERSION:-v0.8.0}
