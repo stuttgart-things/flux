@@ -55,7 +55,8 @@ spec:
       HOMERUN2_OMNI_PITCHER_TOKEN_PATH: "${HOMERUN2_OMNI_PITCHER_TOKEN_PATH:-homerun2}"
       HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY: "${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY:-omni-pitcher-auth-token}"
       # The kustomize artefact and the image (one variable, both tags). At
-      # least v1.3.0 (homerun2-k8s-pitcher#88): an older image ignores the
-      # profile's filters, cooldown and rate limit and pitches every Event.
+      # least v1.4.0 (homerun2-k8s-pitcher#88, #89): an older image ignores the
+      # profile's filters, cooldown and rate limit and pitches every Event and
+      # every Flux flip.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
-      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.3.0}"
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.4.0}"

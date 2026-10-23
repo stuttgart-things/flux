@@ -43,10 +43,11 @@ spec:
       HOMERUN2_K8S_PITCHER_NAMESPACE: "${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2}"
       HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM: "${HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}"
       # The kustomize artefact and the image (one variable, both tags). At
-      # least v1.3.0 (homerun2-k8s-pitcher#88): an older image ignores the
-      # profile's filters, cooldown and rate limit and pitches every Event.
+      # least v1.4.0 (homerun2-k8s-pitcher#88, #89): an older image ignores the
+      # profile's filters, cooldown and rate limit and pitches every Event and
+      # every Flux flip.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
-      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.3.0}"
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.4.0}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_K8S_PITCHER_AUTH_TOKEN
       # The CENTRAL omni-pitcher's token -- the same value as that cluster's

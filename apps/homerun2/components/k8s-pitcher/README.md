@@ -38,9 +38,15 @@ parent's Secret is its only writer. Select one of them. `profiles/k8s-pitcher-re
 (eso) and `profiles/k8s-pitcher-remote-sops` compose them; the apps-platform
 bundle components `homerun2-k8s-pitcher-remote` / `-sops` apply those.
 
-`remote/` **needs k8s-pitcher v1.3.0 or later** (homerun2-k8s-pitcher#88). The
-profile loader ignores fields it does not know, so an older image starts fine,
-drops `types`, `reasons`, `cooldown` and `rateLimit`, and pitches every Event.
+`remote/` **needs k8s-pitcher v1.4.0 or later** (homerun2-k8s-pitcher#88, #89).
+The profile loader ignores fields it does not know, so an older image starts
+fine, drops `types`, `reasons`, `cooldown`, `rateLimit`, `ignoreStatuses`,
+`ignoreReasons` and `minDuration`, and pitches every Event and every Flux flip.
+
+Flux Kustomizations and HelmReleases are watched for lasting failures only:
+`Unknown` and the reasons `Progressing`, `DependencyNotReady` and
+`ReconciliationInProgress` are ignored, a failure is pitched once it has lasted
+5m, its recovery only if the failure was pitched.
 
 The token is the **central** omni-pitcher's. The pitcher verifies TLS against
 trust-manager's `cluster-trust-bundle`, which must hold the central endpoint's CA.
