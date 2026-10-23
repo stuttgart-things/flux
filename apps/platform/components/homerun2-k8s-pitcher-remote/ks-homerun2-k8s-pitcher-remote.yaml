@@ -59,4 +59,4 @@ spec:
       # profile's filters, cooldown and rate limit and pitches every Event and
       # every Flux flip.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
-      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.4.0}"
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.5.0}"
