@@ -107,6 +107,19 @@ spec:
     postgresql:
       image:
         repository: bitnamilegacy/postgresql
+      # The chart's resourcesPreset "nano" caps CPU at 150m: ~60% of the CFS
+      # periods were throttled (CPUThrottlingHigh) at ~1% average use. Same
+      # values as nano except the CPU limit; resources replaces the preset.
+      primary:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            ephemeral-storage: 50Mi
+          limits:
+            cpu: "1"
+            memory: 192Mi
+            ephemeral-storage: 2Gi
 
     redis:
       image:
