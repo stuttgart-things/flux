@@ -24,10 +24,13 @@ apps/platform/
     ├── infisical/   → ./apps/infisical   (requires cilium-gateway, a StorageClass + a Secret)
     ├── backstage-rag-postgres/ → ./apps/backstage-rag-postgres
     │                  (requires backstage, cnpg-operator, cnpg-barman-cloud, velero, the ESO vault store)
+    ├── backstage-rag-postgres-sops/ → ./apps/backstage-rag-postgres
+    │                  (instead of backstage-rag-postgres: no backups, no ESO; requires backstage, cnpg-operator, a SOPS Secret)
     ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
     ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
     ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
     ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
+    ├── clusterscope-labview/ → ./apps/clusterscope (instead of clusterscope: Vault kubeconfigs + git token, config, probes)
     ├── vcluster/    → ./apps/vcluster
     │
     │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:

@@ -1,0 +1,14 @@
+---
+# clusterscope-labview -- clusterscope as a lab view: the other clusters'
+# kubeconfigs and the git token from Vault, a config file, live state and
+# blackbox probes of every endpoint it finds.
+# An ALTERNATIVE to ../clusterscope, not an add-on: select one of the two.
+# bundle-alternative-of: clusterscope
+#
+# REQUIRES cilium-gateway, CLUSTERSCOPE_GIT_REPO, two ESO stores
+# (CLUSTERSCOPE_KUBECONFIG_STORE, CLUSTERSCOPE_GIT_SYNC_AUTH_STORE),
+# kube-prometheus-stack for the probes' ScrapeConfig and a blackbox exporter.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-clusterscope.yaml

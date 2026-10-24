@@ -1,0 +1,14 @@
+---
+# backstage-rag-postgres-sops -- the RAG-AI pgvector Postgres without backups
+# and without external-secrets: the owner credentials come from a Secret the
+# cluster supplies (SOPS), and nothing is archived.
+# An ALTERNATIVE to ../backstage-rag-postgres, not an add-on: select one of the two.
+# bundle-alternative-of: backstage-rag-postgres
+#
+# REQUIRES backstage (for its namespace), cnpg-operator, a real
+# RAG_PG_STORAGE_CLASS and a basic-auth Secret rag-postgres-creds
+# (username, password) in BACKSTAGE_NAMESPACE.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-backstage-rag-postgres.yaml
