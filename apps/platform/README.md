@@ -17,6 +17,8 @@ apps/platform/
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
     ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
+    ├── harbor-project-proxy/ → ./apps/harbor/components/project-proxy
+    │                  (requires harbor; route: harbor-project-proxy-httproute)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
     ├── infisical/   → ./apps/infisical   (requires cilium-gateway, a StorageClass + a Secret)
@@ -173,7 +175,7 @@ success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
+`keycloak`, `harbor`, `harbor-project-proxy`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
 (the infra bundle's profiles are listed in
 [`infra/platform`](../../infra/platform/README.md#appprofiles)).
 It lists the vars a cluster may set for the app, which of them are required, and

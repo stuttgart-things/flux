@@ -1,9 +1,8 @@
 ---
-# Both routes, as before. The Harbor route itself lives in
-# ../components/httproute so the platform bundle can select it on its own.
+# Both routes, as before. Each lives in its own Component under ../components
+# so the platform bundle can select them separately.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - httproute-project-proxy.yaml
 components:
   - ../components/httproute
+  - ../components/httproute-project-proxy
