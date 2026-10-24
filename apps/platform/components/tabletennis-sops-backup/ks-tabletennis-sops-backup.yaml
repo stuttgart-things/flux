@@ -129,6 +129,10 @@ spec:
       ZAEHLWERK_PONG_BOT_SKILL: "${TABLETENNIS_ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
       ZAEHLWERK_PONG_ATTRACT_AFTER: "${TABLETENNIS_ZAEHLWERK_PONG_ATTRACT_AFTER:-10m}"
       ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # Read only by zaehlwerk-panel-homerun2: what the catcher returns to after
+      # a match. `messages`; add a Pong sandbox's stream to show its league
+      # while the table is free (../tabletennis-sandbox, zaehlwerk ADR-0016).
+      ZAEHLWERK_CATCHER_IDLE_STREAMS: "${TABLETENNIS_ZAEHLWERK_CATCHER_IDLE_STREAMS:-messages}"
       # passthrough-override: the component derives this from SCHMETTERPAUSE_HOSTNAME
       # and DOMAIN, which exist one level down; the same value has to be built
       # from this layer's own INFRA_DOMAIN here.

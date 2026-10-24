@@ -1,0 +1,44 @@
+---
+# zaehlwerk-panel-redis -- zaehlwerk publishing its score straight into
+# homerun2's Redis on the same cluster, onto a stream of its own, and never
+# switching the LED catcher. Selected with TABLETENNIS_ZAEHLWERK_PANEL: redis.
+#
+# Made for the Pong sandbox next to the office (zaehlwerk ADR-0016): its
+# matches go to ZAEHLWERK_PANEL_STREAM (tabletennis-sandbox there), and the
+# office's zaehlwerk lists that stream among its idle streams
+# (ZAEHLWERK_CATCHER_IDLE_STREAMS in zaehlwerk-panel-homerun2). So the panel
+# shows the sandbox while the real table is free, and a real match takes the
+# panel by the existing rule (ADR-0003) -- nothing has to decide anything
+# across the two instances.
+#
+# REDIS_ADDR rather than omni-pitcher: over omni-pitcher the stream is the
+# pitcher's routing decision, by system, which both instances share; straight
+# into Redis, PANEL_STREAM is the stream. No CATCHER_URL on purpose: two
+# zaehlwerks switching one catcher would take the panel from each other.
+#
+# The password is ZAEHLWERK_REDIS_PASSWORD, homerun2's, as for
+# zaehlwerk-panel-homerun2 (the sops Secret's REDIS_PASSWORD).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: zaehlwerk-config
+          patch: |
+            - op: add
+              path: /data/REDIS_ADDR
+              value: redis-stack.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+            - op: add
+              path: /data/REDIS_PORT
+              value: "6379"
+            - op: add
+              path: /data/PANEL_STREAM
+              value: "${ZAEHLWERK_PANEL_STREAM:-tabletennis}"

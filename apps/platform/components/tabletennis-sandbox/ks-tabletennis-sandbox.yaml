@@ -1,0 +1,113 @@
+---
+# The Pong sandbox → ./apps/tabletennis/profiles/sandbox
+#
+# A league that plays itself: eight bot players seeded into a schmetterpause of
+# its own, zaehlwerk-pong starting one real match after another between two of
+# them through zaehlwerk's MATCHES_TOKEN door, every result reported and rated
+# at once. What tests schmetterpause the way Pong already tests zaehlwerk.
+#
+# Everything the profile selects is fixed (see its kustomization.yaml). Two
+# slots are left to the cluster:
+#
+#   TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL  off | redis   (default off)
+#     redis: the score into homerun2's Redis on the stream
+#     TABLETENNIS_SANDBOX_PANEL_STREAM (tabletennis-sandbox), never a catcher
+#     switch. The office's zaehlwerk shows it between its own matches when its
+#     TABLETENNIS_ZAEHLWERK_CATCHER_IDLE_STREAMS lists the same stream, and the
+#     led-catcher's HOMERUN2_LED_CATCHER_STREAMS does too (zaehlwerk ADR-0016).
+#     ZAEHLWERK_REDIS_PASSWORD in the Secret is then homerun2's.
+#
+#   TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK  off | on   (default on)
+#     the running league match on the sandbox's start page.
+#
+# ITS OWN VARIABLES. The bundle hands every cluster variable to every child,
+# so a TABLETENNIS_ZAEHLWERK_NAMESPACE set for the office would land here too;
+# hence TABLETENNIS_SANDBOX_* throughout, defaulted apart from the office's.
+#
+# zaehlwerk reaches schmetterpause over the Service by default, so the league
+# needs neither the gateway's certificate nor trust-manager. The pages still
+# get routes: schmetterpause-sandbox, zaehlwerk-sandbox and
+# zaehlwerk-pong-sandbox on INFRA_DOMAIN.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: tabletennis-sandbox
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+    - name: cnpg-operator
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${TABLETENNIS_SANDBOX_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/tabletennis/profiles/sandbox
+  components:
+    - ../../components/zaehlwerk-panel-${TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL:-off}
+    - ../../components/schmetterpause-zaehlwerk-${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK:-on}
+  postBuild:
+    substitute:
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      # passthrough-override: the sandbox sits next to the office's pair, so its
+      # names must differ from the components' defaults, which are the office's.
+      SCHMETTERPAUSE_NAMESPACE: "${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_NAMESPACE:-schmetterpause-sandbox}"
+      # passthrough-override: as SCHMETTERPAUSE_NAMESPACE above.
+      SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME:-schmetterpause-sandbox}"
+      SCHMETTERPAUSE_DB_IMAGE: "${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_DB_IMAGE:-ghcr.io/cloudnative-pg/postgresql:18}"
+      SCHMETTERPAUSE_DB_STORAGE_SIZE: "${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_DB_STORAGE_SIZE:-1Gi}"
+      # passthrough-override: as SCHMETTERPAUSE_NAMESPACE above.
+      ZAEHLWERK_NAMESPACE: "${TABLETENNIS_SANDBOX_ZAEHLWERK_NAMESPACE:-zaehlwerk-sandbox}"
+      # passthrough-override: as SCHMETTERPAUSE_NAMESPACE above.
+      ZAEHLWERK_HOSTNAME: "${TABLETENNIS_SANDBOX_ZAEHLWERK_HOSTNAME:-zaehlwerk-sandbox}"
+      # passthrough-override: the component falls back to DOMAIN, which exists one
+      # level down; this layer builds the same value from INFRA_DOMAIN.
+      LINK_DOMAIN: "${TABLETENNIS_SANDBOX_LINK_DOMAIN:-${INFRA_DOMAIN}}"
+      # passthrough-override: as SCHMETTERPAUSE_NAMESPACE above.
+      ZAEHLWERK_PONG_HOSTNAME: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_HOSTNAME:-zaehlwerk-pong-sandbox}"
+      ZAEHLWERK_PONG_BOT_SKILL: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
+      # The league (zaehlwerk-pong-league): who counts, the bots' strengths by
+      # the seed's names, the pause between matches.
+      ZAEHLWERK_PONG_OPERATOR: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_OPERATOR:-Pong}"
+      ZAEHLWERK_PONG_PLAYER_SKILL: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_PLAYER_SKILL:-Ada=schwer,Bert=schwer,Cleo=0.1,Dino=mittel,Emil=mittel,Frida=0.2,Gero=leicht,Hanna=leicht}"
+      ZAEHLWERK_PONG_LEAGUE_PAUSE: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_LEAGUE_PAUSE:-30s}"
+      ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # Read only by zaehlwerk-panel-redis.
+      ZAEHLWERK_PANEL_STREAM: "${TABLETENNIS_SANDBOX_PANEL_STREAM:-tabletennis-sandbox}"
+      # passthrough-override: built from this layer's own hostname and domain,
+      # as in ../tabletennis-sops.
+      ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_SANDBOX_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME:-schmetterpause-sandbox}.${INFRA_DOMAIN}}"
+      ZAEHLWERK_SET_OPENER: "${TABLETENNIS_SANDBOX_ZAEHLWERK_SET_OPENER:-alternate}"
+      # Where zaehlwerk reports, and where Pong reads its players: the Service,
+      # so the league depends on no certificate.
+      #
+      # passthrough-override: the component's default is the HTTPRoute; the
+      # sandbox's is the in-cluster Service of its own namespace.
+      ZAEHLWERK_SCHMETTERPAUSE_URL: "${TABLETENNIS_SANDBOX_ZAEHLWERK_SCHMETTERPAUSE_URL:-http://schmetterpause.${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_NAMESPACE:-schmetterpause-sandbox}.svc.cluster.local}"
+      # Read by browsers on the start page: zaehlwerk's route.
+      #
+      # passthrough-override: same reason as ZAEHLWERK_ALLOWED_ORIGINS.
+      SCHMETTERPAUSE_ZAEHLWERK_URL: "${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK_URL:-https://${TABLETENNIS_SANDBOX_ZAEHLWERK_HOSTNAME:-zaehlwerk-sandbox}.${INFRA_DOMAIN}}"
+    substituteFrom:
+      # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD,
+      #   SCHMETTERPAUSE_SESSION_KEY, SCHMETTERPAUSE_SCOREBOARD_TOKEN,
+      #   ZAEHLWERK_MATCHES_TOKEN
+      # substituteFrom-optional-keys: ZAEHLWERK_REDIS_PASSWORD,
+      #   ZAEHLWERK_OMNI_PITCHER_TOKEN
+      # The scoreboard token and the matches token are both required here:
+      # without them nothing is reported and Pong cannot start a match.
+      # `openssl rand -hex 32` for both: substituted into YAML unquoted.
+      - kind: Secret
+        name: ${TABLETENNIS_SANDBOX_SOPS_SECRET:-tabletennis-sandbox-secrets}
+        optional: false

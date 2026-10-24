@@ -14,6 +14,10 @@
 # ConfigMap. This appends a patch to that child from inside the build that
 # renders it, which is the one place that can.
 #
+# CATCHER_IDLE_STREAMS is what the catcher returns to after a match,
+# `messages` unless ZAEHLWERK_CATCHER_IDLE_STREAMS adds a stream -- the Pong
+# sandbox's, for one (zaehlwerk-panel-redis).
+#
 # The token is NOT set here: zaehlwerk reads <mount>/zaehlwerk:omni-pitcher-token,
 # and a cluster points homerun2's HOMERUN2_OMNI_PITCHER_TOKEN_PATH/_PROPERTY at
 # that same entry, so both sides hold one credential.
@@ -38,3 +42,11 @@ patches:
             - op: add
               path: /data/CATCHER_URL
               value: http://homerun2-led-catcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+            # What the catcher goes back to when a match ends. `messages`, as
+            # zaehlwerk's own default; the office next to a Pong sandbox adds
+            # the sandbox's stream (messages,tabletennis-sandbox), so the
+            # sandbox's matches show while the table is free (zaehlwerk
+            # ADR-0016). A plain value: never empty, so no null.
+            - op: add
+              path: /data/CATCHER_IDLE_STREAMS
+              value: "${ZAEHLWERK_CATCHER_IDLE_STREAMS:-messages}"
