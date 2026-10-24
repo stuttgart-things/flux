@@ -1,0 +1,8 @@
+---
+# The project-proxy wildcard route alone, as a Component so the platform
+# bundle can apply it from a Kustomization of its own, after
+# components/project-proxy has created the Service it points at.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute-project-proxy.yaml

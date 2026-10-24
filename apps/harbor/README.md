@@ -10,9 +10,10 @@ harbor/
 ├── requirements.yaml           # Namespace + HelmRepositories (Bitnami + OCI)
 ├── pre-release.yaml            # cert-manager Certificate (incl. wildcard for proxy)
 ├── release.yaml                # Harbor HelmRelease
-├── httproute/                  # Both Gateway API routes (Harbor + project-proxy wildcard)
+├── httproute/                  # Both Gateway API routes (the two route components below)
 └── components/
     ├── httproute/              # Component: the Harbor route alone (used by apps/platform)
+    ├── httproute-project-proxy/ # Component: the project-proxy wildcard route alone
     └── project-proxy/          # Optional: harbor-project-proxy for mirror access
         ├── kustomization.yaml
         ├── requirements.yaml   # HelmRepository for harbor-project-proxy (OCI)
@@ -194,6 +195,7 @@ EOF
 | `HARBOR_DOMAIN` | *(required)* | Domain suffix |
 | `HARBOR_ADMIN_PASSWORD` | *(from Secret)* | Harbor admin password |
 | `INGRESS_CLASS_NAME` | `nginx` | IngressClassName |
+| `EXPOSURE_TYPE` | `ingress` | Chart `exposureType`; `none` renders no Ingress (Gateway clusters route with an HTTPRoute) |
 | `ISSUER_NAME` | *(required)* | cert-manager ClusterIssuer name |
 | `ISSUER_KIND` | `ClusterIssuer` | cert-manager issuer kind |
 | `STORAGE_CLASS` | `nfs4-csi` | StorageClass for persistent volumes |
