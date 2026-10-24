@@ -1,0 +1,10 @@
+---
+# backup-freshness -- reads a backup DESTINATION bucket and pitches an alert
+# when nothing younger than MAX_AGE arrived there.
+#
+# REQUIRES trust-manager, the destination's credentials Secret and the
+# pitcher's token Secret in BACKUP_FRESHNESS_NAMESPACE (default homerun2).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-backup-freshness.yaml
