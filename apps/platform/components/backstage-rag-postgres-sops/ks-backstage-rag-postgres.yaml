@@ -1,0 +1,96 @@
+---
+# Backstage RAG Postgres, SOPS flavour → ./apps/backstage-rag-postgres
+#
+# The same child (backstage-rag-postgres) as ../backstage-rag-postgres, with
+# what needs a Vault store, a bucket or velero deleted from the build:
+#   - the two ExternalSecrets: rag-postgres-creds is the cluster's own Secret;
+#   - WAL archiving (the Cluster's spec.plugins), the ObjectStore, the
+#     ScheduledBackup and the velero Schedule: no backups. The embeddings are
+#     re-created by indexing again, so this suits a lab, not data that matters.
+# That leaves cnpg-operator and backstage as the only prerequisites --
+# cnpg-barman-cloud, velero and external-secrets need not be on the cluster.
+#
+# FIRST ROLLOUT: as ../backstage-rag-postgres -- restart backstage once this is
+# Ready, or it keeps RAG-AI off (apps/backstage README, "Optional: RAG-AI").
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backstage-rag-postgres
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cnpg-operator
+    - name: backstage
+  interval: 1h
+  retryInterval: 1m
+  # initdb on a fresh PVC
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${BACKSTAGE_RAG_POSTGRES_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/backstage-rag-postgres
+  postBuild:
+    substitute:
+      # Same variable and default as the backstage component.
+      BACKSTAGE_NAMESPACE: "${BACKSTAGE_NAMESPACE:-portal}"
+      # REQUIRED.
+      # passthrough-override: the base names `nfs4-csi`, which exists in one lab
+      # and nowhere else; a placeholder fails louder than a PVC left Pending.
+      STORAGE_CLASS: "${RAG_PG_STORAGE_CLASS:-set-RAG_PG_STORAGE_CLASS}"
+      RAG_PG_STORAGE_SIZE: "${RAG_PG_STORAGE_SIZE:-5Gi}"
+      # RAG_PG_INSTANCES and RAG_PG_IMAGE_TAG are NOT threaded (ints; see
+      # ../backstage-rag-postgres).
+      RAG_PG_DATABASE: "${RAG_PG_DATABASE:-backstage_rag}"
+      RAG_PG_OWNER: "${RAG_PG_OWNER:-rag}"
+  patches:
+    - target:
+        group: postgresql.cnpg.io
+        kind: Cluster
+        name: rag-postgres
+      patch: |
+        - op: remove
+          path: /spec/plugins
+    - target:
+        group: external-secrets.io
+        kind: ExternalSecret
+      patch: |
+        $patch: delete
+        apiVersion: external-secrets.io/v1
+        kind: ExternalSecret
+        metadata:
+          name: not-used
+    - target:
+        group: barmancloud.cnpg.io
+        kind: ObjectStore
+      patch: |
+        $patch: delete
+        apiVersion: barmancloud.cnpg.io/v1
+        kind: ObjectStore
+        metadata:
+          name: not-used
+    - target:
+        group: postgresql.cnpg.io
+        kind: ScheduledBackup
+      patch: |
+        $patch: delete
+        apiVersion: postgresql.cnpg.io/v1
+        kind: ScheduledBackup
+        metadata:
+          name: not-used
+    - target:
+        group: velero.io
+        kind: Schedule
+      patch: |
+        $patch: delete
+        apiVersion: velero.io/v1
+        kind: Schedule
+        metadata:
+          name: not-used

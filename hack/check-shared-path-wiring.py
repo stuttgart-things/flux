@@ -215,6 +215,15 @@ DIVERGENT = {
                         "is an alternative of cluster-build-watch that adds "
                         "the homerun2 sink. Both carry the same on/off switch "
                         "for the worker's machinery gRPC token.",
+    "./apps/backstage-rag-postgres": "backstage-rag-postgres-sops is an "
+                        "alternative of backstage-rag-postgres without backups "
+                        "and without external-secrets: it deletes the "
+                        "ExternalSecrets, ObjectStore, ScheduledBackup and velero "
+                        "Schedule, so it threads none of their variables.",
+    "./apps/clusterscope": "clusterscope-labview is an alternative of "
+                        "clusterscope that adds the vault-kubeconfigs, "
+                        "vault-git-auth, config and blackbox-probes components "
+                        "and the variables they read.",
 }
 
 
