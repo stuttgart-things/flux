@@ -35,7 +35,7 @@ spec:
       image:
         repository: infisical/infisical
         # renovate: datasource=docker depName=infisical/infisical
-        tag: ${INFISICAL_IMAGE_TAG:-v0.166.9}
+        tag: ${INFISICAL_IMAGE_TAG:-v0.167.0}
     # exposed through httproute.yaml (Gateway API) instead
     ingress:
       enabled: false
