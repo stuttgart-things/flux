@@ -48,7 +48,8 @@ apps/platform/
     │                            → ./apps/homerun2/profiles/k8s-pitcher-remote-sops
     │                              (instead of homerun2-k8s-pitcher-remote; a Secret with the central token)
     ├── tabletennis-sops/        → ./apps/tabletennis/profiles/sops   (instead of tabletennis; cnpg-operator + a Secret)
-    └── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
+    ├── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
+    └── tabletennis-sandbox/     → ./apps/tabletennis/profiles/sandbox (NEXT TO tabletennis*: a second pair where Pong plays a league)
 ```
 
 (The listing above is not exhaustive: the homerun2 and tabletennis families
@@ -85,6 +86,7 @@ a `substituteFrom` Secret in `flux-system` instead:
 | `homerun2-k8s-pitcher-remote-sops` | `homerun2-k8s-pitcher-remote-sops-secrets` | `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` -- the CENTRAL cluster's omni-pitcher token | <!-- pragma: allowlist secret -->
 | `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
+| `tabletennis-sandbox` | `tabletennis-sandbox-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN`, `ZAEHLWERK_MATCHES_TOKEN`; optional `ZAEHLWERK_REDIS_PASSWORD` (homerun2's, with the redis panel) | <!-- pragma: allowlist secret -->
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`); optional `OPENBAO_TERRAFORM_PASSWORD`, `OPENBAO_ADMIN_PASSWORD` (both needed with `OPENBAO_INIT: self-init-userpass`) |
 
 Select one of each pair, never both: the alternative renders the same child

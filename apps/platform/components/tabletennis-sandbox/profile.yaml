@@ -1,0 +1,52 @@
+---
+# AppProfile: what a cluster sets for tabletennis-sandbox, and the Secret it
+# needs. Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# With TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL: redis, ZAEHLWERK_REDIS_PASSWORD must
+# be homerun2-sops' redis password (decoded), referenced from the same source as
+# the office's in the ClusterApps.
+kind: AppProfile
+metadata:
+  name: tabletennis-sandbox
+spec:
+  bundle: apps-platform
+  component: ../components/tabletennis-sandbox
+  vars:
+    INFRA_DOMAIN: { required: true }
+    TABLETENNIS_SANDBOX_SUSPEND: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_NAMESPACE: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_DB_IMAGE: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_DB_STORAGE_SIZE: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_NAMESPACE: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_HOSTNAME: {}
+    TABLETENNIS_SANDBOX_LINK_DOMAIN: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_HOSTNAME: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_BOT_SKILL: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_OPERATOR: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_PLAYER_SKILL: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_PONG_LEAGUE_PAUSE: {}
+    TABLETENNIS_SANDBOX_PANEL_STREAM: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_ALLOWED_ORIGINS: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_SET_OPENER: {}
+    TABLETENNIS_SANDBOX_ZAEHLWERK_SCHMETTERPAUSE_URL: {}
+    TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK_URL: {}
+    HOMERUN2_NAMESPACE: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: tabletennis-sandbox-secrets
+      data:
+        # alnum: it ends up in a postgres connection URL.
+        SCHMETTERPAUSE_DB_PASSWORD: { generate: { type: alnum, length: 32 } }
+        SCHMETTERPAUSE_SESSION_KEY: { generate: { type: base64, length: 32 } }
+        # One value, read by schmetterpause (serves /api) and zaehlwerk
+        # (reports, and Pong reads the players). Hex: substituted unquoted.
+        SCHMETTERPAUSE_SCOREBOARD_TOKEN: { generate: { type: hex, length: 64 } }
+        # zaehlwerk's MATCHES_TOKEN, which Pong sends as ZAEHLWERK_TOKEN.
+        ZAEHLWERK_MATCHES_TOKEN: { generate: { type: hex, length: 64 } }
+        ZAEHLWERK_REDIS_PASSWORD: set-ZAEHLWERK_REDIS_PASSWORD # pragma: allowlist secret
+        ZAEHLWERK_OMNI_PITCHER_TOKEN: set-ZAEHLWERK_OMNI_PITCHER_TOKEN

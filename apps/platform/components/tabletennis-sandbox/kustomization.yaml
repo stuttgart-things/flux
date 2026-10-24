@@ -1,0 +1,18 @@
+---
+# tabletennis-sandbox -- a SECOND schmetterpause + zaehlwerk next to the
+# office's, where zaehlwerk-pong plays a league by itself
+# (./apps/tabletennis/profiles/sandbox; zaehlwerk ADR-0015/0016,
+# schmetterpause ADR-0027).
+#
+# AN ADD-ON, NOT AN ALTERNATIVE of tabletennis: its own child name
+# (tabletennis-sandbox), its own namespaces and hostnames (schmetterpause-sandbox,
+# zaehlwerk-sandbox by default), its own substituteFrom Secret
+# (tabletennis-sandbox-secrets) and its own variables (TABLETENNIS_SANDBOX_*),
+# so it can sit next to any tabletennis* entry without touching it.
+#
+# REQUIRES cilium-gateway and cnpg-operator from the infra bundle. Its
+# schmetterpause database and namespaces are NOT pruned, as for tabletennis.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-tabletennis-sandbox.yaml

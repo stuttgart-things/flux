@@ -1,0 +1,40 @@
+---
+# The Pong sandbox (zaehlwerk ADR-0015/0016, schmetterpause ADR-0027): the pair
+# as profiles/sops deploys it, plus what turns it into a league that plays
+# itself -- a second schmetterpause and zaehlwerk, in namespaces of their own,
+# where zaehlwerk-pong plays one real match after another between bot players
+# and every result counts at once.
+#
+# NEVER THE OFFICE'S PAIR. Everything here is selected unconditionally because
+# it is what the sandbox is: the handover and the scoreboard (the result has to
+# arrive), MATCHES_TOKEN (Pong's door into zaehlwerk), immediate settling
+# (nobody confirms), the seed (the bots and the observer `Pong`) and league
+# mode. The office's bundle entries (tabletennis*) select none of the
+# sandbox-only components, and this profile is applied by the
+# tabletennis-sandbox entry alone.
+#
+# Its own path rather than ../sops with components on top: two Flux
+# Kustomizations over one path must be wired alike
+# (hack/check-shared-path-wiring.py), and this one differs from the office's on
+# purpose.
+#
+# Values from the substituteFrom Secret: SCHMETTERPAUSE_SESSION_KEY,
+# SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN and
+# ZAEHLWERK_MATCHES_TOKEN (all required), ZAEHLWERK_REDIS_PASSWORD with the
+# redis panel. Namespaces and hostnames are the consumer's -- it must set them
+# apart from the office's.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+  - ../../components/schmetterpause
+  - ../../components/zaehlwerk
+  - ../../components/schmetterpause/sops
+  - ../../components/zaehlwerk/sops
+  # After the credential components: they patch the Secrets those render and
+  # test the credentials annotation those stamp.
+  - ../../components/schmetterpause-scoreboard-sops
+  - ../../components/zaehlwerk-handover-sops
+  - ../../components/zaehlwerk-matches-sops
+  - ../../components/schmetterpause-settle-immediate
+  - ../../components/schmetterpause-seed-pong
+  - ../../components/zaehlwerk-pong-league

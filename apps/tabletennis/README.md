@@ -173,7 +173,7 @@ written down.
 
 | Variable | Values | What `on` adds |
 |---|---|---|
-| `TABLETENNIS_ZAEHLWERK_PANEL` | `off`, `homerun2` | `OMNI_PITCHER_URL` + `CATCHER_URL` — scores to the LED panel |
+| `TABLETENNIS_ZAEHLWERK_PANEL` | `off`, `homerun2`, `redis` | `homerun2`: `OMNI_PITCHER_URL` + `CATCHER_URL` — scores to the LED panel, and the catcher switched to them during a match; it returns to `TABLETENNIS_ZAEHLWERK_CATCHER_IDLE_STREAMS` (`messages`) afterwards. `redis`: `REDIS_ADDR` into homerun2's Redis on the stream `ZAEHLWERK_PANEL_STREAM`, and no catcher switch — the Pong sandbox's way onto the office's panel (below) |
 | `TABLETENNIS_SCHMETTERPAUSE_MONITORING` | `off`, `on`, `backup` | PodMonitors and alert rules (`backup` adds the WAL/base-backup rules) |
 | `TABLETENNIS_SCHMETTERPAUSE_ADMIN` | `off`, `on` | `SP_BOOTSTRAP_ADMIN` — the display name (`TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN`) that gets the admin flag at every start; also in the `tabletennis-sops*` bundle components |
 | `TABLETENNIS_SCHMETTERPAUSE_SCOREBOARD` | `off`, `on` (`sops` under `profiles/sops`) | `SP_SCOREBOARD_TOKEN` — schmetterpause's `/api/players` and `/api/results` |
@@ -279,8 +279,55 @@ TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'
 | an observer keeping score | schmetterpause **v0.14.0+** (`GET /api/operators`, its ADR-0023) and zaehlwerk **v0.6.0+**, which offers observers in *Keeping score*. Either alone changes nothing: the older side falls back to the player list |
 | check-in by fob or phone | schmetterpause **v0.17.0+** and zaehlwerk **v0.19.0+** (`/ingest/checkin` with `CHECKIN_TOKEN` from the base, `/checkin/claim`); the table mock's fobs need `zaehlwerk-buttons` **v0.18.0+**, a fob per player **v0.20.0+** |
 | the side select and the screensaver | zaehlwerk **v0.21.0+** with check-in on; the screensaver also needs `TABLETENNIS_ZAEHLWERK_PONG` `on` or `attract`. Older tags ignore `PONG_URL` |
+| the Pong sandbox | zaehlwerk **v0.31.0+** (`MATCHES_TOKEN`, Pong's league mode) and schmetterpause **v0.18.0+** (`SP_SEED_FIXTURE`, `SP_SCOREBOARD_SETTLE`) |
 | monitoring | schmetterpause **v0.8.0+** — the release that added the `metrics` container port |
 | the policy | schmetterpause **v0.9.0+**, and a Kyverno serving `policies.kyverno.io/v1` |
+
+## The Pong sandbox (`profiles/sandbox`)
+
+A second schmetterpause and zaehlwerk, in namespaces of their own, where
+zaehlwerk-pong plays a league by itself: one real match after another between
+eight bot players, every result reported and rated at once (zaehlwerk
+ADR-0015/0016, schmetterpause ADR-0027). It tests schmetterpause — TTR,
+ranking, later tournaments — the way Pong already tests zaehlwerk.
+
+Selected through the bundle as **`tabletennis-sandbox`**, next to whichever
+`tabletennis*` entry the cluster runs. It is an add-on, not an alternative: its
+own child name, namespaces (`schmetterpause-sandbox`, `zaehlwerk-sandbox`),
+hostnames (`schmetterpause-sandbox`, `zaehlwerk-sandbox`,
+`zaehlwerk-pong-sandbox`), Secret (`tabletennis-sandbox-secrets`) and variables
+(`TABLETENNIS_SANDBOX_*`, because the bundle hands every variable to every
+child).
+
+The profile is `profiles/sops` plus, unconditionally:
+
+| Component | What it adds |
+|---|---|
+| `schmetterpause-scoreboard-sops`, `zaehlwerk-handover-sops` | the result's way into schmetterpause, with `SCHMETTERPAUSE_SCOREBOARD_TOKEN` |
+| `zaehlwerk-matches-sops` | `MATCHES_TOKEN` from `ZAEHLWERK_MATCHES_TOKEN`: `POST /matches` takes player ids (zaehlwerk v0.31.0+). Adds the env entry itself, because the v0.31.0 base does not list the key |
+| `schmetterpause-settle-immediate` | `SP_SCOREBOARD_SETTLE=immediate` (schmetterpause v0.18.0+): nobody confirms in a sandbox |
+| `schmetterpause-seed-pong` | a Job running `schmetterpause seed` with `SP_SEED_FIXTURE=pong`: Ada … Hanna and the observer `Pong`. Refuses a database with players, so every later run is a no-op |
+| `zaehlwerk-pong-league` | the game in league mode: `ZAEHLWERK_TOKEN` (the matches token), `PONG_OPERATOR` (`Pong`), `PONG_PLAYER_SKILL` (a spread over the seed's names), `PONG_LEAGUE_PAUSE` (`30s`) |
+
+Two slots stay with the cluster: `TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL` (`off`,
+`redis`) and `TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK` (`on` by default,
+the running league match on the sandbox's start page). zaehlwerk reports to
+schmetterpause over the Service by default, so the league depends on no
+certificate.
+
+**On the office's panel.** With the sandbox's panel at `redis`, its matches go
+to `TABLETENNIS_SANDBOX_PANEL_STREAM` (`tabletennis-sandbox`). The office shows
+them between its own matches when that stream is in its zaehlwerk's
+`TABLETENNIS_ZAEHLWERK_CATCHER_IDLE_STREAMS` and in the led-catcher's
+`HOMERUN2_LED_CATCHER_STREAMS`, both `messages,tabletennis-sandbox`. A real
+match switches the catcher to `tabletennis` alone and the sandbox is off the
+panel until it ends (zaehlwerk ADR-0003, ADR-0016). The catcher's display rules
+match on the system, not the stream, so a sandbox score looks like any other.
+
+**Never on the office's pair.** Every sandbox-only component is selected by
+this profile and by nothing else, and the guard is a secret: an office
+zaehlwerk has no `MATCHES_TOKEN`, so Pong in league mode is refused with 503
+there and creates nothing.
 
 ## What a cluster has to provide
 
