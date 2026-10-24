@@ -156,6 +156,7 @@ informers:
 
 | Target | Patch |
 |--------|-------|
+| Deployment | `reloader.stakater.com/auto: "true"` (rolls on ConfigMap/Secret change; needs Reloader) |
 | Deployment | Override container image tag |
 | Secret (`homerun2-k8s-pitcher-token`) | Override auth token from variable |
 | Deployment | Mount trust-bundle volume + `SSL_CERT_DIR` env var |
