@@ -39,7 +39,7 @@ spec:
             spec:
               containers:
                 - name: claim-machinery-api
-                  image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.21.3}
+                  image: ghcr.io/stuttgart-things/claim-machinery-api:${CLAIM_MACHINERY_API_VERSION:-v0.22.0}
                   args:
                     - server
     # Opt into Stakater Reloader so a change to the claim-machinery-api
