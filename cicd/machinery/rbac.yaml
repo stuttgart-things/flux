@@ -29,6 +29,9 @@ rules:
   - apiGroups:
       - config.stuttgart-things.com
       - resources.stuttgart-things.com
+      # MinioBucket (minio Configuration) -- in the watch set so the Backstage
+      # claim picker can offer it.
+      - storage.stuttgart-things.com
     resources: ["*"]
     verbs: ["get", "list", "watch"]
   # Flux Kustomizations, so a client can tell whether an order in git has been
