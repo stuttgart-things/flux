@@ -61,9 +61,11 @@ spec:
       # bundle serves; claim-machinery-api's route is
       # ${CLAIM_MACHINERY_API_HOSTNAME:-claim-machinery-api}.<domain>.
       BACKSTAGE_CLAIM_MACHINERY_API_URL: "${BACKSTAGE_CLAIM_MACHINERY_API_URL:-https://${CLAIM_MACHINERY_API_HOSTNAME:-claim-machinery-api}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}}"
-      # passthrough-override: same host as machinery-registry-api's route, but
-      # built from its HOSTNAME variable rather than the base's literal.
-      BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL: "${BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL:-https://${MACHINERY_REGISTRY_API_HOSTNAME:-machinery-registry-api}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}}"
+      # passthrough-override: same host as machinery's route, but built from
+      # its HOSTNAME variable rather than the base's literal. machinery runs on
+      # the management cluster, usually not beside backstage: set
+      # BACKSTAGE_MACHINERY_URL to that cluster's machinery host.
+      BACKSTAGE_MACHINERY_URL: "${BACKSTAGE_MACHINERY_URL:-https://${MACHINERY_HOSTNAME:-machinery}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}}"
 
       # REQUIRED.
       # passthrough-override: the base names `nfs4-csi`, which exists in one lab

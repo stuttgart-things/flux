@@ -91,12 +91,12 @@ spec:
                   '^/api/proxy/claim-machinery': ''
                 allowedHeaders: ['*']
                 credentials: 'dangerously-allow-unauthenticated'
-              '/machinery-registry':
-                target: $${CLAIM_MACHINERY_REGISTRY_URL:-https://claim-api.example.com}
+              '/machinery':
+                target: $${MACHINERY_URL:-https://machinery.example.com}
                 changeOrigin: true
                 secure: false
                 pathRewrite:
-                  '^/api/proxy/machinery-registry': ''
+                  '^/api/proxy/machinery': ''
                 allowedHeaders: ['*']
                 credentials: 'dangerously-allow-unauthenticated'
           # TechDocs: built in the pod by default. builder external + publisher
@@ -192,11 +192,12 @@ spec:
           APP_BASE_URL: https://backstage.${DOMAIN}
           BACKEND_BASE_URL: https://backstage.${DOMAIN}
           CORS_ORIGIN: https://backstage.${DOMAIN}
-          # Targets of the /claim-machinery and /machinery-registry proxies.
+          # Targets of the /claim-machinery and /machinery proxies (machinery:
+          # the live XR inventory the MachineryClaimPicker reads).
           # Overridable, because the hosts are decided by whoever deploys
           # those two APIs, not by this chart.
           CLAIM_MACHINERY_API_URL: ${BACKSTAGE_CLAIM_MACHINERY_API_URL:-https://claim-api.${DOMAIN}}
-          CLAIM_MACHINERY_REGISTRY_URL: ${BACKSTAGE_CLAIM_MACHINERY_REGISTRY_URL:-https://machinery-registry-api.${DOMAIN}}
+          MACHINERY_URL: ${BACKSTAGE_MACHINERY_URL:-https://machinery.${DOMAIN}}
           AUTH_ENVIRONMENT: development
           GITHUB_TOKEN: ${BACKSTAGE_GITHUB_TOKEN}
           GITHUB_CLIENT_ID: ${BACKSTAGE_GITHUB_CLIENT_ID}

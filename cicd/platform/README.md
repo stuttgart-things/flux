@@ -27,14 +27,13 @@ cicd/platform/
     ├── dapr-workflows-trigger/ → ./apps/dapr/root     (the BackstageTemplateRun RGD; needs kro + dapr-workflows)
     ├── komoplane/            → ./cicd/komoplane       (needs crossplane + cilium-gateway)
     ├── claim-machinery-api/  → ./apps/claim-machinery-api    (needs cilium-gateway)
-    ├── machinery-registry-api/ → ./apps/machinery-registry-api (needs cilium-gateway)
     └── clusterbook-operator/ → ./apps/clusterbook-operator
 ```
 
 Several of those paths are under `apps/` and that is not an inconsistency: the
 bundle a component belongs to is decided by the layer it serves, not by the
-directory its base happens to sit in. `kargo`, `dapr`, `claim-machinery-api`,
-`machinery-registry-api` and `clusterbook-operator` are delivery-layer tools;
+directory its base happens to sit in. `kargo`, `dapr`, `claim-machinery-api` and
+`clusterbook-operator` are delivery-layer tools;
 most of their bases were written before this bundle existed. `infra/platform` does the same with `flux-web` and
 `headlamp`.
 
@@ -117,14 +116,6 @@ githubusercontent URL pinned to a git ref — not from this repo and not from th
 OCI artifact. The deployed behaviour can therefore change with no commit here,
 whenever that ref moves. `CLAIM_MACHINERY_PROFILE_REF` defaults to `main`; pin
 it to a tag where that matters.
-
-**`machinery-registry-api`** serves the claim inventory (`registry.yaml` in a
-GitHub repo) that Backstage's `RegistryClaimPicker` reads through its
-`/machinery-registry` proxy. Like `claim-machinery-api` it reads its data **at
-runtime** from GitHub (`MACHINERY_REGISTRY_REPO`, default
-`stuttgart-things/harvester`), which must be public. Its host defaults to what
-`apps/platform`'s `backstage` points the proxy at, so the two wire up with no
-override.
 
 **`clusterbook-operator`** reconciles the Clusterbook CRs. It carries no
 `dependsOn`, unlike the `argocd-platform` wiring of the same path — there it
