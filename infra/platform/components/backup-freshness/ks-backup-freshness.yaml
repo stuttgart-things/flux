@@ -1,0 +1,57 @@
+---
+# backup-freshness → ./infra/backup-freshness
+#
+# A CronJob that lists the destination bucket of a cross-lab backup copy and
+# pitches to homerun2's omni-pitcher when nothing younger than MAX_AGE is
+# there. It reads only the far end, so it also fires when the producer (or the
+# cluster running the producer's own probe) is down -- see the base for why
+# there is no heartbeat.
+#
+# dependsOn trust-manager: the pod mounts the cluster-trust-bundle ConfigMap
+# (not optional) to trust the lab CA of the destination MinIO.
+#
+# NOT dependsOn homerun2, which lives in the apps bundle: the probe only needs
+# two Secrets in its namespace at the moment a Job runs, and a missing one
+# leaves that Job in CreateContainerConfigError -- loud, and retried every
+# schedule. Both Secrets are the cluster's:
+#   BACKUP_FRESHNESS_SECRET        AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+#                                  for the destination (ListBucket is enough)
+#   BACKUP_FRESHNESS_TOKEN_SECRET  key auth-token, the omni-pitcher's token
+#
+# The image stays the base's own digest, the same the machinery probe runs.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: backup-freshness
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: trust-manager
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${BACKUP_FRESHNESS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/backup-freshness
+  postBuild:
+    substitute:
+      # REQUIRED, no default in the base: the bucket and the S3 endpoint the
+      # copy writes into.
+      BACKUP_FRESHNESS_DEST_BUCKET: "${BACKUP_FRESHNESS_DEST_BUCKET:-set-BACKUP_FRESHNESS_DEST_BUCKET}"
+      BACKUP_FRESHNESS_DEST_ENDPOINT: "${BACKUP_FRESHNESS_DEST_ENDPOINT:-https://set-BACKUP_FRESHNESS_DEST_ENDPOINT.invalid}"
+      BACKUP_FRESHNESS_MAX_AGE: "${BACKUP_FRESHNESS_MAX_AGE:-26h}"
+      BACKUP_FRESHNESS_SCHEDULE: "${BACKUP_FRESHNESS_SCHEDULE:-37 * * * *}"
+      BACKUP_FRESHNESS_NAMESPACE: "${BACKUP_FRESHNESS_NAMESPACE:-homerun2}"
+      BACKUP_FRESHNESS_SECRET: "${BACKUP_FRESHNESS_SECRET:-minio-replication-labda-target}"
+      BACKUP_FRESHNESS_TOKEN_SECRET: "${BACKUP_FRESHNESS_TOKEN_SECRET:-homerun2-omni-pitcher-token}"
+      BACKUP_FRESHNESS_TRUST_BUNDLE: "${BACKUP_FRESHNESS_TRUST_BUNDLE:-cluster-trust-bundle}"
+      BACKUP_FRESHNESS_WEBHOOK_URL: "${BACKUP_FRESHNESS_WEBHOOK_URL:-http://homerun2-omni-pitcher.homerun2.svc.cluster.local/pitch/grafana}"

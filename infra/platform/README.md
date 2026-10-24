@@ -45,6 +45,7 @@ infra/platform/
     ├── cnpg-operator/            → ./apps/cnpg-operator
     ├── cnpg-barman-cloud/        → ./apps/cnpg-barman-cloud                (requires cnpg-operator, cert-manager-install)
     ├── prometheus-pve-exporter/  → ./infra/prometheus-pve-exporter          (requires kube-prometheus-stack)
+    ├── backup-freshness/         → ./infra/backup-freshness                (requires trust-manager + two Secrets)
     └── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
 ```
 
@@ -247,6 +248,7 @@ the same list:
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
 | `prometheus-pve-exporter` | `kube-prometheus-stack` |
+| `backup-freshness` | `trust-manager` |
 
 The four behind `cilium-gateway` render an `HTTPRoute` unconditionally, and an
 `HTTPRoute` whose `parentRef` does not resolve sits at `Accepted=False` without
