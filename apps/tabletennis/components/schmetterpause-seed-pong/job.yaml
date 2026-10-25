@@ -33,7 +33,7 @@ spec:
       containers:
         - name: seed
           # Keep the default equal to components/schmetterpause/requirements.yaml's.
-          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.18.0}
+          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.19.0}
           args: ["seed"]
           # The database Secret and the fixture, nothing else: `seed` does not
           # serve, so it needs no session key.

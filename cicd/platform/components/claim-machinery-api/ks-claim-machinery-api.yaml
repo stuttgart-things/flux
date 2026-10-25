@@ -52,7 +52,7 @@ spec:
     substitute:
       CLAIM_MACHINERY_API_NAMESPACE: "${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/claim-machinery-api
-      CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.22.0}"
+      CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.22.1}"
       FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
 
       # ---- the claim profile --------------------------------------------
