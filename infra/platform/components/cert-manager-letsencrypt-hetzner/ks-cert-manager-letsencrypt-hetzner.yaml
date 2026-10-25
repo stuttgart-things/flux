@@ -52,7 +52,7 @@ spec:
     substitute:
       CERT_MANAGER_NAMESPACE: "${CERT_MANAGER_NAMESPACE:-cert-manager}"
       # renovate: datasource=helm depName=cert-manager-webhook-hetzner registryUrl=https://charts.hetzner.cloud
-      LETSENCRYPT_HETZNER_WEBHOOK_VERSION: "${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.0}"
+      LETSENCRYPT_HETZNER_WEBHOOK_VERSION: "${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.1}"
       LETSENCRYPT_HETZNER_ISSUER: "${LETSENCRYPT_HETZNER_ISSUER:-letsencrypt-hetzner}"
       LETSENCRYPT_HETZNER_STAGING_ISSUER: "${LETSENCRYPT_HETZNER_STAGING_ISSUER:-letsencrypt-staging-hetzner}"
       LETSENCRYPT_HETZNER_TOKEN_SECRET: "${LETSENCRYPT_HETZNER_TOKEN_SECRET:-hetzner-dns}" # pragma: allowlist secret
