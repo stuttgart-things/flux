@@ -32,6 +32,7 @@ apps/platform/
     ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
     ├── clusterscope-labview/ → ./apps/clusterscope (instead of clusterscope: Vault kubeconfigs + git token, config, probes)
     ├── vcluster/    → ./apps/vcluster
+    ├── zitadel/     → ./apps/zitadel     (a StorageClass + a Secret; route: zitadel-httproute)
     │
     │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:
     ├── homerun2-sops/           → ./apps/homerun2/profiles/sops      (instead of homerun2; a StorageClass + a Secret)
@@ -173,14 +174,14 @@ how a platform delivers things. A consumer that selected
 ## The apps that need a Secret you must supply
 
 `rancher`, `minio`, `backstage`, `redis-stack`, `harbor`, `keycloak`,
-`openldap` and `infisical` use
+`openldap`, `infisical` and `zitadel` use
 `substituteFrom` with `optional: false`. That is on purpose: left optional, Flux proceeds with the
 variables unset and installs a MinIO with an empty admin password, and reports
 success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor`, `harbor-project-proxy`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
+`keycloak`, `harbor`, `harbor-project-proxy`, `minio`, `infisical` and `zitadel` carry a `profile.yaml` next to their `ks-*.yaml`
 (the infra bundle's profiles are listed in
 [`infra/platform`](../../infra/platform/README.md#appprofiles)).
 It lists the vars a cluster may set for the app, which of them are required, and
@@ -237,6 +238,24 @@ which also turns the chart's Ingress off. That is more than a route: with no
 Ingress the chart stops setting `KC_HOSTNAME`, and Keycloak 26 then refuses to
 start, so the component sets it — plus `proxyHeaders: xforwarded`, without
 which every redirect is `http://` behind a TLS-terminating Gateway.
+
+## zitadel: SOPS Secret, no Certificate, a bootstrap key in the cluster
+
+`zitadel` renders two children: `zitadel` (PostgreSQL as its own release,
+then ZITADEL with the Login UI v2) and `zitadel-httproute` (`dependsOn:
+zitadel`). Details: [`apps/zitadel`](../zitadel/README.md).
+
+- **Secret** `zitadel-secrets` in `flux-system`: `ZITADEL_MASTERKEY` (exactly
+  32 characters, never changes), `ZITADEL_DB_PASSWORD`,
+  `ZITADEL_DB_ADMIN_PASSWORD`, `ZITADEL_ADMIN_PASSWORD` (needs a symbol: the
+  default password policy rejects alnum). No ESO variant -- it is meant for the
+  infra clusters, which deliver secrets with SOPS.
+- **No Certificate.** The route sits on the Gateway's wildcard listener, so the
+  wildcard certificate is what clients see. `APPS_CLUSTER_ISSUER` is not read.
+- **Terraform bootstrap** without the console: the setup job creates the
+  machine user `terraform` (IAM_OWNER) and leaves its JSON key in the Secret
+  `terraform` (key `terraform.json`) in `ZITADEL_NAMESPACE`, outside every
+  inventory.
 
 ## Things the cluster supplies that no component ships
 

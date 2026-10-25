@@ -1,0 +1,146 @@
+---
+# ZITADEL -- the upstream chart (https://charts.zitadel.com), with the Login UI
+# v2 (the chart's `login` deployment, on by default) and PostgreSQL from
+# postgresql.yaml.
+#
+# TLS terminates at the Gateway (the cluster's wildcard certificate);
+# ZITADEL serves cleartext h2c behind it, but has to know it is reached over
+# https on 443. Get ExternalDomain/ExternalSecure/ExternalPort wrong and every
+# login loops: tokens are issued for an origin the browser never sees.
+#
+# THE TERRAFORM BOOTSTRAP IS DECLARATIVE. FirstInstance.Org.Machine makes the
+# setup job create a machine user `terraform` with a JSON key, and the chart's
+# machinekey writer stores that key as the Secret `terraform` (key
+# `terraform.json`) in this namespace. ZITADEL grants that user ORG_OWNER and
+# IAM_OWNER (internal/command/instance.go, setupAdminMembers) -- no clicking in
+# the console. The Secret is written by a kubectl inside the setup job, not by
+# Helm or Flux, so it is in neither inventory: it survives upgrades and is not
+# pruned. It is written ONCE, on the first setup of an empty database.
+#
+# The human IAM_OWNER `zitadel-admin` is created as well (login name
+# zitadel-admin@zitadel.<ZITADEL_DOMAIN>), with the password from the Secret
+# and a forced change at the first login.
+#
+# No image tags: both images follow the chart's appVersion, so the chart
+# version is the one thing to keep current, and server and login UI cannot
+# drift apart.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zitadel
+  namespace: ${ZITADEL_NAMESPACE:-zitadel}
+spec:
+  dependsOn:
+    - name: zitadel-postgresql
+  interval: 30m
+  # The pre-install hooks run the init and setup jobs, and the first setup
+  # computes every projection. Five minutes is not always enough for both.
+  timeout: 15m
+  chart:
+    spec:
+      chart: zitadel
+      # renovate: datasource=helm depName=zitadel registryUrl=https://charts.zitadel.com
+      version: "${ZITADEL_VERSION:-10.4.0}"
+      sourceRef:
+        kind: HelmRepository
+        name: zitadel
+        namespace: ${ZITADEL_NAMESPACE:-zitadel}
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    replicaCount: 1
+    zitadel:
+      # masterkey from the Secret secret.yaml renders (key `masterkey`). The
+      # chart takes exactly one of masterkey / masterkeySecretName.
+      masterkeySecretName: zitadel-credentials # pragma: allowlist secret
+      configmapConfig:
+        ExternalDomain: ${ZITADEL_DOMAIN}
+        ExternalPort: 443
+        ExternalSecure: true
+        TLS:
+          Enabled: false
+        # Setting Host turns off the chart's DSN helper, which would inline a
+        # password into the pod spec. The passwords come from env below.
+        Database:
+          Postgres:
+            Host: zitadel-postgresql
+            Port: 5432
+            Database: zitadel
+            User:
+              Username: zitadel
+              SSL:
+                Mode: disable
+            Admin:
+              Username: postgres
+              SSL:
+                Mode: disable
+        # No self-registration: accounts are made by Terraform or an admin.
+        # Instance default, applied when the instance is created -- the
+        # zitadel_login_policy resource would need thirteen required fields to
+        # say the same. On an existing instance this changes nothing; there it
+        # is console -> Default Settings -> Login Behavior.
+        DefaultInstance:
+          LoginPolicy:
+            AllowRegister: false
+        FirstInstance:
+          Org:
+            Machine:
+              Machine:
+                Username: terraform
+                Name: Terraform
+              MachineKey:
+                # A literal, not a variable: kustomize drops the quotes around
+                # a substituted value, and a bare timestamp is no longer a
+                # string (hack/check-substitute-strings.py). Read once.
+                ExpirationDate: "2029-01-01T00:00:00Z"
+                # 1 = JSON, the format the zitadel terraform provider's
+                # jwt_profile_file reads.
+                Type: 1
+              # No PAT: the provider authenticates with the key. null removes
+              # the chart's default, which would mint a second credential.
+              Pat: null
+    # Top level, not zitadel.env: the chart's zitadel.dbEnv helper renders
+    # .Values.env into the deployment and both jobs (homerun2-dev lost a day to
+    # zitadel.env, which the chart ignores).
+    env:
+      - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-credentials
+            key: db-password
+      - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-credentials
+            key: db-admin-password
+      # Read only by the setup job, and only on the first setup.
+      - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: zitadel-credentials
+            key: admin-password
+    setupJob:
+      activeDeadlineSeconds: 900
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+    login:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi
+    # Published through the shared Gateway by components/httproute, applied
+    # after this release (README.md, "The HTTPRoute"). Both chart routes and
+    # the Ingress stay off.
+    ingress:
+      enabled: false

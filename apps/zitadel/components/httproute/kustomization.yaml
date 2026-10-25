@@ -1,0 +1,12 @@
+---
+# The HTTPRoute for ZITADEL and its Login UI, on its own.
+#
+# Out of the base on purpose. Cilium resolves a route's backendRefs ONCE: a
+# route applied before its Service exists serves HTTP 500 for good while every
+# Kustomization reports Ready (apps/homerun2/README.md, "Routes come last").
+# apps/platform/components/zitadel applies it as zitadel-httproute, which
+# dependsOn zitadel -- the same split as openbao-httproute.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml
