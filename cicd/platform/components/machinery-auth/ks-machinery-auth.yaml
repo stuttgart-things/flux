@@ -58,7 +58,7 @@ spec:
     substitute:
       MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
-      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.15.0}"
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.17.0}"
 
       # ---- gRPC auth ----
       # The config.json member that turns the check on; tokenFile is where
