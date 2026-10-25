@@ -1,9 +1,15 @@
 ---
-# vault — HashiCorp Vault (Bitnami chart).
+# vault — HashiCorp Vault (Bitnami chart): vault, vault-autounseal (the
+# external unseal operator) and vault-httproute (waits for vault).
 #
 # For EXISTING instances. New ones should take ../openbao instead; see the
 # child and the bundle README.
+#
+# REQUIRES ../cilium-gateway and ../cert-manager-install from the infra bundle,
+# and a VAULT_STORAGE_CLASS that exists here.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
   - ks-vault.yaml
+  - ks-vault-autounseal.yaml
+  - ks-vault-httproute.yaml
