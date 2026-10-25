@@ -215,6 +215,11 @@ DIVERGENT = {
                         "is an alternative of cluster-build-watch that adds "
                         "the homerun2 sink. Both carry the same on/off switch "
                         "for the worker's machinery gRPC token.",
+    "./infra/fluent-bit": "fluent-bit and fluent-bit-remote are alternatives: "
+                          "the plain one pushes HTTP to the Loki gateway "
+                          "Service of its own cluster, the remote one adds "
+                          "components/remote (HTTPS to another cluster's "
+                          "Gateway) and the CA bundle variables only it reads.",
     "./apps/backstage-rag-postgres": "backstage-rag-postgres-sops is an "
                         "alternative of backstage-rag-postgres without backups "
                         "and without external-secrets: it deletes the "

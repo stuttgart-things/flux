@@ -1,0 +1,9 @@
+---
+# Opt-in: Loki as a Grafana datasource, for the kube-prometheus-stack Grafana
+# of the SAME cluster. Its datasource sidecar picks up ConfigMaps labelled
+# grafana_datasource=1 in its own namespace, hence LOKI_GRAFANA_NAMESPACE
+# (default: KPS_NAMESPACE's default, monitoring). That namespace must exist.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - datasource.yaml

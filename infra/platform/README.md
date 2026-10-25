@@ -32,6 +32,9 @@ infra/platform/
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
     ├── kube-prometheus-stack-eso/ → ./infra/kube-prometheus-stack           (instead of kube-prometheus-stack; webhook token via external-secrets-vault-store)
+    ├── loki/                     → ./infra/loki + httproute                 (requires cilium-gateway; one per lab)
+    ├── fluent-bit/               → ./infra/fluent-bit                       (ships logs to the loki component of this cluster)
+    ├── fluent-bit-remote/        → ./infra/fluent-bit + remote              (instead of fluent-bit; Loki on another cluster, HTTPS)
     ├── external-secrets/         → ./infra/external-secrets/components/install
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)

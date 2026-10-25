@@ -1,0 +1,6 @@
+---
+# Opt-in: fluent-bit (standalone; needs a reachable Loki, see ks-fluent-bit.yaml)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-fluent-bit.yaml

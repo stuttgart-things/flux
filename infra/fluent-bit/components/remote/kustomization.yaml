@@ -1,0 +1,51 @@
+---
+# Opt-in: push to a Loki on ANOTHER cluster, through its Gateway --
+# FLUENT_BIT_LOKI_HOST=<LOKI_HOSTNAME>.<domain of that cluster>, HTTPS on 443.
+#
+# The certificate is verified against FLUENT_BIT_CA_CONFIGMAP (default: the
+# trust-manager bundle cluster-trust-bundle), mounted at /etc/ssl/custom. It is
+# mounted optional so the pod starts without it -- and then every push fails
+# TLS verification, which is the log line to look for.
+#
+# The `test` op pins the output being replaced to the loki one in release.yaml,
+# so a reshuffle there fails this build instead of patching the wrong thing.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      kind: HelmRelease
+      name: fluent-bit
+    patch: |
+      - op: test
+        path: /spec/values/kind
+        value: DaemonSet
+      - op: add
+        path: /spec/values/extraVolumes
+        value:
+          - name: trust-bundle
+            configMap:
+              name: ${FLUENT_BIT_CA_CONFIGMAP:-cluster-trust-bundle}
+              optional: true
+      - op: add
+        path: /spec/values/extraVolumeMounts
+        value:
+          - name: trust-bundle
+            mountPath: /etc/ssl/custom
+            readOnly: true
+      - op: replace
+        path: /spec/values/config/outputs
+        value: |
+          [OUTPUT]
+              Name loki
+              Match kube.*
+              Host ${FLUENT_BIT_LOKI_HOST:-set-FLUENT_BIT_LOKI_HOST.invalid}
+              Port 443
+              tls on
+              tls.verify on
+              tls.ca_file /etc/ssl/custom/${FLUENT_BIT_CA_KEY:-trust-bundle.pem}
+              labels job=fluent-bit, cluster=${FLUENT_BIT_CLUSTER_NAME:-set-FLUENT_BIT_CLUSTER_NAME.invalid}
+              label_keys $kubernetes['namespace_name'],$kubernetes['pod_name'],$kubernetes['container_name']
+              remove_keys kubernetes, stream
+              line_format json
+              Retry_Limit 10
