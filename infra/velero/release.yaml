@@ -32,6 +32,20 @@ spec:
     nodeAgent:
       annotations:
         reloader.stakater.com/auto: "true"
+      # The same trust bundle as the server below. The SSL_CERT_DIR env
+      # reaches node-agent too, but extraVolumes do not -- without this mount
+      # a file-system backup (Kopia, VELERO_DEPLOY_NODE_AGENT) fails on an
+      # S3 endpoint with a lab certificate: "x509: certificate signed by
+      # unknown authority" while the manifest backup succeeds.
+      extraVolumes:
+        - name: trust-bundle
+          configMap:
+            name: ${VELERO_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+            optional: true
+      extraVolumeMounts:
+        - name: trust-bundle
+          mountPath: ${VELERO_TRUST_BUNDLE_MOUNT_PATH:-/etc/ssl/custom}
+          readOnly: true
     initContainers:
       - name: velero-plugin-for-aws
         image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.14.4}
