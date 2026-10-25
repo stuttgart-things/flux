@@ -30,6 +30,20 @@ spec:
               containers:
                 - name: machinery
                   image: ghcr.io/stuttgart-things/machinery:${MACHINERY_VERSION:-v1.14.1}
+    # machinery reads config.json (machinery-watch-config) and the auth token
+    # ONCE, at start; a changed ConfigMap is otherwise only picked up by the
+    # next pod. Reloader rolls the Deployment on a change, where it runs
+    # (infra component reloader); elsewhere the annotation does nothing.
+    - target:
+        kind: Deployment
+        name: machinery
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+          annotations:
+            reloader.stakater.com/auto: "true"
     # Mount MACHINERY_CONFIG from ConfigMap as a file
     - target:
         kind: Deployment
