@@ -23,7 +23,7 @@ spec:
     spec:
       chart: cert-manager-webhook-hetzner
       # renovate: datasource=helm depName=cert-manager-webhook-hetzner registryUrl=https://charts.hetzner.cloud
-      version: ${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.0}
+      version: ${LETSENCRYPT_HETZNER_WEBHOOK_VERSION:-0.9.1}
       sourceRef:
         kind: HelmRepository
         name: hcloud
