@@ -1,6 +1,6 @@
 ---
 # zaehlwerk-matches-sops -- POST /matches takes a handover (home_id, away_id,
-# operator_id) behind MATCHES_TOKEN (zaehlwerk ADR-0015, v0.31.0+), for the sops
+# operator_id) behind MATCHES_TOKEN (zaehlwerk ADR-0015, base v0.32.0+), for the sops
 # credential mode. The door the sandbox's Pong plays its league matches
 # through: every match it starts that way is reported to schmetterpause.
 #
@@ -24,35 +24,12 @@ patches:
       - op: test
         path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
         value: sops
-      # The env entry, because zaehlwerk's published base hands its Secret to
-      # the container one key at a time, from a fixed list, and v0.31.0's list
-      # has no MATCHES_TOKEN (CHECKIN_TOKEN was added here the same way until
-      # the base carried it, zaehlwerk-checkin-sops). Strategic merge: env
-      # merges by name, so the base's entries stay. Drop this patch once the
-      # base lists the key, or the container gets it twice.
-      - op: add
-        path: /spec/patches/-
-        value:
-          target:
-            kind: Deployment
-            name: zaehlwerk
-          patch: |
-            apiVersion: apps/v1
-            kind: Deployment
-            metadata:
-              name: zaehlwerk
-            spec:
-              template:
-                spec:
-                  containers:
-                    - name: zaehlwerk
-                      env:
-                        - name: MATCHES_TOKEN
-                          valueFrom:
-                            secretKeyRef:
-                              name: zaehlwerk-panel
-                              key: MATCHES_TOKEN
-                              optional: true
+      # Only the guard is left: zaehlwerk's published base lists MATCHES_TOKEN
+      # among the Secret keys it hands the container since v0.32.0
+      # (zaehlwerk#178), so the env entry this patch added for v0.31.0 is gone
+      # (as CHECKIN_TOKEN's went, zaehlwerk-checkin-sops). The sandbox renders
+      # the base at the default version; a consumer that pins zaehlwerk below
+      # v0.32.0 with this component gets a token nobody reads.
   # The token, into the plain Secret that is in this build
   # (../zaehlwerk/sops/secrets.yaml).
   - target:
