@@ -1,0 +1,73 @@
+---
+# k8s-pitcher on a cluster that runs NOTHING ELSE of homerun2 (#823): it
+# pitches the events that matter to the omni-pitcher of a central homerun2
+# cluster, which routes them on (core-catcher, notification-catcher -> Teams).
+#
+# Adds to ../ (the k8s-pitcher component, listed BEFORE this one):
+#   - the namespace -- there is no redis-stack here to create it;
+#   - the profile ConfigMap ../ expects its caller to provide, as the
+#     `important-events` preset of homerun2-k8s-pitcher: Warning Events with a
+#     reason worth a message, Ready flips of nodes, and those of Flux
+#     Kustomizations and HelmReleases only once a failure has lasted 5m, see
+#     profile.yaml; cooldown 1h, at most 20 messages per 10m;
+#   - a ClusterRole that grants exactly what that profile watches, in place of
+#     the artefact's (pods, deployments, replicasets and every Secret).
+#
+# Required: HOMERUN2_CENTRAL_PITCHER_URL (the central omni-pitcher's /pitch
+# endpoint) and CLUSTER_NAME (spec.cluster, named in every message). Neither
+# has a usable default; the placeholders below fail at the first pitch.
+#
+# The token is the Secret homerun2-k8s-pitcher-token in the same namespace,
+# from ../eso (ClusterSecretStore) or ../sops (HOMERUN2_K8S_PITCHER_AUTH_TOKEN);
+# select one. It must be the CENTRAL omni-pitcher's token.
+#
+# TLS: ../ mounts trust-manager's cluster-trust-bundle, so a private CA on the
+# central endpoint verifies with `insecure: false`. Without the bundle on this
+# cluster the pitches fail with an unknown-authority error.
+#
+# NEEDS k8s-pitcher v1.5.0 or later (homerun2-k8s-pitcher#88: types, reasons,
+# cooldown, rateLimit; #89: ignoreStatuses, ignoreReasons, minDuration; #93:
+# updates: flips). v1.4.x rejects `updates: flips` at start-up. Before v1.4.0
+# the loader ignores the fields it does not know, starts fine and pitches
+# EVERY Event and Flux flip -- a flood, not an error.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - namespace.yaml
+  - profile.yaml
+patches:
+  # The artefact's ClusterRole reads pods, deployments and replicasets and
+  # gets ANY Secret in the cluster. The profile watches nodes, Events and two
+  # Flux kinds, and reads one Secret: the rules are replaced (a list without
+  # a merge key), not extended.
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-k8s-pitcher
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ClusterRole
+            name: homerun2-k8s-pitcher
+          patch: |
+            apiVersion: rbac.authorization.k8s.io/v1
+            kind: ClusterRole
+            metadata:
+              name: homerun2-k8s-pitcher
+            rules:
+              - apiGroups: [""]
+                resources: [nodes, events]
+                verbs: [get, list, watch]
+              - apiGroups: [kustomize.toolkit.fluxcd.io]
+                resources: [kustomizations]
+                verbs: [get, list, watch]
+              - apiGroups: [helm.toolkit.fluxcd.io]
+                resources: [helmreleases]
+                verbs: [get, list, watch]
+              # The bearer token (spec.auth.tokenFrom), read with a Get.
+              - apiGroups: [""]
+                resources: [secrets]
+                resourceNames: [homerun2-k8s-pitcher-token]
+                verbs: [get]

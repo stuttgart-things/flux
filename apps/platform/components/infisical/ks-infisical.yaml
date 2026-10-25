@@ -36,7 +36,7 @@ spec:
     substitute:
       INFISICAL_NAMESPACE: "${INFISICAL_NAMESPACE:-infisical}"
       # renovate: datasource=helm depName=infisical-standalone registryUrl=https://dl.cloudsmith.io/public/infisical/helm-charts/helm/charts/
-      INFISICAL_VERSION: "${INFISICAL_VERSION:-1.11.0}"
+      INFISICAL_VERSION: "${INFISICAL_VERSION:-1.11.1}"
       # REQUIRED. A PVC that never binds leaves PostgreSQL Pending and
       # Infisical crash-looping on its DB connection.
       # passthrough-override: the base names `nfs4-csi`, which exists in one lab

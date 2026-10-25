@@ -1,0 +1,59 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: schmetterpause-seed
+  namespace: ${SCHMETTERPAUSE_NAMESPACE:-schmetterpause}
+  labels:
+    app.kubernetes.io/name: schmetterpause
+    app.kubernetes.io/component: seed
+  annotations:
+    # A Job's pod template is immutable, so the image tag moving with
+    # SCHMETTERPAUSE_VERSION would be a rejected patch. Force recreates it,
+    # and the seed's own guard makes the new run a no-op.
+    kustomize.toolkit.fluxcd.io/force: Enabled
+spec:
+  # The database is created in the same apply and the schema by the
+  # application's migrate init container, so the first attempts can find no
+  # database or no tables. Ten retries with the Job's own backoff ride that out
+  # (a few minutes); past that, failing is more useful than retrying forever.
+  backoffLimit: 10
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: schmetterpause
+        app.kubernetes.io/component: seed
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: seed
+          # Keep the default equal to components/schmetterpause/requirements.yaml's.
+          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.19.0}
+          args: ["seed"]
+          # The database Secret and the fixture, nothing else: `seed` does not
+          # serve, so it needs no session key.
+          env:
+            - name: SP_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: schmetterpause-db
+                  key: SP_DATABASE_URL
+            - name: SP_SEED_FIXTURE
+              value: pong
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

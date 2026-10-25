@@ -156,8 +156,13 @@ order:
 
 ## CRD note
 
-The prometheus-operator CRDs are large. If a chart upgrade ever fails with
-`metadata.annotations: Too long`, install the CRDs via a dedicated Flux
+The prometheus-operator CRDs live in the chart's `charts/crds/crds/`, which
+Helm only installs. The HelmRelease therefore sets `install.crds` and
+`upgrade.crds` to `CreateReplace`: each upgrade replaces the CRDs with the
+chart's, so the operator never runs against older CRDs (helm-controller's
+default for an upgrade is `Skip`). A replace carries no last-applied
+annotation, so the large CRDs do not hit `metadata.annotations: Too long`.
+If that ever happens anyway, install the CRDs via a dedicated Flux
 Kustomization (raw manifests from the chart's `charts/crds`) and set
 `crds.enabled: false` in `release.yaml`.
 

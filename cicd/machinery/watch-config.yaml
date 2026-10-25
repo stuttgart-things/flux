@@ -169,6 +169,29 @@ data:
             { "label": "Memory",      "path": "spec.vm.ram" }
           ]
         },
+        "ScheduledRun": {
+          "group": "resources.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "scheduledruns",
+          "statusFields": [
+            "status.lastSuccessfulTime"
+          ],
+          "infoFields": [
+            { "label": "Schedule",       "path": "spec.schedule" },
+            { "label": "Last scheduled", "path": "status.lastScheduleTime" },
+            { "label": "Last success",   "path": "status.lastSuccessfulTime" },
+            { "label": "Suspended",      "path": "spec.suspend" }
+          ]
+        },
+        "MinioBucket": {
+          "group": "storage.stuttgart-things.com",
+          "version": "v1alpha1",
+          "resource": "miniobuckets",
+          "infoFields": [
+            { "label": "Bucket",          "path": "spec.bucketName" },
+            { "label": "Deletion policy", "path": "spec.deletionPolicy" }
+          ]
+        },
         "AnsibleRun": {
           "group": "resources.stuttgart-things.com",
           "version": "v1alpha1",

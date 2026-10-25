@@ -1,0 +1,42 @@
+---
+# zaehlwerk-matches-sops -- POST /matches takes a handover (home_id, away_id,
+# operator_id) behind MATCHES_TOKEN (zaehlwerk ADR-0015, base v0.32.0+), for the sops
+# credential mode. The door the sandbox's Pong plays its league matches
+# through: every match it starts that way is reported to schmetterpause.
+#
+# SANDBOX ONLY. A zaehlwerk at a real table never needs it -- the page and
+# check-in carry their own handover -- and without MATCHES_TOKEN a body with an
+# id answers 503, which is what the office runs with. Selected by
+# ../../profiles/sandbox, not by a bundle switch.
+#
+# REQUIRES ZAEHLWERK_MATCHES_TOKEN (`openssl rand -hex 32`: substituted into
+# YAML unquoted) and the handover (zaehlwerk-handover-sops): zaehlwerk opens the
+# door only with SCHMETTERPAUSE_URL set too. zaehlwerk-pong-league reads the
+# same key as ZAEHLWERK_TOKEN -- one credential, read twice.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: zaehlwerk
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+      # Only the guard is left: zaehlwerk's published base lists MATCHES_TOKEN
+      # among the Secret keys it hands the container since v0.32.0
+      # (zaehlwerk#178), so the env entry this patch added for v0.31.0 is gone
+      # (as CHECKIN_TOKEN's went, zaehlwerk-checkin-sops). The sandbox renders
+      # the base at the default version; a consumer that pins zaehlwerk below
+      # v0.32.0 with this component gets a token nobody reads.
+  # The token, into the plain Secret that is in this build
+  # (../zaehlwerk/sops/secrets.yaml).
+  - target:
+      version: v1
+      kind: Secret
+      name: zaehlwerk-panel
+    patch: |
+      - op: add
+        path: /stringData/MATCHES_TOKEN
+        value: ${ZAEHLWERK_MATCHES_TOKEN}

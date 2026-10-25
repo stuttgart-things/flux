@@ -1,0 +1,31 @@
+---
+# schmetterpause-settle-immediate -- a result through POST /api/results counts
+# at once instead of waiting for a player (SP_SCOREBOARD_SETTLE=immediate,
+# schmetterpause ADR-0027, v0.18.0+). For the Pong sandbox, where nobody
+# confirms anything: without it every league result stays pending and TTR
+# never moves.
+#
+# NOT FOR THE OFFICE. There it would rate the Zählwerk's matches without
+# anybody agreeing to them; whether that is right is the test phase's decision
+# in schmetterpause ADR-0015. schmetterpause logs a warning at start with this
+# on, so a value copied from the sandbox shows up.
+#
+# A ConfigMap key, so both credential modes can select it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: ConfigMap
+            name: schmetterpause-config
+          patch: |
+            - op: add
+              path: /data/SP_SCOREBOARD_SETTLE
+              value: immediate

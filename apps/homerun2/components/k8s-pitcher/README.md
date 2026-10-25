@@ -18,6 +18,41 @@ K8s API → informers (real-time add/update/delete)  → HTTP POST → omni-pitc
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from `substituteFrom` Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap with K8sPitcherProfile YAML |
+| `HOMERUN2_CENTRAL_PITCHER_URL` | sentinel | with `remote/` | Central omni-pitcher `/pitch` endpoint |
+| `CLUSTER_NAME` | sentinel | with `remote/` | `spec.cluster` in the profile |
+| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | - | with `sops/` | Token for the token Secret |
+| `HOMERUN2_SECRET_STORE`, `HOMERUN2_OMNI_PITCHER_TOKEN_PATH`, `HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY` | sentinel, `homerun2`, `omni-pitcher-auth-token` | with `eso/` | Where the token lives |
+
+## Remote: k8s-pitcher only, pitching to a central homerun2 (#823)
+
+Three sub-components, each listed after this one:
+
+| Sub-component | Adds |
+|---|---|
+| `remote/` | the namespace, the profile ConfigMap (the `important-events` preset of homerun2-k8s-pitcher, `pitcher.addr: ${HOMERUN2_CENTRAL_PITCHER_URL}`, `spec.cluster: ${CLUSTER_NAME}`, `insecure: false`), and a ClusterRole replacing the artefact's with exactly what that profile watches: `nodes`, `events` (get/list/watch), plus `get` on the one Secret `homerun2-k8s-pitcher-token` |
+| `eso/` | the token Secret as an ExternalSecret: `${HOMERUN2_SECRET_STORE}`, entry `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}`, property `${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY}` |
+| `sops/` | the token Secret from `${HOMERUN2_K8S_PITCHER_AUTH_TOKEN}`, no default |
+
+`eso/` and `sops/` delete the artefact's placeholder Secret in the child, so the
+parent's Secret is its only writer. Select one of them. `profiles/k8s-pitcher-remote`
+(eso) and `profiles/k8s-pitcher-remote-sops` compose them; the apps-platform
+bundle components `homerun2-k8s-pitcher-remote` / `-sops` apply those.
+
+`remote/` **needs k8s-pitcher v1.5.0 or later** (homerun2-k8s-pitcher#88, #89,
+#93); v1.4.x rejects its `updates: flips` at start-up. Before v1.4.0 the
+profile loader ignores fields it does not know, so an older image starts fine,
+drops `types`, `reasons`, `cooldown`, `rateLimit`, `ignoreStatuses`,
+`ignoreReasons` and `minDuration`, and pitches every Event and every Flux flip.
+
+All condition informers use `updates: flips`: Ready/Synced flips only, no
+`<Kind>/<name> update` message on a spec (generation) change. Flux
+Kustomizations and HelmReleases are watched for lasting failures only:
+`Unknown` and the reasons `Progressing`, `DependencyNotReady` and
+`ReconciliationInProgress` are ignored, a failure is pitched once it has lasted
+5m, its recovery only if the failure was pitched.
+
+The token is the **central** omni-pitcher's. The pitcher verifies TLS against
+trust-manager's `cluster-trust-bundle`, which must hold the central endpoint's CA.
 
 ## Profile ConfigMap
 
@@ -121,6 +156,7 @@ informers:
 
 | Target | Patch |
 |--------|-------|
+| Deployment | `reloader.stakater.com/auto: "true"` (rolls on ConfigMap/Secret change; needs Reloader) |
 | Deployment | Override container image tag |
 | Secret (`homerun2-k8s-pitcher-token`) | Override auth token from variable |
 | Deployment | Mount trust-bundle volume + `SSL_CERT_DIR` env var |

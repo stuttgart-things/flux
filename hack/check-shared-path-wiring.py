@@ -220,6 +220,15 @@ DIVERGENT = {
                           "Service of its own cluster, the remote one adds "
                           "components/remote (HTTPS to another cluster's "
                           "Gateway) and the CA bundle variables only it reads.",
+    "./apps/backstage-rag-postgres": "backstage-rag-postgres-sops is an "
+                        "alternative of backstage-rag-postgres without backups "
+                        "and without external-secrets: it deletes the "
+                        "ExternalSecrets, ObjectStore, ScheduledBackup and velero "
+                        "Schedule, so it threads none of their variables.",
+    "./apps/clusterscope": "clusterscope-labview is an alternative of "
+                        "clusterscope that adds the vault-kubeconfigs, "
+                        "vault-git-auth, config and blackbox-probes components "
+                        "and the variables they read.",
 }
 
 

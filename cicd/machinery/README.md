@@ -55,7 +55,7 @@ Both `ghcr.io/stuttgart-things/machinery` and `ghcr.io/stuttgart-things/machiner
 
 ## What the dashboard watches
 
-The kinds and fields come from `config.json` in the `machinery-watch-config` ConfigMap ([`watch-config.yaml`](watch-config.yaml)), mounted at `/etc/machinery` and pointed to by `MACHINERY_CONFIG`. It ships this fleet's XRs:
+The kinds and fields come from `config.json` in the `machinery-watch-config` ConfigMap ([`watch-config.yaml`](watch-config.yaml)), mounted at `/etc/machinery` and pointed to by `MACHINERY_CONFIG`. machinery reads it once, at start. The Deployment carries `reloader.stakater.com/auto: "true"`, so where the infra component `reloader` runs, a change rolls the pod; elsewhere, restart it by hand (`kubectl -n machinery rollout restart deploy/machinery`). It ships this fleet's XRs:
 
 | kind | shown |
 |---|---|

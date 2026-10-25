@@ -1,0 +1,72 @@
+---
+# zaehlwerk-pong-league -- everything zaehlwerk-pong-on ships, plus league mode
+# (zaehlwerk ADR-0015, v0.31.0+): one REAL match after another between two of
+# schmetterpause's players, each at the strength PONG_PLAYER_SKILL gives its
+# display name, played by the server driver and reported by zaehlwerk. With
+# PONG_TOURNAMENTS (ADR-0017) it plays open tournament places first.
+#
+# SANDBOX ONLY. A league match is no demo: it ends running demos, and its
+# result lands in schmetterpause's TTR and ranking. Selected by
+# ../../profiles/sandbox, never on a cluster whose schmetterpause is the
+# office's. The guard is zaehlwerk-matches-sops: without MATCHES_TOKEN on
+# zaehlwerk every league start is refused with 503 and nothing is created.
+#
+# REQUIRES zaehlwerk-matches-sops (ZAEHLWERK_TOKEN here is its MATCHES_TOKEN)
+# and the handover (SCHMETTERPAUSE_URL and SCHMETTERPAUSE_TOKEN, which
+# zaehlwerk-pong-on already passes on, optionally): the players come from
+# /api/players, the operator from /api/operators. The operator is the
+# observer the sandbox seed creates, `Pong` (schmetterpause ADR-0027).
+#
+# Not next to attract mode: the game refuses to start with both (both start
+# matches by themselves), so this includes `on`, not `attract`.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+components:
+  - ../zaehlwerk-pong-on
+patches:
+  - target:
+      kind: Deployment
+      name: zaehlwerk-pong
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: zaehlwerk-pong
+      spec:
+        template:
+          spec:
+            containers:
+              - name: pong
+                env:
+                  - name: ZAEHLWERK_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: zaehlwerk-panel
+                        key: MATCHES_TOKEN
+                  - name: PONG_OPERATOR
+                    value: "${ZAEHLWERK_PONG_OPERATOR:-Pong}"
+                  # The sandbox seed's eight bots (schmetterpause
+                  # SP_SEED_FIXTURE=pong), spread from strong to weak, so
+                  # the ranking has something to sort. The names are a
+                  # contract with that fixture: a renamed bot plays at
+                  # PONG_BOT_SKILL and the game logs it. Never empty -- an
+                  # empty substitution renders as YAML null.
+                  - name: PONG_PLAYER_SKILL
+                    value: "${ZAEHLWERK_PONG_PLAYER_SKILL:-Ada=schwer,Bert=schwer,Cleo=0.1,Dino=mittel,Emil=mittel,Frida=0.2,Gero=leicht,Hanna=leicht}"
+                  # Longer than zaehlwerk's SCHMETTERPAUSE_REPORT_DELAY (15s),
+                  # so a result is out before the next match starts.
+                  - name: PONG_LEAGUE_PAUSE
+                    value: "${ZAEHLWERK_PONG_LEAGUE_PAUSE:-30s}"
+                  # Tournaments first (zaehlwerk ADR-0017, v0.32.0+): the
+                  # open places of schmetterpause's tournaments, oldest
+                  # first, final included, before random pairs. Needs
+                  # schmetterpause v0.19.0+ (ADR-0028); an older one answers
+                  # 404, which the game logs once before playing the league.
+                  # An older game ignores the variable.
+                  #
+                  # Fixed, not ${...:-on}: `on` is a YAML 1.1 boolean, and a
+                  # substituted bare `on` reaches the API server as one
+                  # (hack/check-substitute-strings.py). Quoted here, kustomize
+                  # keeps the quotes. To turn it off, patch the value to "off".
+                  - name: PONG_TOURNAMENTS
+                    value: "on"

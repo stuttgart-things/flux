@@ -1,0 +1,31 @@
+---
+# k8s-pitcher: the omni-pitcher token as a plain Secret substituted from the
+# consumer's substituteFrom Secret -- HOMERUN2_K8S_PITCHER_AUTH_TOKEN, with NO
+# default: unset, the Secret renders without a value and the apply fails,
+# rather than pitching with ../'s `changeme`. eso/ is the alternative. On a
+# remote cluster (../remote) it is the CENTRAL omni-pitcher's token.
+#
+# The child deletes the artefact's placeholder Secret (which ../ fills from
+# HOMERUN2_OMNI_PITCHER_AUTH_TOKEN), so this Secret is its only writer.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secrets.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-k8s-pitcher
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-k8s-pitcher-token
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-k8s-pitcher-token
+            $patch: delete

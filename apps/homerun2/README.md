@@ -15,7 +15,9 @@ Selected like any other app component, with credentials from a ClusterSecretStor
 | `homerun2-light-catcher-tabletennis` | `profiles/platform-light-catcher-tabletennis` | a second light-catcher, for the table tennis table, on the `tabletennis` stream in namespace `homerun2-tabletennis` (waits on `homerun2`) |
 | `homerun2-light-catcher-tabletennis-sops` | `profiles/sops-light-catcher-tabletennis`, then `profiles/platform-light-catcher-tabletennis-routes` | **instead of `homerun2-light-catcher-tabletennis`**, next to `homerun2-sops`: the same instance, with the redis password from a `substituteFrom` Secret (`homerun2-light-catcher-tabletennis-sops-secrets`, key `HOMERUN2_REDIS_PASSWORD_B64` -- homerun2-sops' value) (waits on `homerun2`) |
 | `homerun2-portal` | `profiles/portal`, then `profiles/portal-routes` | homerun2-portal: one page with every service's status and fragments, and each service's own UI under `/<key>/` through its reverse proxy (`HOMERUN2_PORTAL_SERVICES`). No secrets, so next to `homerun2` or `homerun2-sops` alike; each service it fronts runs with `HOMERUN2_<SERVICE>_BASE_PATH=/<key>` (waits on `homerun2`) |
-| `homerun2-notification-catcher` | `profiles/platform-notification-catcher` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
+| `homerun2-notification-catcher` | `profiles/platform-notification-catcher`, then `profiles/platform-notification-catcher-routes` | notification-catcher, credentials from the store: by default table tennis **results** (a won match, never a point) from stream `tabletennis` to the Teams channel in `teams-webhook-url`, starting in dry run (`HOMERUN2_NOTIFICATION_CATCHER_DRY_RUN: on`). See `components/notification-catcher/README.md` (waits on `homerun2`) |
+| `homerun2-k8s-pitcher-remote` | `profiles/k8s-pitcher-remote` | **on a cluster without homerun2 of its own**: only the k8s-pitcher, pitching the `important-events` preset (Warning Events with an important reason, Ready flips of nodes, Flux objects only once a failure has lasted 5m; cooldown 1h, at most 20 per 10m) to a central homerun2 cluster's omni-pitcher (`HOMERUN2_CENTRAL_PITCHER_URL`, `CLUSTER_NAME`, both required). The central token from the store. Needs k8s-pitcher v1.5.0+. See `components/k8s-pitcher/README.md` |
+| `homerun2-k8s-pitcher-remote-sops` | `profiles/k8s-pitcher-remote-sops` | **instead of `homerun2-k8s-pitcher-remote`**, without external-secrets: the central token from a `substituteFrom` Secret (`homerun2-k8s-pitcher-remote-sops-secrets`, key `HOMERUN2_K8S_PITCHER_AUTH_TOKEN`) |
 | `homerun2-smoke-test` | `smoke-test` | a Job: omni-pitcher health, 401 without token, 2xx with it, one probe per component, in-cluster and through the gateway. Runs again when the Job spec changes, which includes any component version (they land in the pod template as `homerun2.stuttgart-things.com/tested-versions`); the `Completed` pod stays on purpose -- with a TTL, Flux would recreate the deleted Job and re-run it every interval. **After a bump, a `PASS` means the new version answered**: each in-cluster probe waits until the service's `/health` reports the version the bundle sets, three times in a row, because the re-run starts in parallel with the rollout (flux#432). Not for wled-mock, whose `/healthz` reports no version, and not for the external probes, which check routes |
 
 A cluster sets `HOMERUN2_SECRET_STORE` and `HOMERUN2_REDIS_STORAGE_CLASS`; both default to sentinels.
@@ -61,14 +63,16 @@ Profiles provide pre-composed subsets of components for different deployment sce
 | Profile | Components | Use case |
 |---------|------------|----------|
 | `profiles/base` | redis-stack, omni-pitcher, core-catcher, notification-catcher, scout | Minimal deployment: message ingestion + web dashboard + notifications + monitoring |
-| `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
+| `profiles/base-routes` | HTTPRoutes for omni-pitcher, core-catcher, scout, notification-catcher (UI) | **Add-on** to `profiles/base`: a second Kustomization with `dependsOn` on the base one |
 | `profiles/sops` | profiles/base + led-catcher, light-catcher, wled-mock, demo-pitcher, config-viewer | The whole stack on the sops path, as one Kustomization. Needs only the Secret keys `profiles/base` needs |
-| `profiles/sops-routes` | HTTPRoutes for all eight of them | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
+| `profiles/sops-routes` | HTTPRoutes for all nine of them (notification-catcher: its UI) | **Add-on** to `profiles/sops`: a second Kustomization with `dependsOn` on it |
 | `profiles/sops-light-catcher-tabletennis` | light-catcher-tabletennis + its `sops/` | **Add-on** to `profiles/sops`: the table tennis light-catcher in its own namespace. Needs `HOMERUN2_REDIS_PASSWORD_B64`; its route is `profiles/platform-light-catcher-tabletennis-routes` |
 | `profiles/base-sound-catcher` | sound-catcher + its `sops/` | **Add-on** to `profiles/base`: the sops counterpart to `profiles/platform-sound-catcher`. Needs `HOMERUN2_REDIS_PASSWORD_B64` |
 | `profiles/base-sound-catcher-routes` | HTTPRoute for sound-catcher | **Add-on** to `profiles/base-sound-catcher`: a second Kustomization with `dependsOn` on it |
 | `profiles/portal` | portal | **Add-on** to any profile: holds no secrets, so it fits the eso and the sops path alike. Each service in `HOMERUN2_PORTAL_SERVICES` must run with `BASE_PATH=/<key>` |
 | `profiles/portal-routes` | HTTPRoute for portal | **Add-on** to `profiles/portal`: a second Kustomization with `dependsOn` on it |
+| `profiles/k8s-pitcher-remote` | k8s-pitcher + its `remote/` and `eso/` | **Standalone**, on a cluster without homerun2: pitches important events to a central omni-pitcher, token from the store |
+| `profiles/k8s-pitcher-remote-sops` | k8s-pitcher + its `remote/` and `sops/` | The same, token from `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` (`substituteFrom`) |
 | `profiles/cicd` | git-pitcher | **Add-on**, not standalone: deploy *alongside* `profiles/base` as a second Kustomization |
 | *(root)* | 11 of the 12 components — everything except `notification-catcher` | Full stack deployment |
 
@@ -146,6 +150,11 @@ Version defaults are not repeated in these tables. Each component pins them in `
 | `HOMERUN2_OMNI_PITCHER_AUTH_TOKEN` | `changeme` | no | Bearer auth token (shared with omni-pitcher, from substituteFrom Secret) |
 | `HOMERUN2_K8S_PITCHER_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | no | ConfigMap name with CA bundle for TLS trust |
 | `HOMERUN2_K8S_PITCHER_PROFILE_CM` | `homerun2-k8s-pitcher-profile` | no | ConfigMap name containing the K8sPitcherProfile YAML |
+| `HOMERUN2_CENTRAL_PITCHER_URL` | `https://set-HOMERUN2_CENTRAL_PITCHER_URL.invalid/pitch` | yes, with `remote/` | The central omni-pitcher's `/pitch` endpoint |
+| `CLUSTER_NAME` | `set-CLUSTER_NAME` | yes, with `remote/` | `spec.cluster`: names this cluster in every message |
+| `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` | - | yes, with `sops/` | Bearer token for the (central) omni-pitcher, from `substituteFrom` |
+
+With `eso/` the token comes from `${HOMERUN2_SECRET_STORE}`, entry `${HOMERUN2_OMNI_PITCHER_TOKEN_PATH}`, property `${HOMERUN2_OMNI_PITCHER_TOKEN_PROPERTY}` -- the same variables as omni-pitcher's.
 
 ### Light Catcher
 
@@ -197,6 +206,7 @@ Shares the version variables above.
 | `HOMERUN2_LED_CATCHER_PROFILE_CM` | `homerun2-led-catcher-profile` | no | ConfigMap (key `profile.yaml`) mounted as the display profile; the default is the base's own |
 | `HOMERUN2_LED_CATCHER_IDLE` | `off` | no | Idle screen: `off` or `clock` |
 | `HOMERUN2_LED_CATCHER_TZ` | `UTC` | no | Time zone of the idle clock and the card's HH:MM, e.g. `Europe/Berlin` |
+| `HOMERUN2_LED_CATCHER_DISPLAY_QUEUE` | `1` | no | `DISPLAY_QUEUE` (led-catcher v0.21.0+): how many finite displays wait their turn, first in first out. `1`: the newest waiting one replaces the rest |
 | `HOMERUN2_LED_CATCHER_BASE_PATH` | *(empty)* | no | `BASE_PATH`, e.g. `/led` behind homerun2-portal. Set, the app answers only under it, on its own hostname too (`led-catcher.<domain>/led/`); `/healthz` stays at the root |
 
 ### Sound Catcher
@@ -226,6 +236,18 @@ The redis password comes from the store like the other catchers' (`eso/`) or fro
 | `HOMERUN2_CONFIG_VIEWER_VERSION` | see `release.yaml` | no | Container image tag |
 | `HOMERUN2_CONFIG_VIEWER_HOSTNAME` | `config-viewer` | no | HTTPRoute hostname prefix |
 | `HOMERUN2_CONFIG_VIEWER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/config` behind homerun2-portal (v0.3.0+); `/health` and `/healthz` stay at the root |
+
+### Notification Catcher
+
+| Variable | Default | Required | Purpose |
+|----------|---------|----------|---------|
+| `HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION` | see `requirements.yaml` | no | OCI kustomize base tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_VERSION` | see `release.yaml` | no | Container image tag |
+| `HOMERUN2_NOTIFICATION_CATCHER_STREAMS` | `messages,alerts` | no | `REDIS_STREAMS`, comma-separated |
+| `HOMERUN2_NOTIFICATION_CATCHER_HOSTNAME` | `notification-catcher` | no | HTTPRoute hostname prefix of the read-only UI |
+| `HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH` | *(empty)* | no | URL prefix of the UI, e.g. `/notify` behind homerun2-portal (`notify=http://homerun2-notification-catcher`); `/healthz`, `/health` and `/metrics` stay at the root. The portal shows the latest dispatched messages on its overview from the catcher release after v3.13.0 |
+
+The UI is always on (`HTTP_ADDR=:8080`, readiness on `/healthz`, Service in `components/notification-catcher/service.yaml`): the loaded routing config with secrets redacted, the event log with each output's result, the dead-letter tab. No token, like the other homerun2 UIs. See `components/notification-catcher/README.md` for routing, dry run and credentials.
 
 ### Portal
 

@@ -25,5 +25,15 @@ configMapGenerator:
       labels:
         grafana_dashboard: "1"
         app.kubernetes.io/part-of: kube-prometheus-stack
+  # Same cluster, filtered to the guests carrying one PVE tag (Grafana textbox
+  # variable "tag", default stuttgart-things); templates excluded. Generated --
+  # same $${...} rule as above.
+  - name: pve-exporter-dashboard-guests
+    files:
+      - proxmox-pve-guests.json=dashboard-guests.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+        app.kubernetes.io/part-of: kube-prometheus-stack
 generatorOptions:
   disableNameSuffixHash: false

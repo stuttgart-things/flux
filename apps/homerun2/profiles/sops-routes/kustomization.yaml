@@ -21,3 +21,4 @@ components:
   - ../../components/wled-mock/route
   - ../../components/demo-pitcher/route
   - ../../components/config-viewer/route
+  - ../../components/notification-catcher/route

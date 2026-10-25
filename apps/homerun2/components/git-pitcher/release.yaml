@@ -15,6 +15,20 @@ spec:
   wait: true
   targetNamespace: ${HOMERUN2_NAMESPACE:-homerun2}
   patches:
+    # Roll the pod when a referenced ConfigMap/Secret changes: it reads its
+    # config at start only. REQUIRES Reloader on the cluster (infra/reloader)
+    # -- without it this does nothing. See ../notification-catcher/release.yaml
+    # for why Reloader, not a hash.
+    - target:
+        kind: Deployment
+        name: homerun2-git-pitcher
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: homerun2-git-pitcher
+          annotations:
+            reloader.stakater.com/auto: "true"
     # Remove the KCL-generated HTTPRoute. The bundle started shipping one
     # with placeholder hostname (homerun2-git-pitcher.example.com) and parent
     # homerun2-dev-gateway/default (preview-env default), which leaves a

@@ -1,0 +1,43 @@
+---
+# harbor-project-proxy → ./apps/harbor/components/project-proxy
+#
+# dependsOn harbor: the proxy forwards to harbor-core, and its HelmRelease
+# waits for the harbor HelmRelease anyway.
+#
+# The chart's Ingress stays off: nothing serves an IngressClass on a Gateway
+# cluster, and harbor-project-proxy-httproute carries the wildcard hostname.
+# INGRESS_ENABLED is written here, not threaded -- `false` is a YAML bool, and
+# postBuild.substitute is map[string]string.
+#
+# REQUIRES the harbor component (same namespace, hostname and domain).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: harbor-project-proxy
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: harbor
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${HARBOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/harbor/components/project-proxy
+  postBuild:
+    substitute:
+      HARBOR_NAMESPACE: "${HARBOR_NAMESPACE:-harbor}"
+      HARBOR_HOSTNAME: "${HARBOR_HOSTNAME:-harbor}"
+      HARBOR_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      # renovate: datasource=docker depName=ghcr.io/hiddenmarten/harbor-project-proxy
+      HARBOR_PROJECT_PROXY_VERSION: "${HARBOR_PROJECT_PROXY_VERSION:-0.0.1}"
+      INGRESS_ENABLED: "false"

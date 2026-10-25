@@ -1,0 +1,19 @@
+---
+# AppProfile: what a cluster sets for harbor-project-proxy. No Secret of its
+# own -- it forwards to harbor-core without credentials.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: harbor-project-proxy
+spec:
+  bundle: apps-platform
+  component: ../components/harbor-project-proxy
+  vars:
+    INFRA_DOMAIN: { required: true }
+    HARBOR_HOSTNAME: {}
+    HARBOR_NAMESPACE: {}
+    HARBOR_PROJECT_PROXY_VERSION: {}
+    HARBOR_SUSPEND: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}

@@ -6,14 +6,14 @@
 # cert-manager's webhook is serving, that fails the Helm install, and a failed
 # HelmRelease goes Stalled rather than retrying (see minio beside this).
 #
-# The chart still renders its own Ingress (exposureType ingress, class nginx).
-# On a Gateway cluster nothing serves that class, so it sits unused -- the
-# HTTPRoute goes to harbor-core / harbor-portal directly, which is what the
-# ingress exposure type exposes.
+# By default the chart still renders its own Ingress (exposureType ingress,
+# class nginx). On a Gateway cluster nothing serves that class, so it sits
+# unused -- the HTTPRoute goes to harbor-core / harbor-portal directly, which
+# is what the ingress exposure type exposes. HARBOR_EXPOSURE_TYPE=none drops
+# the Ingress altogether.
 #
 # The project-proxy (wildcard *.harbor.<domain> mirror access) is NOT part of
-# this component. It is a separate HelmRelease with its own route; see
-# apps/harbor/README.md.
+# this component: select ../harbor-project-proxy beside it.
 #
 # REQUIRES a StorageClass that exists here, and a Secret with
 # HARBOR_ADMIN_PASSWORD.
@@ -56,6 +56,8 @@ spec:
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
       ISSUER_NAME: "${APPS_CLUSTER_ISSUER:-cluster-ca}"
       ISSUER_KIND: "${APPS_CLUSTER_ISSUER_KIND:-ClusterIssuer}"
+      # ingress (the base's default) or none; see the header.
+      EXPOSURE_TYPE: "${HARBOR_EXPOSURE_TYPE:-ingress}"
       # REQUIRED. A PVC that never binds leaves the pods Pending while the
       # HelmRelease reports installed.
       # passthrough-override: the base names `nfs4-csi`, which exists in one lab

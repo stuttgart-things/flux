@@ -46,12 +46,15 @@ spec:
           envFrom:
             - secretRef:
                 name: prometheus-pve-exporter
+          # Average use is ~1% of a core, but each scrape walks the whole PVE
+          # cluster in a burst; at 200m ~40% of the CFS periods were throttled
+          # (CPUThrottlingHigh).
           resources:
             requests:
               cpu: 25m
               memory: 64Mi
             limits:
-              cpu: 200m
+              cpu: "1"
               memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false

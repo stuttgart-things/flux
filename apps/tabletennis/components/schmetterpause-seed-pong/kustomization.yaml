@@ -1,0 +1,20 @@
+---
+# schmetterpause-seed-pong -- a Job that fills an EMPTY schmetterpause database
+# with the sandbox's field: eight bot players and the observer `Pong`
+# (SP_SEED_FIXTURE=pong, schmetterpause ADR-0027, v0.18.0+). For the Pong
+# sandbox only.
+#
+# Why flux renders it: schmetterpause's published base carries its seed Job
+# only in pr-* artefacts (its docs/preview-environments.md), and kustomize
+# cannot switch on a resource that was never rendered. The shape follows
+# schmetterpause's kcl/seed.k.
+#
+# SAFE TO RUN AGAIN, and that is what makes it a plain Job. `seed` refuses a
+# database that already has players and exits 0 with "nothing seeded, the
+# database is in use", so every later run -- a new image tag recreates the Job
+# -- is a no-op. It is not a guard against pointing it at the office: that is
+# the namespace, and this component is selected by ../../profiles/sandbox only.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - job.yaml

@@ -17,6 +17,11 @@ Deploys [trust-manager](https://cert-manager.io/docs/trust/trust-manager/) via H
 | `TRUST_BUNDLE_VAULT_CA_KEY` | `ca.crt` | no | Key within the Vault CA secret |
 | `TRUST_BUNDLE_EXTRA_CA_SECRET` | `TRUST_BUNDLE_CA_SECRET` | no | One additional CA to trust (e.g. the other lab's Vault root), `cluster-trust-bundle` only. Unset = the cluster CA again, de-duplicated by trust-manager, so the bundle is unchanged |
 | `TRUST_BUNDLE_EXTRA_CA_KEY` | `TRUST_BUNDLE_CA_KEY` | no | Key within the extra CA secret |
+| `TRUST_BUNDLE_SECRET_NAME` | `tls-ca` | no | Name of the Secret-target Bundle (Rancher `privateCA`); must stay in `secretTargets.authorizedSecrets` |
+| `TRUST_BUNDLE_SECRET_TARGET_KEY` | `cacerts.pem` | no | Key in the synced Secret |
+| `TRUST_BUNDLE_SECRET_NAMESPACE` | `cattle-system` | no | Namespace the Secret is synced to |
+| `TRUST_BUNDLE_SECRET_CA_SECRET` | `TRUST_BUNDLE_CA_SECRET` | no | First CA of the Secret-target Bundle. Set it to `TRUST_BUNDLE_VAULT_CA_SECRET` when Rancher's certificate comes from the Vault/OpenBao PKI: the bundle is then that root alone, and the 60-day renewal of the self-signed cluster CA no longer changes the checksum Rancher agents pin (`CATTLE_CA_CHECKSUM`) |
+| `TRUST_BUNDLE_SECRET_CA_KEY` | `TRUST_BUNDLE_CA_KEY` | no | Key within that secret |
 
 ## GIT-REPOSITORY MANIFEST
 

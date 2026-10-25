@@ -178,11 +178,11 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: CLAIM_MACHINERY_API_URL
-        - name: CLAIM_MACHINERY_REGISTRY_URL
+        - name: MACHINERY_URL
           valueFrom:
             secretKeyRef:
               name: backstage-secrets
-              key: CLAIM_MACHINERY_REGISTRY_URL
+              key: MACHINERY_URL
         - name: AUTH_ENVIRONMENT
           valueFrom:
             secretKeyRef:

@@ -1,0 +1,32 @@
+---
+# k8s-pitcher: the omni-pitcher token from a ClusterSecretStore instead of
+# HOMERUN2_OMNI_PITCHER_AUTH_TOKEN, so nothing credential-shaped passes through
+# Flux. The entry is ${HOMERUN2_OMNI_PITCHER_TOKEN_PATH} / ..._PROPERTY -- the
+# same variables as omni-pitcher/eso, so a store that already holds the
+# omni-pitcher token serves this one unchanged. On a remote cluster (../remote)
+# that is the CENTRAL omni-pitcher's token, copied into this cluster's store.
+#
+# The child deletes the artefact's placeholder Secret (which ../ fills from
+# HOMERUN2_OMNI_PITCHER_AUTH_TOKEN), so the ExternalSecret is its only writer.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - external-secrets.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: homerun2-k8s-pitcher
+    patch: | # pragma: allowlist secret
+      - op: add
+        path: /spec/patches/-
+        value:
+          target:
+            kind: Secret
+            name: homerun2-k8s-pitcher-token
+          patch: |
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: homerun2-k8s-pitcher-token
+            $patch: delete

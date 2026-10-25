@@ -17,15 +17,20 @@ apps/platform/
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
     ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
+    ├── harbor-project-proxy/ → ./apps/harbor/components/project-proxy
+    │                  (requires harbor; route: harbor-project-proxy-httproute)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
     ├── openldap/    → ./apps/openldap    (requires a StorageClass + a Secret)
     ├── infisical/   → ./apps/infisical   (requires cilium-gateway, a StorageClass + a Secret)
     ├── backstage-rag-postgres/ → ./apps/backstage-rag-postgres
     │                  (requires backstage, cnpg-operator, cnpg-barman-cloud, velero, the ESO vault store)
+    ├── backstage-rag-postgres-sops/ → ./apps/backstage-rag-postgres
+    │                  (instead of backstage-rag-postgres: no backups, no ESO; requires backstage, cnpg-operator, a SOPS Secret)
     ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
     ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
     ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
     ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
+    ├── clusterscope-labview/ → ./apps/clusterscope (instead of clusterscope: Vault kubeconfigs + git token, config, probes)
     ├── vcluster/    → ./apps/vcluster
     │
     │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:
@@ -39,8 +44,12 @@ apps/platform/
     ├── homerun2-git-pitcher-sops/
     │                            → ./apps/homerun2/profiles/cicd
     │                              (no ESO variant; homerun2 + a Secret + a watch-config ConfigMap)
+    ├── homerun2-k8s-pitcher-remote-sops/
+    │                            → ./apps/homerun2/profiles/k8s-pitcher-remote-sops
+    │                              (instead of homerun2-k8s-pitcher-remote; a Secret with the central token)
     ├── tabletennis-sops/        → ./apps/tabletennis/profiles/sops   (instead of tabletennis; cnpg-operator + a Secret)
-    └── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
+    ├── tabletennis-sops-backup/ → ./apps/tabletennis/profiles/sops   (instead of tabletennis; + cnpg-barman-cloud, S3)
+    └── tabletennis-sandbox/     → ./apps/tabletennis/profiles/sandbox (NEXT TO tabletennis*: a second pair where Pong plays a league)
 ```
 
 (The listing above is not exhaustive: the homerun2 and tabletennis families
@@ -74,13 +83,15 @@ a `substituteFrom` Secret in `flux-system` instead:
 | `homerun2-light-catcher-tabletennis-sops` | `homerun2-light-catcher-tabletennis-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
 | `homerun2-sound-catcher-sops` | `homerun2-sound-catcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
 | `homerun2-git-pitcher-sops` | `homerun2-git-pitcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` (as `homerun2-sops`'), `HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64` | <!-- pragma: allowlist secret -->
+| `homerun2-k8s-pitcher-remote-sops` | `homerun2-k8s-pitcher-remote-sops-secrets` | `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` -- the CENTRAL cluster's omni-pitcher token | <!-- pragma: allowlist secret -->
 | `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
+| `tabletennis-sandbox` | `tabletennis-sandbox-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN`, `ZAEHLWERK_MATCHES_TOKEN`; optional `ZAEHLWERK_REDIS_PASSWORD` (homerun2's, with the redis panel) | <!-- pragma: allowlist secret -->
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`); optional `OPENBAO_TERRAFORM_PASSWORD`, `OPENBAO_ADMIN_PASSWORD` (both needed with `OPENBAO_INIT: self-init-userpass`) |
 
 Select one of each pair, never both: the alternative renders the same child
 Kustomization (`homerun2`, `homerun2-light-catcher-tabletennis`,
-`tabletennis`, `openbao`), and the bundle build
+`homerun2-k8s-pitcher-remote`, `tabletennis`, `openbao`), and the bundle build
 fails on the duplicate. Switching between the two rebuilds the child in place
 rather than pruning it.
 
@@ -169,7 +180,7 @@ success.
 
 ### AppProfiles: generating that Secret instead of writing it
 
-`keycloak`, `harbor`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
+`keycloak`, `harbor`, `harbor-project-proxy`, `minio` and `infisical` carry a `profile.yaml` next to their `ks-*.yaml`
 (the infra bundle's profiles are listed in
 [`infra/platform`](../../infra/platform/README.md#appprofiles)).
 It lists the vars a cluster may set for the app, which of them are required, and

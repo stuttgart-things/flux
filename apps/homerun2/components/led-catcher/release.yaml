@@ -53,7 +53,7 @@ spec:
             spec:
               containers:
                 - name: homerun2-led-catcher
-                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.20.0}
+                  image: ghcr.io/stuttgart-things/homerun2-led-catcher:${HOMERUN2_LED_CATCHER_VERSION:-v0.22.0}
     # Override Redis connection
     - target:
         kind: Deployment
@@ -90,6 +90,14 @@ spec:
                       value: "${HOMERUN2_LED_CATCHER_IDLE:=off}"
                     - name: TZ
                       value: "${HOMERUN2_LED_CATCHER_TZ:=UTC}"
+                    # How many finite displays may wait their turn, first in
+                    # first out (led-catcher v0.21.0 and later; older ones
+                    # ignore it). 1 is the old single slot: the newest waiting
+                    # display replaces the rest, so the middle one of a burst
+                    # never shows. Set it to what the real panel runs, so the
+                    # simulator plays a burst the same way.
+                    - name: DISPLAY_QUEUE
+                      value: "${HOMERUN2_LED_CATCHER_DISPLAY_QUEUE:=1}"
                     # URL prefix behind homerun2-portal, which serves the
                     # simulator under /led/ (v0.18.0 or later). Set, the app
                     # answers only under it -- also on its own hostname.

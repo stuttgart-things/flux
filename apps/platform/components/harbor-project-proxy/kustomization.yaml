@@ -1,0 +1,11 @@
+---
+# harbor-project-proxy -- mirror access through wildcard subdomains
+# (<project>.harbor.<domain>), plus its route applied after it
+# (harbor-project-proxy-httproute)
+#
+# REQUIRES the harbor component beside it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-harbor-project-proxy.yaml
+  - ks-harbor-project-proxy-httproute.yaml

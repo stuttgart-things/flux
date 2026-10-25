@@ -46,4 +46,4 @@ spec:
       HOSTNAME: "${HOMEPAGE_HOSTNAME:-home}"
       HOMEPAGE_NAMESPACE: "${HOMEPAGE_NAMESPACE:-homepage}"
       # renovate: datasource=docker depName=ghcr.io/m0nsterrr/helm-charts/homepage
-      HOMEPAGE_VERSION: "${HOMEPAGE_VERSION:-5.6.0}"
+      HOMEPAGE_VERSION: "${HOMEPAGE_VERSION:-5.8.0}"

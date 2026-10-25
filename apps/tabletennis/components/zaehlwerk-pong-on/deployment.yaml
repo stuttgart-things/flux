@@ -35,7 +35,7 @@ spec:
           # The same tag as zaehlwerk: one release run builds both. Keep the
           # default equal to components/zaehlwerk/requirements.yaml's: the
           # sops bundles set no ZAEHLWERK_VERSION, so both fall back to it.
-          image: ghcr.io/stuttgart-things/zaehlwerk-pong:${ZAEHLWERK_VERSION:-v0.30.0}
+          image: ghcr.io/stuttgart-things/zaehlwerk-pong:${ZAEHLWERK_VERSION:-v0.32.0}
           env:
             # The game calls zaehlwerk by its Service, like the buttons sim.
             - name: ZAEHLWERK_URL
