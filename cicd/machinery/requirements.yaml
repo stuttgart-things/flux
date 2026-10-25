@@ -15,4 +15,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/machinery-kustomize
   ref:
-    tag: ${MACHINERY_VERSION:-v1.15.0}
+    tag: ${MACHINERY_VERSION:-v1.17.0}
