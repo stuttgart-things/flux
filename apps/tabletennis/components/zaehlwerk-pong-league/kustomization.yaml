@@ -2,7 +2,8 @@
 # zaehlwerk-pong-league -- everything zaehlwerk-pong-on ships, plus league mode
 # (zaehlwerk ADR-0015, v0.31.0+): one REAL match after another between two of
 # schmetterpause's players, each at the strength PONG_PLAYER_SKILL gives its
-# display name, played by the server driver and reported by zaehlwerk.
+# display name, played by the server driver and reported by zaehlwerk. With
+# PONG_TOURNAMENTS (ADR-0017) it plays open tournament places first.
 #
 # SANDBOX ONLY. A league match is no demo: it ends running demos, and its
 # result lands in schmetterpause's TTR and ranking. Selected by
@@ -56,3 +57,16 @@ patches:
                   # so a result is out before the next match starts.
                   - name: PONG_LEAGUE_PAUSE
                     value: "${ZAEHLWERK_PONG_LEAGUE_PAUSE:-30s}"
+                  # Tournaments first (zaehlwerk ADR-0017, v0.32.0+): the
+                  # open places of schmetterpause's tournaments, oldest
+                  # first, final included, before random pairs. Needs
+                  # schmetterpause v0.19.0+ (ADR-0028); an older one answers
+                  # 404, which the game logs once before playing the league.
+                  # An older game ignores the variable.
+                  #
+                  # Fixed, not ${...:-on}: `on` is a YAML 1.1 boolean, and a
+                  # substituted bare `on` reaches the API server as one
+                  # (hack/check-substitute-strings.py). Quoted here, kustomize
+                  # keeps the quotes. To turn it off, patch the value to "off".
+                  - name: PONG_TOURNAMENTS
+                    value: "on"

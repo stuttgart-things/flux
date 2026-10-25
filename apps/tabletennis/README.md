@@ -307,7 +307,7 @@ The profile is `profiles/sops` plus, unconditionally:
 | `zaehlwerk-matches-sops` | `MATCHES_TOKEN` from `ZAEHLWERK_MATCHES_TOKEN`: `POST /matches` takes player ids (zaehlwerk v0.31.0+). Adds the env entry itself, because the v0.31.0 base does not list the key |
 | `schmetterpause-settle-immediate` | `SP_SCOREBOARD_SETTLE=immediate` (schmetterpause v0.18.0+): nobody confirms in a sandbox |
 | `schmetterpause-seed-pong` | a Job running `schmetterpause seed` with `SP_SEED_FIXTURE=pong`: Ada … Hanna and the observer `Pong`. Refuses a database with players, so every later run is a no-op |
-| `zaehlwerk-pong-league` | the game in league mode: `ZAEHLWERK_TOKEN` (the matches token), `PONG_OPERATOR` (`Pong`), `PONG_PLAYER_SKILL` (a spread over the seed's names), `PONG_LEAGUE_PAUSE` (`30s`) |
+| `zaehlwerk-pong-league` | the game in league mode: `ZAEHLWERK_TOKEN` (the matches token), `PONG_OPERATOR` (`Pong`), `PONG_PLAYER_SKILL` (a spread over the seed's names), `PONG_LEAGUE_PAUSE` (`30s`), `PONG_TOURNAMENTS` (`on`, fixed: open tournament places first, zaehlwerk v0.32.0+ against schmetterpause v0.19.0+) |
 
 Two slots stay with the cluster: `TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL` (`off`,
 `redis`) and `TABLETENNIS_SANDBOX_SCHMETTERPAUSE_ZAEHLWERK` (`on` by default,
