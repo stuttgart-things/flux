@@ -1,0 +1,41 @@
+---
+# vault-autounseal -- the external unseal operator for ../vault → ./apps/vault/autounseal
+#
+# Vault CE has no auto-unseal of its own here: this operator keeps the shamir
+# keys and the root token in a Secret beside the server and unseals every pod
+# that matches the label selector after a restart. Without it a rescheduled
+# vault-server stays Sealed until a human unseals it.
+#
+# No dependsOn vault, on purpose: vault only becomes Ready once it is
+# unsealed, so waiting for it would hold back the one thing that unseals it.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-autounseal
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${VAULT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/vault/autounseal
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: "${VAULT_NAMESPACE:-vault}"
+      UNSEAL_HELM_REPO_URL: "${VAULT_AUTOUNSEAL_HELM_REPO_URL:-https://pytoshka.github.io/vault-autounseal}"
+      # renovate: datasource=helm depName=vault-autounseal registryUrl=https://pytoshka.github.io/vault-autounseal
+      VAULT_AUTOUNSEAL_VERSION: "${VAULT_AUTOUNSEAL_VERSION:-0.5.3}"
+      # passthrough-override: follows VAULT_NAMESPACE; the base hard-codes the
+      # vault namespace in its default, which is wrong for any other one.
+      VAULT_AUTOUNSEAL_URL: "${VAULT_AUTOUNSEAL_URL:-http://vault-server.${VAULT_NAMESPACE:-vault}.svc:8200}"
+      VAULT_AUTOUNSEAL_LABEL_SELECTOR: "${VAULT_AUTOUNSEAL_LABEL_SELECTOR:-app.kubernetes.io/component=server}"

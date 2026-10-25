@@ -1,0 +1,40 @@
+---
+# vault-httproute -- the HTTPRoute for ../vault → ./apps/vault/httproute
+#
+# A Kustomization of its own that waits for vault, because Cilium resolves a
+# route's backendRefs once: applied before its Service exists, a route serves
+# HTTP 500 for good while every Kustomization reports Ready. Same split as
+# ../openbao-sops (openbao-httproute).
+#
+# vault waits only with VAULT_WAIT "true" (see ks-vault.yaml); with the
+# default it is Ready before `vault operator init`, and so is this route.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vault-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: vault
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${VAULT_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/vault/httproute
+  postBuild:
+    substitute:
+      VAULT_NAMESPACE: "${VAULT_NAMESPACE:-vault}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      VAULT_HOSTNAME: "${VAULT_HOSTNAME:-vault}"
+      VAULT_DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

@@ -10,7 +10,7 @@ apps/platform/
 └── components/
     ├── openbao/     → ./apps/openbao     (requires cilium-gateway, a seal; route: openbao-httproute)
     ├── openbao-sops/ → ./apps/openbao    (instead of openbao: static seal, key from a Secret; openbao-prereqs first)
-    ├── vault/       → ./apps/vault       (existing instances only — see below)
+    ├── vault/       → ./apps/vault       (existing instances only — see below; + vault-autounseal, route: vault-httproute)
     ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
     ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret; routes: minio-httproute)
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
