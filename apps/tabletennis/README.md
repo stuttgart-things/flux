@@ -279,7 +279,7 @@ TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: 'on'
 | an observer keeping score | schmetterpause **v0.14.0+** (`GET /api/operators`, its ADR-0023) and zaehlwerk **v0.6.0+**, which offers observers in *Keeping score*. Either alone changes nothing: the older side falls back to the player list |
 | check-in by fob or phone | schmetterpause **v0.17.0+** and zaehlwerk **v0.19.0+** (`/ingest/checkin` with `CHECKIN_TOKEN` from the base, `/checkin/claim`); the table mock's fobs need `zaehlwerk-buttons` **v0.18.0+**, a fob per player **v0.20.0+** |
 | the side select and the screensaver | zaehlwerk **v0.21.0+** with check-in on; the screensaver also needs `TABLETENNIS_ZAEHLWERK_PONG` `on` or `attract`. Older tags ignore `PONG_URL` |
-| the Pong sandbox | zaehlwerk **v0.31.0+** (`MATCHES_TOKEN`, Pong's league mode) and schmetterpause **v0.18.0+** (`SP_SEED_FIXTURE`, `SP_SCOREBOARD_SETTLE`) |
+| the Pong sandbox | zaehlwerk **v0.32.0+** (`MATCHES_TOKEN` in the base, Pong's league and tournaments) and schmetterpause **v0.19.0+** (`SP_SEED_FIXTURE`, `SP_SCOREBOARD_SETTLE`, tournaments on `/api`) |
 | monitoring | schmetterpause **v0.8.0+** — the release that added the `metrics` container port |
 | the policy | schmetterpause **v0.9.0+**, and a Kyverno serving `policies.kyverno.io/v1` |
 
@@ -304,7 +304,7 @@ The profile is `profiles/sops` plus, unconditionally:
 | Component | What it adds |
 |---|---|
 | `schmetterpause-scoreboard-sops`, `zaehlwerk-handover-sops` | the result's way into schmetterpause, with `SCHMETTERPAUSE_SCOREBOARD_TOKEN` |
-| `zaehlwerk-matches-sops` | `MATCHES_TOKEN` from `ZAEHLWERK_MATCHES_TOKEN`: `POST /matches` takes player ids (zaehlwerk v0.31.0+). Adds the env entry itself, because the v0.31.0 base does not list the key |
+| `zaehlwerk-matches-sops` | `MATCHES_TOKEN` from `ZAEHLWERK_MATCHES_TOKEN`: `POST /matches` takes player ids. The base passes the key to the container from zaehlwerk v0.32.0 on; below that nothing reads it |
 | `schmetterpause-settle-immediate` | `SP_SCOREBOARD_SETTLE=immediate` (schmetterpause v0.18.0+): nobody confirms in a sandbox |
 | `schmetterpause-seed-pong` | a Job running `schmetterpause seed` with `SP_SEED_FIXTURE=pong`: Ada … Hanna and the observer `Pong`. Refuses a database with players, so every later run is a no-op |
 | `zaehlwerk-pong-league` | the game in league mode: `ZAEHLWERK_TOKEN` (the matches token), `PONG_OPERATOR` (`Pong`), `PONG_PLAYER_SKILL` (a spread over the seed's names), `PONG_LEAGUE_PAUSE` (`30s`), `PONG_TOURNAMENTS` (`on`, fixed: open tournament places first, zaehlwerk v0.32.0+ against schmetterpause v0.19.0+) |
