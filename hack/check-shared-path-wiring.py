@@ -250,6 +250,11 @@ def kustomizations():
             path = spec.get("path")
             if not path:
                 continue
+            # A path in an OCI artifact or a bucket is a path in THAT artifact,
+            # not in this repository: clusterscope-deploy's `./` and
+            # sthings-portal's `./` are two different releases' roots.
+            if (spec.get("sourceRef") or {}).get("kind", "GitRepository") != "GitRepository":
+                continue
             yield (
                 path,
                 str(f.relative_to(ROOT)),

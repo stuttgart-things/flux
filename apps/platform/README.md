@@ -33,6 +33,8 @@ apps/platform/
     ├── clusterscope-labview/ → ./apps/clusterscope (instead of clusterscope: Vault kubeconfigs + git token, config, probes)
     ├── vcluster/    → ./apps/vcluster
     ├── zitadel/     → ./apps/zitadel     (a StorageClass + a Secret; route: zitadel-httproute)
+    ├── sthings-portal/ → OCI artifact sthings-portal-kustomize (OIDC login; a Secret + a CA ConfigMap
+    │                  in its namespace; route: sthings-portal-routes; INSTEAD of homerun2-portal on one host)
     │
     │   SOPS-only clusters (no external-secrets), each an ALTERNATIVE:
     ├── homerun2-sops/           → ./apps/homerun2/profiles/sops      (instead of homerun2; a StorageClass + a Secret)
@@ -256,6 +258,26 @@ zitadel`). Details: [`apps/zitadel`](../zitadel/README.md).
   machine user `terraform` (IAM_OWNER) and leaves its JSON key in the Secret
   `terraform` (key `terraform.json`) in `ZITADEL_NAMESPACE`, outside every
   inventory.
+
+## sthings-portal: an OCI base, a Secret you create, one host with homerun2-portal
+
+`sthings-portal` applies the release's kustomize artifact
+(`ghcr.io/stuttgart-things/sthings-portal-kustomize`) directly: the
+OCIRepository and the Kustomization `sthings-portal` live in the component,
+not under `./apps`, so the base stays free of Flux objects. Its route is
+`sthings-portal-routes` (`dependsOn: sthings-portal`). Details and the ArgoCD
+note: [`apps/sthings-portal`](../sthings-portal/README.md).
+
+- **Secret** `STHINGS_PORTAL_AUTH_SECRET` (default `sthings-portal-auth`) in
+  the portal's namespace, not in `flux-system` and not via `substituteFrom`:
+  `users` (emergency access), `session-key`, `oidc-client-secret`. Created by
+  hand -- the client secret lives in Terraform state only. Hence no
+  `secrets:` in its AppProfile.
+- **CA** of the OIDC provider: by default trust-manager's
+  `cluster-trust-bundle`.
+- **Same default host as `homerun2-portal`** (`portal.<INFRA_DOMAIN>`): select
+  one of the two. Swapping them in one change prunes the old route before the
+  new one is applied.
 
 ## Things the cluster supplies that no component ships
 

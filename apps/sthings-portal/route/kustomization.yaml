@@ -1,0 +1,9 @@
+---
+# The HTTPRoute for sthings-portal, on its own: applied by
+# sthings-portal-routes after sthings-portal is Ready (Cilium resolves a
+# route's backendRefs once). Substitutes STHINGS_PORTAL_NAMESPACE,
+# STHINGS_PORTAL_HOST, GATEWAY_NAME and GATEWAY_NAMESPACE.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - httproute.yaml
