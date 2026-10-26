@@ -1,0 +1,171 @@
+---
+# sthings-portal -- the published kustomize base of a sthings-portal release,
+# ghcr.io/stuttgart-things/sthings-portal-kustomize:<tag>, applied straight
+# from its OCI artifact, with login through an OIDC provider (ZITADEL) and the
+# local users as emergency access.
+#
+# ONE LEVEL, NOT TWO. Other OCI-based apps here (homerun2-portal, run-things,
+# clusterscope) point a Kustomization at ./apps/<app>, which holds an
+# OCIRepository plus a second Flux Kustomization. Here both live in this
+# component, so everything Flux-specific about the portal is in this
+# directory and ./apps/sthings-portal holds no Flux objects at all. The base
+# is the release's artifact: plain manifests rendered by the portal's KCL
+# module, which another delivery tool (ArgoCD) can consume as they are
+# (apps/sthings-portal/README.md, "Design").
+#
+# What the patches add is exactly what the KCL module renders with
+# authMode: oidc (the published artifact is rendered with authMode: none):
+# the AUTH_* settings in the ConfigMap, the Secret's keys as env, the users
+# file and the CA as volumes. The artifact's own HTTPRoute is removed; the
+# route is sthings-portal-routes, applied after this is Ready, because Cilium
+# resolves a route's backendRefs once.
+#
+# REQUIRES, in STHINGS_PORTAL_NAMESPACE, before this is selected:
+#   * the namespace itself -- not created here (homerun2 / homerun2-sops own
+#     `homerun2`; a namespace owned twice is pruned with either owner);
+#   * the Secret STHINGS_PORTAL_AUTH_SECRET with `users` (htpasswd -nbB lines,
+#     the emergency access), `session-key` (32+ bytes) and
+#     `oidc-client-secret`; optional `kiosk-token`. Not rendered here: the
+#     client secret comes out of Terraform state and is supplied by hand;
+#   * the CA ConfigMap STHINGS_PORTAL_OIDC_CA_CONFIGMAP (key
+#     STHINGS_PORTAL_OIDC_CA_KEY) that verifies the provider's certificate.
+#     The default is trust-manager's cluster-trust-bundle.
+# Without the Secret the pod sits in CreateContainerConfigError, and this
+# Kustomization times out.
+#
+# Reloader (infra/reloader) rolls the pod when the ConfigMap or the Secret
+# changes -- the portal reads both at start only.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: OCIRepository
+metadata:
+  name: sthings-portal-kustomize
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  suspend: ${STHINGS_PORTAL_SUSPEND:-false}
+  url: oci://ghcr.io/stuttgart-things/sthings-portal-kustomize
+  # The artifact pins the image to the same tag: one version for both.
+  ref:
+    tag: ${STHINGS_PORTAL_VERSION:-v0.13.0}
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sthings-portal
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${STHINGS_PORTAL_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: OCIRepository
+    name: sthings-portal-kustomize
+  path: ./
+  # The artifact says `homerun2`; this moves every object.
+  targetNamespace: ${STHINGS_PORTAL_NAMESPACE:-homerun2}
+  # No postBuild: the variables below are substituted by the bundle that
+  # renders this object, and the artifact carries none of its own.
+  patches:
+    # The route is sthings-portal-routes (ks-sthings-portal-routes.yaml).
+    - target:
+        kind: HTTPRoute
+        name: sthings-portal
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: sthings-portal
+        $patch: delete
+    # Settings. PORTAL_SERVICES is `key=url` or `key|Title=url`,
+    # comma-separated, in navigation order; every service runs with
+    # BASE_PATH=/<key>, and a short Service name resolves in the namespace.
+    # An empty AUTH_OIDC_ALLOWED_GROUPS lets in every user the provider lets
+    # through.
+    - target:
+        kind: ConfigMap
+        name: sthings-portal-config
+      patch: |
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: sthings-portal-config
+        data:
+          PORTAL_SERVICES: "${STHINGS_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"
+          PORTAL_THEME: "${STHINGS_PORTAL_THEME:-homerun2}"
+          AUTH_MODE: oidc
+          AUTH_USERS_FILE: /etc/portal/auth/users
+          AUTH_SESSION_TTL: "${STHINGS_PORTAL_SESSION_TTL:-12h}"
+          AUTH_OIDC_ISSUER: "${STHINGS_PORTAL_OIDC_ISSUER:-set-STHINGS_PORTAL_OIDC_ISSUER}"
+          AUTH_OIDC_CLIENT_ID: "${STHINGS_PORTAL_OIDC_CLIENT_ID:-set-STHINGS_PORTAL_OIDC_CLIENT_ID}"
+          AUTH_OIDC_REDIRECT_URL: "https://${STHINGS_PORTAL_HOSTNAME:-portal}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}/auth/callback"
+          AUTH_OIDC_NAME: "${STHINGS_PORTAL_OIDC_NAME:-Zitadel}"
+          AUTH_OIDC_ALLOWED_GROUPS: "${STHINGS_PORTAL_OIDC_ALLOWED_GROUPS:-}"
+          AUTH_OIDC_CA_FILE: "/etc/portal/oidc-ca/${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}"
+    # The Secret's keys and the two files, as KCL renders them for oidc.
+    # kiosk-token and oidc-client-secret are optional there (a kiosk
+    # display; a public PKCE client) and stay optional here.
+    - target:
+        kind: Deployment
+        name: sthings-portal
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: sthings-portal
+          annotations:
+            reloader.stakater.com/auto: "true"
+        spec:
+          template:
+            spec:
+              containers:
+                - name: sthings-portal
+                  env:
+                    - name: AUTH_SESSION_KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
+                          key: session-key
+                    - name: AUTH_KIOSK_TOKEN
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
+                          key: kiosk-token
+                          optional: true
+                    - name: AUTH_OIDC_CLIENT_SECRET
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
+                          key: oidc-client-secret
+                          optional: true
+                  volumeMounts:
+                    - name: auth
+                      mountPath: /etc/portal/auth
+                      readOnly: true
+                    - name: oidc-ca
+                      mountPath: /etc/portal/oidc-ca
+                      readOnly: true
+              volumes:
+                - name: auth
+                  secret:
+                    secretName: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
+                    items:
+                      - key: users
+                        path: users
+                - name: oidc-ca
+                  configMap:
+                    name: ${STHINGS_PORTAL_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}
+                    items:
+                      - key: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}
+                        path: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}

@@ -1,0 +1,34 @@
+---
+# AppProfile: what a cluster sets for sthings-portal. Read by blueprints
+# `render-cluster-apps`; kept true by hack/check-app-profiles.py (vars and
+# keys) and `kcl vet` (value shapes).
+#
+# No `secrets:` -- on purpose. The portal's Secret (STHINGS_PORTAL_AUTH_SECRET)
+# is read by the pod in its own namespace, not through substituteFrom, and its
+# oidc-client-secret exists only in the Terraform state that registered the
+# client at the provider. It is created by hand, SOPS-encrypted
+# (apps/sthings-portal/README.md, "The Secret").
+kind: AppProfile
+metadata:
+  name: sthings-portal
+spec:
+  bundle: apps-platform
+  component: ../components/sthings-portal
+  vars:
+    INFRA_DOMAIN: { required: true }
+    STHINGS_PORTAL_OIDC_ISSUER: { required: true }
+    STHINGS_PORTAL_OIDC_CLIENT_ID: { required: true }
+    STHINGS_PORTAL_OIDC_ALLOWED_GROUPS: {}
+    STHINGS_PORTAL_OIDC_NAME: {}
+    STHINGS_PORTAL_OIDC_CA_CONFIGMAP: {}
+    STHINGS_PORTAL_OIDC_CA_KEY: {}
+    STHINGS_PORTAL_AUTH_SECRET: {}
+    STHINGS_PORTAL_SESSION_TTL: {}
+    STHINGS_PORTAL_NAMESPACE: {}
+    STHINGS_PORTAL_SUSPEND: {}
+    STHINGS_PORTAL_VERSION: {}
+    STHINGS_PORTAL_SERVICES: {}
+    STHINGS_PORTAL_THEME: {}
+    STHINGS_PORTAL_HOSTNAME: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
