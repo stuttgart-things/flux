@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${ZITADEL_NAMESPACE:-zitadel}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: zitadel
+  namespace: ${ZITADEL_NAMESPACE:-zitadel}
+spec:
+  interval: 24h
+  url: https://charts.zitadel.com
+---
+# PostgreSQL for ZITADEL (postgresql.yaml). The same registry apps/keycloak and
+# apps/harbor pull their bundled PostgreSQL from.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: bitnami
+  namespace: ${ZITADEL_NAMESPACE:-zitadel}
+spec:
+  type: oci
+  interval: 1h
+  url: oci://registry-1.docker.io/bitnamicharts

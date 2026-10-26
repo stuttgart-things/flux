@@ -1,0 +1,36 @@
+---
+# One host, two backends: the Login UI v2 lives on its own Service
+# (zitadel-login:3000), everything else -- console, OIDC endpoints, the gRPC /
+# Connect APIs -- on zitadel:8080. The console sends every sign-in to
+# /ui/v2/login; without the first rule that path reaches the API and answers
+# {"code":5,"message":"Not Found"} (homerun2-dev, stuttgart-things#2217).
+# The longer prefix wins, whatever the rule order.
+#
+# zitadel:8080 speaks h2c; the chart sets appProtocol kubernetes.io/h2c on the
+# Service, which Cilium honours, so one route carries gRPC as well.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: zitadel
+  namespace: ${ZITADEL_NAMESPACE:-zitadel}
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME:-cilium-gateway}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+  hostnames:
+    - "${ZITADEL_DOMAIN}"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ui/v2/login
+      backendRefs:
+        - name: zitadel-login
+          port: 3000
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: zitadel
+          port: 8080

@@ -163,6 +163,16 @@
       "allowedVersions": "<17.0.0"
     },
     {
+      "description": "Hold the bitnami postgresql chart for apps/zitadel at 16.7.27. It is the last release whose default image tag (17.6.0-debian-12-r4) exists under docker.io/bitnamilegacy, which apps/zitadel/postgresql.yaml pulls from; newer charts default to bitnami/postgresql:latest, and a renovate bump would roll ZITADEL's database onto an unpinned, differently-built image. The images are frozen anyway -- the way forward is CNPG, not a newer chart.",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "registry-1.docker.io/bitnamicharts/postgresql"
+      ],
+      "allowedVersions": "<=16.7.27"
+    },
+    {
       "description": "Group the crossplane-contrib packages so a registry change arrives as one reviewable PR. THE REGISTRY IS NOT INTERCHANGEABLE: each package here is on the registry the installed Configurations declare for it, and Crossplane keys its lock on the source string -- the other spelling of the same image reads as a missing dependency. Do not 'tidy' these onto one registry; that has to start in the packages' own dependsOn.",
       "matchDatasources": [
         "docker"

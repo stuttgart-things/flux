@@ -1,0 +1,39 @@
+---
+# AppProfile: what a cluster sets for zitadel, and the Secret it needs.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+#
+# ZITADEL_MASTERKEY is generated ONCE and must survive every later render
+# (--existing-secrets): it encrypts data inside the database, and a new one
+# leaves an existing instance unreadable. Exactly 32 characters: 24 bytes,
+# base64.
+#
+# ZITADEL_ADMIN_PASSWORD is read once, at the first setup, and must pass
+# ZITADEL's default password policy, which demands a symbol -- `alnum` fails
+# the setup job. 32 bytes base64 always ends in the padding `=`, and its
+# alphabet stays a plain YAML scalar after substitution (apps/zitadel/secret.yaml);
+# `password` would bring symbols that do not.
+kind: AppProfile
+metadata:
+  name: zitadel
+spec:
+  bundle: apps-platform
+  component: ../components/zitadel
+  vars:
+    ZITADEL_STORAGE_CLASS: { required: true }
+    INFRA_DOMAIN: { required: true }
+    ZITADEL_HOSTNAME: {}
+    ZITADEL_NAMESPACE: {}
+    ZITADEL_SUSPEND: {}
+    ZITADEL_VERSION: {}
+    ZITADEL_POSTGRESQL_VERSION: {}
+    ZITADEL_STORAGE_SIZE: {}
+    INFRA_GATEWAY_NAME: {}
+    INFRA_GATEWAY_NAMESPACE: {}
+  secrets:
+    - name: zitadel-secrets
+      data:
+        ZITADEL_MASTERKEY: { generate: { type: base64, length: 24 } }
+        ZITADEL_DB_PASSWORD: { generate: { type: alnum, length: 32 } }
+        ZITADEL_DB_ADMIN_PASSWORD: { generate: { type: alnum, length: 32 } }
+        ZITADEL_ADMIN_PASSWORD: { generate: { type: base64, length: 32 } }

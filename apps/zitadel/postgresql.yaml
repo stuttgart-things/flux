@@ -1,0 +1,76 @@
+---
+# PostgreSQL for ZITADEL, as a release of its own -- NOT the zitadel chart's
+# bundled `postgresql` subchart.
+#
+# The subchart cannot work under Helm: the zitadel chart's init and setup jobs
+# are pre-install hooks, and hooks run BEFORE the release's regular objects. The
+# init job therefore waits for a database whose StatefulSet Helm has not created
+# yet, times out, and fails the install. homerun2-dev (ArgoCD) only got past it
+# by stripping the hook annotations and ordering by sync-wave; the chart's own
+# acceptance tests install PostgreSQL as a separate release first, which is what
+# this does: the zitadel HelmRelease dependsOn this one.
+#
+# bitnamilegacy, not bitnami: Bitnami withdrew the versioned tags from
+# docker.io/bitnami in 2025 (same fix as apps/keycloak and apps/harbor). Those
+# images are FROZEN -- 17.6.0-debian-12-r4 is the last one and gets no more
+# patches. The chart is held at 16.7.27, the last release whose default tag
+# exists under bitnamilegacy (renovate.json holds it there); newer charts
+# default to bitnami/postgresql:latest. Moving to CNPG is the way forward once
+# the cluster runs the operator.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: zitadel-postgresql
+  namespace: ${ZITADEL_NAMESPACE:-zitadel}
+spec:
+  interval: 30m
+  timeout: 10m
+  chart:
+    spec:
+      chart: postgresql
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/postgresql
+      version: "${ZITADEL_POSTGRESQL_VERSION:-16.7.27}"
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: ${ZITADEL_NAMESPACE:-zitadel}
+      interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # The Service name release.yaml points ZITADEL at.
+    fullnameOverride: zitadel-postgresql
+    image:
+      repository: bitnamilegacy/postgresql
+    global:
+      security:
+        allowInsecureImages: true
+    auth:
+      database: zitadel
+      username: zitadel
+      # Both passwords from the Secret secret.yaml renders -- nothing in the
+      # values, nothing in the HelmRelease on the cluster.
+      existingSecret: zitadel-credentials # pragma: allowlist secret
+      secretKeys:
+        adminPasswordKey: db-admin-password # pragma: allowlist secret
+        userPasswordKey: db-password # pragma: allowlist secret
+    primary:
+      persistence:
+        enabled: true
+        # REQUIRED. A PVC that never binds leaves PostgreSQL Pending and the
+        # zitadel release waiting on its dependsOn, with nothing above it
+        # naming the reason.
+        storageClass: ${ZITADEL_STORAGE_CLASS}
+        size: ${ZITADEL_STORAGE_SIZE:-8Gi}
+      # Explicit, not the chart's resourcesPreset (nano: a 192Mi limit, too
+      # small once ZITADEL's projections run).
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          memory: 1Gi

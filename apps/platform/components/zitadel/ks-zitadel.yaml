@@ -1,0 +1,73 @@
+---
+# ZITADEL, the lab IdP -- PostgreSQL, the server and the Login UI v2
+# → ./apps/zitadel
+#
+# The HTTPRoute is NOT in this Kustomization: it is zitadel-httproute
+# (ks-zitadel-httproute.yaml), which waits for this one, so the route is only
+# applied once the Services exist.
+#
+# No dependsOn cilium-gateway, like openbao: nothing here needs the Gateway to
+# come up, and the route settles once it does. No dependsOn cert-manager
+# either: there is no Certificate. ZITADEL is served under the Gateway's
+# wildcard listener, so the wildcard certificate (INFRA_TLS_SECRET, signed by
+# the cluster's Vault PKI issuer) is the one a client sees. A per-host
+# Certificate would not be referenced by any listener.
+#
+# The Terraform bootstrap needs no console: the setup job creates the machine
+# user `terraform` (IAM_OWNER) and leaves its JSON key in the Secret
+# `terraform`, key `terraform.json`, in ZITADEL_NAMESPACE
+# (apps/zitadel/README.md, "Terraform bootstrap").
+#
+# REQUIRES a StorageClass that exists here (ZITADEL_STORAGE_CLASS) and the
+# Secret below.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: zitadel
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  # PostgreSQL first (dependsOn inside the path), then the init and setup jobs
+  # of the zitadel release, which may take its whole 15m timeout on the first
+  # install.
+  timeout: 20m
+  force: false
+  prune: true
+  suspend: ${ZITADEL_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/zitadel
+  postBuild:
+    substitute:
+      ZITADEL_NAMESPACE: "${ZITADEL_NAMESPACE:-zitadel}"
+      # The chart, not ZITADEL: the server and Login UI images follow its
+      # appVersion (v4.19.2 for 10.4.0).
+      # renovate: datasource=helm depName=zitadel registryUrl=https://charts.zitadel.com
+      ZITADEL_VERSION: "${ZITADEL_VERSION:-10.4.0}"
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/postgresql
+      ZITADEL_POSTGRESQL_VERSION: "${ZITADEL_POSTGRESQL_VERSION:-16.7.27}"
+      # The public name, baked into every token ZITADEL issues -- changing it
+      # later invalidates every client's issuer. Built from INFRA_DOMAIN so it
+      # stays under the Gateway's wildcard listener and certificate.
+      ZITADEL_DOMAIN: "${ZITADEL_HOSTNAME:-zitadel}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED (INFRA_DOMAIN)
+      # REQUIRED: a PVC that never binds leaves PostgreSQL Pending, and the
+      # zitadel release waits on it with nothing naming the reason.
+      ZITADEL_STORAGE_CLASS: "${ZITADEL_STORAGE_CLASS:-set-ZITADEL_STORAGE_CLASS}"
+      ZITADEL_STORAGE_SIZE: "${ZITADEL_STORAGE_SIZE:-8Gi}"
+    substituteFrom:
+      # substituteFrom-keys: ZITADEL_ADMIN_PASSWORD, ZITADEL_DB_ADMIN_PASSWORD, ZITADEL_DB_PASSWORD, ZITADEL_MASTERKEY
+      # optional: false guards the SOURCE, not the KEYS. Flux fails this
+      # Kustomization when the Secret is absent -- and substitutes an empty
+      # string for any key the Secret does not carry, with no error at all. A
+      # blank ZITADEL_MASTERKEY gives a crash-looping ZITADEL; a masterkey
+      # that later changes gives an unreadable database. See #331.
+      - kind: Secret
+        name: ${ZITADEL_SECRET:-zitadel-secrets}
+        optional: false
