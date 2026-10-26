@@ -110,6 +110,10 @@ def children():
                 path = spec.get("path")
                 if not path:
                     continue
+                # A path in an OCI artifact or a bucket is a path in THAT
+                # artifact, not in this repository (sthings-portal's `./`).
+                if (spec.get("sourceRef") or {}).get("kind", "GitRepository") != "GitRepository":
+                    continue
                 sub = (spec.get("postBuild") or {}).get("substitute") or {}
                 # The bundle's own value is itself a ${VAR:-default}; take the
                 # default, which is what a consumer that sets nothing gets.
