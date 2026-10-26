@@ -39,9 +39,13 @@ patches:
             - op: add
               path: /data/OMNI_PITCHER_URL
               value: http://homerun2-omni-pitcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+            # With the led-catcher's BASE_PATH: behind homerun2-portal its
+            # whole API, /streams included, lives under that prefix, and a
+            # URL without it makes every stream switch a 404 (flux#836).
+            # Empty or `/` is the root; zaehlwerk drops a trailing slash.
             - op: add
               path: /data/CATCHER_URL
-              value: http://homerun2-led-catcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
+              value: http://homerun2-led-catcher.${ZAEHLWERK_HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local${ZAEHLWERK_LED_CATCHER_BASE_PATH:=}
             # What the catcher goes back to when a match ends. `messages`, as
             # zaehlwerk's own default; the office next to a Pong sandbox adds
             # the sandbox's stream (messages,tabletennis-sandbox), so the

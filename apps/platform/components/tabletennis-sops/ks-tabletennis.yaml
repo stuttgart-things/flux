@@ -135,6 +135,13 @@ spec:
       ZAEHLWERK_PONG_BOT_SKILL: "${TABLETENNIS_ZAEHLWERK_PONG_BOT_SKILL:-mittel}"
       ZAEHLWERK_PONG_ATTRACT_AFTER: "${TABLETENNIS_ZAEHLWERK_PONG_ATTRACT_AFTER:-10m}"
       ZAEHLWERK_HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
+      # Read only by zaehlwerk-panel-homerun2: the led-catcher's BASE_PATH,
+      # so CATCHER_URL reaches its /streams behind homerun2-portal (flux#836).
+      # The same variable homerun2 reads, so the two cannot disagree.
+      # passthrough-override: `/` rather than the component's empty default,
+      # as homerun2's own pass-through has it -- an empty substitute renders
+      # as null, and zaehlwerk drops the trailing slash.
+      ZAEHLWERK_LED_CATCHER_BASE_PATH: "${HOMERUN2_LED_CATCHER_BASE_PATH:-/}"
       # Read only by zaehlwerk-panel-homerun2: what the catcher returns to after
       # a match. `messages`; add a Pong sandbox's stream to show its league
       # while the table is free (../tabletennis-sandbox, zaehlwerk ADR-0016).
