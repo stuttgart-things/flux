@@ -80,6 +80,6 @@ spec:
       # passthrough-override: the component's own default is empty, see above.
       HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH: "${HOMERUN2_NOTIFICATION_CATCHER_BASE_PATH:-/}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher-kustomize
-      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.15.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_KUSTOMIZE_VERSION:-v3.16.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
-      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.15.0}"
+      HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.16.0}"
