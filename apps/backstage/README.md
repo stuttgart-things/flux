@@ -318,6 +318,7 @@ spec:
 | `BACKSTAGE_LLM_MODEL` | three free models | Comma-separated chat models, most reliable first |
 | `BACKSTAGE_LLM_EMBEDDINGS_MODEL` | `nvidia/nemotron-3-embed-1b:free` | Embeddings model; changing it means re-indexing |
 | `BACKSTAGE_LLM_MAX_TOKENS` | `4000` | Max answer tokens |
+| `BACKSTAGE_RAG_AI_AMOUNT` | `6` | Chunks (1000 chars each) retrieved per question; raise it for a model with a large context, e.g. `20` for Ollama at 16k |
 | `BACKSTAGE_TECHDOCS_BUILDER` | `local` | `external`: Backstage builds no docs, it reads what CI published, see [TechDocs from CI](#optional-techdocs-from-ci) |
 | `BACKSTAGE_TECHDOCS_PUBLISHER` | `local` | `awsS3`: read the docs from S3/MinIO |
 | `BACKSTAGE_TECHDOCS_S3_BUCKET` | `techdocs` | Bucket CI publishes to |
