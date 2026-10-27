@@ -109,7 +109,7 @@ spec:
       HOMERUN2_LED_CATCHER_STREAMS: "${HOMERUN2_LED_CATCHER_STREAMS:-messages}"
       HOMERUN2_LED_CATCHER_TZ: "${HOMERUN2_LED_CATCHER_TZ:-UTC}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-led-catcher-kustomize
-      HOMERUN2_LED_CATCHER_VERSION: "${HOMERUN2_LED_CATCHER_VERSION:-v0.22.0}"
+      HOMERUN2_LED_CATCHER_VERSION: "${HOMERUN2_LED_CATCHER_VERSION:-v0.23.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
       HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.14.0}"
       HOMERUN2_LIGHT_CATCHER_PROFILE_CM: "${HOMERUN2_LIGHT_CATCHER_PROFILE_CM:-homerun2-light-catcher-profile}"
