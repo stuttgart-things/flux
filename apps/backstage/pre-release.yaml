@@ -181,7 +181,10 @@ spec:
                 batchSize: 128
             storage:
               pgVector:
-                amount: 6
+                # Chunks per question handed to the model. 6 keeps prompts small
+                # for the free OpenRouter models; a local model with a larger
+                # context can take more (harvester#526: 6 chunks hid a VM).
+                amount: ${BACKSTAGE_RAG_AI_AMOUNT:-6}
     secrets:
       backstage-secrets:
         name: backstage-secrets
