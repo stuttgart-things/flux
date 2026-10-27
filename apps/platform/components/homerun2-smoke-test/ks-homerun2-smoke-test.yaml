@@ -68,7 +68,7 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-led-catcher-kustomize
       HOMERUN2_LED_CATCHER_VERSION: "${HOMERUN2_LED_CATCHER_VERSION:-v0.22.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-demo-pitcher-kustomize
-      HOMERUN2_DEMO_PITCHER_VERSION: "${HOMERUN2_DEMO_PITCHER_VERSION:-v2.3.0}"
+      HOMERUN2_DEMO_PITCHER_VERSION: "${HOMERUN2_DEMO_PITCHER_VERSION:-v2.3.1}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher-kustomize
       HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION: "${HOMERUN2_LIGHT_CATCHER_KUSTOMIZE_VERSION:-v1.14.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-light-catcher
