@@ -6,6 +6,8 @@ metadata:
   namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
 spec:
   interval: 20m
+  # single-node clusters can need >5m to pull new images on upgrade
+  timeout: 10m
   chart:
     spec:
       chart: cert-manager
@@ -16,5 +18,11 @@ spec:
         name: cert-manager
         namespace: ${CERT_MANAGER_NAMESPACE:-cert-manager}
       interval: 12h
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
   values:
     installCRDs: ${CERT_MANAGER_INSTALL_CRDS:-true}
