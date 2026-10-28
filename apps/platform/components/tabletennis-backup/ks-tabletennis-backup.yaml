@@ -180,7 +180,12 @@ spec:
       # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       ZAEHLWERK_SET_OPENER: "${TABLETENNIS_ZAEHLWERK_SET_OPENER:-alternate}"
-      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL:-}"
+      # Where the LED panel fetches the winner's figure: schmetterpause's own
+      # https name by default, which the catcher cannot fetch where the cluster's
+      # CA signs it -- set a public one there (apps/tabletennis/README.md).
+      #
+      # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
+      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       SCHMETTERPAUSE_MONITORING_INTERVAL: "${TABLETENNIS_SCHMETTERPAUSE_MONITORING_INTERVAL:-60s}"
       # Only read by the `backup` monitoring variant. The ScheduledBackup is
       # daily; 26 h leaves room for one slow run before it alerts.

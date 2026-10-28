@@ -201,9 +201,9 @@ homerun2-led-catcher v0.24.0+. It has to be schmetterpause as the **catcher**
 reaches it: over https, with a certificate the catcher trusts. The catcher
 mounts no cluster CA, so where `schmetterpause.<domain>` is signed by the
 cluster's own CA, set a public name here (for example the one on
-`TABLETENNIS_LINK_DOMAIN`). Empty (default) leaves it to zaehlwerk, which takes
-its `SCHMETTERPAUSE_URL` when that is https. A fetch the catcher refuses leaves
-the board up without the figure; nothing else changes. The sandbox has its own,
+`TABLETENNIS_LINK_DOMAIN`). The default is schmetterpause's own
+`https://<hostname>.<domain>`. A fetch the catcher refuses leaves the board up
+without the figure; nothing else changes. The sandbox has its own,
 `TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL_FIGURES_URL`.
 
 **`TABLETENNIS_LINK_DOMAIN`** is a plain value too: the domain the pages' links

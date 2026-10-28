@@ -145,7 +145,12 @@ spec:
       # from this layer's own INFRA_DOMAIN here.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       ZAEHLWERK_SET_OPENER: "${TABLETENNIS_ZAEHLWERK_SET_OPENER:-alternate}"
-      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL:-}"
+      # Where the LED panel fetches the winner's figure: schmetterpause's own
+      # https name by default, which the catcher cannot fetch where the cluster's
+      # CA signs it -- set a public one there (apps/tabletennis/README.md).
+      #
+      # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
+      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       # Where zaehlwerk reports a won match, read only by the `sops` handover.
       # The HTTPRoute by default. A cluster without trust-manager's CA bundle
       # (zaehlwerk mounts it optionally) sets the in-cluster Service instead:
