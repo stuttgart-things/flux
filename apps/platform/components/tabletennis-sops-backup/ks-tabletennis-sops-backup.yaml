@@ -115,7 +115,7 @@ spec:
       # Read only by zaehlwerk-portal-on. Its own version, as the sims have:
       # the base zaehlwerk-portal-kustomize, published with zaehlwerk v0.29.0+.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/zaehlwerk-portal-kustomize
-      ZAEHLWERK_PORTAL_VERSION: "${TABLETENNIS_ZAEHLWERK_PORTAL_VERSION:-v0.39.0}"
+      ZAEHLWERK_PORTAL_VERSION: "${TABLETENNIS_ZAEHLWERK_PORTAL_VERSION:-v0.40.0}"
       ZAEHLWERK_PORTAL_HOSTNAME: "${TABLETENNIS_ZAEHLWERK_PORTAL_HOSTNAME:-zaehlwerk-portal}"
       # Read only by zaehlwerk-pong-on/-attract; the same values as
       # ../tabletennis. The image follows zaehlwerk's version default.
