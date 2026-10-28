@@ -142,7 +142,7 @@ jobs:
       # for the validator today but is not something to rely on.
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 26
 
       # npx rather than the renovate/renovate image the lint-renovate task uses:
       # several GB of pull for a single validation is not worth it in CI.
