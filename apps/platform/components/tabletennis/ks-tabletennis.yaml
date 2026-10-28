@@ -98,7 +98,7 @@ spec:
       # check-passthrough-defaults failed the PR (flux#359). Keep the comment
       # directly above the key: the manager matches the two as one block.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/schmetterpause-kustomize
-      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.20.0}"
+      SCHMETTERPAUSE_VERSION: "${TABLETENNIS_SCHMETTERPAUSE_VERSION:-v0.21.0}"
       SCHMETTERPAUSE_HOSTNAME: "${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}"
       # The whole image rather than a major version: a bare 18 resolves to an
       # int, which postBuild.substitute rejects for every sibling at once.
@@ -176,6 +176,7 @@ spec:
       # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SCHMETTERPAUSE_HOSTNAME:-schmetterpause}.${INFRA_DOMAIN}}"
       ZAEHLWERK_SET_OPENER: "${TABLETENNIS_ZAEHLWERK_SET_OPENER:-alternate}"
+      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL:-}"
       SCHMETTERPAUSE_MONITORING_INTERVAL: "${TABLETENNIS_SCHMETTERPAUSE_MONITORING_INTERVAL:-60s}"
       # Only read by the `backup` monitoring variant. The ScheduledBackup is
       # daily; 26 h leaves room for one slow run before it alerts.

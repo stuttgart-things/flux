@@ -30,10 +30,16 @@ spec:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
-      containers:
+      # seed fills an EMPTY database and then does nothing (see the
+      # kustomization). dress, after it, gives every player without a figure a
+      # random one (schmetterpause v0.21.0+, ADR-0029): the bots of a sandbox
+      # seeded before figures existed, and whoever was added since. A figure
+      # somebody chose stays, and a second run dresses nobody, so it runs every
+      # time the Job is recreated -- on every new image tag.
+      initContainers:
         - name: seed
           # Keep the default equal to components/schmetterpause/requirements.yaml's.
-          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.20.0}
+          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.21.0}
           args: ["seed"]
           # The database Secret and the fixture, nothing else: `seed` does not
           # serve, so it needs no session key.
@@ -45,6 +51,30 @@ spec:
                   key: SP_DATABASE_URL
             - name: SP_SEED_FIXTURE
               value: pong
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      containers:
+        - name: dress
+          # Keep the default equal to components/schmetterpause/requirements.yaml's.
+          image: ghcr.io/stuttgart-things/schmetterpause:${SCHMETTERPAUSE_VERSION:-v0.21.0}
+          args: ["dress"]
+          # The database Secret, nothing else.
+          env:
+            - name: SP_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: schmetterpause-db
+                  key: SP_DATABASE_URL
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

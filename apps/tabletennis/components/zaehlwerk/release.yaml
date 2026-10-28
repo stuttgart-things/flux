@@ -88,6 +88,21 @@ spec:
         - op: add
           path: /data/SET_OPENER
           value: "${ZAEHLWERK_SET_OPENER:-alternate}"
+    # Where the LED panel fetches the winner's figure after a won set or
+    # match (zaehlwerk v0.40.0+, PANEL_FIGURES_URL; schmetterpause ADR-0030):
+    # Schmetterpause as the CATCHER reaches it, over https with a certificate
+    # it trusts. The catcher mounts no cluster CA, so on a cluster whose
+    # schmetterpause hostname is signed by its own CA this has to be a public
+    # name. Empty is a supported value: zaehlwerk then takes SCHMETTERPAUSE_URL
+    # when that is https, and a fetch the catcher refuses only leaves the
+    # board up without the figure. Quoted and ADDED like ALLOWED_ORIGINS.
+    - target:
+        kind: ConfigMap
+        name: zaehlwerk-config
+      patch: |
+        - op: add
+          path: /data/PANEL_FIGURES_URL
+          value: "${ZAEHLWERK_PANEL_FIGURES_URL:-}"
     # Stakater Reloader: roll zaehlwerk when zaehlwerk-config or one of its
     # Secrets changes. zaehlwerk reads them only at start, so a changed
     # ConfigMap -- e.g. the panel URLs from zaehlwerk-panel-homerun2 -- sat

@@ -14,6 +14,11 @@
 # database is in use", so every later run -- a new image tag recreates the Job
 # -- is a no-op. It is not a guard against pointing it at the office: that is
 # the namespace, and this component is selected by ../../profiles/sandbox only.
+#
+# After seed, `dress` (schmetterpause v0.21.0+) gives every player who has no
+# figure a random one: a sandbox seeded before figures existed shows eight
+# identical bots otherwise. It replaces no chosen figure and is a no-op the
+# second time, so it is as safe to run again as seed.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

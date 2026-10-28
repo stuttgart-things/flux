@@ -96,6 +96,7 @@ spec:
       # as in ../tabletennis-sops.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_SANDBOX_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME:-schmetterpause-sandbox}.${INFRA_DOMAIN}}"
       ZAEHLWERK_SET_OPENER: "${TABLETENNIS_SANDBOX_ZAEHLWERK_SET_OPENER:-alternate}"
+      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL_FIGURES_URL:-}"
       # Where zaehlwerk reports, and where Pong reads its players: the Service,
       # so the league depends on no certificate.
       #
