@@ -193,6 +193,19 @@ zaehlwerk ADR-0005). `alternate` (default) is the rulebook, ITTF 2.13.6; `loser`
 is the house rule where whoever lost the previous set opens the next one. A
 match can still choose its own through the API.
 
+**`TABLETENNIS_ZAEHLWERK_PANEL_FIGURES_URL`** is a plain value as well. It
+tells zaehlwerk where the LED panel fetches the winner's figure after a won set
+or match: zaehlwerk's `PANEL_FIGURES_URL` (v0.40.0+), with the GIF from
+schmetterpause v0.21.0+ (ADR-0030) and the `tabletennis-figure` rule of
+homerun2-led-catcher v0.24.0+. It has to be schmetterpause as the **catcher**
+reaches it: over https, with a certificate the catcher trusts. The catcher
+mounts no cluster CA, so where `schmetterpause.<domain>` is signed by the
+cluster's own CA, set a public name here (for example the one on
+`TABLETENNIS_LINK_DOMAIN`). The default is schmetterpause's own
+`https://<hostname>.<domain>`. A fetch the catcher refuses leaves the board up
+without the figure; nothing else changes. The sandbox has its own,
+`TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL_FIGURES_URL`.
+
 **`TABLETENNIS_LINK_DOMAIN`** is a plain value too: the domain the pages' links
 send a browser to, `INFRA_DOMAIN` by default. It covers zaehlwerk's *Buttons* and *Pong*
 links (`BUTTONS_URL`, `PONG_URL`, so also the screensaver's address) and the

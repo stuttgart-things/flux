@@ -96,6 +96,12 @@ spec:
       # as in ../tabletennis-sops.
       ZAEHLWERK_ALLOWED_ORIGINS: "${TABLETENNIS_SANDBOX_ZAEHLWERK_ALLOWED_ORIGINS:-https://${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME:-schmetterpause-sandbox}.${INFRA_DOMAIN}}"
       ZAEHLWERK_SET_OPENER: "${TABLETENNIS_SANDBOX_ZAEHLWERK_SET_OPENER:-alternate}"
+      # Where the LED panel fetches the winner's figure: schmetterpause's own
+      # https name by default, which the catcher cannot fetch where the cluster's
+      # CA signs it -- set a public one there (apps/tabletennis/README.md).
+      #
+      # passthrough-override: same reason as ZAEHLWERK_SCHMETTERPAUSE_URL above.
+      ZAEHLWERK_PANEL_FIGURES_URL: "${TABLETENNIS_SANDBOX_ZAEHLWERK_PANEL_FIGURES_URL:-https://${TABLETENNIS_SANDBOX_SCHMETTERPAUSE_HOSTNAME:-schmetterpause-sandbox}.${INFRA_DOMAIN}}"
       # Where zaehlwerk reports, and where Pong reads its players: the Service,
       # so the league depends on no certificate.
       #
