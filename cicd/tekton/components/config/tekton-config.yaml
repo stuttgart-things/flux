@@ -16,8 +16,15 @@ spec:
   # `basic` also drops the Dashboard, and the Dashboard is the reason to run a
   # profile above `lite` at all. Set TEKTON_RESULT_DISABLED=false on a cluster
   # that has a default StorageClass and actually wants a run archive.
+  #
+  # is_external_db is REQUIRED by the v0.81.2 TektonConfig CRD (next to
+  # `disabled`), even with Results off. Without it the server-side dry-run
+  # refuses the object -- "spec.result.is_external_db: Required value" -- and
+  # the tekton Kustomization never goes Ready. Observed on machinery-labul,
+  # 2026-10-29, the first fresh install after #779.
   result:
     disabled: ${TEKTON_RESULT_DISABLED:-true}
+    is_external_db: ${TEKTON_RESULT_IS_EXTERNAL_DB:-false}
   pipeline:
     # DEFAULT beta, not Tekton's own `stable`, because every AnsibleRun in this
     # fleet resolves its pipeline through a git resolver — and resolver params

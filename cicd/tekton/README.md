@@ -120,6 +120,11 @@ unchanged, so `components/dashboard-httproute` needs no change.
   field in `components/config/tekton-config.yaml` exists in the v0.81.2 schema
   with the type the substitutions produce (`pruner.disabled` bool,
   `pruner.keep-since` int, `pipeline.*` strings, `result.disabled` bool).
+  The schema also has `required` lists: `result` needs `disabled` AND
+  `is_external_db` (set via `TEKTON_RESULT_IS_EXTERNAL_DB`, default `false`),
+  `pruner` needs `disabled`. A missing required field fails the dry-run
+  ("spec.result.is_external_db: Required value") and the tekton Kustomization
+  never goes Ready -- first seen on a fresh install (machinery-labul).
 - **`TektonHub` is gone** (CRD and reconciler). The CRD is no longer vendored, so
   `prune: true` deletes it -- and any `TektonHub` objects with it.
 - **Pipelines-as-Code is installed by default on Kubernetes with `profile: all`.**
