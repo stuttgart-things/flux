@@ -15,4 +15,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/zaehlwerk-kustomize
   ref:
-    tag: ${ZAEHLWERK_VERSION:-v0.45.1}
+    tag: ${ZAEHLWERK_VERSION:-v0.46.0}
