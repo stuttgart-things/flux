@@ -50,7 +50,7 @@ spec:
   url: oci://ghcr.io/stuttgart-things/sthings-portal-kustomize
   # The artifact pins the image to the same tag: one version for both.
   ref:
-    tag: ${STHINGS_PORTAL_VERSION:-v0.13.0}
+    tag: ${STHINGS_PORTAL_VERSION:-v0.14.0}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -113,6 +113,9 @@ spec:
           AUTH_OIDC_NAME: "${STHINGS_PORTAL_OIDC_NAME:-Zitadel}"
           AUTH_OIDC_ALLOWED_GROUPS: "${STHINGS_PORTAL_OIDC_ALLOWED_GROUPS:-}"
           AUTH_OIDC_CA_FILE: "/etc/portal/oidc-ca/${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}"
+          # Empty: the theme's built-in icon (v0.14.0+). Set to a file in the
+          # favicon volume, e.g. /etc/portal/favicon/favicon.svg.
+          PORTAL_FAVICON: "${STHINGS_PORTAL_FAVICON:-}"
     # The Secret's keys and the two files, as KCL renders them for oidc.
     # kiosk-token and oidc-client-secret are optional there (a kiosk
     # display; a public PKCE client) and stay optional here.
@@ -156,6 +159,9 @@ spec:
                     - name: oidc-ca
                       mountPath: /etc/portal/oidc-ca
                       readOnly: true
+                    - name: favicon
+                      mountPath: /etc/portal/favicon
+                      readOnly: true
               volumes:
                 - name: auth
                   secret:
@@ -169,3 +175,10 @@ spec:
                     items:
                       - key: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}
                         path: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}
+                # Optional: without the ConfigMap the directory is empty and
+                # PORTAL_FAVICON stays unset. A PORTAL_FAVICON pointing at a
+                # file that is not there stops the portal at start.
+                - name: favicon
+                  configMap:
+                    name: ${STHINGS_PORTAL_FAVICON_CONFIGMAP:-sthings-portal-favicon}
+                    optional: true

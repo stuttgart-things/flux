@@ -81,7 +81,7 @@ tool has to patch.
 | `INFRA_DOMAIN` | -- | REQUIRED: host is `${STHINGS_PORTAL_HOSTNAME}.${INFRA_DOMAIN}` |
 | `STHINGS_PORTAL_HOSTNAME` | `portal` | the same default host as homerun2-portal -- select one of the two |
 | `STHINGS_PORTAL_NAMESPACE` | `homerun2` | must exist; not created here |
-| `STHINGS_PORTAL_VERSION` | `v0.13.0` | artifact tag = image tag (renovate) |
+| `STHINGS_PORTAL_VERSION` | `v0.14.0` | artifact tag = image tag (renovate) |
 | `STHINGS_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | `key=url` or `key\|Title=url`, comma-separated, in navigation order |
 | `STHINGS_PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` |
 | `STHINGS_PORTAL_OIDC_ISSUER` | -- | REQUIRED, e.g. `https://zitadel.<infra domain>` |
@@ -90,6 +90,8 @@ tool has to patch.
 | `STHINGS_PORTAL_OIDC_NAME` | `Zitadel` | label of the login button |
 | `STHINGS_PORTAL_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with the CA that signed the provider's certificate |
 | `STHINGS_PORTAL_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
+| `STHINGS_PORTAL_FAVICON` | *(empty: the theme's built-in icon)* | a file in the favicon ConfigMap, e.g. `/etc/portal/favicon/favicon.svg` (`.svg`, `.png`, `.ico`, at most 1 MiB; v0.14.0+) |
+| `STHINGS_PORTAL_FAVICON_CONFIGMAP` | `sthings-portal-favicon` | ConfigMap mounted (optional) at `/etc/portal/favicon` |
 | `STHINGS_PORTAL_AUTH_SECRET` | `sthings-portal-auth` | the Secret below |
 | `STHINGS_PORTAL_SESSION_TTL` | `12h` | |
 | `STHINGS_PORTAL_SUSPEND` | `false` | |
@@ -148,6 +150,25 @@ read at start: a missing ConfigMap keeps the pod in ContainerCreating.
   kubectl create configmap sthings-portal-oidc-ca -n homerun2 --from-file=ca.crt \
     --dry-run=client -o yaml > sthings-portal-oidc-ca.yaml   # commit it with the cluster
   ```
+
+## Favicon
+
+Without anything set the portal serves its theme's built-in icon at
+`/favicon.ico` (no login needed). An own icon: a ConfigMap in the portal's
+namespace plus the path to the file in it --
+
+```bash
+kubectl create configmap sthings-portal-favicon -n homerun2 --from-file=favicon.svg \
+  --dry-run=client -o yaml > sthings-portal-favicon.yaml   # commit it with the cluster
+```
+
+```yaml
+STHINGS_PORTAL_FAVICON: /etc/portal/favicon/favicon.svg
+```
+
+The volume is optional, so a missing ConfigMap only leaves the directory
+empty -- but a `STHINGS_PORTAL_FAVICON` pointing at a file that is not there
+stops the portal at start. Set the variable together with the ConfigMap.
 
 ## Replacing homerun2-portal
 
