@@ -26,6 +26,11 @@
 # re-runs terraform per resource per poll, and on u26-kind3 that held the
 # node at load 8 and cost ~3950 control-plane restarts in 39 days, because
 # a saturated API server misses lease renewals.
+#
+# A provider the catalog gives a `workspace` is also preceded by its
+# PersistentVolumeClaim, mounted by that DeploymentRuntimeConfig. For a
+# CLI-based upjet provider it holds the per-resource terraform state,
+# which a restart would otherwise lose (stuttgart-things#4210).
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider

@@ -44,6 +44,9 @@ catalog says is the same drift as a hand-maintained copy, only harder to see.
 Usage:
     python3 hack/gen-crossplane-profile.py            # write
     python3 hack/gen-crossplane-profile.py --check    # verify, exit 1 on drift
+    python3 hack/gen-crossplane-profile.py --catalog-path ../kcl/crossplane/xplane-crossplane-catalog
+                                                      # PREVIEW an unreleased
+                                                      # catalog; never commit it
 """
 import json
 import subprocess
@@ -80,8 +83,13 @@ BANNER = (
 )
 
 
-def catalog():
-    """Render the profile by evaluating the published KCL module."""
+def catalog(local=None):
+    """Render the profile by evaluating the published KCL module.
+
+    `local` is a checkout of the catalog module, for previewing what a catalog
+    change WOULD regenerate before it is released. The banner then names that
+    path instead of the pin, so a preview committed by accident fails --check.
+    """
     with tempfile.TemporaryDirectory() as tmp:
         mod = Path(tmp) / "render"
         run = lambda *a: subprocess.run(a, cwd=mod, capture_output=True, text=True)
@@ -90,7 +98,11 @@ def catalog():
                            capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit(f"kcl mod init failed:\n{r.stderr}")
-        r = run("kcl", "mod", "add", f"oci://{CATALOG}", "--tag", CATALOG_VERSION)
+        if local:
+            r = run("kcl", "mod", "add", str(Path(local).resolve()))
+        else:
+            r = run("kcl", "mod", "add", f"oci://{CATALOG}", "--tag",
+                    CATALOG_VERSION)
         if r.returncode != 0:
             sys.exit(f"kcl mod add failed:\n{r.stderr}")
         (mod / "main.k").write_text(
@@ -186,8 +198,12 @@ def scalar(v):
 #                provider without depending on an SA name that carries the
 #                package-revision hash. Emitting per-provider bindings here
 #                would be one real grant and N decorative ones.
+#
+# workspace is RENDERED: a PersistentVolumeClaim (in the profile's namespace)
+# plus the volume, mount and pod securityContext in the provider's own
+# DeploymentRuntimeConfig -- see workspace_doc() and runtime_doc().
 RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources",
-            "runtimeConfig"}
+            "runtimeConfig", "workspace"}
 IGNORED = {"pulls", "providerCrd", "clusterRole"}
 
 
@@ -216,6 +232,20 @@ def runtime_doc(p):
     both fine and one less thing to keep level.
     """
     container = {"name": "package-runtime"}
+    pod = {}
+    w = p.get("workspace")
+    if w:
+        # A pod securityContext in the template REPLACES Crossplane's default
+        # (runAsNonRoot, runAsUser/Group 2000) instead of merging with it --
+        # the default is applied only when the template has none. So it is
+        # restated in full next to fsGroup, which is what makes storage that
+        # honours fsGroup writable by the runtime UID.
+        pod["securityContext"] = {
+            "runAsNonRoot": True,
+            "runAsUser": 2000,
+            "runAsGroup": 2000,
+            "fsGroup": w["fsGroup"],
+        }
     if p.get("env"):
         # env, not args: args in a DeploymentRuntimeConfig REPLACE the image's
         # own arguments instead of adding to them.
@@ -226,18 +256,64 @@ def runtime_doc(p):
                             for k, v in sorted(p["env"].items())]
     if p.get("resources"):
         container["resources"] = p["resources"]
+    spec = {"selector": {}}
+    if w:
+        container["volumeMounts"] = [{"name": "workspace",
+                                      "mountPath": w["mountPath"]}]
+        # ReadWriteOnce: no surge, so two pods of one revision never run
+        # terraform on the same state. NOT type=Recreate: Crossplane applies
+        # the Deployment as a JSON merge patch, the existing rollingUpdate
+        # would survive it, and the API server rejects rollingUpdate under
+        # Recreate.
+        spec["strategy"] = {"type": "RollingUpdate",
+                            "rollingUpdate": {"maxSurge": 0,
+                                              "maxUnavailable": 1}}
+    pod["containers"] = [container]
+    if w:
+        pod["volumes"] = [{"name": "workspace",
+                           "persistentVolumeClaim": {
+                               "claimName": w["claimName"]}}]
+    spec["template"] = {"spec": pod}
     return doc({
         "apiVersion": "pkg.crossplane.io/v1beta1",
         "kind": "DeploymentRuntimeConfig",
         "metadata": {"name": p["name"]},
-        "spec": {"deploymentTemplate": {"spec": {
-            "selector": {},
-            "template": {"spec": {"containers": [container]}},
-        }}},
+        "spec": {"deploymentTemplate": {"spec": spec}},
     })
 
 
-def package_docs(packages):
+def workspace_doc(p, namespace):
+    """The PersistentVolumeClaim behind a provider's `workspace`.
+
+    For CLI-based upjet providers: one terraform workspace per managed
+    resource under /tmp/<MR uid>/. On the container's writable layer a restart
+    loses it, and for a resource being DELETED upjet does not rebuild it --
+    destroy runs on an empty state and the finalizer goes while the VM stays
+    (stuttgart-things#4210, crossplane/upjet#803).
+
+    prune: disabled, because this Kustomization prunes and the claim holds
+    state for live infrastructure: dropping the field from the catalog, or
+    renaming the claim, must not delete the only copy of that state. Remove a
+    retired claim by hand once its provider has no managed resources left.
+    """
+    w = p["workspace"]
+    spec = {"accessModes": ["ReadWriteOnce"]}
+    if w.get("storageClassName"):
+        spec["storageClassName"] = w["storageClassName"]
+    spec["resources"] = {"requests": {"storage": w["size"]}}
+    return doc({
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+            "name": w["claimName"],
+            "namespace": namespace,
+            "annotations": {"kustomize.toolkit.fluxcd.io/prune": "disabled"},
+        },
+        "spec": spec,
+    })
+
+
+def package_docs(packages, namespace):
     """Providers, then Functions, then Configurations -- the install order."""
     out = []
     for kind in ("Provider", "Function", "Configuration"):
@@ -258,13 +334,13 @@ def package_docs(packages):
                 "spec": {"package": p["package"]},
             }
             external = p.get("runtimeConfig")
-            if p.get("env") or p.get("resources"):
+            if p.get("env") or p.get("resources") or p.get("workspace"):
                 if kind != "Provider":
-                    sys.exit(f"{p['name']}: env/resources are a provider "
-                             f"runtime setting, and this is a {kind}.")
+                    sys.exit(f"{p['name']}: env/resources/workspace are a "
+                             f"provider runtime setting, and this is a {kind}.")
                 if external:
                     sys.exit(f"{p['name']}: the catalog sets runtimeConfig "
-                             f"({external}) AND env/resources. A Provider has "
+                             f"({external}) AND env/resources/workspace. A Provider has "
                              f"exactly one runtimeConfigRef, so these two "
                              f"cannot both apply -- put the env and resources "
                              f"into whatever ships {external}, or drop "
@@ -274,6 +350,8 @@ def package_docs(packages):
                 # is not decided here -- kustomize and the kustomize-controller
                 # sort by kind -- and a Provider whose runtimeConfigRef is not
                 # there yet only retries.
+                if p.get("workspace"):
+                    out.append(workspace_doc(p, namespace))
                 out.append(runtime_doc(p))
                 body["spec"]["runtimeConfigRef"] = {
                     "apiVersion": "pkg.crossplane.io/v1beta1",
@@ -330,8 +408,13 @@ def render(data):
         + "# re-runs terraform per resource per poll, and on u26-kind3 that held the\n"
         + "# node at load 8 and cost ~3950 control-plane restarts in 39 days, because\n"
         + "# a saturated API server misses lease renewals.\n"
+        + "#\n"
+        + "# A provider the catalog gives a `workspace` is also preceded by its\n"
+        + "# PersistentVolumeClaim, mounted by that DeploymentRuntimeConfig. For a\n"
+        + "# CLI-based upjet provider it holds the per-resource terraform state,\n"
+        + "# which a restart would otherwise lose (stuttgart-things#4210).\n"
         + "---\n"
-        + "\n---\n".join(package_docs(data["packages"]))
+        + "\n---\n".join(package_docs(data["packages"], data["namespace"]))
         + "\n"
     )
 
@@ -379,6 +462,12 @@ def render(data):
 
 def main():
     check = "--check" in sys.argv
+    local = None
+    if "--catalog-path" in sys.argv:
+        i = sys.argv.index("--catalog-path")
+        if i + 1 >= len(sys.argv):
+            sys.exit("--catalog-path needs a path to the catalog module")
+        local = sys.argv[i + 1]
     if subprocess.run(["which", "kcl"], capture_output=True).returncode != 0:
         # Same policy as check-crossplane-deps.py and skopeo: a check that turns
         # red on a runner without a tool teaches people to ignore it.
@@ -386,7 +475,12 @@ def main():
               "against the catalog")
         return 0
 
-    files = render(catalog())
+    files = render(catalog(local))
+    if local:
+        # A preview must not pass for the pinned render: name its source.
+        files = {rel: c.replace(f"oci://{CATALOG}:{CATALOG_VERSION}",
+                                f"LOCAL PREVIEW {local} (not {CATALOG_VERSION})", 1)
+                 for rel, c in files.items()}
     drift = []
     for rel, content in files.items():
         path = OUT / rel
