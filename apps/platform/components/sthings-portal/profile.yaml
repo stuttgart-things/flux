@@ -16,8 +16,12 @@ spec:
   component: ../components/sthings-portal
   vars:
     INFRA_DOMAIN: { required: true }
-    STHINGS_PORTAL_OIDC_ISSUER: { required: true }
-    STHINGS_PORTAL_OIDC_CLIENT_ID: { required: true }
+    # oidc (default), local or none -- apps/sthings-portal/README.md, "Login".
+    STHINGS_PORTAL_AUTH_MODE: {}
+    # Required with STHINGS_PORTAL_AUTH_MODE oidc (the default) only; the
+    # portal refuses to start without them there, and ignores them otherwise.
+    STHINGS_PORTAL_OIDC_ISSUER: {}
+    STHINGS_PORTAL_OIDC_CLIENT_ID: {}
     STHINGS_PORTAL_OIDC_ALLOWED_GROUPS: {}
     STHINGS_PORTAL_OIDC_NAME: {}
     STHINGS_PORTAL_OIDC_CA_CONFIGMAP: {}

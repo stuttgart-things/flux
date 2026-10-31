@@ -13,25 +13,38 @@
 # module, which another delivery tool (ArgoCD) can consume as they are
 # (apps/sthings-portal/README.md, "Design").
 #
-# What the patches add is exactly what the KCL module renders with
-# authMode: oidc (the published artifact is rendered with authMode: none):
-# the AUTH_* settings in the ConfigMap, the Secret's keys as env, the users
-# file and the CA as volumes. The artifact's own HTTPRoute is removed; the
+# What the patches add is what the KCL module renders with authMode: oidc
+# (the published artifact is rendered with authMode: none): the AUTH_*
+# settings in the ConfigMap, the Secret's keys as env, the users file and the
+# CA as volumes -- with one difference: every Secret key and both volumes are
+# optional, so the same patches serve all three STHINGS_PORTAL_AUTH_MODEs.
+# The portal checks what its mode needs at start, and says so in its log:
+#   * oidc (default) -- session-key (32+ bytes), the users file (the
+#     emergency access; AUTH_USERS_FILE is set, so it must hold a user),
+#     issuer, client ID, the CA file; oidc-client-secret unless a public
+#     client;
+#   * local -- session-key and the users file; AUTH_OIDC_* are ignored;
+#   * none  -- nothing: no Secret, no CA; AUTH_* are ignored. The artifact's own HTTPRoute is removed; the
 # route is sthings-portal-routes, applied after this is Ready, because Cilium
 # resolves a route's backendRefs once.
 #
 # REQUIRES, in STHINGS_PORTAL_NAMESPACE, before this is selected:
 #   * the namespace itself -- not created here (homerun2 / homerun2-sops own
-#     `homerun2`; a namespace owned twice is pruned with either owner);
-#   * the Secret STHINGS_PORTAL_AUTH_SECRET with `users` (htpasswd -nbB lines,
-#     the emergency access), `session-key` (32+ bytes) and
-#     `oidc-client-secret`; optional `kiosk-token`. Not rendered here: the
-#     client secret comes out of Terraform state and is supplied by hand;
-#   * the CA ConfigMap STHINGS_PORTAL_OIDC_CA_CONFIGMAP (key
+#     `homerun2`; a namespace owned twice is pruned with either owner). On a
+#     cluster without such an owner (machinery-portal on the infra clusters)
+#     the cluster repo ships the Namespace in the same directory as the
+#     Secret below: one apply, Namespace first -- a Namespace created here
+#     would come after the Secret's apply had already failed on it;
+#   * (local, oidc) the Secret STHINGS_PORTAL_AUTH_SECRET with `users`
+#     (htpasswd -nbB lines, the emergency access), `session-key` (32+ bytes)
+#     and, for oidc, `oidc-client-secret`; optional `kiosk-token`. Not
+#     rendered here: the client secret comes out of Terraform state and is
+#     supplied by hand;
+#   * (oidc) the CA ConfigMap STHINGS_PORTAL_OIDC_CA_CONFIGMAP (key
 #     STHINGS_PORTAL_OIDC_CA_KEY) that verifies the provider's certificate.
 #     The default is trust-manager's cluster-trust-bundle.
-# Without the Secret the pod sits in CreateContainerConfigError, and this
-# Kustomization times out.
+# Without what its mode needs the portal exits at start (CrashLoopBackOff,
+# the reason in its log), and this Kustomization times out.
 #
 # Reloader (infra/reloader) rolls the pod when the ConfigMap or the Secret
 # changes -- the portal reads both at start only.
@@ -88,7 +101,12 @@ spec:
         metadata:
           name: sthings-portal
         $patch: delete
-    # Settings. PORTAL_SERVICES is `key=url` or `key|Title=url`,
+    # Settings. AUTH_MODE is `oidc` (default), `local` or `none`; the
+    # AUTH_OIDC_* keys are rendered in every mode and read only with oidc.
+    # Issuer and client ID default to empty, not to a set-* placeholder:
+    # required only with oidc, where the portal refuses to start without
+    # them (AUTH_OIDC_ISSUER / AUTH_OIDC_CLIENT_ID in its log).
+    # PORTAL_SERVICES is `key=url` or `key|Title=url`,
     # comma-separated, in navigation order; every service runs with
     # BASE_PATH=/<key>, and a short Service name resolves in the namespace.
     # An empty AUTH_OIDC_ALLOWED_GROUPS lets in every user the provider lets
@@ -104,11 +122,11 @@ spec:
         data:
           PORTAL_SERVICES: "${STHINGS_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"
           PORTAL_THEME: "${STHINGS_PORTAL_THEME:-homerun2}"
-          AUTH_MODE: oidc
+          AUTH_MODE: ${STHINGS_PORTAL_AUTH_MODE:-oidc}
           AUTH_USERS_FILE: /etc/portal/auth/users
           AUTH_SESSION_TTL: "${STHINGS_PORTAL_SESSION_TTL:-12h}"
-          AUTH_OIDC_ISSUER: "${STHINGS_PORTAL_OIDC_ISSUER:-set-STHINGS_PORTAL_OIDC_ISSUER}"
-          AUTH_OIDC_CLIENT_ID: "${STHINGS_PORTAL_OIDC_CLIENT_ID:-set-STHINGS_PORTAL_OIDC_CLIENT_ID}"
+          AUTH_OIDC_ISSUER: "${STHINGS_PORTAL_OIDC_ISSUER:-}"
+          AUTH_OIDC_CLIENT_ID: "${STHINGS_PORTAL_OIDC_CLIENT_ID:-}"
           AUTH_OIDC_REDIRECT_URL: "https://${STHINGS_PORTAL_HOSTNAME:-portal}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}/auth/callback"
           AUTH_OIDC_NAME: "${STHINGS_PORTAL_OIDC_NAME:-Zitadel}"
           AUTH_OIDC_ALLOWED_GROUPS: "${STHINGS_PORTAL_OIDC_ALLOWED_GROUPS:-}"
@@ -116,9 +134,11 @@ spec:
           # Empty: the theme's built-in icon (v0.14.0+). Set to a file in the
           # favicon volume, e.g. /etc/portal/favicon/favicon.svg.
           PORTAL_FAVICON: "${STHINGS_PORTAL_FAVICON:-}"
-    # The Secret's keys and the two files, as KCL renders them for oidc.
-    # kiosk-token and oidc-client-secret are optional there (a kiosk
-    # display; a public PKCE client) and stay optional here.
+    # The Secret's keys and the two files, as KCL renders them for oidc --
+    # but all optional, so `local` needs no CA and `none` neither Secret nor
+    # CA (STHINGS_PORTAL_AUTH_MODE). A missing session-key, users file or CA
+    # file is not lost: in the modes that need them the portal refuses to
+    # start and names the variable (internal/auth).
     - target:
         kind: Deployment
         name: sthings-portal
@@ -140,6 +160,7 @@ spec:
                         secretKeyRef:
                           name: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
                           key: session-key
+                          optional: true
                     - name: AUTH_KIOSK_TOKEN
                       valueFrom:
                         secretKeyRef:
@@ -166,12 +187,14 @@ spec:
                 - name: auth
                   secret:
                     secretName: ${STHINGS_PORTAL_AUTH_SECRET:-sthings-portal-auth}
+                    optional: true
                     items:
                       - key: users
                         path: users
                 - name: oidc-ca
                   configMap:
                     name: ${STHINGS_PORTAL_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}
+                    optional: true
                     items:
                       - key: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}
                         path: ${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}
