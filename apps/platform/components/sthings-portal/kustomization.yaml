@@ -3,13 +3,18 @@
 # each service UI under /<key>/ through its reverse proxy), with login through
 # an OIDC provider (ZITADEL) and local users as emergency access. The
 # successor of homerun2-portal; the same host by default, so select one of
-# the two.
+# the two. The same component runs the lab services' portal
+# (machinery-portal: own namespace and host, theme machinery) -- variables
+# only, see apps/sthings-portal/README.md, "Instances".
 #
-# REQUIRES, in STHINGS_PORTAL_NAMESPACE: the namespace, the Secret
-# STHINGS_PORTAL_AUTH_SECRET (created by hand: users, session-key,
-# oidc-client-secret) and the CA ConfigMap (default: trust-manager's
-# cluster-trust-bundle). Reloader to roll the pod on a change. See
-# apps/sthings-portal/README.md.
+# Login: STHINGS_PORTAL_AUTH_MODE oidc (default; ZITADEL), local (users
+# file only) or none -- the provider is needed for oidc only.
+#
+# REQUIRES, in STHINGS_PORTAL_NAMESPACE: the namespace; with oidc or local
+# the Secret STHINGS_PORTAL_AUTH_SECRET (created by hand: users, session-key,
+# and oidc-client-secret for oidc); with oidc the CA ConfigMap (default:
+# trust-manager's cluster-trust-bundle). Reloader to roll the pod on a
+# change. See apps/sthings-portal/README.md.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:

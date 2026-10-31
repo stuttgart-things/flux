@@ -1,0 +1,10 @@
+---
+# CLUSTERBOOK_ROUTE=all (the default): the HTTPRoute on clusterbook's own
+# hostname serves everything -- UI, REST API, /health -- as it always has.
+# Nothing to change; this component exists so the bundle component can pick
+# ./components/route-${CLUSTERBOOK_ROUTE} without a special case.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `resources: []`: kustomize refuses a kustomization.yaml without a single
+# field ("kustomization.yaml is empty").
+resources: []

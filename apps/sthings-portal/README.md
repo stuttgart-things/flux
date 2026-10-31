@@ -6,7 +6,9 @@ service with its status, each service's UI under `/<key>/` through the
 portal's reverse proxy), with **login through an OIDC provider (ZITADEL)** and
 the local users file as **emergency access**. Selected through the bundle
 component [`apps/platform/components/sthings-portal`](../platform/components/sthings-portal);
-first consumer is platform-sthings (stuttgart-things/stuttgart-things#4141).
+first consumer is platform-sthings (stuttgart-things/stuttgart-things#4141),
+second the per-cluster **machinery-portal** for the lab services
+(stuttgart-things/stuttgart-things#4221, see [Instances](#instances)).
 
 ```
 apps/platform/components/sthings-portal/   everything Flux-specific
@@ -39,8 +41,11 @@ this directory carries no Flux object. `route/` is a plain HTTPRoute; its
 **The patches are what KCL renders for `authMode: oidc`.** The artifact is
 rendered with `authMode: none`; the patches add the `AUTH_*` settings to the
 ConfigMap, the Secret's keys as env, and the users file and the CA as
-volumes, with the same names, paths and `optional` flags as `kcl/deploy.k` and
-`kcl/configmap.k`. Checked when this was added (v0.13.0): the artifact plus the
+volumes, with the same names and paths as `kcl/deploy.k` and
+`kcl/configmap.k` -- but with every Secret key and both volumes `optional`
+(KCL: session-key, the users and the CA volume are not), so the same patches
+serve `STHINGS_PORTAL_AUTH_MODE` `oidc`, `local` and `none`; the portal checks
+at start what its mode needs ([Login](#login-oidc-local-or-none)). Checked when this was added (v0.13.0): the artifact plus the
 patches and a `kcl run` with the same values in `config.authMode: oidc`
 render the same ServiceAccount, ConfigMap, Deployment and Service, the only
 difference being the Reloader annotation. A portal release that changes how
@@ -80,12 +85,15 @@ tool has to patch.
 |---|---|---|
 | `INFRA_DOMAIN` | -- | REQUIRED: host is `${STHINGS_PORTAL_HOSTNAME}.${INFRA_DOMAIN}` |
 | `STHINGS_PORTAL_HOSTNAME` | `portal` | the same default host as homerun2-portal -- select one of the two |
-| `STHINGS_PORTAL_NAMESPACE` | `homerun2` | must exist; not created here |
+| `STHINGS_PORTAL_NAMESPACE` | `homerun2` | must exist; not created here (see [Instances](#instances)) |
 | `STHINGS_PORTAL_VERSION` | `v0.14.0` | artifact tag = image tag (renovate) |
 | `STHINGS_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | `key=url` or `key\|Title=url`, comma-separated, in navigation order |
 | `STHINGS_PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` |
-| `STHINGS_PORTAL_OIDC_ISSUER` | -- | REQUIRED, e.g. `https://zitadel.<infra domain>` |
-| `STHINGS_PORTAL_OIDC_CLIENT_ID` | -- | REQUIRED (not secret) |
+| `STHINGS_PORTAL_TITLE` | *(empty: the theme's -- `HOMERUN²` / `machinery`)* | header text, also the page title |
+| `STHINGS_PORTAL_SUBTITLE` | *(empty: the theme's -- `PORTAL` / `LAB PORTAL`)* | the small line under the header text |
+| `STHINGS_PORTAL_AUTH_MODE` | `oidc` | `oidc`, `local` or `none` -- [Login](#login-oidc-local-or-none) |
+| `STHINGS_PORTAL_OIDC_ISSUER` | *(empty)* | REQUIRED with `oidc`, e.g. `https://zitadel.<infra domain>`; ignored otherwise |
+| `STHINGS_PORTAL_OIDC_CLIENT_ID` | *(empty)* | REQUIRED with `oidc` (not secret); ignored otherwise |
 | `STHINGS_PORTAL_OIDC_ALLOWED_GROUPS` | *(empty: every user the provider lets through)* | comma-separated, e.g. `portal-admin,portal-user` |
 | `STHINGS_PORTAL_OIDC_NAME` | `Zitadel` | label of the login button |
 | `STHINGS_PORTAL_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with the CA that signed the provider's certificate |
@@ -103,18 +111,111 @@ All values land as plain YAML scalars after substitution: no leading `#`,
 The redirect URI is `https://${STHINGS_PORTAL_HOSTNAME}.${INFRA_DOMAIN}/auth/callback`,
 the post-logout URI `.../auth/login`. Register exactly those at the provider.
 
+## Instances
+
+One component, two kinds of instance -- the difference is variables only, the
+patches are the same. One instance per cluster: the object names
+(`sthings-portal`, `sthings-portal-routes`, Deployment `sthings-portal`, ...)
+are fixed.
+
+| | homerun2 portal (platform-sthings) | machinery-portal (infra clusters) |
+|---|---|---|
+| Services | the homerun2 services, short names in `homerun2` | the lab services on that cluster (clusterbook, clusterscope, machinery, claim-machinery-api), full in-cluster names |
+| `STHINGS_PORTAL_NAMESPACE` | `homerun2` (default; owned by homerun2-sops) | `machinery-portal` -- shipped by the cluster repo |
+| `STHINGS_PORTAL_HOSTNAME` | `portal` (default) | `machinery-portal` |
+| `STHINGS_PORTAL_THEME` | `homerun2` (default) | `machinery` |
+| `STHINGS_PORTAL_OIDC_*` | ZITADEL on infra-sthings, client `lab-portal` | the ZITADEL on the same cluster, client `machinery-portal` |
+
+**machinery-portal, the settings of one cluster** (LabUL infra-sthings):
+
+```yaml
+components:
+  - ../components/clusterbook
+  - ../components/sthings-portal
+postBuild:
+  substitute:
+    INFRA_DOMAIN: infra.sthings-vsphere.labul.sva.de
+    CLUSTERBOOK_BASE_PATH: /clusterbook          # = the portal key below
+    CLUSTERBOOK_ROUTE: api                       # own host: /api + /health only
+    STHINGS_PORTAL_NAMESPACE: machinery-portal
+    STHINGS_PORTAL_HOSTNAME: machinery-portal
+    STHINGS_PORTAL_THEME: machinery
+    STHINGS_PORTAL_SERVICES: clusterbook|Clusterbook=http://clusterbook-http.clusterbook.svc.cluster.local:8080
+    STHINGS_PORTAL_OIDC_ISSUER: https://zitadel.infra.sthings-vsphere.labul.sva.de
+    STHINGS_PORTAL_OIDC_CLIENT_ID: "<terraform output client_ids machinery-portal>"
+    STHINGS_PORTAL_OIDC_ALLOWED_GROUPS: portal-admin,portal-user
+    STHINGS_PORTAL_AUTH_SECRET: machinery-portal-auth
+```
+
+- **Each service runs with `BASE_PATH=/<key>`**, the key of its
+  `STHINGS_PORTAL_SERVICES` entry: the portal forwards `/<key>/...`
+  unchanged. clusterbook: `CLUSTERBOOK_BASE_PATH: /clusterbook`, and the
+  Service `clusterbook-http` (8080, HTTP) -- `clusterbook` (80) is gRPC.
+- **The namespace comes from the cluster repo**, in the same directory as the
+  SOPS Secret (`machinery-portal-namespace.yaml` beside
+  `machinery-portal-auth.enc.yaml`): the cluster's Kustomization applies both
+  in one go, the Namespace first. Created by this component instead, the
+  Secret's apply in the cluster's Kustomization would fail on the missing
+  namespace before the bundle that creates it is even updated.
+- **Title and subtitle**: `STHINGS_PORTAL_TITLE` / `STHINGS_PORTAL_SUBTITLE`,
+  empty by default, which is the theme's text (`machinery` / `LAB PORTAL`,
+  page title `machinery portal`).
+- **clusterbook only behind the login**: `CLUSTERBOOK_ROUTE: api` leaves
+  `/api/...` and `/health` on clusterbook's own host and takes the UI off it
+  (apps/clusterbook/README.md).
+
+## Login: oidc, local or none
+
+`STHINGS_PORTAL_AUTH_MODE` picks the login. ZITADEL is needed for `oidc`
+only; the patches are the same in every mode, and the portal checks at start
+what its mode needs (sthings-portal `internal/auth`, `internal/config`) and
+exits with the variable's name in its log if something is missing.
+
+| Mode | Login | Needs | Ignored |
+|---|---|---|---|
+| `oidc` (default) | the provider's button, plus the users file as emergency access | Secret with `session-key`, `users` (at least one user: `AUTH_USERS_FILE` is set), `oidc-client-secret` (unless a public client); `STHINGS_PORTAL_OIDC_ISSUER`, `STHINGS_PORTAL_OIDC_CLIENT_ID`; the CA ConfigMap; the client registered at the provider | -- |
+| `local` | user / password from the users file | Secret with `session-key` and `users` | `AUTH_OIDC_*`, the CA ConfigMap, `oidc-client-secret` |
+| `none` | none -- **everyone who reaches the host sees every service** | nothing | the Secret, the CA ConfigMap, every `AUTH_*` |
+
+`oidc` and `local` keep the Secret below; `local` simply leaves out
+`oidc-client-secret`:
+
+```yaml
+STHINGS_PORTAL_AUTH_MODE: local
+STHINGS_PORTAL_AUTH_SECRET: my-portal-auth     # users + session-key
+```
+
+```bash
+htpasswd -nB admin > users                     # one line per user
+kubectl create secret generic my-portal-auth -n <namespace> \
+  --from-file=users=./users \
+  --from-literal=session-key="$(openssl rand -base64 48)" \
+  --dry-run=client -o yaml > my-portal-auth.yaml   # SOPS-encrypt, then commit
+```
+
+`none` needs no Secret and no CA (the volumes are optional) -- only for a
+portal on a network where every visitor may use every service behind it:
+
+```yaml
+STHINGS_PORTAL_AUTH_MODE: none
+```
+
+The rendered `AUTH_OIDC_*` keys stay in the ConfigMap in every mode (empty
+where not set); the portal reads them with `oidc` only.
+
 ## The Secret
 
-The pod reads one Secret in its namespace, `STHINGS_PORTAL_AUTH_SECRET`. It is
+The pod reads one Secret in its namespace, `STHINGS_PORTAL_AUTH_SECRET`
+(modes `oidc` and `local`; `none` reads none). It is
 **not** rendered by the component: `oidc-client-secret` exists only in the
 Terraform state that registered the client, and nothing here should hold a
 copy. Create it by hand, SOPS-encrypted, next to the cluster's other secrets.
 
 | Key | |
 |---|---|
-| `users` | REQUIRED. The emergency access, one `name:bcrypt-hash[:group,group]` per line (`htpasswd -nB <name>`). The volume mounts this key, so without it the pod does not start; with no line in it the portal refuses to start. |
-| `session-key` | REQUIRED, at least 32 bytes: `openssl rand -base64 48`. A new one ends every session. |
-| `oidc-client-secret` | The client's secret (leave it out only for a public PKCE client). |
+| `users` | REQUIRED (`oidc`, `local`). The emergency access (with `oidc`) or the only login (`local`), one `name:bcrypt-hash[:group,group]` per line (`htpasswd -nB <name>`). Mounted optional: without it, or with no line in it, the portal refuses to start (`AUTH_USERS_FILE` in its log). |
+| `session-key` | REQUIRED (`oidc`, `local`), at least 32 bytes: `openssl rand -base64 48`. A new one ends every session. Optional in the pod spec; the portal refuses to start without it. |
+| `oidc-client-secret` | `oidc`: the client's secret (leave it out only for a public PKCE client). |
 | `kiosk-token` | Optional, at least 32 bytes: read-only access for a kiosk display (`openssl rand -hex 32`). |
 
 Reloader restarts the pod when the Secret changes; the portal reads it at
@@ -125,7 +226,9 @@ start only.
 ZITADEL is served under its Gateway's wildcard certificate from the lab's
 Vault PKI, so the portal has to trust that CA (`AUTH_OIDC_CA_FILE`), or the
 login ends in "not reachable" with an `x509` error in the log. The CA file is
-read at start: a missing ConfigMap keeps the pod in ContainerCreating.
+read at start (`oidc` only): the volume is optional, so a missing ConfigMap
+leaves the file out and the portal exits with `AUTH_OIDC_CA_FILE` in its log;
+`local` and `none` do not read it.
 
 - **Default: trust-manager's `cluster-trust-bundle`** (key `trust-bundle.pem`),
   which trust-manager copies into every namespace. Enough when the bundle

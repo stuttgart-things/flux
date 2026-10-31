@@ -30,6 +30,14 @@ spec:
               containers:
                 - name: clusterbook
                   image: ghcr.io/stuttgart-things/clusterbook:${CLUSTERBOOK_VERSION:-v1.29.0}
+                  # URL prefix of the web UI behind sthings-portal, e.g.
+                  # /clusterbook (v1.29.0+). Empty or / serves it at the root.
+                  # /health and /api/v1 stay at the root either way. An env
+                  # entry, not a ConfigMap key: a change here rolls the pod,
+                  # a ConfigMap read through envFrom would not.
+                  env:
+                    - name: BASE_PATH
+                      value: "${CLUSTERBOOK_BASE_PATH:=}"
     # Override PowerDNS + DD-WRT config in ConfigMap
     - target:
         kind: ConfigMap

@@ -64,6 +64,39 @@ EOF
 | `DDWRT_USER` | *(empty)* | DD-WRT login user |
 | `DDWRT_ZONE` | *(empty)* | DD-WRT DNS zone |
 | `DDWRT_PASSWORD` | *(required if DD-WRT enabled)* | DD-WRT login password (via `substituteFrom` Secret) |
+| `CLUSTERBOOK_ROUTE` | `all` | bundle component only: what the own hostname serves, `all` or `api` (see below) |
+| `CLUSTERBOOK_BASE_PATH` | *(empty; the bundle component passes `/`)*: UI at the root | URL prefix of the web UI behind [sthings-portal](../sthings-portal/README.md), e.g. `/clusterbook` (clusterbook v1.29.0+, stuttgart-things/clusterbook#220) |
+
+## Behind sthings-portal
+
+The portal forwards `/<key>/...` unchanged to the service, so clusterbook has
+to answer under the same prefix: the portal entry
+`clusterbook=http://clusterbook-http.clusterbook.svc.cluster.local:8080` needs
+`CLUSTERBOOK_BASE_PATH: /clusterbook`. Use the Service `clusterbook-http`
+(port 8080, HTTP); `clusterbook` (port 80) is gRPC.
+
+With a prefix set:
+
+- the UI is under the prefix **on the own hostname too**:
+  `https://clusterbook.<domain>/clusterbook/` (the root `/` answers 404);
+- `/health` and the REST API `/api/v1/...` stay at the root -- the Crossplane
+  provider, `dagger -m clusterbook` and other clients need no change;
+- `BASE_PATH` is a container env entry, so changing it rolls the pod.
+
+### The own hostname: `CLUSTERBOOK_ROUTE`
+
+The bundle component picks one of `./components/route-*` for the HTTPRoute
+on `clusterbook.<domain>`:
+
+| `CLUSTERBOOK_ROUTE` | the own hostname serves |
+|---|---|
+| `all` (default) | everything: UI, REST API, `/health` |
+| `api` | `/api/...` and `/health` only -- the UI is then reachable only through sthings-portal (behind its login); everything else answers 404 |
+
+Every client (Crossplane provider-clusterbook, terraform-provider-clusterbook,
+clusterbook-operator, clusterscope, `dagger -m clusterbook`, the Backstage VM
+template) calls `/api/v1/...` only. With `api`, set `CLUSTERBOOK_BASE_PATH`
+and the portal entry too, or the UI is nowhere.
 
 ## NetworkConfig CR
 

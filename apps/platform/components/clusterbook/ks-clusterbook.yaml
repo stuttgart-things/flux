@@ -42,6 +42,11 @@ spec:
   # this component does not list never reaches the base.
   components:
     - ./components/pdns
+    # What clusterbook's own hostname serves: `all` (default: UI, API,
+    # /health, as before) or `api` (/api/... and /health only -- the UI then
+    # only through sthings-portal's login, with CLUSTERBOOK_BASE_PATH set).
+    # A component and not a substitute: the route's rules are a list.
+    - ./components/route-${CLUSTERBOOK_ROUTE:-all}
   postBuild:
     substitute:
       CLUSTERBOOK_NAMESPACE: "${CLUSTERBOOK_NAMESPACE:-clusterbook}"
@@ -68,6 +73,17 @@ spec:
       # unparsable. That has bitten the teardown path twice.
       # passthrough-override: same as PDNS_URL above -- empty is accepted silently.
       PDNS_ZONE: "${CLUSTERBOOK_PDNS_ZONE:-set-CLUSTERBOOK_PDNS_ZONE.}"
+
+      # ---- behind sthings-portal (stuttgart-things#4221) ------------------
+      # The URL prefix of the web UI, e.g. /clusterbook for a portal entry
+      # `clusterbook=http://clusterbook-http.<ns>.svc.cluster.local:8080` --
+      # the portal forwards /<key>/... unchanged, so this must equal its key.
+      # `/` (the default) serves the UI at the root, as before -- clusterbook
+      # reads "/" as no prefix. Not empty: an empty default arrives in the
+      # child's substitute map as null, which the apply rejects. Set, the UI
+      # moves under the prefix on the own hostname too; /health and /api/v1
+      # stay at the root (Crossplane provider, pipelines). clusterbook v1.29.0+.
+      CLUSTERBOOK_BASE_PATH: "${CLUSTERBOOK_BASE_PATH:-/}"
 
       # ---- HTTPRoute ----------------------------------------------------
       CLUSTERBOOK_HOSTNAME: "${CLUSTERBOOK_HOSTNAME:-clusterbook}"
