@@ -101,7 +101,9 @@ spec:
         metadata:
           name: sthings-portal
         $patch: delete
-    # Settings. AUTH_MODE is `oidc` (default), `local` or `none`; the
+    # Settings. PORTAL_TITLE / PORTAL_SUBTITLE empty: the theme's own text
+    # (homerun2: HOMERUN² / PORTAL, machinery: machinery / LAB PORTAL).
+    # AUTH_MODE is `oidc` (default), `local` or `none`; the
     # AUTH_OIDC_* keys are rendered in every mode and read only with oidc.
     # Issuer and client ID default to empty, not to a set-* placeholder:
     # required only with oidc, where the portal refuses to start without
@@ -122,6 +124,8 @@ spec:
         data:
           PORTAL_SERVICES: "${STHINGS_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"
           PORTAL_THEME: "${STHINGS_PORTAL_THEME:-homerun2}"
+          PORTAL_TITLE: "${STHINGS_PORTAL_TITLE:-}"
+          PORTAL_SUBTITLE: "${STHINGS_PORTAL_SUBTITLE:-}"
           AUTH_MODE: ${STHINGS_PORTAL_AUTH_MODE:-oidc}
           AUTH_USERS_FILE: /etc/portal/auth/users
           AUTH_SESSION_TTL: "${STHINGS_PORTAL_SESSION_TTL:-12h}"

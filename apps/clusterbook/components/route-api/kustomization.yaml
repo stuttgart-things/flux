@@ -1,0 +1,36 @@
+---
+# CLUSTERBOOK_ROUTE=api: clusterbook's own hostname serves the machine paths
+# only -- the REST API (/api/...) and /health. The UI (at / or under
+# CLUSTERBOOK_BASE_PATH) is then reachable only through sthings-portal, behind
+# its login (stuttgart-things/stuttgart-things#4221; the same idea as #4146 for
+# the homerun2 UIs). clusterbook has no login of its own.
+#
+# What the clients call (checked 2026-10 in provider-clusterbook,
+# terraform-provider-clusterbook, clusterbook-operator, clusterscope, the
+# dagger module and the Backstage VM template): /api/v1/... only. clusterbook
+# v1.29.0 keeps /api/ and /health at the root under any BASE_PATH and serves
+# no /metrics. gRPC is the Service `clusterbook` (:80), never on this route.
+# The portal reaches the UI in-cluster (clusterbook-http:8080), not here.
+#
+# PathPrefix /api matches /api and /api/... (whole path segments), not
+# /apix. Anything else on the host answers 404 from the Gateway.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: clusterbook
+    patch: |
+      - op: replace
+        path: /spec/rules
+        value:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+              - path:
+                  type: Exact
+                  value: /health
+            backendRefs:
+              - name: clusterbook-http
+                port: 8080

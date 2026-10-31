@@ -89,6 +89,8 @@ tool has to patch.
 | `STHINGS_PORTAL_VERSION` | `v0.14.0` | artifact tag = image tag (renovate) |
 | `STHINGS_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | `key=url` or `key\|Title=url`, comma-separated, in navigation order |
 | `STHINGS_PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` |
+| `STHINGS_PORTAL_TITLE` | *(empty: the theme's -- `HOMERUN²` / `machinery`)* | header text, also the page title |
+| `STHINGS_PORTAL_SUBTITLE` | *(empty: the theme's -- `PORTAL` / `LAB PORTAL`)* | the small line under the header text |
 | `STHINGS_PORTAL_AUTH_MODE` | `oidc` | `oidc`, `local` or `none` -- [Login](#login-oidc-local-or-none) |
 | `STHINGS_PORTAL_OIDC_ISSUER` | *(empty)* | REQUIRED with `oidc`, e.g. `https://zitadel.<infra domain>`; ignored otherwise |
 | `STHINGS_PORTAL_OIDC_CLIENT_ID` | *(empty)* | REQUIRED with `oidc` (not secret); ignored otherwise |
@@ -134,6 +136,7 @@ postBuild:
   substitute:
     INFRA_DOMAIN: infra.sthings-vsphere.labul.sva.de
     CLUSTERBOOK_BASE_PATH: /clusterbook          # = the portal key below
+    CLUSTERBOOK_ROUTE: api                       # own host: /api + /health only
     STHINGS_PORTAL_NAMESPACE: machinery-portal
     STHINGS_PORTAL_HOSTNAME: machinery-portal
     STHINGS_PORTAL_THEME: machinery
@@ -154,11 +157,12 @@ postBuild:
   in one go, the Namespace first. Created by this component instead, the
   Secret's apply in the cluster's Kustomization would fail on the missing
   namespace before the bundle that creates it is even updated.
-- **Title and subtitle are the theme's**: `machinery` / `LAB PORTAL` (page
-  title `machinery portal`). The portal reads `PORTAL_TITLE` and
-  `PORTAL_SUBTITLE`, but the component does not pass them: two more keys in
-  the ConfigMap patch would change every existing instance's rendering (and
-  roll its pod) for no difference in what it shows.
+- **Title and subtitle**: `STHINGS_PORTAL_TITLE` / `STHINGS_PORTAL_SUBTITLE`,
+  empty by default, which is the theme's text (`machinery` / `LAB PORTAL`,
+  page title `machinery portal`).
+- **clusterbook only behind the login**: `CLUSTERBOOK_ROUTE: api` leaves
+  `/api/...` and `/health` on clusterbook's own host and takes the UI off it
+  (apps/clusterbook/README.md).
 
 ## Login: oidc, local or none
 

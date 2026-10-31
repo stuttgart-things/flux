@@ -42,6 +42,11 @@ spec:
   # this component does not list never reaches the base.
   components:
     - ./components/pdns
+    # What clusterbook's own hostname serves: `all` (default: UI, API,
+    # /health, as before) or `api` (/api/... and /health only -- the UI then
+    # only through sthings-portal's login, with CLUSTERBOOK_BASE_PATH set).
+    # A component and not a substitute: the route's rules are a list.
+    - ./components/route-${CLUSTERBOOK_ROUTE:-all}
   postBuild:
     substitute:
       CLUSTERBOOK_NAMESPACE: "${CLUSTERBOOK_NAMESPACE:-clusterbook}"
