@@ -39,7 +39,7 @@ infra/platform/
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
-    ├── headlamp-oidc/            → ./apps/headlamp + oidc                   (instead of headlamp; OIDC login, requires cilium-gateway)
+    ├── headlamp-oidc/            → ./apps/headlamp + OIDC patch             (instead of headlamp; OIDC login, requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
     ├── velero/                   → ./infra/velero                          (requires an S3 Secret)
     ├── velero-eso/               → ./infra/velero                          (instead of velero; requires external-secrets-vault-store)
@@ -165,7 +165,7 @@ it maps -- otherwise the IdP login works and every request after it is 401.
 
 ```yaml
 HEADLAMP_OIDC_ISSUER_URL: https://zitadel.infra.example
-HEADLAMP_OIDC_CLIENT_ID: "123456789012345678"
+HEADLAMP_OIDC_CLIENT_ID: "123456789012345678"   # keep quoted (digits only)
 # ZITADEL: the project roles into the ID token
 HEADLAMP_OIDC_SCOPES: profile,email,urn:zitadel:iam:org:projects:roles
 ```
@@ -181,8 +181,12 @@ HEADLAMP_OIDC_SCOPES: profile,email,urn:zitadel:iam:org:projects:roles
 | `HEADLAMP_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | CA bundle for the issuer (`-oidc-ca-file`) |
 | `HEADLAMP_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
 
-The client secret never passes through a substitute; a missing Secret or CA
-ConfigMap keeps the pod in `ContainerCreating`.
+The variables are read by the bundle into a HelmRelease patch on the child
+(`spec.patches`), not threaded as child substitute keys: kustomize drops the
+quotes of a substitute value, and a digits-only client ID would arrive as a
+number in `postBuild.substitute` and fail the bundle's apply. The client
+secret never passes through a variable; a missing Secret or CA ConfigMap
+keeps the pod in `ContainerCreating`.
 
 ## Consumer usage
 

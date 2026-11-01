@@ -67,11 +67,11 @@ Paste the token into the Headlamp login screen.
 
 ## OIDC login (optional)
 
-The kustomize component `components/oidc` (or the `headlamp-oidc` component of
-the infra-platform bundle) switches Headlamp to OIDC login: issuer, client ID,
-scopes and callback from `HEADLAMP_OIDC_*` variables, the client secret from an
-existing Secret, the issuer's CA from a ConfigMap. Without it nothing changes.
-See `apps/headlamp/README.md` for the variables.
+The `headlamp-oidc` component of the infra-platform bundle switches Headlamp
+to OIDC login: issuer, client ID, scopes and callback from `HEADLAMP_OIDC_*`
+variables, the client secret from an existing Secret, the issuer's CA from a
+ConfigMap. Without it nothing changes. See `infra/platform/README.md` for the
+variables.
 
 ## Notes
 

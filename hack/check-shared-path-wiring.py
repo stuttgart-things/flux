@@ -113,19 +113,10 @@ MUST_MATCH = {
                "instead of token login -- the same chart, route and namespace, "
                "so a cluster switching between the two keeps its hostname and "
                "version",
-        # The OIDC client: issuer, client, scopes, callback, where the secret
-        # and the issuer's CA come from. Everything else is threaded by both.
-        "extra_allowed": {
-            "HEADLAMP_OIDC_ISSUER_URL",
-            "HEADLAMP_OIDC_CLIENT_ID",
-            "HEADLAMP_OIDC_SCOPES",
-            "HEADLAMP_OIDC_CALLBACK_URL",
-            "HEADLAMP_OIDC_CLIENT_SECRET_NAME",
-            "HEADLAMP_OIDC_CLIENT_SECRET_KEY",
-            "HEADLAMP_OIDC_CA_CONFIGMAP",
-            "HEADLAMP_OIDC_CA_KEY",
-        },
-        "extra_components_allowed": {"./components/oidc"},
+        # Nothing: the OIDC settings are a spec.patches block on the child,
+        # substituted by the bundle (client IDs can be digits only, which a
+        # substitute value cannot carry), not substitute keys.
+        "extra_allowed": set(),
     },
     "./apps/tabletennis/profiles/base": {
         "why": "tabletennis-backup is tabletennis with schmetterpause's database "

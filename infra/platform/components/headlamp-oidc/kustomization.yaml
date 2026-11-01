@@ -1,6 +1,6 @@
 ---
-# Opt-in: headlamp-oidc -- headlamp with OIDC login (apps/headlamp/components/oidc)
-# instead of token login.
+# Opt-in: headlamp-oidc -- headlamp with OIDC login instead of token login
+# (a HelmRelease patch in the child, see ks-headlamp-oidc.yaml).
 # bundle-alternative-of: headlamp
 #
 # REQUIRES ../cilium-gateway in the same spec.components list, and the CA
