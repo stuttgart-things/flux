@@ -54,6 +54,26 @@ kubectl create token headlamp -n headlamp --duration=8760h
 
 Paste the token into the headlamp login screen.
 
+## OIDC login (optional)
+
+The `headlamp-oidc` component of `infra/platform` renders this path with a
+HelmRelease patch for OIDC login (issuer, client ID, scopes and callback as
+env, the client secret from an existing Secret, the issuer's CA from a
+ConfigMap); variables in `infra/platform/README.md`. Without it nothing
+changes. The settings go through `.Values.env`, not `config.oidc.*`: chart
+0.46.0 renders `config.oidc.clientID` unquoted, which breaks digits-only
+client IDs.
+
+```bash
+kubectl -n headlamp create secret generic headlamp-oidc \
+  --from-literal=client-secret=<client secret> --dry-run=client -o yaml
+# -> SOPS-encrypt it in the cluster repository
+```
+
+Headlamp forwards the user's ID token to the kube-apiserver. The apiserver has
+to trust the issuer with the client ID as audience (structured authentication,
+`--authentication-config`) and RBAC has to bind the mapped users / groups.
+
 ## Components
 
 - **release.yaml** - HelmRelease from `https://kubernetes-sigs.github.io/headlamp/` with chart-native Gateway API HTTPRoute support

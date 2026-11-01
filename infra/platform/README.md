@@ -39,6 +39,7 @@ infra/platform/
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
+    ├── headlamp-oidc/            → ./apps/headlamp + OIDC patch             (instead of headlamp; OIDC login, requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
     ├── velero/                   → ./infra/velero                          (requires an S3 Secret)
     ├── velero-eso/               → ./infra/velero                          (instead of velero; requires external-secrets-vault-store)
@@ -154,6 +155,39 @@ Unset, it forwards `unset.invalid.` to `0.0.0.0`: visible in the Corefile and
 verified not to touch `cluster.local`, service discovery or upstream DNS, which
 live in a separate server block.
 
+### headlamp-oidc
+
+Headlamp with OIDC login instead of token login: the same child `headlamp`,
+so select it **instead of** `headlamp`. Headlamp passes the user's ID token
+straight to the kube-apiserver, so the apiserver must accept the issuer with
+the client ID as audience (`--authentication-config`) and RBAC must bind what
+it maps -- otherwise the IdP login works and every request after it is 401.
+
+```yaml
+HEADLAMP_OIDC_ISSUER_URL: https://zitadel.infra.example
+HEADLAMP_OIDC_CLIENT_ID: "123456789012345678"   # keep quoted (digits only)
+# ZITADEL: the project roles into the ID token
+HEADLAMP_OIDC_SCOPES: profile,email,urn:zitadel:iam:org:projects:roles
+```
+
+| Variable | Default | |
+|---|---|---|
+| `HEADLAMP_OIDC_ISSUER_URL` | *(required)* | as in the discovery document, no trailing slash |
+| `HEADLAMP_OIDC_CLIENT_ID` | *(required)* | also the apiserver's audience |
+| `HEADLAMP_OIDC_SCOPES` | `profile,email` | comma separated, `openid` is added by Headlamp |
+| `HEADLAMP_OIDC_CALLBACK_URL` | `https://<HEADLAMP_HOSTNAME>.<INFRA_DOMAIN>/oidc-callback` | must be a redirect URI of the client |
+| `HEADLAMP_OIDC_CLIENT_SECRET_NAME` | `headlamp-oidc` | existing Secret in the headlamp namespace (SOPS / ESO) |
+| `HEADLAMP_OIDC_CLIENT_SECRET_KEY` | `client-secret` | its key |
+| `HEADLAMP_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | CA bundle for the issuer (`-oidc-ca-file`) |
+| `HEADLAMP_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
+
+The variables are read by the bundle into a HelmRelease patch on the child
+(`spec.patches`), not threaded as child substitute keys: kustomize drops the
+quotes of a substitute value, and a digits-only client ID would arrive as a
+number in `postBuild.substitute` and fail the bundle's apply. The client
+secret never passes through a variable; a missing Secret or CA ConfigMap
+keeps the pod in `ContainerCreating`.
+
 ## Consumer usage
 
 The cluster picks its components on its **own** Kustomization. `spec.components`
@@ -250,6 +284,7 @@ the same list:
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `headlamp` | `cilium-gateway` |
+| `headlamp-oidc` | `cilium-gateway`; the CA ConfigMap (default `trust-manager`'s bundle) and the client-secret Secret |
 | `prometheus-pve-exporter` | `kube-prometheus-stack` |
 | `backup-freshness` | `trust-manager` |
 

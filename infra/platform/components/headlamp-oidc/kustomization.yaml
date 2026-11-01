@@ -1,0 +1,12 @@
+---
+# Opt-in: headlamp-oidc -- headlamp with OIDC login instead of token login
+# (a HelmRelease patch in the child, see ks-headlamp-oidc.yaml).
+# bundle-alternative-of: headlamp
+#
+# REQUIRES ../cilium-gateway in the same spec.components list, and the CA
+# ConfigMap (default: ../trust-manager's cluster-trust-bundle) plus the client
+# secret Secret in the headlamp namespace.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-headlamp-oidc.yaml
