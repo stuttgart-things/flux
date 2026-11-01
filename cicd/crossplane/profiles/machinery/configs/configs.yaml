@@ -1,6 +1,6 @@
 # GENERATED -- DO NOT EDIT.
 #
-# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.30.0, profile `machinery`.
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.31.0, profile `machinery`.
 # Regenerate: python3 hack/gen-crossplane-profile.py
 #
 # This is the same list `ManagementPlane` installs, so a cluster built by
@@ -100,6 +100,20 @@ metadata:
 spec:
   package: xpkg.crossplane.io/crossplane-contrib/provider-kubernetes:v1.4.1
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: valkiriaaquaticamendi-provider-proxmox-bpg-workspace
+  namespace: crossplane-system
+  annotations:
+    kustomize.toolkit.fluxcd.io/prune: disabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: pkg.crossplane.io/v1beta1
 kind: DeploymentRuntimeConfig
 metadata:
@@ -108,11 +122,23 @@ spec:
   deploymentTemplate:
     spec:
       selector: {}
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 2000
+            runAsGroup: 2000
+            fsGroup: 2000
           containers:
             - name: package-runtime
               env:
+                - name: HOME
+                  value: /tmp
                 - name: PROVIDER_POLL
                   value: 1h
                 - name: PROVIDER_SYNC
@@ -124,6 +150,13 @@ spec:
                 limits:
                   cpu: "2"
                   memory: 2Gi
+              volumeMounts:
+                - name: workspace
+                  mountPath: /tmp
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: valkiriaaquaticamendi-provider-proxmox-bpg-workspace
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
