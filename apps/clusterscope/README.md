@@ -14,7 +14,8 @@ apps/clusterscope/
 │   ├── vault-git-auth/     # opt-in: git-sync credentials from Vault (private repos)
 │   ├── config/             # opt-in: -config (several repos, cluster name / lab overrides)
 │   ├── git-sync-extra/     # opt-in: a second repository (/data-extra)
-│   └── blackbox-probes/    # opt-in: ScrapeConfig probing /api/targets via blackbox
+│   ├── blackbox-probes/    # opt-in: ScrapeConfig probing /api/targets via blackbox
+│   └── route-{all,api,health}/  # what the own hostname serves (CLUSTERSCOPE_ROUTE, bundle components)
 └── README.md
 ```
 
@@ -159,6 +160,41 @@ clusterscope's own probe: a route counts as reachable when it answers below
 500, including `401`/`403` behind a login and `404` on an app without a root
 page — `http_2xx` would page for those.
 
+## Behind sthings-portal
+
+clusterscope has no login of its own. Behind
+[sthings-portal](../sthings-portal/README.md) (machinery-portal,
+stuttgart-things/stuttgart-things#4231) the portal forwards `/<key>/...`
+unchanged, so clusterscope serves its dashboard under that prefix:
+`CLUSTERSCOPE_BASE_PATH: /clusterscope` with the portal entry
+`clusterscope|Clusterscope=http://clusterscope.clusterscope.svc.cluster.local:8080`.
+clusterscope v0.29.0+ (stuttgart-things/clusterscope#103); older releases
+ignore it.
+
+- `BASE_PATH` is a container env entry (`/`, the default, is no prefix), so
+  changing it rolls the pod.
+- `/health`, `/healthz`, `/readyz`, `/metrics` and `/api/...` stay at the
+  root under any prefix: the kubelet probes, `components/blackbox-probes`
+  (`/api/targets`, in-cluster through the Service) and the portal's health
+  poll are unchanged.
+
+### The own hostname: `CLUSTERSCOPE_ROUTE`
+
+The bundle components pick one of `./components/route-*` for the HTTPRoute on
+`clusterscope.<domain>`:
+
+| `CLUSTERSCOPE_ROUTE` | the own hostname serves |
+|---|---|
+| `all` (default) | everything: dashboard, API, health |
+| `api` | `/api/...`, `/health`, `/healthz`, `/readyz` -- the dashboard only through sthings-portal |
+| `health` | `/health`, `/healthz`, `/readyz` -- dashboard and API only through sthings-portal |
+
+Anything else answers 404 from the Gateway. With `api` or `health`, set
+`CLUSTERSCOPE_BASE_PATH` and the portal entry too, or the dashboard is
+nowhere. Checked 2026-11 (stuttgart-things#4231): nothing outside the cluster
+reads clusterscope's API -- the blackbox probes read `/api/targets` through
+the Service -- so a lab view behind the portal takes `health`.
+
 ## Substitution variables
 
 | Variable | Default | Description |
@@ -178,6 +214,8 @@ page — `http_2xx` would page for those.
 | `CLUSTERSCOPE_KUBECONFIG_DIR` | — | `/kubeconfigs` with `components/vault-kubeconfigs` |
 | `CLUSTERSCOPE_PROBE` | `false` | Probe every HTTPRoute URL on each refresh |
 | `CLUSTERSCOPE_REFRESH` | `60` | Live refresh interval (seconds) |
+| `CLUSTERSCOPE_BASE_PATH` | `/` (no prefix) | dashboard URL prefix behind sthings-portal, e.g. `/clusterscope` (v0.29.0+) |
+| `CLUSTERSCOPE_ROUTE` | `all` | bundle components only: what the own hostname serves, `all`, `api` or `health` |
 | `CLUSTERSCOPE_KUBECONFIG_CLUSTERS` | `^$` (none) | vault-kubeconfigs: regexp over Vault entry names |
 | `CLUSTERSCOPE_BLACKBOX_MODULE` | `http_2xx` | blackbox-probes: blackbox module for every endpoint |
 | `CLUSTERSCOPE_BLACKBOX_ADDRESS` | `blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc:9115` | blackbox-probes: exporter address |

@@ -48,10 +48,20 @@
 #
 # Reloader (infra/reloader) rolls the pod when the ConfigMap or the Secret
 # changes -- the portal reads both at start only.
+#
+# STHINGS_PORTAL_INSTANCE (default sthings-portal) names the three Flux
+# objects of this component: OCIRepository <instance>-kustomize,
+# Kustomizations <instance> and <instance>-routes. Unset, they are what they
+# always were. A second instance on the same cluster (machinery-portal next to
+# the homerun2 portal, stuttgart-things/stuttgart-things#4231) is a second
+# bundle Kustomization selecting this component with its own substitute block
+# -- another instance name, namespace and hostname; the objects INSIDE the
+# artifact keep their names and are told apart by the namespace
+# (apps/sthings-portal/README.md, "Instances").
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
-  name: sthings-portal-kustomize
+  name: ${STHINGS_PORTAL_INSTANCE:-sthings-portal}-kustomize
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
@@ -68,7 +78,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: sthings-portal
+  name: ${STHINGS_PORTAL_INSTANCE:-sthings-portal}
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
@@ -84,7 +94,7 @@ spec:
   wait: true
   sourceRef:
     kind: OCIRepository
-    name: sthings-portal-kustomize
+    name: ${STHINGS_PORTAL_INSTANCE:-sthings-portal}-kustomize
   path: ./
   # The artifact says `homerun2`; this moves every object.
   targetNamespace: ${STHINGS_PORTAL_NAMESPACE:-homerun2}

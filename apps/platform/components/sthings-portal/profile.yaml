@@ -30,6 +30,9 @@ spec:
     STHINGS_PORTAL_FAVICON_CONFIGMAP: {}
     STHINGS_PORTAL_AUTH_SECRET: {}
     STHINGS_PORTAL_SESSION_TTL: {}
+    # The Flux objects' name (default sthings-portal); set only for a second
+    # instance on one cluster, in a bundle Kustomization of its own.
+    STHINGS_PORTAL_INSTANCE: {}
     STHINGS_PORTAL_NAMESPACE: {}
     STHINGS_PORTAL_SUSPEND: {}
     STHINGS_PORTAL_VERSION: {}

@@ -8,10 +8,13 @@
 # The host is the one homerun2-portal-routes serves by default
 # (portal.<INFRA_DOMAIN>). Select one of the two portals per host, never both:
 # two routes for one host and path are a conflict the Gateway settles by age.
+#
+# Named after STHINGS_PORTAL_INSTANCE (ks-sthings-portal.yaml); the HTTPRoute
+# itself is `sthings-portal` in STHINGS_PORTAL_NAMESPACE for every instance.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: sthings-portal-routes
+  name: ${STHINGS_PORTAL_INSTANCE:-sthings-portal}-routes
   namespace: flux-system
   labels:
     app.kubernetes.io/managed-by: flux
@@ -19,7 +22,7 @@ metadata:
     kustomization.stuttgart-things.com/bundle: apps-platform
 spec:
   dependsOn:
-    - name: sthings-portal
+    - name: ${STHINGS_PORTAL_INSTANCE:-sthings-portal}
   interval: 1h
   retryInterval: 1m
   timeout: 5m
