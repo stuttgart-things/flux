@@ -54,11 +54,39 @@ kubectl create token headlamp -n headlamp --duration=8760h
 
 Paste the token into the headlamp login screen.
 
+## OIDC login (optional)
+
+`components/oidc` switches Headlamp to OIDC login. Select it with
+`spec.components: [./components/oidc]` on the Kustomization (or use the
+`headlamp-oidc` component of `infra/platform`); without it nothing changes.
+
+| Variable | Default | Description |
+|---|---|---|
+| `HEADLAMP_OIDC_ISSUER_URL` | *(required)* | Issuer URL |
+| `HEADLAMP_OIDC_CLIENT_ID` | *(required)* | Client ID (also the kube-apiserver's audience) |
+| `HEADLAMP_OIDC_SCOPES` | `profile,email` | Comma separated; `openid` is added by Headlamp |
+| `HEADLAMP_OIDC_CALLBACK_URL` | `https://${HOSTNAME}.${DOMAIN}/oidc-callback` | Redirect URI registered at the IdP |
+| `HEADLAMP_OIDC_CLIENT_SECRET_NAME` | `headlamp-oidc` | Existing Secret holding the client secret |
+| `HEADLAMP_OIDC_CLIENT_SECRET_KEY` | `client-secret` | Key in that Secret |
+| `HEADLAMP_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with the issuer's CA (trust-manager bundle) |
+| `HEADLAMP_OIDC_CA_KEY` | `trust-bundle.pem` | Key in that ConfigMap |
+
+```bash
+kubectl -n headlamp create secret generic headlamp-oidc \
+  --from-literal=client-secret=<client secret> --dry-run=client -o yaml
+# -> SOPS-encrypt it in the cluster repository
+```
+
+Headlamp forwards the user's ID token to the kube-apiserver. The apiserver has
+to trust the issuer with the client ID as audience (structured authentication,
+`--authentication-config`) and RBAC has to bind the mapped users / groups.
+
 ## Components
 
 - **release.yaml** - HelmRelease from `https://kubernetes-sigs.github.io/headlamp/` with chart-native Gateway API HTTPRoute support
 - **rbac.yaml** - ClusterRoleBinding granting `cluster-admin` to the headlamp ServiceAccount
 - **requirements.yaml** - Namespace and HelmRepository
+- **components/oidc** - optional OIDC login (client secret from an existing Secret, issuer CA from a ConfigMap)
 
 ## Claims CLI
 

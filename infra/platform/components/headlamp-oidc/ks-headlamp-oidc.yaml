@@ -1,0 +1,84 @@
+---
+# Headlamp with OIDC login (opt-in) → ./apps/headlamp + ./components/oidc
+#
+# Same child Kustomization, same name, as the headlamp component: select ONE
+# of the two. Everything the headlamp component threads is threaded here the
+# same way (check-shared-path-wiring.py), plus the OIDC client. A cluster
+# switching between the two keeps its hostname, version and namespace.
+#
+# Headlamp passes the user's ID token through to the kube-apiserver, so this
+# is only half of it: the apiserver must trust the issuer with this client ID
+# as audience (AuthenticationConfiguration, --authentication-config), and RBAC
+# must bind the users / groups it maps. Without that the login succeeds at the
+# IdP and every request after it is 401.
+#
+# The base's cluster-admin binding of Headlamp's own ServiceAccount stays as
+# it is: with OIDC, requests go out with the user's token, not the pod's.
+#
+# The client secret is NOT a substitute: it comes from an existing Secret in
+# the headlamp namespace (HEADLAMP_OIDC_CLIENT_SECRET_NAME / _KEY), applied
+# by the cluster (SOPS) or ESO. The CA defaults to trust-manager's
+# cluster-trust-bundle, which carries the lab's Vault PKI.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: headlamp
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  # Same reason as flux-web: the HelmRelease renders an HTTPRoute
+  # unconditionally, and one whose parentRef does not resolve fails quietly.
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set HEADLAMP_SUSPEND: "true" in the consumer's substitute block.
+  # STOPS RECONCILING; objects stay. To uninstall, drop the component.
+  suspend: ${HEADLAMP_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/headlamp
+  components:
+    - ./components/oidc
+  postBuild:
+    # passthrough-complete: every ${VAR} the child reads is listed here.
+    substitute:
+      HEADLAMP_NAMESPACE: "${HEADLAMP_NAMESPACE:-headlamp}"
+      # renovate: datasource=helm depName=headlamp registryUrl=https://kubernetes-sigs.github.io/headlamp
+      HEADLAMP_VERSION: "${HEADLAMP_VERSION:-0.46.0}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${HEADLAMP_HOSTNAME:-headlamp}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+
+      # ---- OIDC ----
+      # REQUIRED, both: the issuer (exactly as in its discovery document, no
+      # trailing slash) and the client ID. The apiserver's audience is the
+      # same client ID.
+      HEADLAMP_OIDC_ISSUER_URL: "${HEADLAMP_OIDC_ISSUER_URL:-https://set-HEADLAMP_OIDC_ISSUER_URL.invalid}"
+      HEADLAMP_OIDC_CLIENT_ID: "${HEADLAMP_OIDC_CLIENT_ID:-set-HEADLAMP_OIDC_CLIENT_ID}"
+      # Comma separated, Headlamp adds openid. For ZITADEL add
+      # urn:zitadel:iam:org:projects:roles so the project roles land in the
+      # ID token (claim urn:zitadel:iam:org:project:roles).
+      HEADLAMP_OIDC_SCOPES: "${HEADLAMP_OIDC_SCOPES:-profile,email}"
+      # Must be a redirect URI of the client at the IdP, character for
+      # character.
+      # passthrough-override: the child derives the same URL from its
+      # HOSTNAME / DOMAIN, which this file fills from HEADLAMP_HOSTNAME /
+      # INFRA_DOMAIN -- one default, spelled in each file's own names.
+      HEADLAMP_OIDC_CALLBACK_URL: "${HEADLAMP_OIDC_CALLBACK_URL:-https://${HEADLAMP_HOSTNAME:-headlamp}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}/oidc-callback}"
+      # The existing Secret (headlamp namespace) and key holding the client
+      # secret.
+      HEADLAMP_OIDC_CLIENT_SECRET_NAME: "${HEADLAMP_OIDC_CLIENT_SECRET_NAME:-headlamp-oidc}" # pragma: allowlist secret
+      HEADLAMP_OIDC_CLIENT_SECRET_KEY: "${HEADLAMP_OIDC_CLIENT_SECRET_KEY:-client-secret}" # pragma: allowlist secret
+      # The CA bundle Headlamp verifies the issuer with (-oidc-ca-file).
+      HEADLAMP_OIDC_CA_CONFIGMAP: "${HEADLAMP_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
+      HEADLAMP_OIDC_CA_KEY: "${HEADLAMP_OIDC_CA_KEY:-trust-bundle.pem}"

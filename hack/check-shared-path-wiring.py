@@ -108,6 +108,25 @@ MUST_MATCH = {
         # is not compared here; the render test in the PR that added it is.
         "extra_components_allowed": {"./components/external-secret"},
     },
+    "./apps/headlamp": {
+        "why": "headlamp-oidc is the headlamp component with OIDC login "
+               "instead of token login -- the same chart, route and namespace, "
+               "so a cluster switching between the two keeps its hostname and "
+               "version",
+        # The OIDC client: issuer, client, scopes, callback, where the secret
+        # and the issuer's CA come from. Everything else is threaded by both.
+        "extra_allowed": {
+            "HEADLAMP_OIDC_ISSUER_URL",
+            "HEADLAMP_OIDC_CLIENT_ID",
+            "HEADLAMP_OIDC_SCOPES",
+            "HEADLAMP_OIDC_CALLBACK_URL",
+            "HEADLAMP_OIDC_CLIENT_SECRET_NAME",
+            "HEADLAMP_OIDC_CLIENT_SECRET_KEY",
+            "HEADLAMP_OIDC_CA_CONFIGMAP",
+            "HEADLAMP_OIDC_CA_KEY",
+        },
+        "extra_components_allowed": {"./components/oidc"},
+    },
     "./apps/tabletennis/profiles/base": {
         "why": "tabletennis-backup is tabletennis with schmetterpause's database "
                "archived through the Barman Cloud plugin -- the apps, their "
