@@ -288,6 +288,21 @@ profile binds cluster-admin to the whole `system:serviceaccounts:` group in
 `configs/preconditions.yaml`, and doing both would be one real grant and a
 handful of decorative ones.
 
+A provider the catalog gives a `workspace` (catalog 0.31.0+: proxmox-bpg) also
+gets a `PersistentVolumeClaim` in `crossplane-system`, mounted at `/tmp` by that
+same `DeploymentRuntimeConfig`, with the full pod `securityContext` (`fsGroup`
+plus Crossplane's own `runAsNonRoot`/`runAsUser`/`runAsGroup` 2000, because a
+template securityContext replaces the default instead of merging) and a
+RollingUpdate with `maxSurge: 0`. upjet keeps one terraform workspace per
+managed resource under `/tmp`; on the container's writable layer a restart
+during a delete drops the finalizer without destroying the VM
+(stuttgart-things#4210). The claim carries
+`kustomize.toolkit.fluxcd.io/prune: disabled`: it is the only copy of that
+state, so neither a catalog change nor a teardown of `crossplane-configs` may
+delete it. To preview an unreleased catalog:
+`python3 hack/gen-crossplane-profile.py --catalog-path <kcl>/crossplane/xplane-crossplane-catalog`
+(the banner then names the path, so a committed preview fails `--check`).
+
 `upbound-provider-vault` is the heavy provider that deliberately gets **no**
 `env`/`resources` and runs on `runtimeConfigRef: default` (#522). Measured
 after the seeds moved their Vault auth to it (stuttgart-things#3063, #3085),
