@@ -10,7 +10,7 @@ spec:
   # (components/config) needs v0.24.0.
   url: oci://ghcr.io/stuttgart-things/clusterscope-kustomize
   ref:
-    tag: ${CLUSTERSCOPE_VERSION:-v0.28.0}
+    tag: ${CLUSTERSCOPE_VERSION:-v0.29.0}
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -62,6 +62,16 @@ spec:
                     - '-kubeconfig-dir=${CLUSTERSCOPE_KUBECONFIG_DIR:-}'
                     - '-probe=${CLUSTERSCOPE_PROBE:-false}'
                     - '-refresh=${CLUSTERSCOPE_REFRESH:-60}'
+                  # The dashboard's URL prefix behind sthings-portal, e.g.
+                  # /clusterscope (= the portal key). An env entry and not a
+                  # -base-path flag: clusterscope reads BASE_PATH since
+                  # v0.29.0, and an older binary ignores the variable where it
+                  # would exit on an unknown flag. `/` (the default) is no
+                  # prefix. /health, /healthz, /readyz, /metrics and /api/...
+                  # stay at the root under any prefix (probes, Prometheus SD).
+                  env:
+                    - name: BASE_PATH
+                      value: '${CLUSTERSCOPE_BASE_PATH:-/}'
                   # The base limits CPU to 500m; the live refresh fans out over
                   # all clusters in a burst and was throttled in ~45% of the
                   # CFS periods (CPUThrottlingHigh) at ~2% average use.

@@ -1,0 +1,10 @@
+---
+# CLUSTERSCOPE_ROUTE=all (the default): the HTTPRoute on clusterscope's own
+# hostname serves everything -- dashboard, API, health -- as it always has.
+# Nothing to change; this component exists so the bundle components can pick
+# components/route-${CLUSTERSCOPE_ROUTE} without a special case.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `resources: []`: kustomize refuses a kustomization.yaml without a single
+# field ("kustomization.yaml is empty").
+resources: []

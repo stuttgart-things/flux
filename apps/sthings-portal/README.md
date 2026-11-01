@@ -12,9 +12,9 @@ second the per-cluster **machinery-portal** for the lab services
 
 ```
 apps/platform/components/sthings-portal/   everything Flux-specific
-├── ks-sthings-portal.yaml          OCIRepository sthings-portal-kustomize
-│                                   + Kustomization sthings-portal (patches)
-├── ks-sthings-portal-routes.yaml   Kustomization sthings-portal-routes → ./route
+├── ks-sthings-portal.yaml          OCIRepository <instance>-kustomize
+│                                   + Kustomization <instance> (patches)
+├── ks-sthings-portal-routes.yaml   Kustomization <instance>-routes → ./route
 └── profile.yaml                    AppProfile
 apps/sthings-portal/
 ├── README.md                       this file
@@ -85,6 +85,7 @@ tool has to patch.
 |---|---|---|
 | `INFRA_DOMAIN` | -- | REQUIRED: host is `${STHINGS_PORTAL_HOSTNAME}.${INFRA_DOMAIN}` |
 | `STHINGS_PORTAL_HOSTNAME` | `portal` | the same default host as homerun2-portal -- select one of the two |
+| `STHINGS_PORTAL_INSTANCE` | `sthings-portal` | name of the Flux objects (`<instance>-kustomize`, `<instance>`, `<instance>-routes`); set only for a second instance on one cluster (see [Instances](#instances)) |
 | `STHINGS_PORTAL_NAMESPACE` | `homerun2` | must exist; not created here (see [Instances](#instances)) |
 | `STHINGS_PORTAL_VERSION` | `v0.14.0` | artifact tag = image tag (renovate) |
 | `STHINGS_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | `key=url` or `key\|Title=url`, comma-separated, in navigation order |
@@ -114,9 +115,44 @@ the post-logout URI `.../auth/login`. Register exactly those at the provider.
 ## Instances
 
 One component, two kinds of instance -- the difference is variables only, the
-patches are the same. One instance per cluster: the object names
-(`sthings-portal`, `sthings-portal-routes`, Deployment `sthings-portal`, ...)
-are fixed.
+patches are the same. The objects inside the artifact (Deployment, Service,
+ConfigMap, HTTPRoute `sthings-portal`, ...) keep their names and are told
+apart by `STHINGS_PORTAL_NAMESPACE`; the Flux objects in `flux-system` are
+named after `STHINGS_PORTAL_INSTANCE` (default `sthings-portal`).
+
+**Two instances on one cluster** (platform-sthings: the homerun2 portal and
+machinery-portal, stuttgart-things/stuttgart-things#4231): a bundle can select
+a component once, with one substitute block. The second instance is a second
+bundle Kustomization of its own -- same source, path `./apps/platform/root`,
+`components: [../components/sthings-portal]` -- with its own
+`STHINGS_PORTAL_INSTANCE`, namespace and hostname:
+
+```yaml
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: apps-machinery-portal
+  namespace: flux-system
+spec:
+  sourceRef:
+    kind: GitRepository
+    name: flux-platform
+  path: ./apps/platform/root
+  components:
+    - ../components/sthings-portal
+  postBuild:
+    substitute:
+      APPS_SOURCE: flux-platform
+      INFRA_DOMAIN: platform.sthings-vsphere.labul.sva.de
+      STHINGS_PORTAL_INSTANCE: machinery-portal   # Flux objects machinery-portal-kustomize, machinery-portal, machinery-portal-routes
+      STHINGS_PORTAL_NAMESPACE: machinery-portal
+      STHINGS_PORTAL_HOSTNAME: machinery-portal
+      # ... as below
+```
+
+The first instance keeps the default names; its bundle needs no change.
+Distinct per instance: `STHINGS_PORTAL_INSTANCE`, `STHINGS_PORTAL_NAMESPACE`
+and `STHINGS_PORTAL_HOSTNAME` (and with it the OIDC client).
 
 | | homerun2 portal (platform-sthings) | machinery-portal (infra clusters) |
 |---|---|---|

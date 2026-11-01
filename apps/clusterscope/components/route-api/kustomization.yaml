@@ -1,0 +1,40 @@
+---
+# CLUSTERSCOPE_ROUTE=api: clusterscope's own hostname serves the machine paths
+# only -- /api/... and the health endpoints. The dashboard (at / or under
+# CLUSTERSCOPE_BASE_PATH) is then reachable only through sthings-portal,
+# behind its login (stuttgart-things/stuttgart-things#4231; the same idea as
+# CLUSTERBOOK_ROUTE=api). clusterscope has no login of its own.
+#
+# clusterscope v0.29.0+ keeps /api/, /health, /healthz and /readyz at the root
+# under any BASE_PATH (v0.28.0 has no /health). /metrics is left off: a
+# scrape belongs on the Service, not on a public host. The portal reaches the
+# dashboard in-cluster (clusterscope:8080), not here.
+#
+# PathPrefix /api matches /api and /api/... (whole path segments), not
+# /apix. Anything else on the host answers 404 from the Gateway.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: clusterscope
+    patch: |
+      - op: replace
+        path: /spec/rules
+        value:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+              - path:
+                  type: Exact
+                  value: /health
+              - path:
+                  type: Exact
+                  value: /healthz
+              - path:
+                  type: Exact
+                  value: /readyz
+            backendRefs:
+              - name: clusterscope
+                port: 8080
