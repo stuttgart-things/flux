@@ -188,6 +188,19 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: AUTH_ENVIRONMENT
+        # Guest sign-in (image >= v1.22.0, sthings-backstage#202). "false" drops
+        # the guest auth backend module and the guest button; set it in every
+        # instance reachable by more than its operators -- guest counts as a
+        # developer and can run developer templates without a login. Every
+        # person who signs in then needs a User entity in BACKSTAGE_CATALOG_ORG.
+        #
+        # PASS IT WITH ITS QUOTES: BACKSTAGE_AUTH_GUEST_ENABLED: '"false"'. An
+        # env value must be a string, and kustomize strips every kind of quote
+        # around ${...} before envsubst runs, so a bare false would land here as
+        # a bool and fail the Deployment. The platform component adds the quotes
+        # itself; a cluster that uses this base directly writes them.
+        - name: AUTH_GUEST_ENABLED
+          value: ${BACKSTAGE_AUTH_GUEST_ENABLED:-"true"}
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:

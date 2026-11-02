@@ -309,6 +309,7 @@ spec:
 | `DOMAIN` | *(required)* | Cluster base domain (Backstage will be at `backstage.<DOMAIN>`) |
 | `GATEWAY_NAME` | *(required)* | Name of the existing Gateway API Gateway resource |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |
+| `BACKSTAGE_AUTH_GUEST_ENABLED` | `true` | Guest sign-in (image >= `v1.22.0`). Turn it off in production: `'"false"'` **with the inner quotes** when this base is used directly (the env value has to stay a string through kustomize), plain `"false"` through the platform bundle. Every person who signs in then needs a User entity in the org (`BACKSTAGE_CATALOG_ORG`) |
 | `BACKSTAGE_RAG_AI_ENABLED` | `false` | Turn on Roadie RAG-AI ("Ask AI", image >= `v1.9.0`), see [RAG-AI](#optional-rag-ai) |
 | `BACKSTAGE_RAG_PG_HOST` | `rag-postgres-rw` | RAG database service (apps/backstage-rag-postgres) |
 | `BACKSTAGE_RAG_PG_PORT` | `5432` | RAG database port |

@@ -108,6 +108,16 @@ spec:
       # so this decides who can sign in, not just what is listed.
       BACKSTAGE_CATALOG_ORG: "${BACKSTAGE_CATALOG_ORG:-sthings-dev}"
 
+      # Guest sign-in (image >= v1.22.0). On by default, as in the image; a
+      # production cluster sets BACKSTAGE_AUTH_GUEST_ENABLED: "false" -- and
+      # only after every person who signs in has a User entity in
+      # BACKSTAGE_CATALOG_ORG, or they are locked out.
+      # passthrough-override: passed WITH its quotes, like
+      # BACKSTAGE_RAG_AI_ENABLED below. The base sets a container env var from
+      # it, and an env value must be a string: a bare true/false would be a bool
+      # both in this postBuild.substitute and in the Deployment.
+      BACKSTAGE_AUTH_GUEST_ENABLED: '"${BACKSTAGE_AUTH_GUEST_ENABLED:-true}"'
+
       # ---- RAG-AI (optional, needs backstage-rag-postgres) ---------------
       # passthrough-override: the switch is passed WITH its quotes. A bare
       # `true`/`false` is what kustomize leaves after stripping the quotes of
