@@ -50,6 +50,8 @@ EOF
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
 | `DOMAIN` | *(required)* | Domain suffix for HTTPRoute hostname |
+| `MACHINERY_BASE_PATH` | `/` (no prefix) | Dashboard URL prefix behind sthings-portal, e.g. `/machinery` (v1.16.0+). `/` is no prefix; the env entry is always set |
+| `MACHINERY_ROUTE` | `all` | Bundle components only: what the own hostname serves, `all` or `api` (`./httproute/components/route-*`) |
 
 Both `ghcr.io/stuttgart-things/machinery` and `ghcr.io/stuttgart-things/machinery-kustomize` publish `v`-prefixed tags, so one variable serves both — but only in that form. A bare `1.13.4` leaves the `OCIRepository` unresolvable, and the resulting error does not mention the version, so the app simply never deploys.
 
@@ -110,9 +112,56 @@ commit.** That is the point of the two files being neighbours.
 
 | Endpoint | Description |
 |---|---|
-| `https://<hostname>.<domain>/` | HTMX dashboard |
+| `https://<hostname>.<domain>/` | HTMX dashboard (under `MACHINERY_BASE_PATH` when set; not on this host with `MACHINERY_ROUTE: api`) |
+| `https://<hostname>.<domain>/api/v1/resources` | JSON API (Backstage's claim picker), always at the root |
+| `https://<hostname>.<domain>/health` | Health, always at the root |
 | `machinery.<namespace>.svc:50051` | gRPC API, in-cluster, plaintext |
 | `<grpc-hostname>.<domain>:443` | gRPC API through the Gateway, TLS — only with the `machinery-grpcroute` component |
+
+## Behind sthings-portal
+
+The dashboard has no login of its own. Behind
+[sthings-portal](../../apps/sthings-portal/README.md) (machinery-portal,
+stuttgart-things/stuttgart-things#4262) the portal forwards `/<key>/...`
+unchanged, so machinery serves its dashboard under that prefix:
+`MACHINERY_BASE_PATH: /machinery` with the portal entry
+`machinery|Machinery=http://machinery.machinery.svc.cluster.local:8080`.
+machinery v1.16.0+ (stuttgart-things/machinery#111); older releases ignore it.
+
+- `BASE_PATH` is a container env entry, so changing it rolls the pod.
+- **The env entry is always there**, `BASE_PATH=/` by default. machinery
+  trims the trailing slash and reads `/` as no prefix, so an unset cluster
+  behaves as before -- but its Deployment gained the entry and rolled once
+  when this came in (stuttgart-things/flux#945). The value must start with
+  `/` (machinery refuses to start otherwise).
+- `/health` and `GET /api/v1/resources` stay at the root under any prefix
+  (machinery `web.go`, `handler()`): the portal's health poll and Backstage
+  are unchanged. With the portal's `X-Forwarded-Prefix` the dashboard shows a
+  compact header.
+
+### The own hostname: `MACHINERY_ROUTE`
+
+The bundle components (`machinery`, `machinery-auth`, `machinery-argocd`)
+pick one of [`./httproute/components/route-*`](httproute/components) for the
+HTTPRoute on `machinery.<domain>`:
+
+| `MACHINERY_ROUTE` | the own hostname serves |
+|---|---|
+| `all` (default) | everything: dashboard, JSON API, health |
+| `api` | `/api/...` and `/health` -- the dashboard only through sthings-portal |
+
+Anything else answers 404 from the Gateway. With `api`, set
+`MACHINERY_BASE_PATH` and the portal entry too, or the dashboard is nowhere.
+There is no `health`-only option on purpose: Backstage's MachineryClaimPicker
+reads `https://machinery.<domain>/api/v1/resources` (`BACKSTAGE_MACHINERY_URL`)
+from other clusters, so the API stays on this host. The GRPCRoute
+(`machinery-grpcroute`, its own hostname) is not affected by either variable.
+
+```yaml
+# cluster's cicd/platform.yaml, postBuild.substitute
+MACHINERY_BASE_PATH: /machinery     # = the portal key
+MACHINERY_ROUTE: api                # own host: /api + /health only
+```
 
 ## gRPC from another cluster
 

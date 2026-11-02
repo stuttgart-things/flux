@@ -1,0 +1,47 @@
+---
+# CLAIM_MACHINERY_API_ROUTE=api: claim-machinery-api's own hostname serves the
+# machine paths only -- the REST API (/api/...), /health, /version and the
+# OpenAPI document (/openapi, /openapi.yaml). The browser pages (/ui/...,
+# /docs) are then reachable only through sthings-portal, behind its login
+# (stuttgart-things/flux#945; the same idea as CLUSTERBOOK_ROUTE=api).
+# claim-machinery-api has no login of its own.
+#
+# The API has to stay on this host: the claims CLI and Backstage call
+# /api/v1/claim-templates... from outside the cluster. claim-machinery-api
+# v0.23.0+ keeps /health, /version, /openapi(.yaml) and /api/v1/claim-templates*
+# at the root under any BASE_PATH (internal/api/server.go registerRoutes). `/`
+# itself (a JSON service summary) is left off: it is a page, not something a
+# client reads. The portal reaches the UI in-cluster
+# (claim-machinery-api.<ns>.svc:8080), not here.
+#
+# PathPrefix /api matches /api and /api/... (whole path segments), not
+# /apix. Anything else on the host answers 404 from the Gateway.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: claim-machinery-api
+    patch: |
+      - op: replace
+        path: /spec/rules
+        value:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+              - path:
+                  type: Exact
+                  value: /health
+              - path:
+                  type: Exact
+                  value: /version
+              - path:
+                  type: Exact
+                  value: /openapi
+              - path:
+                  type: Exact
+                  value: /openapi.yaml
+            backendRefs:
+              - name: claim-machinery-api
+                port: 8080

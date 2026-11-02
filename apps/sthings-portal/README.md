@@ -199,6 +199,11 @@ postBuild:
 - **clusterbook only behind the login**: `CLUSTERBOOK_ROUTE: api` leaves
   `/api/...` and `/health` on clusterbook's own host and takes the UI off it
   (apps/clusterbook/README.md).
+- **machinery and claim-machinery-api** the same way:
+  `MACHINERY_BASE_PATH` / `MACHINERY_ROUTE: api` (cicd/machinery/README.md)
+  and `CLAIM_MACHINERY_API_BASE_PATH` / `CLAIM_MACHINERY_API_ROUTE: api`
+  (apps/claim-machinery-api/README.md). Both keep their API on the own host,
+  which Backstage and the claims CLI read from other clusters.
 
 ## Login: oidc, local or none
 

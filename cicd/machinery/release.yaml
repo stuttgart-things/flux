@@ -73,6 +73,34 @@ spec:
                     # watch-config.yaml.
                     name: machinery-watch-config
                     optional: true
+    # BASE_PATH behind sthings-portal (stuttgart-things/flux#945): the
+    # dashboard's URL prefix, e.g. /machinery (= the portal key; the portal
+    # forwards /<key>/... unchanged). machinery v1.16.0+; /health and
+    # GET /api/v1/resources stay at the root under any prefix (Backstage's
+    # claim picker, the portal's health poll).
+    #
+    # An env entry, not a key in the envFrom ConfigMap: a change here rolls
+    # the pod. ALWAYS PRESENT: `/` (the default) is no prefix -- machinery
+    # trims the trailing slash and reads "" as the root -- so a cluster without
+    # MACHINERY_BASE_PATH behaves as before, but its Deployment gained this
+    # entry and rolled once when it came in. The value must start with `/`;
+    # machinery refuses to start otherwise.
+    - target:
+        kind: Deployment
+        name: machinery
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery
+                  env:
+                    - name: BASE_PATH
+                      value: "${MACHINERY_BASE_PATH:-/}"
     # Add HTTP port to deployment
     - target:
         kind: Deployment

@@ -60,6 +60,18 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
       MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.17.0}"
 
+      # ---- behind sthings-portal (stuttgart-things/flux#945) ---------------
+      # The dashboard's URL prefix, e.g. /machinery for a portal entry
+      # `machinery|Machinery=http://machinery.<ns>.svc.cluster.local:8080` --
+      # the portal forwards /<key>/... unchanged, so this must equal its key.
+      # `/` (the default) is no prefix -- machinery reads it as the root.
+      # The env entry is always set (cicd/machinery/release.yaml), so an
+      # existing cluster rolls the pod once when this comes in. Not empty: an empty default arrives in the child's substitute
+      # map as null, which the apply rejects. Set, the dashboard moves under
+      # the prefix on the own hostname too; /health and GET /api/v1/resources
+      # stay at the root. machinery v1.16.0+.
+      MACHINERY_BASE_PATH: "${MACHINERY_BASE_PATH:-/}"
+
       # ---- gRPC auth ----
       # The config.json member that turns the check on; tokenFile is where
       # ./auth mounts the Secret. Leading space and trailing comma because it
@@ -95,6 +107,14 @@ spec:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
   path: ./cicd/machinery/httproute
+  components:
+    # What machinery's own hostname serves: `all` (default: dashboard, JSON
+    # API, /health, as before) or `api` (/api/... and /health only -- the
+    # dashboard then only through sthings-portal's login, with
+    # MACHINERY_BASE_PATH set). The API stays public either way: Backstage
+    # reads /api/v1/resources from other clusters. A component and not a
+    # substitute: the route's rules are a list.
+    - ./components/route-${MACHINERY_ROUTE:-all}
   postBuild:
     substitute:
       MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"

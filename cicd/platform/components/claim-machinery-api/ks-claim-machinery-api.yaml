@@ -48,12 +48,34 @@ spec:
     kind: GitRepository
     name: ${APPS_SOURCE:-flux-apps}
   path: ./apps/claim-machinery-api
+  components:
+    # What claim-machinery-api's own hostname serves: `all` (default: API,
+    # docs, OpenAPI, /ui/, /health, as before) or `api` (/api/..., /health,
+    # /version, /openapi(.yaml) only -- the UI then only through
+    # sthings-portal's login, with CLAIM_MACHINERY_API_BASE_PATH set). The
+    # API stays public either way: the claims CLI and Backstage call it from
+    # outside. A component and not a substitute: the route's rules are a list.
+    - ./components/route-${CLAIM_MACHINERY_API_ROUTE:-all}
   postBuild:
     substitute:
       CLAIM_MACHINERY_API_NAMESPACE: "${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/claim-machinery-api
       CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.24.0}"
       FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
+
+      # ---- behind sthings-portal (stuttgart-things/flux#945) ---------------
+      # The prefix of UI, docs and API, e.g. /claims for a portal entry
+      # `claims|Claims=http://claim-machinery-api.<ns>.svc.cluster.local:8080`
+      # -- the portal forwards /<key>/... unchanged, so this must equal its
+      # key. `/` (the default) is no prefix -- the service reads it as the
+      # root. The env entry is always set (apps/claim-machinery-api/
+      # release.yaml), so an existing cluster rolls the pod once when this
+      # comes in. Not empty: an empty
+      # default arrives in the child's substitute map as null, which the apply
+      # rejects. Set, the UI moves under the prefix on the own hostname too;
+      # /health, /version, /openapi(.yaml) and /api/v1/claim-templates* stay
+      # at the root. claim-machinery-api v0.23.0+.
+      CLAIM_MACHINERY_API_BASE_PATH: "${CLAIM_MACHINERY_API_BASE_PATH:-/}"
 
       # ---- the claim profile --------------------------------------------
       # See the note above: this is a URL the pod fetches, not a file in the
