@@ -117,6 +117,12 @@ spec:
       # it, and an env value must be a string: a bare true/false would be a bool
       # both in this postBuild.substitute and in the Deployment.
       BACKSTAGE_AUTH_GUEST_ENABLED: '"${BACKSTAGE_AUTH_GUEST_ENABLED:-true}"'
+      # Zitadel sign-in (image >= v1.23.0). Off by default. Needs
+      # BACKSTAGE_ZITADEL_ISSUER/_CLIENT_ID/_CLIENT_SECRET (and optionally
+      # _PROJECT_ID) in the Secret below.
+      # passthrough-override: passed WITH its quotes, like
+      # BACKSTAGE_AUTH_GUEST_ENABLED above.
+      BACKSTAGE_AUTH_OIDC_ENABLED: '"${BACKSTAGE_AUTH_OIDC_ENABLED:-false}"'
 
       # ---- RAG-AI (optional, needs backstage-rag-postgres) ---------------
       # passthrough-override: the switch is passed WITH its quotes. A bare
@@ -154,7 +160,9 @@ spec:
       # BACKSTAGE_GITHUB_CLIENT_SECRET, BACKSTAGE_BACKEND_SECRET,
       # BACKSTAGE_POSTGRESQL_PASSWORD, BACKSTAGE_EXTERNAL_ACCESS_TOKEN
       # substituteFrom-optional-keys: BACKSTAGE_LLM_API_KEY,
-      # BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID, BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY
+      # BACKSTAGE_TECHDOCS_S3_ACCESS_KEY_ID, BACKSTAGE_TECHDOCS_S3_SECRET_ACCESS_KEY,
+      # BACKSTAGE_ZITADEL_ISSUER, BACKSTAGE_ZITADEL_CLIENT_ID,
+      # BACKSTAGE_ZITADEL_CLIENT_SECRET, BACKSTAGE_ZITADEL_PROJECT_ID
       #
       # optional: false guards the SOURCE, not the KEYS. Flux fails this
       # Kustomization when the Secret is absent -- and substitutes an empty

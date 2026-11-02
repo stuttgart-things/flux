@@ -201,6 +201,39 @@ spec:
         # itself; a cluster that uses this base directly writes them.
         - name: AUTH_GUEST_ENABLED
           value: ${BACKSTAGE_AUTH_GUEST_ENABLED:-"true"}
+        # Zitadel sign-in (image >= v1.23.0, sthings-backstage#203). "true" loads
+        # the OIDC module with the zitadelProjectRoles resolver; the provider
+        # block is in backstage-app-config (pre-release.yaml). Same quoting rule
+        # as AUTH_GUEST_ENABLED: '"true"' directly, "true" through the bundle.
+        # Turn it on only with BACKSTAGE_ZITADEL_* in the substitution Secret.
+        - name: AUTH_OIDC_ENABLED
+          value: ${BACKSTAGE_AUTH_OIDC_ENABLED:-"false"}
+        # optional: the keys are always in backstage-secrets (empty without
+        # BACKSTAGE_ZITADEL_*), optional only guards older Secrets.
+        - name: ZITADEL_ISSUER
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: ZITADEL_ISSUER
+              optional: true
+        - name: ZITADEL_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: ZITADEL_CLIENT_ID
+              optional: true
+        - name: ZITADEL_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: ZITADEL_CLIENT_SECRET
+              optional: true
+        - name: ZITADEL_PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: backstage-secrets
+              key: ZITADEL_PROJECT_ID
+              optional: true
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:

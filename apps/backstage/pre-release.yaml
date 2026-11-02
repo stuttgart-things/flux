@@ -139,6 +139,28 @@ spec:
                   signIn:
                     resolvers:
                       - resolver: usernameMatchingUserEntityName
+              # Zitadel (sthings-backstage#203, docs/zitadel.md). Read only
+              # with AUTH_OIDC_ENABLED=true (release.yaml); without it no
+              # module registers the provider and this block is inert, so the
+              # empty ZITADEL_* of a cluster without Zitadel do no harm. The
+              # key matches auth.environment above. The Zitadel project roles
+              # decide the group: backstage-platform -> platform-team,
+              # backstage-developer -> guests, none -> refused.
+              oidc:
+                development:
+                  metadataUrl: $${ZITADEL_ISSUER}
+                  clientId: $${ZITADEL_CLIENT_ID}
+                  clientSecret: $${ZITADEL_CLIENT_SECRET}
+                  prompt: auto
+                  signIn:
+                    resolvers:
+                      - resolver: zitadelProjectRoles
+                        # Only this project's roles count; empty reads the
+                        # roles of the client's own project.
+                        projectId: "$${ZITADEL_PROJECT_ID:-}"
+                        # Zitadel users have no User entity: the token is
+                        # user:default/<preferred_username> plus the role group.
+                        dangerouslyAllowSignInWithoutUserInCatalog: true
           scaffolder: {}
           claimMachinery:
             apiUrl: $${CLAIM_MACHINERY_API_URL:-https://claim-api.example.com}
@@ -227,6 +249,10 @@ spec:
           ZITADEL_ISSUER: ${BACKSTAGE_ZITADEL_ISSUER:-}
           ZITADEL_CLIENT_ID: ${BACKSTAGE_ZITADEL_CLIENT_ID:-}
           ZITADEL_CLIENT_SECRET: ${BACKSTAGE_ZITADEL_CLIENT_SECRET:-}
+          # Not a secret, but set per instance next to the client ID: the
+          # Zitadel project of the Backstage clients (zitadel-backstage TF
+          # module output project_id).
+          ZITADEL_PROJECT_ID: ${BACKSTAGE_ZITADEL_PROJECT_ID:-}
           # RAG-AI chat + embeddings key. Empty default: RAG-AI stays off
           # (or reports 503) without it, the rest of Backstage is unaffected.
           LLM_API_KEY: "${BACKSTAGE_LLM_API_KEY:-}"

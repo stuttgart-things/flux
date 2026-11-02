@@ -310,6 +310,7 @@ spec:
 | `GATEWAY_NAME` | *(required)* | Name of the existing Gateway API Gateway resource |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |
 | `BACKSTAGE_AUTH_GUEST_ENABLED` | `true` | Guest sign-in (image >= `v1.22.0`). Turn it off in production: `'"false"'` **with the inner quotes** when this base is used directly (the env value has to stay a string through kustomize), plain `"false"` through the platform bundle. Every person who signs in then needs a User entity in the org (`BACKSTAGE_CATALOG_ORG`) |
+| `BACKSTAGE_AUTH_OIDC_ENABLED` | `false` | Zitadel sign-in (image >= `v1.23.0`, sthings-backstage `docs/zitadel.md`): loads the OIDC provider with the `zitadelProjectRoles` resolver and shows the Zitadel button. Quoted like `BACKSTAGE_AUTH_GUEST_ENABLED`. Needs `BACKSTAGE_ZITADEL_ISSUER`, `BACKSTAGE_ZITADEL_CLIENT_ID`, `BACKSTAGE_ZITADEL_CLIENT_SECRET` and optionally `BACKSTAGE_ZITADEL_PROJECT_ID` in the substitution Secret (Terraform module `zitadel-backstage` in stuttgart-things), and Backstage must trust the CA of the Zitadel certificate (`NODE_EXTRA_CA_CERTS`) |
 | `BACKSTAGE_RAG_AI_ENABLED` | `false` | Turn on Roadie RAG-AI ("Ask AI", image >= `v1.9.0`), see [RAG-AI](#optional-rag-ai) |
 | `BACKSTAGE_RAG_PG_HOST` | `rag-postgres-rw` | RAG database service (apps/backstage-rag-postgres) |
 | `BACKSTAGE_RAG_PG_PORT` | `5432` | RAG database port |
