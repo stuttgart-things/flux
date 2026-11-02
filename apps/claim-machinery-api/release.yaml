@@ -131,21 +131,14 @@ spec:
     # poll). An env entry and not a key in the envFrom ConfigMap: a change
     # here rolls the pod even where Reloader does not run.
     #
-    # ONLY WHEN SET, so a cluster without CLAIM_MACHINERY_API_BASE_PATH keeps
-    # its Deployment byte for byte and the pod does not roll. A substitution
-    # cannot add or drop a list entry, so the patch is always here and its
-    # TARGET is the switch: kustomize reads a target name as an anchored
-    # regex, and `${CLAIM_MACHINERY_API_BASE_PATH:1:1}` is the character after
-    # the leading slash --
-    #
-    #   unset, or `/`  ->  claim-machinery-api{0}   "claim-machinery-ap": no-op
-    #   /claims        ->  claim-machinery-apic{0}  "claim-machinery-api": applies
-    #
-    # A target that matches nothing is no error. The value must start with
-    # `/` -- claim-machinery-api refuses to start otherwise.
+    # ALWAYS PRESENT: `/` (the default) is no prefix -- claim-machinery-api
+    # trims the trailing slash and reads "" as the root -- so a cluster without
+    # CLAIM_MACHINERY_API_BASE_PATH behaves as before, but its Deployment
+    # gained this entry and rolled once when it came in. The value must start
+    # with `/`; claim-machinery-api refuses to start otherwise.
     - target:
         kind: Deployment
-        name: claim-machinery-api${CLAIM_MACHINERY_API_BASE_PATH:1:1}{0}
+        name: claim-machinery-api
       patch: |
         apiVersion: apps/v1
         kind: Deployment

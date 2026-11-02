@@ -67,9 +67,10 @@ spec:
       # The prefix of UI, docs and API, e.g. /claims for a portal entry
       # `claims|Claims=http://claim-machinery-api.<ns>.svc.cluster.local:8080`
       # -- the portal forwards /<key>/... unchanged, so this must equal its
-      # key. `/` (the default) is no prefix, and
-      # apps/claim-machinery-api/release.yaml then adds no env entry at all:
-      # the Deployment stays byte for byte as before. Not empty: an empty
+      # key. `/` (the default) is no prefix -- the service reads it as the
+      # root. The env entry is always set (apps/claim-machinery-api/
+      # release.yaml), so an existing cluster rolls the pod once when this
+      # comes in. Not empty: an empty
       # default arrives in the child's substitute map as null, which the apply
       # rejects. Set, the UI moves under the prefix on the own hostname too;
       # /health, /version, /openapi(.yaml) and /api/v1/claim-templates* stay

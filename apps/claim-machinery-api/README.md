@@ -23,7 +23,7 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | `CLAIM_MACHINERY_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | no | ConfigMap name created by trust-manager containing CA bundle |
 | `CLAIM_MACHINERY_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | no | Key within the trust bundle ConfigMap |
 | `CLAIM_MACHINERY_SSL_CERT_DIR` | `/etc/ssl/custom` | no | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
-| `CLAIM_MACHINERY_API_BASE_PATH` | `/` (no prefix) | no | Prefix of UI, docs and API behind sthings-portal, e.g. `/claims` (v0.23.0+). Unset or `/`: no env entry at all, the Deployment is unchanged |
+| `CLAIM_MACHINERY_API_BASE_PATH` | `/` (no prefix) | no | Prefix of UI, docs and API behind sthings-portal, e.g. `/claims` (v0.23.0+). `/` is no prefix; the env entry is always set |
 | `CLAIM_MACHINERY_API_ROUTE` | `all` | no | Bundle component only: what the own hostname serves, `all` or `api` (`components/route-*`) |
 
 ### Behind sthings-portal
@@ -40,13 +40,11 @@ preview/render). claim-machinery-api v0.23.0+
 
 - `BASE_PATH` is a container env entry, so changing it rolls the pod even
   where Reloader does not run.
-- **Unset (or `/`), there is no env entry at all**: the Deployment renders
-  byte for byte as before and nothing rolls. A substitution cannot add or drop
-  a list entry, so the patch in [`release.yaml`](release.yaml) is always there
-  and its target is the switch — `claim-machinery-api${CLAIM_MACHINERY_API_BASE_PATH:1:1}{0}`,
-  an anchored regex that matches the Deployment only when there is a
-  character after the leading slash. The value must start with `/`
-  (claim-machinery-api refuses to start otherwise).
+- **The env entry is always there**, `BASE_PATH=/` by default.
+  claim-machinery-api trims the trailing slash and reads `/` as no prefix, so
+  an unset cluster behaves as before -- but its Deployment gained the entry
+  and rolled once when this came in (stuttgart-things/flux#945). The value
+  must start with `/` (claim-machinery-api refuses to start otherwise).
 - `/health`, `/version`, `/openapi`, `/openapi.yaml` and
   `/api/v1/claim-templates*` stay at the root under any prefix
   (`internal/api/server.go`, `registerRoutes`), and answer under the prefix as

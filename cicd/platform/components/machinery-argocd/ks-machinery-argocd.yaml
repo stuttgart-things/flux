@@ -50,9 +50,9 @@ spec:
       # The dashboard's URL prefix, e.g. /machinery for a portal entry
       # `machinery|Machinery=http://machinery.<ns>.svc.cluster.local:8080` --
       # the portal forwards /<key>/... unchanged, so this must equal its key.
-      # `/` (the default) is no prefix, and cicd/machinery/release.yaml then
-      # adds no env entry at all: the Deployment stays byte for byte as
-      # before. Not empty: an empty default arrives in the child's substitute
+      # `/` (the default) is no prefix -- machinery reads it as the root.
+      # The env entry is always set (cicd/machinery/release.yaml), so an
+      # existing cluster rolls the pod once when this comes in. Not empty: an empty default arrives in the child's substitute
       # map as null, which the apply rejects. Set, the dashboard moves under
       # the prefix on the own hostname too; /health and GET /api/v1/resources
       # stay at the root. machinery v1.16.0+.

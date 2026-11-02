@@ -50,7 +50,7 @@ EOF
 | `GATEWAY_NAME` | *(required)* | Gateway API gateway name |
 | `GATEWAY_NAMESPACE` | `default` | Gateway namespace |
 | `DOMAIN` | *(required)* | Domain suffix for HTTPRoute hostname |
-| `MACHINERY_BASE_PATH` | `/` (no prefix) | Dashboard URL prefix behind sthings-portal, e.g. `/machinery` (v1.16.0+). Unset or `/`: no env entry at all, the Deployment is unchanged |
+| `MACHINERY_BASE_PATH` | `/` (no prefix) | Dashboard URL prefix behind sthings-portal, e.g. `/machinery` (v1.16.0+). `/` is no prefix; the env entry is always set |
 | `MACHINERY_ROUTE` | `all` | Bundle components only: what the own hostname serves, `all` or `api` (`./httproute/components/route-*`) |
 
 Both `ghcr.io/stuttgart-things/machinery` and `ghcr.io/stuttgart-things/machinery-kustomize` publish `v`-prefixed tags, so one variable serves both — but only in that form. A bare `1.13.4` leaves the `OCIRepository` unresolvable, and the resulting error does not mention the version, so the app simply never deploys.
@@ -129,13 +129,11 @@ unchanged, so machinery serves its dashboard under that prefix:
 machinery v1.16.0+ (stuttgart-things/machinery#111); older releases ignore it.
 
 - `BASE_PATH` is a container env entry, so changing it rolls the pod.
-- **Unset (or `/`), there is no env entry at all**: the Deployment renders
-  byte for byte as before and nothing rolls. A substitution cannot add or drop
-  a list entry, so the patch in [`release.yaml`](release.yaml) is always there
-  and its target is the switch — `machinery${MACHINERY_BASE_PATH:1:1}{0}`, an
-  anchored regex that matches the Deployment only when there is a character
-  after the leading slash. The value must start with `/` (machinery refuses to
-  start otherwise).
+- **The env entry is always there**, `BASE_PATH=/` by default. machinery
+  trims the trailing slash and reads `/` as no prefix, so an unset cluster
+  behaves as before -- but its Deployment gained the entry and rolled once
+  when this came in (stuttgart-things/flux#945). The value must start with
+  `/` (machinery refuses to start otherwise).
 - `/health` and `GET /api/v1/resources` stay at the root under any prefix
   (machinery `web.go`, `handler()`): the portal's health poll and Backstage
   are unchanged. With the portal's `X-Forwarded-Prefix` the dashboard shows a
