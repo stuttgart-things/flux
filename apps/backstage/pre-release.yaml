@@ -163,6 +163,11 @@ spec:
                   clientId: "${BACKSTAGE_ZITADEL_CLIENT_ID:-}"
                   clientSecret: $${ZITADEL_CLIENT_SECRET}
                   prompt: auto
+                  # offline_access: without it Zitadel issues no refresh token, Backstage
+                  # sets no oidc-refresh-token cookie and every reload signs the user out
+                  # ("Refresh failed; Missing session cookie").
+                  additionalScopes:
+                    - offline_access
                   signIn:
                     resolvers:
                       - resolver: zitadelProjectRoles
