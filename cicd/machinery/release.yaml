@@ -73,6 +73,40 @@ spec:
                     # watch-config.yaml.
                     name: machinery-watch-config
                     optional: true
+    # BASE_PATH behind sthings-portal (stuttgart-things/flux#945): the
+    # dashboard's URL prefix, e.g. /machinery (= the portal key; the portal
+    # forwards /<key>/... unchanged). machinery v1.16.0+; /health and
+    # GET /api/v1/resources stay at the root under any prefix (Backstage's
+    # claim picker, the portal's health poll).
+    #
+    # ONLY WHEN SET, so a cluster without MACHINERY_BASE_PATH keeps its
+    # Deployment byte for byte and the pod does not roll. A substitution cannot
+    # add or drop a list entry, so the patch is always here and its TARGET is
+    # the switch: kustomize reads a target name as an anchored regex, and
+    # `${MACHINERY_BASE_PATH:1:1}` is the character after the leading slash --
+    #
+    #   unset, or `/`   ->  machinery{0}    "machiner", matches nothing: no-op
+    #   /machinery      ->  machinerym{0}   "machinery": the patch applies
+    #
+    # A target that matches nothing is no error (see the HTTPRoute delete
+    # below, which matches nothing in the current base either). The value
+    # must start with `/` -- machinery refuses to start otherwise.
+    - target:
+        kind: Deployment
+        name: machinery${MACHINERY_BASE_PATH:1:1}{0}
+      patch: |
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery
+        spec:
+          template:
+            spec:
+              containers:
+                - name: machinery
+                  env:
+                    - name: BASE_PATH
+                      value: "${MACHINERY_BASE_PATH:-/}"
     # Add HTTP port to deployment
     - target:
         kind: Deployment

@@ -23,6 +23,56 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | `CLAIM_MACHINERY_TRUST_BUNDLE_CONFIGMAP` | `cluster-trust-bundle` | no | ConfigMap name created by trust-manager containing CA bundle |
 | `CLAIM_MACHINERY_TRUST_BUNDLE_KEY` | `trust-bundle.pem` | no | Key within the trust bundle ConfigMap |
 | `CLAIM_MACHINERY_SSL_CERT_DIR` | `/etc/ssl/custom` | no | Directory to mount the CA bundle into (sets `SSL_CERT_DIR`) |
+| `CLAIM_MACHINERY_API_BASE_PATH` | `/` (no prefix) | no | Prefix of UI, docs and API behind sthings-portal, e.g. `/claims` (v0.23.0+). Unset or `/`: no env entry at all, the Deployment is unchanged |
+| `CLAIM_MACHINERY_API_ROUTE` | `all` | no | Bundle component only: what the own hostname serves, `all` or `api` (`components/route-*`) |
+
+### Behind sthings-portal
+
+claim-machinery-api has no login of its own. Behind
+[sthings-portal](../sthings-portal/README.md) (machinery-portal,
+stuttgart-things/stuttgart-things#4262) the portal forwards `/<key>/...`
+unchanged, so the service answers under that prefix:
+`CLAIM_MACHINERY_API_BASE_PATH: /claims` with the portal entry
+`claims|Claims=http://claim-machinery-api.claim-machinery.svc.cluster.local:8080`.
+The htmx UI is then at `/claims/ui/` (template list, a form per template,
+preview/render). claim-machinery-api v0.23.0+
+(stuttgart-things/claim-machinery-api#117); older releases ignore it.
+
+- `BASE_PATH` is a container env entry, so changing it rolls the pod even
+  where Reloader does not run.
+- **Unset (or `/`), there is no env entry at all**: the Deployment renders
+  byte for byte as before and nothing rolls. A substitution cannot add or drop
+  a list entry, so the patch in [`release.yaml`](release.yaml) is always there
+  and its target is the switch — `claim-machinery-api${CLAIM_MACHINERY_API_BASE_PATH:1:1}{0}`,
+  an anchored regex that matches the Deployment only when there is a
+  character after the leading slash. The value must start with `/`
+  (claim-machinery-api refuses to start otherwise).
+- `/health`, `/version`, `/openapi`, `/openapi.yaml` and
+  `/api/v1/claim-templates*` stay at the root under any prefix
+  (`internal/api/server.go`, `registerRoutes`), and answer under the prefix as
+  well: the claims CLI, Backstage and the kubelet probes are unchanged.
+
+#### The own hostname: `CLAIM_MACHINERY_API_ROUTE`
+
+The bundle component (`cicd/platform/components/claim-machinery-api`) picks
+one of [`./components/route-*`](components) for the HTTPRoute on
+`claim-machinery-api.<domain>`:
+
+| `CLAIM_MACHINERY_API_ROUTE` | the own hostname serves |
+|---|---|
+| `all` (default) | everything: API, `/docs`, OpenAPI, `/ui/`, health |
+| `api` | `/api/...`, `/health`, `/version`, `/openapi`, `/openapi.yaml` -- UI and `/docs` only through sthings-portal |
+
+Anything else answers 404 from the Gateway (also `/`, the JSON service
+summary). With `api`, set `CLAIM_MACHINERY_API_BASE_PATH` and the portal entry
+too, or the UI is nowhere. The API stays on this host on purpose: the claims
+CLI and Backstage call it from outside the cluster.
+
+```yaml
+# cluster's cicd/platform.yaml, postBuild.substitute
+CLAIM_MACHINERY_API_BASE_PATH: /claims   # = the portal key
+CLAIM_MACHINERY_API_ROUTE: api           # own host: API, health, version, OpenAPI only
+```
 
 ### Profile source
 

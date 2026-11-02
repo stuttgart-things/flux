@@ -1,0 +1,37 @@
+---
+# MACHINERY_ROUTE=api: machinery's own hostname serves the machine paths only
+# -- the JSON API (/api/...) and /health. The dashboard (at / or under
+# MACHINERY_BASE_PATH) is then reachable only through sthings-portal, behind
+# its login (stuttgart-things/flux#945; the same idea as CLUSTERBOOK_ROUTE=api).
+# machinery has no login of its own on the dashboard.
+#
+# The API has to stay on this host: Backstage's MachineryClaimPicker reads
+# https://machinery.<domain>/api/v1/resources (BACKSTAGE_MACHINERY_URL) from
+# OTHER clusters. machinery v1.16.0+ keeps /health and GET /api/v1/resources
+# at the root under any BASE_PATH (web.go handler()). The gRPC API is a
+# GRPCRoute on its own hostname (machinery-grpcroute), never on this route,
+# and is untouched. The portal reaches the dashboard in-cluster
+# (machinery.<ns>.svc:8080), not here.
+#
+# PathPrefix /api matches /api and /api/... (whole path segments), not
+# /apix. Anything else on the host answers 404 from the Gateway.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: machinery
+    patch: |
+      - op: replace
+        path: /spec/rules
+        value:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+              - path:
+                  type: Exact
+                  value: /health
+            backendRefs:
+              - name: machinery
+                port: 8080
