@@ -130,6 +130,11 @@ spec:
                   secretAccessKey: $${TECHDOCS_S3_SECRET_ACCESS_KEY:-}
           auth:
             environment: development
+            # The OIDC provider keeps its login state in an express session and
+            # fails without a secret ("authentication requires session
+            # support"). Harmless for GitHub/guest.
+            session:
+              secret: $${BACKEND_SECRET:-change-me-in-production}
             providers:
               guest: {}
               github:
@@ -146,10 +151,16 @@ spec:
               # key matches auth.environment above. The Zitadel project roles
               # decide the group: backstage-platform -> platform-team,
               # backstage-developer -> guests, none -> refused.
+              #
+              # clientId and projectId are substituted HERE, by Flux, inside
+              # this block string and quoted: Zitadel IDs are all digits, and
+              # through secretKVs / env they arrive as a number
+              # (397814535416774689 -> 3.978145354167747e+17), which Zitadel
+              # rejects. The quotes inside a block scalar survive kustomize.
               oidc:
                 development:
                   metadataUrl: $${ZITADEL_ISSUER}
-                  clientId: $${ZITADEL_CLIENT_ID}
+                  clientId: "${BACKSTAGE_ZITADEL_CLIENT_ID:-}"
                   clientSecret: $${ZITADEL_CLIENT_SECRET}
                   prompt: auto
                   signIn:
@@ -157,7 +168,7 @@ spec:
                       - resolver: zitadelProjectRoles
                         # Only this project's roles count; empty reads the
                         # roles of the client's own project.
-                        projectId: "$${ZITADEL_PROJECT_ID:-}"
+                        projectId: "${BACKSTAGE_ZITADEL_PROJECT_ID:-}"
                         # Zitadel users have no User entity: the token is
                         # user:default/<preferred_username> plus the role group.
                         dangerouslyAllowSignInWithoutUserInCatalog: true
@@ -249,10 +260,6 @@ spec:
           ZITADEL_ISSUER: ${BACKSTAGE_ZITADEL_ISSUER:-}
           ZITADEL_CLIENT_ID: ${BACKSTAGE_ZITADEL_CLIENT_ID:-}
           ZITADEL_CLIENT_SECRET: ${BACKSTAGE_ZITADEL_CLIENT_SECRET:-}
-          # Not a secret, but set per instance next to the client ID: the
-          # Zitadel project of the Backstage clients (zitadel-backstage TF
-          # module output project_id).
-          ZITADEL_PROJECT_ID: ${BACKSTAGE_ZITADEL_PROJECT_ID:-}
           # RAG-AI chat + embeddings key. Empty default: RAG-AI stays off
           # (or reports 503) without it, the rest of Backstage is unaffected.
           LLM_API_KEY: "${BACKSTAGE_LLM_API_KEY:-}"

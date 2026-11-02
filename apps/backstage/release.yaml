@@ -209,7 +209,9 @@ spec:
         - name: AUTH_OIDC_ENABLED
           value: ${BACKSTAGE_AUTH_OIDC_ENABLED:-"false"}
         # optional: the keys are always in backstage-secrets (empty without
-        # BACKSTAGE_ZITADEL_*), optional only guards older Secrets.
+        # BACKSTAGE_ZITADEL_*), optional only guards older Secrets. The client
+        # ID is NOT read from here (a number after substitution): see the oidc
+        # block in pre-release.yaml.
         - name: ZITADEL_ISSUER
           valueFrom:
             secretKeyRef:
@@ -227,12 +229,6 @@ spec:
             secretKeyRef:
               name: backstage-secrets
               key: ZITADEL_CLIENT_SECRET
-              optional: true
-        - name: ZITADEL_PROJECT_ID
-          valueFrom:
-            secretKeyRef:
-              name: backstage-secrets
-              key: ZITADEL_PROJECT_ID
               optional: true
         - name: GITHUB_TOKEN
           valueFrom:
