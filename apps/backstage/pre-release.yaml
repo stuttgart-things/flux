@@ -24,6 +24,16 @@ spec:
           app:
             title: $${APP_TITLE:-Backstage}
             baseUrl: $${APP_BASE_URL}
+            # Sign-in buttons. The chart starts Backstage with --config for
+            # the mounted files only, so the image's app-config.yaml -- which
+            # carries the same two lines -- is never read, and without them
+            # the frontend falls back to its defaults: a guest button even
+            # with AUTH_GUEST_ENABLED=false (the backend module is gone, the
+            # button only errors). Resolved by Backstage from the env vars the
+            # backend reads (release.yaml), so button and provider agree.
+            auth:
+              guestEnabled: $${AUTH_GUEST_ENABLED:-true}
+              oidcEnabled: $${AUTH_OIDC_ENABLED:-false}
           organization:
             name: $${ORGANIZATION_NAME}
           backend:
