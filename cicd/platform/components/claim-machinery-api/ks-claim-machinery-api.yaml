@@ -60,7 +60,7 @@ spec:
     substitute:
       CLAIM_MACHINERY_API_NAMESPACE: "${CLAIM_MACHINERY_API_NAMESPACE:-claim-machinery}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/claim-machinery-api
-      CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.25.0}"
+      CLAIM_MACHINERY_API_VERSION: "${CLAIM_MACHINERY_API_VERSION:-v0.26.0}"
       FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
 
       # ---- behind sthings-portal (stuttgart-things/flux#945) ---------------
@@ -82,7 +82,7 @@ spec:
       # artifact. PROFILE_PATH is the full override; leaving it unset composes
       # the URL from REF and NAME.
       CLAIM_MACHINERY_PROFILE_REF: "${CLAIM_MACHINERY_PROFILE_REF:-main}"
-      CLAIM_MACHINERY_PROFILE_NAME: "${CLAIM_MACHINERY_PROFILE_NAME:-labul-vsphere}"
+      CLAIM_MACHINERY_PROFILE_NAME: "${CLAIM_MACHINERY_PROFILE_NAME:-machinery}"
 
       # ---- HTTPRoute ----------------------------------------------------
       # GATEWAY_NAME, HOSTNAME and DOMAIN have NO default in the base. Unset,
