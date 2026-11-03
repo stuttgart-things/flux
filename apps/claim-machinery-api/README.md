@@ -14,7 +14,7 @@ OCI kustomize-based app using `OCIRepository` + Flux `Kustomization` with Gatewa
 | `DOMAIN` | - | yes | HTTPRoute domain suffix |
 | `CLAIM_MACHINERY_PROFILE_PATH` | composed remote URL (see below) | no | Full override for the profile source: any HTTP URL, or `/app/config/profile.yaml` for the version-pinned baked-in profile |
 | `CLAIM_MACHINERY_PROFILE_REF` | `main` | no | Git ref/tag/sha used when composing the default remote profile URL (ignored if `CLAIM_MACHINERY_PROFILE_PATH` is set) |
-| `CLAIM_MACHINERY_PROFILE_NAME` | `labul-vsphere` | no | Profile file name used when composing the default remote profile URL (ignored if `CLAIM_MACHINERY_PROFILE_PATH` is set) |
+| `CLAIM_MACHINERY_PROFILE_NAME` | `machinery` | no | Profile file name used when composing the default remote profile URL (ignored if `CLAIM_MACHINERY_PROFILE_PATH` is set) |
 | `CLAIM_MACHINERY_ENABLE_HOMERUN` | `false` | no | Enable homerun2 notifications (`true`/`1`/`yes`) |
 | `CLAIM_MACHINERY_HOMERUN_URL` | - | no | Omni-pitcher base URL (required when homerun enabled) |
 | `CLAIM_MACHINERY_HOMERUN_AUTH_TOKEN` | - | no | Bearer token for pitcher `/pitch` endpoint (stored in Secret via pre-release) |
@@ -80,7 +80,7 @@ CLAIM_MACHINERY_API_ROUTE: api           # own host: API, health, version, OpenA
    URL, or at `/app/config/profile.yaml` to use the version-pinned profile baked into
    the OCI artifact.
 2. Otherwise it is composed as:
-   `https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/${CLAIM_MACHINERY_PROFILE_REF:-main}/profiles/${CLAIM_MACHINERY_PROFILE_NAME:-labul-vsphere}.yaml`
+   `https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/${CLAIM_MACHINERY_PROFILE_REF:-main}/profiles/${CLAIM_MACHINERY_PROFILE_NAME:-machinery}.yaml`
 
 So a new environment usually only sets `CLAIM_MACHINERY_PROFILE_NAME` (and optionally
 pins `CLAIM_MACHINERY_PROFILE_REF` to a tag/sha for reproducibility).
@@ -131,7 +131,7 @@ spec:
       GATEWAY_NAMESPACE: default
       HOSTNAME: claim-api
       DOMAIN: whatever.sthings-vsphere.labul.sva.de
-      CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/refs/heads/main/profiles/labul-vsphere.yaml
+      CLAIM_MACHINERY_PROFILE_PATH: https://raw.githubusercontent.com/stuttgart-things/claim-machinery-api/refs/heads/main/profiles/machinery.yaml
       # Optional: homerun2 notifications
       CLAIM_MACHINERY_ENABLE_HOMERUN: "true"
       CLAIM_MACHINERY_HOMERUN_URL: https://pitcher.example.sthings-vsphere.labul.sva.de
