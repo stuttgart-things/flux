@@ -21,27 +21,33 @@ in this repository, because the fact that decides them lives in the PACKAGES --
 their own dependsOn, published inside the OCI artifact. So this check reads
 them, with skopeo, the way verify-image-tags.py already reads the registry.
 
-Two rules, one per failure:
+Three rules, one per failure:
 
-  1. A Configuration that depends on another Configuration IN THE SAME FILE
-     must set skipDependencyResolution. Those are applied in one pass, so it is
-     a race: Crossplane materialises the dependency as a second Configuration
-     named after the OCI path (stuttgart-things-crossplane-volume-claim), and
-     whether that beats our own declaration varies per cluster. cicd-test1 came
-     up clean and cicd-test2 did not, from identical manifests.
+  1. Under "short" naming, a package that depends on ANYTHING this profile
+     installs must set skipDependencyResolution. Crossplane materialises a
+     dependency it cannot match as a second package named after the OCI path
+     (stuttgart-things-crossplane-volume-claim, crossplane-contrib-function-kcl),
+     and whether our own declaration wins is a race.
 
-     Narrowed to Configuration -> Configuration on evidence, not taste. Every
-     Configuration here also depends on providers and functions, and none of
-     those produced a duplicate: they are installed by the `crossplane`
-     Kustomization, which `crossplane-configs` dependsOn, so their nodes are in
-     the lock before any Configuration resolves. Only the Configurations race
-     each other.
+     This used to be narrowed to Configuration -> Configuration in one file,
+     on the evidence that the Functions are in the lock before any
+     Configuration resolves. That evidence ran out on sthings-runner: a
+     Function whose revision is unhealthy at resolve time counts as missing.
+     The crossplane v2.4.2 -> v2.4.3 upgrade duplicated function-go-templating
+     (2026-10-26); removing that duplicate let ansible-run resolve onto a
+     still-unhealthy function-kcl and duplicate that too (2026-11-07). Being
+     in the lock first is not enough -- only not resolving is.
 
   2. A package that does NOT skip resolution must have every dependency shipped
      under the EXACT source string it names. The two crossplane-contrib
      mirrors, xpkg.upbound.io and xpkg.crossplane.io, are different sources and
      therefore different nodes -- consolidating onto one registry looks like
      tidying and takes the cluster down.
+
+  3. A package that DOES skip resolution must have every dependency shipped,
+     under the exact source string, in its profile. With the flag set nothing
+     installs a missing one, and rule 2 -- which would have caught it -- no
+     longer looks at that package.
 """
 import re
 import shutil
@@ -252,10 +258,9 @@ def check_profile(profile, files, cache, naming):
         checked += 1
         name = src.rsplit("/", 1)[-1]
 
-        # Same file, and configuration-kind only: see rule 1 above.
-        siblings = {s for s, (_, _, w) in pkgs.items() if w == where}
-        overlap = [d for d, _, kind in deps
-                   if kind == "configuration" and d in siblings and d != src]
+        # Any dependency this profile installs, whatever its kind and file:
+        # see rule 1 above for why it is no longer Configuration-only.
+        overlap = [d for d, _, _ in deps if d in pkgs and d != src]
         if overlap and not skip and naming == "short":
             print(f"FAIL {where}: {name} depends on {len(overlap)} package(s) "
                   f"this bundle also installs, and does not set "
@@ -272,6 +277,20 @@ def check_profile(profile, files, cache, naming):
             fail = 1
 
         if skip:
+            # Rule 3: nothing else will install what this package needs.
+            unshipped = [(d, c) for d, c, _ in deps if d not in pkgs]
+            if unshipped:
+                print(f"FAIL {where}: {name} sets skipDependencyResolution "
+                      f"but this bundle does not install {len(unshipped)} of "
+                      f"its dependencies under the source it names:",
+                      file=sys.stderr)
+                for d, c in unshipped:
+                    print(f"       {d} ({c})", file=sys.stderr)
+                print(f"     With the flag set, Crossplane installs none of "
+                      f"them, and the package's compositions fail at runtime. "
+                      f"Ship each one, at exactly that source string, or drop "
+                      f"the flag.", file=sys.stderr)
+                fail = 1
             continue
         for d, constraint, _ in deps:
             if d in pkgs:
