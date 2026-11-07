@@ -85,6 +85,37 @@ CLAIM_MACHINERY_API_ROUTE: api           # own host: API, health, version, OpenA
 So a new environment usually only sets `CLAIM_MACHINERY_PROFILE_NAME` (and optionally
 pins `CLAIM_MACHINERY_PROFILE_REF` to a tag/sha for reproducibility).
 
+### Order auth and order as PR (off by default)
+
+claim-machinery-api's order authentication (`AUTH_*`) and order as PR
+(`GITHUB_DISPATCH_*`) are not substitute variables: the Deployment reads two
+**optional** objects the cluster creates in the namespace
+(stuttgart-things/stuttgart-things#4380). Without them nothing changes.
+
+| Object | Content | Use |
+|---|---|---|
+| ConfigMap `claim-machinery-order` | env keys (`envFrom`) | `AUTH_OIDC_ISSUER`, `AUTH_OIDC_AUDIENCE`, `AUTH_OIDC_CA_FILE=/etc/ssl/custom/trust-bundle.pem` (the trust-bundle mount), `AUTH_TRUST_FORWARDED_USER`, `AUTH_ORDER_ROLES`, `AUTH_ADMIN_ROLES`; `GITHUB_DISPATCH_APP_ID`, `GITHUB_DISPATCH_INSTALLATION_ID`, `GITHUB_DISPATCH_PRIVATE_KEY_FILE=/etc/github-app/private-key.pem` |
+| Secret `claim-machinery-github-app` | key `private-key.pem` | the GitHub App's private key, mounted at `/etc/github-app` (SOPS) |
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: claim-machinery-order
+  namespace: claim-machinery
+data:
+  AUTH_OIDC_ISSUER: https://zitadel.example
+  AUTH_OIDC_AUDIENCE: "123456789012345678"   # quoted: digits only
+  AUTH_OIDC_CA_FILE: /etc/ssl/custom/trust-bundle.pem
+  AUTH_TRUST_FORWARDED_USER: "true"
+  AUTH_ADMIN_ROLES: backstage-platform
+```
+
+Order: set `AUTH_*` only after every caller sends a token (see the
+claim-machinery-api README); `GITHUB_DISPATCH_*` only together with the
+Secret -- a partial dispatch config stops the service. Removing the
+ConfigMap switches both off. Reloader rolls the pod on changes.
+
 ## GIT-REPOSITORY MANIFEST
 
 ```bash
