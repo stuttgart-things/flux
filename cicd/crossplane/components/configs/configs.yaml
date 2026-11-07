@@ -30,12 +30,57 @@
 #
 # Converging the two families is a change to the PACKAGES' own dependsOn
 # declarations first; it cannot be done from this file.
+#
+# EVERY CONFIGURATION BELOW SETS skipDependencyResolution, and none may drop it.
+# This profile installs every dependency of every package itself: the
+# Providers in components/install, the Functions in components/functions, the
+# Configurations here. Resolving them again gains nothing and can cost the
+# cluster its entire Crossplane.
+#
+# Crossplane materialises a dependency it cannot match as a package of its own,
+# named after the OCI path -- crossplane-contrib-function-kcl for the image our
+# short-named `function-kcl` already installs. Two lock nodes then carry one
+# source, and the resolver gives up on the WHOLE graph:
+#
+#   cannot initialize dependency graph from the packages in the lock:
+#   node xpkg.upbound.io/crossplane-contrib/function-kcl already exists
+#
+# Every Configuration, Function and Provider goes Healthy=False with that
+# message, including the ones that have nothing to do with the duplicate.
+# Installed stays True and the pods keep running, so nothing crashes and
+# nothing restarts -- Crossplane simply stops reconciling packages, and
+# crossplane-configs sits in its health check until the timeout, forever.
+#
+# It is a RACE, which is why it does not always happen, and it is not only a
+# Configuration -> Configuration one:
+#
+#   - Configuration -> Configuration: harvester-vm's volume-claim and
+#     cloud-config are applied in this same pass. cicd-test1 came up clean,
+#     cicd-test2 did not, from the same manifests.
+#   - Configuration -> Function: the Functions are in the lock long before any
+#     Configuration resolves, so this was believed safe. It is not: while a
+#     Function revision is unhealthy -- during a Crossplane upgrade, or while
+#     ANOTHER duplicate holds the graph down -- the resolver treats it as
+#     missing. sthings-runner, 2026-10-26: crossplane v2.4.2 -> v2.4.3, and
+#     nine seconds before the new pod, crossplane-contrib-function-go-templating
+#     appeared (pulled by cloud-config/volume-claim/storage-platform). Deleting
+#     it on 2026-11-07 let ansible-run resolve next, onto a still-unhealthy
+#     function-kcl, and crossplane-contrib-function-kcl appeared within seconds.
+#
+# The Providers do not collide: components/install lists them in the chart,
+# and the chart names them exactly as the resolver would. The Functions cannot
+# follow suit -- Compositions reference them by short name in functionRef.
+#
+# If a dependency is ever REMOVED from the profile, add it back -- with this
+# flag set, nothing will install it. hack/check-crossplane-deps.py fails on
+# exactly that, and on a Configuration here that resolves on its own.
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
 metadata:
   name: cloud-config
 spec:
   package: ghcr.io/stuttgart-things/crossplane/cloud-config:${CROSSPLANE_CONFIG_CLOUD_CONFIG_VERSION:-v0.5.1}
+  skipDependencyResolution: true
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -43,6 +88,7 @@ metadata:
   name: volume-claim
 spec:
   package: ghcr.io/stuttgart-things/crossplane/volume-claim:${CROSSPLANE_CONFIG_VOLUME_CLAIM_VERSION:-v0.1.1}
+  skipDependencyResolution: true
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -50,6 +96,7 @@ metadata:
   name: storage-platform
 spec:
   package: ghcr.io/stuttgart-things/crossplane/storage-platform:${CROSSPLANE_CONFIG_STORAGE_PLATFORM_VERSION:-v0.6.0}
+  skipDependencyResolution: true
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -57,6 +104,7 @@ metadata:
   name: ansible-run
 spec:
   package: ghcr.io/stuttgart-things/crossplane/ansible-run:${CROSSPLANE_CONFIG_ANSIBLE_RUN_VERSION:-v12.0.0}
+  skipDependencyResolution: true
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -64,6 +112,7 @@ metadata:
   name: pipeline-integration
 spec:
   package: ghcr.io/stuttgart-things/crossplane/pipeline-integration:${CROSSPLANE_CONFIG_PIPELINE_INTEGRATION_VERSION:-v0.1.2}
+  skipDependencyResolution: true
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
@@ -71,30 +120,4 @@ metadata:
   name: harvester-vm
 spec:
   package: ghcr.io/stuttgart-things/crossplane/harvester-vm:${CROSSPLANE_CONFIG_HARVESTER_VM_VERSION:-v0.3.3}
-  # The ONLY package here that depends on other packages in this same file --
-  # volume-claim and cloud-config, plus provider-kubernetes and
-  # function-patch-and-transform from the lists beside it. All four are already
-  # installed above, so resolving them again gains nothing and costs the
-  # cluster its entire Crossplane:
-  #
-  # Crossplane materialises an unresolved dependency as a Configuration of its
-  # own, named after the OCI path -- stuttgart-things-crossplane-volume-claim
-  # for the same image our `volume-claim` above installs. Two lock nodes then
-  # carry one source, and the resolver gives up on the WHOLE graph:
-  #
-  #   cannot initialize dependency graph from the packages in the lock:
-  #   node ghcr.io/stuttgart-things/crossplane/volume-claim already exists
-  #
-  # Every Configuration, Function and Provider goes Healthy=False with that
-  # message, including the ones that have nothing to do with harvester-vm.
-  # Installed stays True and the pods keep running, so nothing crashes and
-  # nothing restarts -- Crossplane simply reconciles no claim at all.
-  #
-  # It is a RACE, which is why it does not always happen: if our explicit
-  # volume-claim reaches the lock first, the dependency resolves onto it and no
-  # duplicate appears. cicd-test1 came up clean, cicd-test2 did not, from the
-  # same manifests.
-  #
-  # If a dependency of harvester-vm is ever REMOVED from this file, add it back
-  # or drop this line -- with it set, nothing will install that dependency.
   skipDependencyResolution: true

@@ -236,7 +236,10 @@ and a `dependsOn`, which is the lock collision above
 (crossplane-configurations#247 — all 20 packages on u26-kind3, 2026-08-12).
 
 This is the opposite convention from `../components/configs`, which lists every
-dependency and sets `skipDependencyResolution` on the one package that needs it.
+dependency and sets `skipDependencyResolution` on every Configuration, so the
+resolver never installs anything there (it used to be only the one with a
+sibling dependency, until a short-named Function was duplicated during an
+upgrade -- see `../components/configs/configs.yaml`).
 Both are valid; do not mix them inside one file.
 `hack/check-crossplane-deps.py` reads the published packages and enforces
 whichever shape a file uses — it groups files by profile, so add any new profile

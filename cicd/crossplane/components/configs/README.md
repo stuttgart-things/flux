@@ -102,6 +102,12 @@ changing any of them.
   before any CR here can even be dry-run (see above). Its `wait: true` is what
   makes `dependsOn` sufficient.
 - The composition **Functions** come from the same `crossplane` Kustomization,
-  so they are in the lock before any Configuration resolves — which is why only
-  the Configurations race each other, and why `skipDependencyResolution` in
-  `configs.yaml` is scoped to Configuration → Configuration edges only.
+  so they are in the lock before any Configuration resolves. That is not
+  enough: a Function revision that is unhealthy when a Configuration resolves
+  (a Crossplane upgrade, or another duplicate holding the graph down) counts
+  as missing, and the resolver installs it a second time under its derived
+  name — one source, two lock nodes, every package `Healthy=False`.
+  sthings-runner hit it twice (`function-go-templating` on the v2.4.2 → v2.4.3
+  upgrade, then `function-kcl`). So **every** Configuration in `configs.yaml`
+  sets `skipDependencyResolution: true`, and this profile must keep shipping
+  every dependency itself; `hack/check-crossplane-deps.py` enforces both.
