@@ -40,7 +40,7 @@ spec:
     spec:
       chart: zitadel
       # renovate: datasource=helm depName=zitadel registryUrl=https://charts.zitadel.com
-      version: "${ZITADEL_VERSION:-10.4.0}"
+      version: "${ZITADEL_VERSION:-10.5.0}"
       sourceRef:
         kind: HelmRepository
         name: zitadel
