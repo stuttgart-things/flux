@@ -122,7 +122,16 @@ spec:
     # comma-separated, in navigation order; every service runs with
     # BASE_PATH=/<key>, and a short Service name resolves in the namespace.
     # An empty AUTH_OIDC_ALLOWED_GROUPS lets in every user the provider lets
-    # through.
+    # through. AUTH_OIDC_SCOPES (space-separated; empty = openid profile
+    # email) and AUTH_OIDC_GROUPS_CLAIM (empty = `groups`, else ZITADEL's
+    # urn:zitadel:iam:org:project:roles) pick which roles become the groups
+    # -- the X-Forwarded-Groups of the services behind the portal and what
+    # AUTH_OIDC_ALLOWED_GROUPS is checked against. E.g. a machinery-portal
+    # forwards the sthings-backstage roles to claim-machinery-api
+    # (stuttgart-things#4380): scopes `openid profile email
+    # urn:zitadel:iam:org:project:id:<backstage project>:aud
+    # urn:zitadel:iam:org:projects:roles`, groups claim
+    # `urn:zitadel:iam:org:project:<backstage project>:roles`.
     - target:
         kind: ConfigMap
         name: sthings-portal-config
@@ -144,6 +153,8 @@ spec:
           AUTH_OIDC_REDIRECT_URL: "https://${STHINGS_PORTAL_HOSTNAME:-portal}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}/auth/callback"
           AUTH_OIDC_NAME: "${STHINGS_PORTAL_OIDC_NAME:-Zitadel}"
           AUTH_OIDC_ALLOWED_GROUPS: "${STHINGS_PORTAL_OIDC_ALLOWED_GROUPS:-}"
+          AUTH_OIDC_SCOPES: "${STHINGS_PORTAL_OIDC_SCOPES:-}"
+          AUTH_OIDC_GROUPS_CLAIM: "${STHINGS_PORTAL_OIDC_GROUPS_CLAIM:-}"
           AUTH_OIDC_CA_FILE: "/etc/portal/oidc-ca/${STHINGS_PORTAL_OIDC_CA_KEY:-trust-bundle.pem}"
           # Empty: the theme's built-in icon (v0.14.0+). Set to a file in the
           # favicon volume, e.g. /etc/portal/favicon/favicon.svg.

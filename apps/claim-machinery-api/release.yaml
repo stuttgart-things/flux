@@ -152,3 +152,51 @@ spec:
                   env:
                     - name: BASE_PATH
                       value: "${CLAIM_MACHINERY_API_BASE_PATH:-/}"
+    # Order auth and order as PR (claim-machinery-api README "Order
+    # authentication" / "Order as PR"; stuttgart-things#4380). OFF unless the
+    # cluster creates them -- both are optional:
+    #
+    #   ConfigMap claim-machinery-order   env for the container (envFrom):
+    #     AUTH_OIDC_ISSUER, AUTH_OIDC_AUDIENCE, AUTH_OIDC_CA_FILE
+    #     (/etc/ssl/custom/trust-bundle.pem = the trust-bundle mount above),
+    #     AUTH_TRUST_FORWARDED_USER, AUTH_ORDER_ROLES, AUTH_ADMIN_ROLES, ...;
+    #     GITHUB_DISPATCH_APP_ID, GITHUB_DISPATCH_INSTALLATION_ID,
+    #     GITHUB_DISPATCH_PRIVATE_KEY_FILE=/etc/github-app/private-key.pem
+    #   Secret claim-machinery-github-app  key private-key.pem (the GitHub
+    #     App's key), mounted under /etc/github-app
+    #
+    # A ConfigMap and not substitute variables: AUTH_ORDER_ROLES may be
+    # empty on purpose, and an empty substitute value renders as null, which
+    # the Kustomization CRD rejects. The cluster ships both objects (the
+    # Secret SOPS-encrypted) next to its platform.yaml. GITHUB_DISPATCH_*
+    # without the Secret stops the service at start (a partial dispatch
+    # config is an error there), so create the Secret first. Reloader
+    # (annotation above) rolls the pod when either changes.
+    #
+    # JSON6902 and not a strategic merge: envFrom has no merge key, a merge
+    # patch would replace the base's configMapRef claim-machinery-api.
+    - target:
+        kind: Deployment
+        name: claim-machinery-api
+      patch: |
+        - op: add
+          path: /spec/template/spec/containers/0/envFrom/-
+          value:
+            configMapRef:
+              name: claim-machinery-order
+              optional: true
+        - op: add
+          path: /spec/template/spec/volumes/-
+          value:
+            name: github-app
+            secret:
+              secretName: claim-machinery-github-app
+              optional: true
+              # 0440: owner and the pod's fsGroup (65532) read it.
+              defaultMode: 288
+        - op: add
+          path: /spec/template/spec/containers/0/volumeMounts/-
+          value:
+            name: github-app
+            mountPath: /etc/github-app
+            readOnly: true

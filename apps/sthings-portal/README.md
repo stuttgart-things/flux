@@ -96,6 +96,8 @@ tool has to patch.
 | `STHINGS_PORTAL_OIDC_ISSUER` | *(empty)* | REQUIRED with `oidc`, e.g. `https://zitadel.<infra domain>`; ignored otherwise |
 | `STHINGS_PORTAL_OIDC_CLIENT_ID` | *(empty)* | REQUIRED with `oidc` (not secret); ignored otherwise |
 | `STHINGS_PORTAL_OIDC_ALLOWED_GROUPS` | *(empty: every user the provider lets through)* | comma-separated, e.g. `portal-admin,portal-user` |
+| `STHINGS_PORTAL_OIDC_SCOPES` | *(empty: `openid profile email`)* | space-separated; e.g. add `urn:zitadel:iam:org:project:id:<project>:aud urn:zitadel:iam:org:projects:roles` to get another project's roles |
+| `STHINGS_PORTAL_OIDC_GROUPS_CLAIM` | *(empty: `groups`, else `urn:zitadel:iam:org:project:roles`)* | the claim the groups (`X-Forwarded-Groups`, `ALLOWED_GROUPS`) come from, e.g. `urn:zitadel:iam:org:project:<project>:roles` |
 | `STHINGS_PORTAL_OIDC_NAME` | `Zitadel` | label of the login button |
 | `STHINGS_PORTAL_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | ConfigMap with the CA that signed the provider's certificate |
 | `STHINGS_PORTAL_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
