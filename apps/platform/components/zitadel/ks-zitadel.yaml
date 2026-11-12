@@ -50,7 +50,7 @@ spec:
       # The chart, not ZITADEL: the server and Login UI images follow its
       # appVersion (v4.19.2 for 10.4.0).
       # renovate: datasource=helm depName=zitadel registryUrl=https://charts.zitadel.com
-      ZITADEL_VERSION: "${ZITADEL_VERSION:-10.4.0}"
+      ZITADEL_VERSION: "${ZITADEL_VERSION:-10.5.0}"
       # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/postgresql
       ZITADEL_POSTGRESQL_VERSION: "${ZITADEL_POSTGRESQL_VERSION:-16.7.27}"
       # The public name, baked into every token ZITADEL issues -- changing it
