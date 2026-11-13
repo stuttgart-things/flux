@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${K8SGPT_NAMESPACE:-k8sgpt-operator-system}
+  labels:
+    toolkit.fluxcd.io/tenant: sthings-team
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: k8sgpt
+  namespace: ${K8SGPT_NAMESPACE:-k8sgpt-operator-system}
+spec:
+  interval: 24h
+  url: https://charts.k8sgpt.ai

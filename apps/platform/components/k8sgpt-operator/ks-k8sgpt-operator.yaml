@@ -1,0 +1,69 @@
+---
+# K8sGPT operator → ./apps/k8sgpt-operator, then its K8sGPT CR → ./apps/k8sgpt-operator/scan
+#
+# Two Kustomizations: the K8sGPT kind exists only once the operator's
+# HelmRelease has installed its CRDs, so the scan waits for the operator.
+#
+# No AI (ai.enabled: false): the result is one Result CR per finding in
+# K8SGPT_NAMESPACE, the current state of the cluster's problems. Read them
+# with kubectl get results -n <ns>, or pitch them to homerun2 with a
+# k8s-pitcher informer on core.k8sgpt.ai/results
+# (stuttgart-things/homerun2-k8s-pitcher, profiles/k8sgpt-results.yaml).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: k8sgpt-operator
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${K8SGPT_OPERATOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/k8sgpt-operator
+  postBuild:
+    substitute:
+      K8SGPT_NAMESPACE: "${K8SGPT_NAMESPACE:-k8sgpt-operator-system}"
+      # renovate: datasource=helm depName=k8sgpt-operator registryUrl=https://charts.k8sgpt.ai
+      K8SGPT_OPERATOR_VERSION: "${K8SGPT_OPERATOR_VERSION:-0.2.29}"
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: k8sgpt-scan
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: k8sgpt-operator
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${K8SGPT_OPERATOR_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/k8sgpt-operator/scan
+  postBuild:
+    substitute:
+      # Same variable and default as k8sgpt-operator: the CR lives next to it.
+      K8SGPT_NAMESPACE: "${K8SGPT_NAMESPACE:-k8sgpt-operator-system}"
+      K8SGPT_NAME: "${K8SGPT_NAME:-k8sgpt}"
+      K8SGPT_ANALYSIS_INTERVAL: "${K8SGPT_ANALYSIS_INTERVAL:-5m}"
+      # renovate: datasource=docker depName=ghcr.io/k8sgpt-ai/k8sgpt
+      K8SGPT_VERSION: "${K8SGPT_VERSION:-v0.4.41}"

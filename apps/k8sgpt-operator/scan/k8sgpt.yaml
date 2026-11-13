@@ -1,0 +1,27 @@
+---
+# The K8sGPT CR: the operator starts a k8sgpt server from it and runs its
+# analyzers every interval. Applied separately from ../ because its CRD comes
+# with the operator's HelmRelease -- in one Kustomization the dry run fails on
+# an unknown kind.
+#
+# ai.enabled: false -- no LLM, no API key. Every finding is a Result CR in
+# this namespace with spec.error[] (the analyzer's texts); spec.details, the AI
+# explanation, stays empty. The operator deletes a Result once its problem is
+# gone, so the Results are always the current findings.
+apiVersion: core.k8sgpt.ai/v1alpha1
+kind: K8sGPT
+metadata:
+  name: ${K8SGPT_NAME:-k8sgpt}
+  namespace: ${K8SGPT_NAMESPACE:-k8sgpt-operator-system}
+spec:
+  ai:
+    enabled: false
+    # Required by the CRD, unused while ai is disabled.
+    backend: openai
+  analysis:
+    interval: ${K8SGPT_ANALYSIS_INTERVAL:-5m}
+  # The cache only holds AI answers.
+  noCache: true
+  repository: ghcr.io/k8sgpt-ai/k8sgpt
+  # renovate: datasource=docker depName=ghcr.io/k8sgpt-ai/k8sgpt
+  version: ${K8SGPT_VERSION:-v0.4.41}
