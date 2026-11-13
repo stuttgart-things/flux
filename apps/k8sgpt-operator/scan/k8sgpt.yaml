@@ -20,6 +20,24 @@ spec:
     backend: openai
   analysis:
     interval: ${K8SGPT_ANALYSIS_INTERVAL:-5m}
+  # k8sgpt's default analyzers without ConfigMap (#1003): on platform-sthings
+  # the ConfigMap analyzer produced 138 of 139 findings on the first scan --
+  # empty or unused ConfigMaps such as kube-root-ca.crt or cluster-trust-bundle.
+  # A list cannot be substituted: a cluster that wants other analyzers patches
+  # /spec/filters on the K8sGPT kind (by kind: patches run before
+  # substitution, when the name is still ${K8SGPT_NAME:-k8sgpt}).
+  filters:
+    - Pod
+    - Deployment
+    - ReplicaSet
+    - StatefulSet
+    - CronJob
+    - Service
+    - Ingress
+    - PersistentVolumeClaim
+    - Node
+    - ValidatingWebhookConfiguration
+    - MutatingWebhookConfiguration
   # The cache only holds AI answers.
   noCache: true
   repository: ghcr.io/k8sgpt-ai/k8sgpt

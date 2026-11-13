@@ -38,6 +38,9 @@ spec:
       HOMERUN2_CENTRAL_PITCHER_URL: "${HOMERUN2_CENTRAL_PITCHER_URL:-https://set-HOMERUN2_CENTRAL_PITCHER_URL.invalid/pitch}" # REQUIRED
       # spec.cluster: names this cluster in every message. No safe default.
       CLUSTER_NAME: "${CLUSTER_NAME:-set-CLUSTER_NAME}" # REQUIRED
+      # Where the k8sgpt-operator component puts its Results (#1003); same
+      # variable and default as that component.
+      K8SGPT_NAMESPACE: "${K8SGPT_NAMESPACE:-k8sgpt-operator-system}"
       # passthrough-override: the component's homerun2-flux is the namespace
       # of a k8s-pitcher beside a full homerun2 stack; alone it is homerun2.
       HOMERUN2_K8S_PITCHER_NAMESPACE: "${HOMERUN2_K8S_PITCHER_NAMESPACE:-homerun2}"
@@ -47,7 +50,7 @@ spec:
       # profile's `updates: flips` at start-up; older images ignore its
       # filters, cooldown and rate limit and pitch every Event and Flux flip.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
-      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.6.0}"
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.9.0}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_K8S_PITCHER_AUTH_TOKEN
       # The CENTRAL omni-pitcher's token -- the same value as that cluster's

@@ -5,8 +5,15 @@
 # otherwise keep it in step with the preset; the ClusterRole in
 # kustomization.yaml grants exactly the informers below.
 #
-# FailedScheduling and Unhealthy (probes) stay out: too noisy. No collectors,
-# no inventory on restart.
+# FailedScheduling and Unhealthy (probes) stay out: too noisy. No inventory on
+# restart.
+#
+# K8sGPT findings (#1003): if the cluster runs the k8sgpt-operator component,
+# its Results go to the central omni-pitcher as system k8sgpt-<cluster>, which
+# routes them to the stream `k8sgpt` (the archive, not Teams): new, changed and
+# resolved findings, and one snapshot of all open findings per hour. Never
+# throttled -- a dropped finding is missing data. Without K8sGPT the part is
+# inert: the pitcher waits for the CRD (homerun2-k8s-pitcher#106).
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -84,3 +91,22 @@ data:
             - BackoffLimitExceeded
             - ProvisioningFailed
             - NodeNotReady
+        # K8sGPT findings -> stream k8sgpt (archive), see the header.
+        - group: core.k8sgpt.ai
+          version: v1alpha1
+          resource: results
+          namespace: ${K8SGPT_NAMESPACE:-k8sgpt-operator-system}
+          events: [add, update, delete]
+          updates: generation
+          includeObject: true
+          throttle: false
+          system: k8sgpt-${CLUSTER_NAME:-set-CLUSTER_NAME}
+      collectors:
+        - group: core.k8sgpt.ai
+          version: v1alpha1
+          resource: results
+          namespace: ${K8SGPT_NAMESPACE:-k8sgpt-operator-system}
+          interval: 1h
+          mode: snapshot
+          throttle: false
+          system: k8sgpt-${CLUSTER_NAME:-set-CLUSTER_NAME}

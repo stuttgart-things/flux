@@ -24,12 +24,20 @@ data:
       - messages
       - alerts
       - tabletennis
+      - k8sgpt
 
     # Catch-all stream when no rule matches.
     default_stream: messages
 
     # Ordered rules — first match wins.
     routes:
+      # K8sGPT findings of the k8s-pitchers (system k8sgpt-<cluster>, #1003)
+      # go to their own stream: an archive (homerun2-s3-catcher) reads it,
+      # no catcher that posts to Teams, lights or speakers.
+      - match:
+          system: k8sgpt
+        stream: k8sgpt
+
       # Alertmanager + Grafana webhooks → alerts stream for the
       # notification-catcher pipeline.
       - match:
