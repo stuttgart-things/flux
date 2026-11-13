@@ -121,7 +121,7 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-notification-catcher
       HOMERUN2_NOTIFICATION_CATCHER_VERSION: "${HOMERUN2_NOTIFICATION_CATCHER_VERSION:-v3.18.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-omni-pitcher-kustomize
-      HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.4.0}"
+      HOMERUN2_OMNI_PITCHER_VERSION: "${HOMERUN2_OMNI_PITCHER_VERSION:-v2.4.1}"
       HOMERUN2_REDIS_IMAGE_REGISTRY: "${HOMERUN2_REDIS_IMAGE_REGISTRY:-ghcr.io}"
       HOMERUN2_REDIS_IMAGE_REPOSITORY: "${HOMERUN2_REDIS_IMAGE_REPOSITORY:-stuttgart-things/redis-stack-server}"
       HOMERUN2_REDIS_SENTINEL_REGISTRY: "${HOMERUN2_REDIS_SENTINEL_REGISTRY:-ghcr.io}"
