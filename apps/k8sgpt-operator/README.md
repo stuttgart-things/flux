@@ -4,8 +4,10 @@ Deploys the [K8sGPT operator](https://github.com/k8sgpt-ai/k8sgpt-operator)
 and, in [`scan/`](scan), one `K8sGPT` CR that scans the cluster **without an
 AI backend** (`ai.enabled: false`).
 
-The operator runs k8sgpt's analyzers (Pods, Deployments, Services, PVCs,
-Ingresses, Nodes, ...) every `K8SGPT_ANALYSIS_INTERVAL` and writes one
+The operator runs k8sgpt's analyzers every `K8SGPT_ANALYSIS_INTERVAL` --
+the defaults **without ConfigMap** (`spec.filters`, #1003: on platform-sthings
+the ConfigMap analyzer produced 138 of 139 findings, empty or unused
+ConfigMaps) -- and writes one
 `Result` CR (`core.k8sgpt.ai/v1alpha1`) per finding into its namespace:
 `spec.kind`, `spec.name`, `spec.parentObject` and `spec.error[].text`.
 `spec.details` holds the AI explanation and stays empty here. A Result is
@@ -48,10 +50,18 @@ and `./apps/k8sgpt-operator/scan`, the second with
 
 The operator's own sinks (Slack, Mattermost, CloudEvents) only send the AI
 text, which is empty without AI, and its S3 `remoteCache` stores AI answers,
-not reports. To ship the findings, watch the Results instead:
-homerun2-k8s-pitcher with an informer on `core.k8sgpt.ai/v1alpha1` `results`
-(its `profiles/k8sgpt-results.yaml`) pitches new, changed and resolved
-findings to homerun2, and homerun2-s3-catcher archives them to S3.
+not reports. The findings are reported by watching the Results instead:
+
+- **Remote clusters:** the `homerun2-k8s-pitcher-remote` component's preset
+  carries a K8sGPT part (#1003, homerun2-k8s-pitcher v1.9.0): new, changed and
+  resolved findings plus one snapshot of all open findings per hour, as system
+  `k8sgpt-<cluster>` to the central omni-pitcher. It routes them to the stream
+  `k8sgpt` (`apps/homerun2/components/omni-pitcher/routes-configmap.yaml`),
+  which an archive (homerun2-s3-catcher) reads and nothing that posts to
+  Teams, lights or speakers. Without this component on the cluster the part
+  is inert.
+- **A cluster with its own homerun2:** a k8s-pitcher with the same informer
+  and collector (homerun2-k8s-pitcher `profiles/k8sgpt-results.yaml`).
 
 ## Verify
 
