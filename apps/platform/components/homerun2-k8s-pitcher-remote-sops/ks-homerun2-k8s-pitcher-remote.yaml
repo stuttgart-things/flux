@@ -47,7 +47,7 @@ spec:
       # profile's `updates: flips` at start-up; older images ignore its
       # filters, cooldown and rate limit and pitch every Event and Flux flip.
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-k8s-pitcher-kustomize
-      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.5.1}"
+      HOMERUN2_K8S_PITCHER_VERSION: "${HOMERUN2_K8S_PITCHER_VERSION:-v1.6.0}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_K8S_PITCHER_AUTH_TOKEN
       # The CENTRAL omni-pitcher's token -- the same value as that cluster's
