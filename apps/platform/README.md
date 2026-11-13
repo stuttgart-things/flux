@@ -28,6 +28,8 @@ apps/platform/
     │                  (instead of backstage-rag-postgres: no backups, no ESO; requires backstage, cnpg-operator, a SOPS Secret)
     ├── homepage/    → ./apps/homepage    (requires cilium-gateway + a homepage-config ConfigMap)
     ├── uptime-kuma/ → ./apps/uptime-kuma (requires cilium-gateway, trust-manager, a StorageClass)
+    ├── k8sgpt-operator/ → ./apps/k8sgpt-operator, then ./apps/k8sgpt-operator/scan
+    │                  (no requirements; K8sGPT without AI, one Result CR per finding)
     ├── run-things/  → ./apps/run-things  (requires cilium-gateway)
     ├── clusterscope/ → ./apps/clusterscope (requires cilium-gateway, a git repo + git-sync-auth)
     ├── clusterscope-labview/ → ./apps/clusterscope (instead of clusterscope: Vault kubeconfigs + git token, config, probes)
