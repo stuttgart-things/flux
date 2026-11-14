@@ -38,6 +38,24 @@ data:
           system: k8sgpt
         stream: k8sgpt
 
+      # The other fleet sources of stuttgart-things#4556 share that archive
+      # stream (contains-match, hence the trailing dash):
+      #  * inventory-<cluster>: versions and images (k8s-pitcher#108)
+      #  * vm-<host>: the Ansible VM health report (ansible#1450)
+      #  * endpoints-<cluster> snapshots (k8s-pitcher#109); a probe's state
+      #    change (down, back, certificate warning) has no snapshot tag and
+      #    goes on to the default stream, so catchers report it once.
+      - match:
+          system: inventory-
+        stream: k8sgpt
+      - match:
+          system: vm-
+        stream: k8sgpt
+      - match:
+          system: endpoints-
+          tag_contains: snapshot
+        stream: k8sgpt
+
       # Alertmanager + Grafana webhooks → alerts stream for the
       # notification-catcher pipeline.
       - match:
