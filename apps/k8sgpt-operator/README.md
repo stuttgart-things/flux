@@ -7,7 +7,9 @@ AI backend** (`ai.enabled: false`).
 The operator runs k8sgpt's analyzers every `K8SGPT_ANALYSIS_INTERVAL` --
 the defaults **without ConfigMap** (`spec.filters`, #1003: on platform-sthings
 the ConfigMap analyzer produced 138 of 139 findings, empty or unused
-ConfigMaps) -- and writes one
+ConfigMaps), plus the Gateway API analyzers `GatewayClass`, `Gateway` and
+`HTTPRoute` (#1011; acceptance and references, not reachability; without the
+Gateway API CRDs they only log an analyzer error) -- and writes one
 `Result` CR (`core.k8sgpt.ai/v1alpha1`) per finding into its namespace:
 `spec.kind`, `spec.name`, `spec.parentObject` and `spec.error[].text`.
 `spec.details` holds the AI explanation and stays empty here. A Result is
