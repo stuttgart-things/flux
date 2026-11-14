@@ -26,6 +26,12 @@ spec:
   # A list cannot be substituted: a cluster that wants other analyzers patches
   # /spec/filters on the K8sGPT kind (by kind: patches run before
   # substitution, when the name is still ${K8SGPT_NAME:-k8sgpt}).
+  #
+  # GatewayClass, Gateway and HTTPRoute (#1011) are optional analyzers: they
+  # check acceptance and references (gateway, backend Service, allowed
+  # namespaces), not reachability. On a cluster without the Gateway API CRDs
+  # their List fails, k8sgpt records an analyzer error and still returns the
+  # other analyzers' results -- no switch needed.
   filters:
     - Pod
     - Deployment
@@ -38,6 +44,9 @@ spec:
     - Node
     - ValidatingWebhookConfiguration
     - MutatingWebhookConfiguration
+    - GatewayClass
+    - Gateway
+    - HTTPRoute
   # The cache only holds AI answers.
   noCache: true
   repository: ghcr.io/k8sgpt-ai/k8sgpt
