@@ -1,0 +1,11 @@
+---
+# machinery-order-service -- orders for machinery resources, delivered as pull
+# requests to the GitOps repo and followed to Ready (stuttgart-things#4297).
+#
+# REQUIRES cilium-gateway from the infra bundle and, from the cluster repo, the
+# Namespace, Secrets and ConfigMap listed in
+# apps/machinery-order-service/release.yaml. One instance per lab.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-machinery-order-service.yaml

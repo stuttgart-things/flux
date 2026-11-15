@@ -1,0 +1,33 @@
+---
+# MACHINERY_ORDER_SERVICE_ROUTE=api: the own hostname serves the machine paths
+# only -- the REST API and SSE (/api/...), /health, /ready, /version. The UI
+# (/ui/ at the root or under BASE_PATH) is then reachable only through
+# sthings-portal, behind its login; the portal reaches the service in-cluster.
+# The service answers at the root and under BASE_PATH, so the claims CLI and
+# curl keep calling /api/v1/orders on this host.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: machinery-order-service
+    patch: |
+      - op: replace
+        path: /spec/rules
+        value:
+          - matches:
+              - path:
+                  type: PathPrefix
+                  value: /api
+              - path:
+                  type: Exact
+                  value: /health
+              - path:
+                  type: Exact
+                  value: /ready
+              - path:
+                  type: Exact
+                  value: /version
+            backendRefs:
+              - name: machinery-order-service
+                port: 8080

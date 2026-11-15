@@ -1,0 +1,119 @@
+---
+# machinery-order-service from its kustomize base (stuttgart-things#4297).
+#
+# The base (v0.1.1+) is neutral: namespace, CRDs Order/ManagementCluster,
+# RBAC, ConfigMap, Deployment, Service -- no route, no auth, no GitHub App,
+# no ManagementCluster objects. What is lab-specific comes from the cluster
+# repo, in the namespace machinery-order-service:
+#
+#   Namespace machinery-order-service       (applied with the Secrets)
+#   Secret machinery-order-service-github-app  key private-key.pem (SOPS)
+#   Secret <tokenSecretRef of each ManagementCluster>, e.g. machinery-grpc (SOPS)
+#   ConfigMap machinery-order-service-cluster  the environment, e.g.
+#     CLAIM_API_URL, GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID,
+#     AUTH_OIDC_ISSUER, AUTH_OIDC_AUDIENCE, AUTH_TRUST_FORWARDED_USER,
+#     AUTH_ADMIN_ROLES, AUTH_ORDER_ROLES ...
+#   ManagementCluster objects -- cluster-scoped, they need the CRDs from
+#     here, so a Kustomization of their own with dependsOn this one.
+#
+# A ConfigMap and not substitute variables for the environment: AUTH_* may
+# be empty on purpose, and an empty substitute value renders as null.
+#
+# The namespace is FIXED: the base's ClusterRoleBinding names the
+# ServiceAccount in machinery-order-service, and targetNamespace does not
+# move a ClusterRoleBinding subject.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-order-service
+  namespace: machinery-order-service
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: machinery-order-service-kustomize
+  prune: true
+  wait: true
+  patches:
+    # The cluster repo owns the Namespace (see above). A Namespace owned
+    # twice is pruned with either owner.
+    - target:
+        kind: Namespace
+        name: machinery-order-service
+      patch: |
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: machinery-order-service
+        $patch: delete
+    - target:
+        kind: Deployment
+        name: machinery-order-service
+      patch: | # pragma: allowlist secret -- secretName of the GitHub App key, no value
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: machinery-order-service
+          annotations:
+            # Rolls the pod when ConfigMap machinery-order-service-cluster or
+            # a Secret changes (envFrom is read at start only).
+            reloader.stakater.com/auto: "${MACHINERY_ORDER_SERVICE_RELOADER_AUTO:-true}"
+        spec:
+          template:
+            spec:
+              volumes:
+                # trust-manager's bundle: the Vault PKI CA of LabUL's ZITADEL,
+                # claim-machinery-api and machinery-grpc hosts. Optional, so a
+                # cluster without trust-manager still starts (with the system
+                # roots only).
+                - name: trust-bundle
+                  configMap:
+                    name: ${MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}
+                    optional: true
+                # Not optional: without the key the service has no git
+                # identity, and a pod stuck in ContainerCreating says why.
+                - name: github-app
+                  secret:
+                    secretName: machinery-order-service-github-app
+                    items:
+                      - key: private-key.pem
+                        path: private-key.pem
+              containers:
+                - name: machinery-order-service
+                  image: ghcr.io/stuttgart-things/machinery-order-service:${MACHINERY_ORDER_SERVICE_VERSION:-v0.1.1}
+                  env:
+                    # URL prefix behind sthings-portal, = the portal key
+                    # (/orders). `/` = the root. An env entry and not a
+                    # ConfigMap key: a change here rolls the pod.
+                    - name: BASE_PATH
+                      value: "${MACHINERY_ORDER_SERVICE_BASE_PATH:-/}"
+                    # Go reads SSL_CERT_DIR in addition to the system bundle
+                    # file, so public CAs (api.github.com) keep working.
+                    - name: SSL_CERT_DIR
+                      value: /etc/ssl/custom
+                    - name: GITHUB_APP_PRIVATE_KEY_FILE
+                      value: /etc/github-app/private-key.pem
+                  volumeMounts:
+                    - name: trust-bundle
+                      mountPath: /etc/ssl/custom/${MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      subPath: ${MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_KEY:-trust-bundle.pem}
+                      readOnly: true
+                    - name: github-app
+                      mountPath: /etc/github-app
+                      readOnly: true
+    # The cluster's environment, AFTER the base ConfigMap (a later envFrom
+    # source wins on a duplicate key, so CLAIM_API_URL here replaces the
+    # base's in-cluster default). Not optional: without it there is no
+    # GitHub App id. JSON6902 and not a strategic merge: envFrom has no merge
+    # key, a merge patch would replace the base's configMapRef.
+    - target:
+        kind: Deployment
+        name: machinery-order-service
+      patch: |
+        - op: add
+          path: /spec/template/spec/containers/0/envFrom/-
+          value:
+            configMapRef:
+              name: machinery-order-service-cluster

@@ -1,0 +1,15 @@
+---
+# No Namespace here: the cluster repo ships `machinery-order-service` next to
+# its SOPS Secrets (GitHub App key, machinery gRPC token) -- one apply,
+# Namespace first. A Namespace created here would come after the Secrets'
+# apply had already failed on it (as for sthings-portal on the infra clusters).
+apiVersion: source.toolkit.fluxcd.io/${FLUX_SOURCE_API_VERSION:-v1}
+kind: OCIRepository
+metadata:
+  name: machinery-order-service-kustomize
+  namespace: machinery-order-service
+spec:
+  interval: 1h
+  url: oci://ghcr.io/stuttgart-things/machinery-order-service-kustomize
+  ref:
+    tag: ${MACHINERY_ORDER_SERVICE_VERSION:-v0.1.1}
