@@ -10,6 +10,7 @@ cicd/platform/
 ├── root/          empty kustomization — the consumer's spec.path
 └── components/
     ├── argo-cd/              → ./cicd/argo-cd        (needs cilium-gateway + a Secret)
+    ├── argo-cd-oidc/         + OIDC login (ZITADEL) on argo-cd  (add-on: needs argo-cd earlier + a Secret)
     ├── argocd-platform/      → ./cicd/argocd-platform/overlays/…  (an ArgoCD control plane)
     ├── argo-rollouts/        → ./cicd/argo-rollouts
     ├── crossplane/           → ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE}/…
@@ -144,6 +145,41 @@ what machinery reads there is the `Application` kind of the shared watch set
 `machinery-argocd` is the same pair of child Kustomizations under the same
 names, `machinery` and `machinery-httproute`, waiting on `argo-cd` instead.
 Select one of the two, never both; `machinery-grpcroute` works with either.
+
+## OIDC login on Argo CD: `argo-cd-oidc`
+
+An add-on to `argo-cd`, listed **after** it: it patches the `argo-cd` child
+Kustomization with a HelmRelease patch (stuttgart-things#4595, #4596). The
+local admin stays as emergency access.
+
+```yaml
+  components:
+    - ../components/argo-cd
+    - ../components/argo-cd-oidc
+  postBuild:
+    substitute:
+      ARGO_CD_OIDC_ISSUER: https://zitadel.example
+      ARGO_CD_OIDC_CLIENT_ID: "123456789012345678"   # quoted: digits only
+```
+
+- `argocd-cm`: `url` (`https://${ARGO_CD_HOSTNAME:-argocd}.${INFRA_DOMAIN}`)
+  and `oidc.config` (name `ARGO_CD_OIDC_NAME`, default Zitadel; scopes
+  `openid profile email`)
+- `argocd-rbac-cm`: groups from the ID token claim `ARGO_CD_OIDC_GROUPS_CLAIM`
+  (default `argocd_roles`), `argocd-admin` → `role:admin`, `argocd-reader` →
+  `role:readonly` (`ARGO_CD_OIDC_ADMIN_GROUP` / `_READONLY_GROUP`), no default
+  role. The claim must be a **list**: Argo CD cannot read ZITADEL's roles map
+  (`urn:zitadel:iam:org:project:roles`); stuttgart-things' zitadel-config
+  roots add `argocd_roles` with an action
+- the issuer's CA: `ARGO_CD_OIDC_CA_CONFIGMAP` / `_KEY` (default
+  `cluster-trust-bundle` / `trust-bundle.pem`) mounted into argocd-server,
+  `SSL_CERT_FILE` points at it
+- the client secret is **not** a variable: Secret `argocd-oidc-zitadel`, key
+  `clientSecret`, in Argo CD's namespace, labelled
+  `app.kubernetes.io/part-of: argocd`, supplied by the cluster (SOPS / ESO)
+
+UI login only: `argocd login --sso` would need an `http://localhost:8085`
+redirect at the IdP.
 
 ## Upgrading a Crossplane Configuration is not a version bump
 
