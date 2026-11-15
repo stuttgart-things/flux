@@ -1,0 +1,59 @@
+# Substituted by the BUNDLE: the ARGO_CD_OIDC_* variables are read here and
+# never reach the child's substitute map -- a digits-only client ID threaded as
+# a child substitute value turns into a number after kustomize drops the quotes
+# and breaks the bundle apply (map[string]string; see headlamp-oidc).
+#
+# `$argocd-oidc-zitadel:clientSecret` is Argo CD's Secret reference, not a
+# Flux variable: Flux substitutes only ${...}, a bare $name passes both the
+# bundle and the child substitution untouched.
+#
+# CA: argocd-server makes the OIDC calls. oidc.config's rootCA would want the
+# PEM inline; instead the trust bundle is mounted and SSL_CERT_FILE points Go's
+# system pool at it (Argo CD uses the system pool when rootCA is empty). The
+# bundle carries the public roots too.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: argocd-deployment
+      patch: |
+        - op: add
+          path: /spec/values/configs/cm
+          value:
+            url: "https://${ARGO_CD_HOSTNAME:-argocd}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+            oidc.config: |
+              name: "${ARGO_CD_OIDC_NAME:-Zitadel}"
+              issuer: "${ARGO_CD_OIDC_ISSUER:-https://set-ARGO_CD_OIDC_ISSUER.invalid}"
+              clientID: "${ARGO_CD_OIDC_CLIENT_ID:-set-ARGO_CD_OIDC_CLIENT_ID}"
+              clientSecret: $argocd-oidc-zitadel:clientSecret
+              requestedScopes: ["openid", "profile", "email"]
+        - op: add
+          path: /spec/values/configs/rbac
+          value:
+            scopes: "[${ARGO_CD_OIDC_GROUPS_CLAIM:-argocd_roles}]"
+            # No default role: a user without one of the groups below sees
+            # nothing. ZITADEL's project_role_check already refuses users
+            # without any role on the project.
+            policy.default: ""
+            policy.csv: |
+              g, ${ARGO_CD_OIDC_ADMIN_GROUP:-argocd-admin}, role:admin
+              g, ${ARGO_CD_OIDC_READONLY_GROUP:-argocd-reader}, role:readonly
+        - op: add
+          path: /spec/values/server/env
+          value:
+            - name: SSL_CERT_FILE
+              value: "/etc/ssl/oidc-ca/${ARGO_CD_OIDC_CA_KEY:-trust-bundle.pem}"
+        - op: add
+          path: /spec/values/server/volumes
+          value:
+            - name: oidc-ca
+              configMap:
+                name: "${ARGO_CD_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
+        - op: add
+          path: /spec/values/server/volumeMounts
+          value:
+            - name: oidc-ca
+              mountPath: /etc/ssl/oidc-ca
+              readOnly: true

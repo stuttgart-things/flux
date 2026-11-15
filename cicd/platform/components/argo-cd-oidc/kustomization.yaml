@@ -1,0 +1,37 @@
+---
+# Opt-in: argo-cd-oidc -- Argo CD logs in through an OIDC provider (ZITADEL)
+# next to the local admin (stuttgart-things#4595, #4596).
+#
+# An ADD-ON, not an alternative: REQUIRES ../argo-cd EARLIER in the same
+# spec.components list. The patch below targets the Flux Kustomization that
+# component renders and adds a HelmRelease patch to it; without ../argo-cd it
+# matches nothing and does nothing.
+#
+# Variables (bundle postBuild.substitute):
+#   ARGO_CD_OIDC_ISSUER        REQUIRED, the issuer as in the discovery document
+#   ARGO_CD_OIDC_CLIENT_ID     REQUIRED (ZITADEL: digits only -- stays quoted
+#                              inside the block scalar)
+#   ARGO_CD_OIDC_NAME          login button, default Zitadel
+#   ARGO_CD_OIDC_GROUPS_CLAIM  the ID token claim RBAC reads the groups from,
+#                              default argocd_roles (a LIST; ZITADEL's own
+#                              roles claim is a map Argo CD cannot read)
+#   ARGO_CD_OIDC_ADMIN_GROUP / ARGO_CD_OIDC_READONLY_GROUP
+#                              default argocd-admin -> role:admin,
+#                              argocd-reader -> role:readonly
+#   ARGO_CD_OIDC_CA_CONFIGMAP / ARGO_CD_OIDC_CA_KEY
+#                              the issuer's CA, default trust-manager's
+#                              cluster-trust-bundle / trust-bundle.pem
+#
+# NOT a variable: the client secret. It comes from the Secret
+# argocd-oidc-zitadel, key clientSecret, in Argo CD's namespace, labelled
+# app.kubernetes.io/part-of: argocd (Argo CD resolves `$<secret>:<key>` only in
+# Secrets with that label). The cluster applies it (SOPS) or ESO writes it.
+# Missing, the login button is there and every login fails at the token step.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: argo-cd
+    path: patch-argo-cd.yaml
