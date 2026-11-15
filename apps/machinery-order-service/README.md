@@ -20,7 +20,7 @@ one instance per lab on the lab's infra cluster.
 | `INFRA_DOMAIN` | - (required) | HTTPRoute domain suffix |
 | `INFRA_GATEWAY_NAME` / `_NAMESPACE` | `cilium-gateway` / `default` | Gateway parentRef |
 | `MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP` / `_KEY` | `cluster-trust-bundle` / `trust-bundle.pem` | trust-manager CA bundle, read through `SSL_CERT_DIR` |
-| `MACHINERY_ORDER_SERVICE_RELOADER_AUTO` | `true` | Reloader rolls the pod on ConfigMap/Secret changes |
+| (Reloader) | on | `reloader.stakater.com/auto: "true"`; not a bundle variable, a bool would reach the child's substitute map as a non-string |
 | `MACHINERY_ORDER_SERVICE_SUSPEND` | `false` | |
 
 ## FROM THE CLUSTER REPO
