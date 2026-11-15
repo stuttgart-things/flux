@@ -1,0 +1,68 @@
+---
+# machinery-order-service -- takes orders for machinery resources (VMs first),
+# renders them through claim-machinery-api, opens the pull request in the
+# GitOps repo and follows it to Ready (stuttgart-things#4296, #4297)
+# → ./apps/machinery-order-service
+#
+# One instance per lab, on the lab's infra cluster: it talks to that lab's
+# ZITADEL, claim-machinery-api and machinery(s), never applies anything to a
+# management cluster -- git is its only write path.
+#
+# dependsOn cilium-gateway (infra bundle) for its HTTPRoute.
+#
+# REQUIRES, in namespace machinery-order-service, before this is selected
+# (apps/machinery-order-service/release.yaml has the list): the Namespace,
+# Secret machinery-order-service-github-app, ConfigMap
+# machinery-order-service-cluster, and the machinery token Secrets. The
+# ManagementCluster objects come after this (they need its CRDs).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-order-service
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: apps
+    kustomization.stuttgart-things.com/bundle: apps-platform
+spec:
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_ORDER_SERVICE_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./apps/machinery-order-service
+  components:
+    # What the own hostname serves: `all` (default: API, UI, /health) or
+    # `api` (/api/..., /health, /ready, /version -- the UI then only through
+    # sthings-portal's login, with MACHINERY_ORDER_SERVICE_BASE_PATH set).
+    - ./components/route-${MACHINERY_ORDER_SERVICE_ROUTE:-all}
+  postBuild:
+    substitute:
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-order-service
+      MACHINERY_ORDER_SERVICE_VERSION: "${MACHINERY_ORDER_SERVICE_VERSION:-v0.1.1}"
+      FLUX_SOURCE_API_VERSION: "${FLUX_SOURCE_API_VERSION:-v1}"
+      MACHINERY_ORDER_SERVICE_RELOADER_AUTO: "${MACHINERY_ORDER_SERVICE_RELOADER_AUTO:-true}"
+      MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP: "${MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP:-cluster-trust-bundle}"
+      MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_KEY: "${MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_KEY:-trust-bundle.pem}"
+
+      # ---- behind sthings-portal ------------------------------------------
+      # The URL prefix of UI and API, e.g. /orders for a portal entry
+      # `orders=http://machinery-order-service.machinery-order-service.svc.cluster.local:8080`
+      # -- the portal forwards /<key>/... unchanged, so this must equal its
+      # key. `/` (the default) is the root; not empty, an empty default
+      # arrives in the child's substitute map as null. The API answers at the
+      # root too, under any prefix.
+      MACHINERY_ORDER_SERVICE_BASE_PATH: "${MACHINERY_ORDER_SERVICE_BASE_PATH:-/}"
+
+      # ---- HTTPRoute ------------------------------------------------------
+      MACHINERY_ORDER_SERVICE_HOSTNAME: "${MACHINERY_ORDER_SERVICE_HOSTNAME:-orders}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
