@@ -13,6 +13,14 @@ metadata:
     backup: backstage-rag-postgres
 spec:
   instances: ${RAG_PG_INSTANCES:-1}
+  # One instance means no replica, and rag-postgres-ro selects replicas only:
+  # it never has an endpoint, and K8sGPT's Service analyzer reports it
+  # (stuttgart-things/stuttgart-things#4591). -rw (what Backstage dials) and
+  # -r stay. Whoever raises RAG_PG_INSTANCES above 1 drops this block, or
+  # -ro stays off with replicas behind it.
+  managed:
+    services:
+      disabledDefaultServices: ["ro"]
   # Custom operand image: CNPG standard images don't bundle pgvector.
   # Built from image/Dockerfile, pushed to ghcr.io/stuttgart-things.
   imageName: ${RAG_PG_IMAGE:-ghcr.io/stuttgart-things/postgresql-pgvector}:${RAG_PG_IMAGE_TAG:-16}
