@@ -5,18 +5,21 @@ metadata:
   name: backstage-httproute
   namespace: ${BACKSTAGE_NAMESPACE:-portal}
 spec:
-  # The route must not exist before the Service it points at.
+  # The route must not exist before the Service it points at -- on a cluster
+  # without the Gateway API TLSRoute CRD.
   #
-  # Cilium resolves a backendRef ONCE, when it admits the route. Created first,
-  # the route is admitted with ResolvedRefs=False / BackendNotFound and STAYS
-  # there after the Service appears seconds later -- nothing re-resolves it. The
-  # Gateway keeps reporting Programmed, the HelmRelease reports installed, the
-  # Kustomization reports Ready, and the hostname answers 500 forever. The cure
-  # is a no-op annotation on the route, which is not something anybody thinks to
-  # try on a green cluster.
+  # cilium-operator lists TLSRoutes on every Service event without checking
+  # that the CRD exists (cilium/cilium#47819, closed upstream without a fix).
+  # With only the standard-channel CRDs installed that list fails, so a route
+  # created before its Service stays ResolvedRefs=False / BackendNotFound and
+  # the hostname answers 500 while everything else reports Ready
+  # (stuttgart-things/stuttgart-things#4643). Measured on sthings-platform's
+  # first install: Service created 3m26s before the route was still "not
+  # found"; a no-op annotation on the route cured it.
   #
-  # Measured on sthings-platform's first install: Service created 3m26s before
-  # the route was still called "not found".
+  # The fix is the experimental TLSRoute CRD plus a cilium-operator restart;
+  # all six lab clusters have it since 2026-11-16 (see their READMEs). This
+  # ordering stays for clusters that are set up without it.
   dependsOn:
     - name: backstage-deployment
       namespace: ${BACKSTAGE_NAMESPACE:-portal}
