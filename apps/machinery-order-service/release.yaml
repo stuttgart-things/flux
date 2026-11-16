@@ -9,6 +9,8 @@
 #   Namespace machinery-order-service       (applied with the Secrets)
 #   Secret machinery-order-service-github-app  key private-key.pem (SOPS)
 #   Secret <tokenSecretRef of each ManagementCluster>, e.g. machinery-grpc (SOPS)
+#   Secret machinery-order-service-claim-api  OPTIONAL, the service's own
+#     claim-machinery-api identity (CLAIM_API_OIDC_CLIENT_ID/_SECRET), SOPS
 #   ConfigMap machinery-order-service-cluster  the environment, e.g.
 #     CLAIM_API_URL, GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID,
 #     AUTH_OIDC_ISSUER, AUTH_OIDC_AUDIENCE, AUTH_TRUST_FORWARDED_USER,
@@ -117,3 +119,20 @@ spec:
           value:
             configMapRef:
               name: machinery-order-service-cluster
+    # The service's own claim-machinery-api identity, for Orders created
+    # with kubectl (no orderer token to forward): CLAIM_API_OIDC_CLIENT_ID /
+    # CLAIM_API_OIDC_CLIENT_SECRET (client credentials of a ZITADEL machine
+    # user) or CLAIM_API_TOKEN. Optional: without it those Orders render
+    # without a token, which only works while claim-machinery-api has no
+    # order auth. CLAIM_API_OIDC_TOKEN_URL / _SCOPE are not secret and go
+    # into the ConfigMap above. Last, so it wins on a duplicate key.
+    - target:
+        kind: Deployment
+        name: machinery-order-service
+      patch: | # pragma: allowlist secret -- name of the Secret, no value
+        - op: add
+          path: /spec/template/spec/containers/0/envFrom/-
+          value:
+            secretRef:
+              name: machinery-order-service-claim-api
+              optional: true
