@@ -94,7 +94,7 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/vspherevm
       CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_VSPHEREVM_CHART_VERSION:-0.17.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/proxmoxvm
-      CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.13.1}"
+      CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION: "${CROSSPLANE_CAPABILITY_PROXMOXVM_CHART_VERSION:-0.13.2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/ansible
       CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION: "${CROSSPLANE_CAPABILITY_ANSIBLE_CHART_VERSION:-0.9.44}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/charts/packer
