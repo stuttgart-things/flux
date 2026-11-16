@@ -1,0 +1,8 @@
+---
+# MACHINERY_ORDER_SERVICE_ROOT_REDIRECT=none (the default): `/` on the own
+# hostname is not redirected. Nothing to change; this component exists so the
+# bundle component can pick ./components/root-redirect-${...} without a special
+# case (same pattern as route-all).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources: []
