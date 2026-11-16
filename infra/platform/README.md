@@ -41,6 +41,7 @@ infra/platform/
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     ├── headlamp-oidc/            → ./apps/headlamp + OIDC patch             (instead of headlamp; OIDC login, requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
+    ├── kured/                    → ./infra/kured                           (reboots nodes after OS updates, weekdays 04:00-06:00 UTC)
     ├── velero/                   → ./infra/velero                          (requires an S3 Secret)
     ├── velero-eso/               → ./infra/velero                          (instead of velero; requires external-secrets-vault-store)
     ├── velero-schedule/          → ./infra/velero/schedule                 (requires velero or velero-eso)
@@ -241,7 +242,7 @@ manifests as the eight hand-written CRs it replaces.
 `cilium-lb`, `cilium-gateway`, `cert-manager-install`,
 `cert-manager-selfsigned`, `cert-manager-ca-from-secret`,
 `cert-manager-letsencrypt-hetzner`, `cilium-gateway-extra`, `cnpg-operator`,
-`cnpg-barman-cloud`, `reloader` and `trust-manager` carry a `profile.yaml` next to their
+`cnpg-barman-cloud`, `reloader`, `kured` and `trust-manager` carry a `profile.yaml` next to their
 `ks-*.yaml`: the vars a cluster may set for the component, and which of them are
 required. blueprints' `render-cluster-apps` reads it to render the bundle's
 `spec.components` and `postBuild.substitute` from a `ClusterApps` file

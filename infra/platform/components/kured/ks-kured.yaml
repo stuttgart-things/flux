@@ -1,0 +1,44 @@
+---
+# kured (kubereboot) → ./infra/kured
+#
+# Standalone: reboots nodes after OS updates, one at a time with drain,
+# weekdays 04:00-06:00 UTC by default. Nothing in the bundle depends on it and
+# it depends on nothing. It REBOOTS NODES -- add the component only to a
+# cluster that should do that unattended.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kured
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set KURED_SUSPEND: "true" in the consumer's substitute block.
+  # Freezes reconciliation; the DaemonSet stays and keeps rebooting. To stop
+  # reboots, remove this component from the consumer's spec.components list
+  # (prune removes the DaemonSet).
+  suspend: ${KURED_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/kured
+  postBuild:
+    # NOT threaded: the reboot days (a list) and forceReboot (a bool) -- see
+    # ./infra/kured/release.yaml; change them with a patch on the HelmRelease.
+    substitute:
+      KURED_NAMESPACE: "${KURED_NAMESPACE:-kube-system}"
+      # renovate: datasource=helm depName=kured registryUrl=https://kubereboot.github.io/charts
+      KURED_VERSION: "${KURED_VERSION:-6.1.0}"
+      KURED_PERIOD: "${KURED_PERIOD:-1h}"
+      KURED_START_TIME: "${KURED_START_TIME:-04:00}"
+      KURED_END_TIME: "${KURED_END_TIME:-06:00}"
+      KURED_TIME_ZONE: "${KURED_TIME_ZONE:-UTC}"
+      KURED_DRAIN_TIMEOUT: "${KURED_DRAIN_TIMEOUT:-15m}"

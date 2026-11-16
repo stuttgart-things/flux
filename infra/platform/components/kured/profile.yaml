@@ -1,0 +1,19 @@
+---
+# AppProfile: what a cluster sets for kured.
+# Read by blueprints `render-cluster-apps`; kept true by
+# hack/check-app-profiles.py (vars and keys) and `kcl vet` (value shapes).
+kind: AppProfile
+metadata:
+  name: kured
+spec:
+  bundle: infra-platform
+  component: ../components/kured
+  vars:
+    KURED_DRAIN_TIMEOUT: {}
+    KURED_END_TIME: {}
+    KURED_NAMESPACE: {}
+    KURED_PERIOD: {}
+    KURED_START_TIME: {}
+    KURED_SUSPEND: {}
+    KURED_TIME_ZONE: {}
+    KURED_VERSION: {}
