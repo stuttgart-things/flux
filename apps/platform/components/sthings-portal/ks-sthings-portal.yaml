@@ -142,6 +142,10 @@ spec:
           name: sthings-portal-config
         data:
           PORTAL_SERVICES: "${STHINGS_PORTAL_SERVICES:-led=http://homerun2-led-catcher}"
+          # Renamed keys, old=new: /<old>/... answers 301 to /<new>/...
+          # (PORTAL_REDIRECTS, stuttgart-things/sthings-portal#37; an older
+          # portal ignores it). Empty: none.
+          PORTAL_REDIRECTS: "${STHINGS_PORTAL_REDIRECTS:-}"
           PORTAL_THEME: "${STHINGS_PORTAL_THEME:-homerun2}"
           PORTAL_TITLE: "${STHINGS_PORTAL_TITLE:-}"
           PORTAL_SUBTITLE: "${STHINGS_PORTAL_SUBTITLE:-}"

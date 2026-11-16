@@ -89,6 +89,7 @@ tool has to patch.
 | `STHINGS_PORTAL_NAMESPACE` | `homerun2` | must exist; not created here (see [Instances](#instances)) |
 | `STHINGS_PORTAL_VERSION` | `v0.14.0` | artifact tag = image tag (renovate) |
 | `STHINGS_PORTAL_SERVICES` | `led=http://homerun2-led-catcher` | `key=url` or `key\|Title=url`, comma-separated, in navigation order |
+| `STHINGS_PORTAL_REDIRECTS` | *(empty)* | renamed service keys, `old=new` comma-separated: `/<old>/…` answers 301 to `/<new>/…` with path and query (`PORTAL_REDIRECTS`, sthings-portal with redirect support) |
 | `STHINGS_PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` |
 | `STHINGS_PORTAL_TITLE` | *(empty: the theme's -- `HOMERUN²` / `machinery`)* | header text, also the page title |
 | `STHINGS_PORTAL_SUBTITLE` | *(empty: the theme's -- `PORTAL` / `LAB PORTAL`)* | the small line under the header text |
