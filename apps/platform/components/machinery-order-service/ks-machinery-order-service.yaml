@@ -43,6 +43,10 @@ spec:
     # `api` (/api/..., /health, /ready, /version -- the UI then only through
     # sthings-portal's login, with MACHINERY_ORDER_SERVICE_BASE_PATH set).
     - ./components/route-${MACHINERY_ORDER_SERVICE_ROUTE:-all}
+    # `/` on the own hostname: `none` (default: as the route above leaves it)
+    # or `portal` (302 to the sthings-portal overview at
+    # MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME.INFRA_DOMAIN). After route-*.
+    - ./components/root-redirect-${MACHINERY_ORDER_SERVICE_ROOT_REDIRECT:-none}
   postBuild:
     substitute:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-order-service
@@ -62,6 +66,8 @@ spec:
 
       # ---- HTTPRoute ------------------------------------------------------
       MACHINERY_ORDER_SERVICE_HOSTNAME: "${MACHINERY_ORDER_SERVICE_HOSTNAME:-orders}"
+      # Host prefix of the sthings-portal that ROOT_REDIRECT=portal points at.
+      MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME: "${MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME:-machinery-portal}"
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

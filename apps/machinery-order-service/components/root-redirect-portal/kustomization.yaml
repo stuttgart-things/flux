@@ -1,0 +1,27 @@
+---
+# MACHINERY_ORDER_SERVICE_ROOT_REDIRECT=portal: `/` (exactly) on the own
+# hostname answers 302 to https://${MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME}.${DOMAIN}/
+# -- the sthings-portal overview -- instead of a 404 (with route-api the
+# gateway has no rule for `/`; with route-all the service has no page there).
+# Every other path is unchanged. Applied after route-*, which may replace
+# /spec/rules, so the rule is appended to what that left.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      kind: HTTPRoute
+      name: machinery-order-service
+    patch: |
+      - op: add
+        path: /spec/rules/-
+        value:
+          matches:
+            - path:
+                type: Exact
+                value: /
+          filters:
+            - type: RequestRedirect
+              requestRedirect:
+                scheme: https
+                hostname: ${MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME}.${DOMAIN}
+                statusCode: 302

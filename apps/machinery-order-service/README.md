@@ -17,6 +17,8 @@ one instance per lab on the lab's infra cluster.
 | `MACHINERY_ORDER_SERVICE_BASE_PATH` | `/` | URL prefix behind sthings-portal, equal to the portal key (e.g. `/orders`) |
 | `MACHINERY_ORDER_SERVICE_ROUTE` | `all` | `api`: the own host serves `/api/...`, `/health`, `/ready` and `/version` only, and the UI is reachable only through the portal |
 | `MACHINERY_ORDER_SERVICE_HOSTNAME` | `orders` | HTTPRoute hostname prefix |
+| `MACHINERY_ORDER_SERVICE_ROOT_REDIRECT` | `none` | `portal`: `/` (exactly) on the own hostname answers 302 to `https://<PORTAL_HOSTNAME>.<INFRA_DOMAIN>/` instead of 404 |
+| `MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME` | `machinery-portal` | Host prefix of the sthings-portal for `ROOT_REDIRECT=portal` |
 | `INFRA_DOMAIN` | - (required) | HTTPRoute domain suffix |
 | `INFRA_GATEWAY_NAME` / `_NAMESPACE` | `cilium-gateway` / `default` | Gateway parentRef |
 | `MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP` / `_KEY` | `cluster-trust-bundle` / `trust-bundle.pem` | trust-manager CA bundle, read through `SSL_CERT_DIR` |
