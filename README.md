@@ -96,7 +96,7 @@ can keep them in one ConfigMap and `substituteFrom` it into every bundle.
 
 | Bundle | Path | Components | What it covers |
 |---|---|---|---|
-| [`infra/platform`](infra/platform) | `./infra/platform/root` | 24 | Cilium LB + Gateway, cert-manager + issuers, trust-manager, storage (openebs, nfs-csi), monitoring (prometheus, kube-prometheus-stack), external-secrets, SOPS, velero, CloudNativePG, reloader, flux-web, headlamp |
+| [`infra/platform`](infra/platform) | `./infra/platform/root` | 24 | Cilium LB + Gateway, cert-manager + issuers, trust-manager, storage (openebs, nfs-csi), monitoring (prometheus, kube-prometheus-stack), external-secrets, SOPS, velero, CloudNativePG, reloader, kured, flux-web, headlamp |
 | [`apps/platform`](apps/platform) | `./apps/platform/root` | 25 | openbao, vault, harbor, keycloak, openldap, infisical, backstage, minio, redis-stack, rancher, vcluster, clusterbook, zitadel, sthings-portal, homepage, uptime-kuma, homerun2, tabletennis, ... |
 | [`cicd/platform`](cicd/platform) | `./cicd/platform/root` | 16 | argo-cd, argo-rollouts, kargo, tekton, crossplane (+ profiles, capabilities), kro, dapr, claim-machinery-api, komoplane, clusterbook-operator |
 

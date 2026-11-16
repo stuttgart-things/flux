@@ -1,0 +1,11 @@
+---
+# No Namespace object: kured runs in kube-system by default, which every
+# cluster has. A cluster that moves it elsewhere creates that namespace itself.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kubereboot
+  namespace: ${KURED_NAMESPACE:-kube-system}
+spec:
+  interval: 24h
+  url: https://kubereboot.github.io/charts
