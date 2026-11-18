@@ -18,6 +18,7 @@ OCIRepository + Flux Kustomization
 | `HOMERUN2_SCOUT_VERSION` | see `release.yaml` | Container image tag |
 | `HOMERUN2_SCOUT_AUTH_TOKEN` | `changeme` | Auth token for scout API |
 | `HOMERUN2_REDIS_PASSWORD_B64` | *(required)* | Base64-encoded Redis password |
+| `HOMERUN2_SCOUT_DIGEST_EXCLUDE_SYSTEMS` | *(empty)* | Comma-separated systems left out of digest and analytics counts (`DIGEST_EXCLUDE_SYSTEMS`), e.g. `radio` |
 | `HOMERUN2_SCOUT_TRUST_BUNDLE_CM` | `cluster-trust-bundle` | ConfigMap with CA bundle for TLS |
 | `GATEWAY_NAME` | *(required)* | Gateway resource name for HTTPRoute |
 | `GATEWAY_NAMESPACE` | `default` | Namespace of the Gateway resource |

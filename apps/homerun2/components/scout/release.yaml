@@ -143,3 +143,9 @@ spec:
                       value: redis-stack.${HOMERUN2_NAMESPACE:-homerun2}.svc.cluster.local
                     - name: REDIS_PORT
                       value: "6379"
+                    # Systems left out of the digest counts and of
+                    # /analytics/digest and /analytics/messages, e.g. `radio`:
+                    # homerun2-radio-pitcher reads those counts and would
+                    # otherwise count its own cards. Empty: none.
+                    - name: DIGEST_EXCLUDE_SYSTEMS
+                      value: "${HOMERUN2_SCOUT_DIGEST_EXCLUDE_SYSTEMS:=}"
