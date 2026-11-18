@@ -328,6 +328,12 @@ the running league match on the sandbox's start page). zaehlwerk reports to
 schmetterpause over the Service by default, so the league depends on no
 certificate.
 
+**Statistics for a reader.** `schmetterpause-statistics-sops` is not in any
+profile; a consumer adds it as a component. It sets `SP_STATISTICS_TOKEN` from
+`SCHMETTERPAUSE_STATISTICS_TOKEN` (schmetterpause v0.25.0+, ADR-0032):
+`GET /api/statistics`, the counts as JSON, read by homerun2-radio-pitcher's
+`tabletennis-stats`. A read-only token of its own, never the scoreboard's.
+
 **On the office's panel.** With the sandbox's panel at `redis`, its matches go
 to `TABLETENNIS_SANDBOX_PANEL_STREAM` (`tabletennis-sandbox`). The office shows
 them between its own matches when that stream is in its zaehlwerk's
