@@ -1,0 +1,38 @@
+---
+# schmetterpause-statistics-sops -- GET /api/statistics (schmetterpause
+# ADR-0032) for the sops credential mode: the office's counts as JSON for a
+# reader such as homerun2-radio-pitcher's tabletennis-stats segment. Add it to
+# the consumer's Kustomization as a component; the reader gets the same value
+# as its bearer token.
+#
+# REQUIRES SCHMETTERPAUSE_STATISTICS_TOKEN, and SCHMETTERPAUSE v0.25.0 OR
+# LATER. A token of its own, not SCHMETTERPAUSE_SCOREBOARD_TOKEN: that one may
+# enter results, and in the sandbox they count at once (ADR-0027). This one
+# only reads.
+#
+# UNSET DOES NOT FAIL THE APPLY. stringData stores YAML null as "", and
+# schmetterpause treats an empty token as "no route": the reader gets 404s.
+# No default on purpose. Generate it as `openssl rand -hex 32`: it is
+# substituted into YAML unquoted.
+#
+# Guarded like schmetterpause-scoreboard-sops: outside the sops mode the test
+# below fails the build rather than writing a key into a Secret nobody applies.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+  - target:
+      version: v1
+      kind: Secret
+      name: schmetterpause-app
+    patch: |
+      - op: add
+        path: /stringData/SP_STATISTICS_TOKEN
+        value: ${SCHMETTERPAUSE_STATISTICS_TOKEN}
