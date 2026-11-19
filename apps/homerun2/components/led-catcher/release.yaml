@@ -88,6 +88,18 @@ spec:
                     # the card's HH:MM are shown in.
                     - name: LED_IDLE
                       value: "${HOMERUN2_LED_CATCHER_IDLE:=off}"
+                    # The clock's face (classic, big, binary, words, analog,
+                    # or rotate: a different one every interval), its colour
+                    # mode (fixed, daylight, random) and the slot in seconds
+                    # (led-catcher v0.29.0 and later; older ones ignore them).
+                    # Set them to what the real panel runs, so the simulator
+                    # shows the same face at the same time.
+                    - name: LED_IDLE_STYLE
+                      value: "${HOMERUN2_LED_CATCHER_IDLE_STYLE:=classic}"
+                    - name: LED_IDLE_COLOR_MODE
+                      value: "${HOMERUN2_LED_CATCHER_IDLE_COLOR_MODE:=fixed}"
+                    - name: LED_IDLE_INTERVAL
+                      value: "${HOMERUN2_LED_CATCHER_IDLE_INTERVAL:=300}"
                     - name: TZ
                       value: "${HOMERUN2_LED_CATCHER_TZ:=UTC}"
                     # How many finite displays may wait their turn, first in
