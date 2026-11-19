@@ -136,7 +136,7 @@ spec:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-scout
       HOMERUN2_SCOUT_VERSION: "${HOMERUN2_SCOUT_VERSION:-v0.13.0}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-wled-mock-kustomize
-      HOMERUN2_WLED_MOCK_VERSION: "${HOMERUN2_WLED_MOCK_VERSION:-v1.14.0}"
+      HOMERUN2_WLED_MOCK_VERSION: "${HOMERUN2_WLED_MOCK_VERSION:-v1.15.0}"
     substituteFrom:
       # substituteFrom-keys: HOMERUN2_REDIS_PASSWORD_B64, TEAMS_WEBHOOK_URL
       # substituteFrom-optional-keys: HOMERUN2_OMNI_PITCHER_AUTH_TOKEN,
