@@ -205,6 +205,9 @@ Shares the version variables above.
 | `HOMERUN2_LED_CATCHER_STREAMS` | `messages` | no | `REDIS_STREAMS`, comma-separated, e.g. `messages,alerts` |
 | `HOMERUN2_LED_CATCHER_PROFILE_CM` | `homerun2-led-catcher-profile` | no | ConfigMap (key `profile.yaml`) mounted as the display profile; the default is the base's own |
 | `HOMERUN2_LED_CATCHER_IDLE` | `off` | no | Idle screen: `off` or `clock` |
+| `HOMERUN2_LED_CATCHER_IDLE_STYLE` | `classic` | no | `LED_IDLE_STYLE` (led-catcher v0.29.0+): the clock's face, `classic`, `big`, `binary`, `words`, `analog`, or `rotate` (a different one every interval) |
+| `HOMERUN2_LED_CATCHER_IDLE_COLOR_MODE` | `fixed` | no | `LED_IDLE_COLOR_MODE` (v0.29.0+): `fixed`, `daylight` (follows the time of day) or `random` |
+| `HOMERUN2_LED_CATCHER_IDLE_INTERVAL` | `300` | no | `LED_IDLE_INTERVAL` (v0.29.0+): seconds a `rotate`/`random` slot lasts, 30-86400 |
 | `HOMERUN2_LED_CATCHER_TZ` | `UTC` | no | Time zone of the idle clock and the card's HH:MM, e.g. `Europe/Berlin` |
 | `HOMERUN2_LED_CATCHER_DISPLAY_QUEUE` | `1` | no | `DISPLAY_QUEUE` (led-catcher v0.21.0+): how many finite displays wait their turn, first in first out. `1`: the newest waiting one replaces the rest |
 | `HOMERUN2_LED_CATCHER_BASE_PATH` | *(empty)* | no | `BASE_PATH`, e.g. `/led` behind homerun2-portal. Set, the app answers only under it, on its own hostname too (`led-catcher.<domain>/led/`); `/healthz` stays at the root |
