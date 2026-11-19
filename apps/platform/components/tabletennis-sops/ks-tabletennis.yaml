@@ -72,6 +72,10 @@ spec:
     # through which zaehlwerk resolves the fob and reports the match.
     - ../../components/schmetterpause-fobs-${TABLETENNIS_FOB_CHECKIN:-off}
     - ../../components/zaehlwerk-checkin-${TABLETENNIS_FOB_CHECKIN:-off}
+    # schmetterpause's kiosk: off or sops. One unlocked device at the table
+    # creates players and enters counted results for everybody
+    # (SCHMETTERPAUSE_KIOSK_TOKEN -> SP_KIOSK_TOKEN). Off, /kiosk is a 404.
+    - ../../components/schmetterpause-kiosk-${TABLETENNIS_SCHMETTERPAUSE_KIOSK:-off}
     # schmetterpause's Zählwerk (SP_ZAEHLWERK_URL): off or on. The running
     # score on the start page, and with the scoreboard token check-in by phone
     # (/table/left|right), where schmetterpause calls zaehlwerk itself -- so
@@ -181,7 +185,8 @@ spec:
       # substituteFrom-keys: SCHMETTERPAUSE_DB_PASSWORD, SCHMETTERPAUSE_SESSION_KEY
       # substituteFrom-optional-keys: ZAEHLWERK_OMNI_PITCHER_TOKEN,
       #   ZAEHLWERK_REDIS_PASSWORD, SCHMETTERPAUSE_SCOREBOARD_TOKEN,
-      #   SCHMETTERPAUSE_RFID_UID_KEY, ZAEHLWERK_CHECKIN_TOKEN
+      #   SCHMETTERPAUSE_RFID_UID_KEY, ZAEHLWERK_CHECKIN_TOKEN,
+      #   SCHMETTERPAUSE_KIOSK_TOKEN
       # SCHMETTERPAUSE_SESSION_KEY: at least 32 characters, or schmetterpause
       # refuses to start. The ZAEHLWERK pair: see the panel note at the top.
       # SCHMETTERPAUSE_SCOREBOARD_TOKEN: read only with
@@ -190,6 +195,8 @@ spec:
       # SCHMETTERPAUSE_RFID_UID_KEY and ZAEHLWERK_CHECKIN_TOKEN: read only with
       # TABLETENNIS_FOB_CHECKIN: sops. The key at least 32 characters, and a
       # new one unlinks every fob; `openssl rand -base64 48` for both.
+      # SCHMETTERPAUSE_KIOSK_TOKEN: read only with
+      # TABLETENNIS_SCHMETTERPAUSE_KIOSK: sops. `openssl rand -hex 32`.
       - kind: Secret
         name: ${TABLETENNIS_SOPS_SECRET:-tabletennis-sops-secrets}
         optional: false
