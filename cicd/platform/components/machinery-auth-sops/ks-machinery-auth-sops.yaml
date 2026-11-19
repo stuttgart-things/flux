@@ -1,0 +1,119 @@
+---
+# machinery WITH gRPC bearer-token auth, token from SOPS -> ./cicd/machinery + ./auth-sops
+#
+# ../machinery-auth with the token substituted from a Secret the cluster
+# supplies (SOPS-encrypted in its repo, decrypted by Flux) instead of read
+# through an ExternalSecret -- for a Flux cluster that runs no
+# external-secrets. The same two Kustomizations under the same names as
+# ../machinery and ../machinery-auth, so a cluster switches by swapping the
+# component line. KEEP THEM IN STEP (hack/check-shared-path-wiring.py compares
+# them); the differences are the `auth-sops` component, MACHINERY_AUTH_CONFIG
+# and the substituteFrom Secret.
+#
+# WHAT IS ON YOU, IN THIS ORDER (as for ../machinery-auth):
+#   1. EVERY gRPC client of this machinery has the token BEFORE you select
+#      this -- the server answers Unauthenticated to anything without it, in-
+#      cluster plaintext calls included. Sending a token to a server WITHOUT
+#      auth is harmless, so clients go first.
+#   2. The Secret below in flux-system, key MACHINERY_AUTH_TOKEN (e.g.
+#      `openssl rand -hex 32`), SOPS-encrypted in the cluster repo. Missing,
+#      this Kustomization fails at substitution and the running machinery
+#      stays as it is.
+#
+# Not covered by auth: /grpc.health.v1.Health/* and the HTMX dashboard (it
+# calls the server in-process). The HTTPRoute is unchanged.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: crossplane-configs
+  interval: 1h
+  retryInterval: 1m
+  timeout: 10m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery
+  components:
+    - ./auth-sops
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-kustomize
+      MACHINERY_VERSION: "${MACHINERY_VERSION:-v1.17.0}"
+
+      # ---- behind sthings-portal (stuttgart-things/flux#945) ---------------
+      # The dashboard's URL prefix, e.g. /machinery for a portal entry
+      # `machinery|Machinery=http://machinery.<ns>.svc.cluster.local:8080` --
+      # the portal forwards /<key>/... unchanged, so this must equal its key.
+      # `/` (the default) is no prefix -- machinery reads it as the root.
+      # The env entry is always set (cicd/machinery/release.yaml), so an
+      # existing cluster rolls the pod once when this comes in. Not empty: an empty default arrives in the child's substitute
+      # map as null, which the apply rejects. Set, the dashboard moves under
+      # the prefix on the own hostname too; /health and GET /api/v1/resources
+      # stay at the root. machinery v1.16.0+.
+      MACHINERY_BASE_PATH: "${MACHINERY_BASE_PATH:-/}"
+
+      # ---- gRPC auth ----
+      # The config.json member that turns the check on; tokenFile is where
+      # ./auth mounts the Secret. Leading space and trailing comma because it
+      # lands between "httpPort" and "resources" in ../../machinery/watch-config.yaml.
+      MACHINERY_AUTH_CONFIG: ' "auth": {"enabled": true, "tokenFile": "/var/run/machinery-auth/token"},'
+    substituteFrom:
+      # substituteFrom-keys: MACHINERY_AUTH_TOKEN
+      # The bearer token, the same value every client sends. No default:
+      # without the Secret this Kustomization fails, without the key the
+      # token renders empty.
+      - kind: Secret
+        name: ${MACHINERY_AUTH_SOPS_SECRET:-machinery-auth-sops-secrets}
+        optional: false
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: machinery-httproute
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: machinery
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${MACHINERY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./cicd/machinery/httproute
+  components:
+    # What machinery's own hostname serves: `all` (default: dashboard, JSON
+    # API, /health, as before) or `api` (/api/... and /health only -- the
+    # dashboard then only through sthings-portal's login, with
+    # MACHINERY_BASE_PATH set). The API stays public either way: Backstage
+    # reads /api/v1/resources from other clusters. A component and not a
+    # substitute: the route's rules are a list.
+    - ./components/route-${MACHINERY_ROUTE:-all}
+  postBuild:
+    substitute:
+      MACHINERY_NAMESPACE: "${MACHINERY_NAMESPACE:-machinery}"
+      MACHINERY_HOSTNAME: "${MACHINERY_HOSTNAME:-machinery}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"

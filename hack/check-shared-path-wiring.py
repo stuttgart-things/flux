@@ -187,12 +187,13 @@ MUST_MATCH = {
         "extra_allowed": set(),
     },
     "./cicd/machinery": {
-        "why": "machinery-auth is the machinery component with its gRPC "
-               "bearer-token auth switched on -- same image, watch set and "
-               "RBAC, and a cluster switching between the two must keep its "
-               "namespace and version",
-        # The auth variant's own: the config.json member, and where its
-        # ExternalSecret reads the token.
+        "why": "machinery-auth and machinery-auth-sops are the machinery "
+               "component with its gRPC bearer-token auth switched on -- same "
+               "image, watch set and RBAC, and a cluster switching between "
+               "them must keep its namespace and version",
+        # The auth variants' own: the config.json member, and where the ESO
+        # variant's ExternalSecret reads the token. The SOPS variant's token
+        # comes through substituteFrom, which this check does not compare.
         "extra_allowed": {
             "MACHINERY_AUTH_CONFIG",
             "MACHINERY_AUTH_ESO_STORE",
@@ -201,10 +202,10 @@ MUST_MATCH = {
             "MACHINERY_AUTH_TOKEN_PATH",
             "MACHINERY_AUTH_TOKEN_PROPERTY",
         },
-        "extra_components_allowed": {"./auth"},
+        "extra_components_allowed": {"./auth", "./auth-sops"},
     },
     "./cicd/machinery/httproute": {
-        "why": "machinery-auth carries the dashboard route of the machinery "
+        "why": "machinery-auth(-sops) carries the dashboard route of the machinery "
                "component unchanged -- auth is a gRPC matter, the route is not",
         "extra_allowed": set(),
     },
