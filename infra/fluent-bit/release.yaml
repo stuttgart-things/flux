@@ -54,10 +54,17 @@ spec:
             Mem_Buf_Limit 10MB
             Skip_Long_Lines On
             DB /var/log/fluent-bit-kube.db
+      # Buffer_Size caps the kubernetes filter's HTTP client reading a pod
+      # from the API server. A pod whose GET is larger (managedFields count:
+      # a cilium agent pod is ~35 kB) logs `[http_client] cannot increase
+      # buffer` and its records go out WITHOUT Kubernetes metadata -- no
+      # namespace/pod/container label in Loki. 32k is fluent-bit's own
+      # default; raise it per cluster (e.g. 128k), 0 = unlimited.
       filters: |
         [FILTER]
             Name kubernetes
             Match kube.*
+            Buffer_Size ${FLUENT_BIT_K8S_BUFFER_SIZE:-32k}
             Merge_Log On
             Keep_Log Off
             K8S-Logging.Parser On

@@ -33,3 +33,5 @@ spec:
       FLUENT_BIT_VERSION: "${FLUENT_BIT_VERSION:-0.58.3}"
       FLUENT_BIT_CLUSTER_NAME: "${FLUENT_BIT_CLUSTER_NAME:-set-FLUENT_BIT_CLUSTER_NAME.invalid}" # REQUIRED
       FLUENT_BIT_LOKI_HOST: "${FLUENT_BIT_LOKI_HOST:-loki-gateway.loki.svc.cluster.local}"
+      # kubernetes filter Buffer_Size; see infra/fluent-bit/release.yaml.
+      FLUENT_BIT_K8S_BUFFER_SIZE: "${FLUENT_BIT_K8S_BUFFER_SIZE:-32k}"

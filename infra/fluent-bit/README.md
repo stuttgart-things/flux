@@ -58,3 +58,4 @@ spec:
 | `FLUENT_BIT_LOKI_HOST` | `loki-gateway.loki.svc.cluster.local` / *(required for remote)* | Loki gateway host |
 | `FLUENT_BIT_CA_CONFIGMAP` | `cluster-trust-bundle` | remote: CA bundle ConfigMap |
 | `FLUENT_BIT_CA_KEY` | `trust-bundle.pem` | remote: key in it |
+| `FLUENT_BIT_K8S_BUFFER_SIZE` | `32k` | `Buffer_Size` of the kubernetes filter. A pod whose API object is larger (cilium agent pods: ~35 kB) logs `[http_client] cannot increase buffer` and loses its metadata labels; raise it (e.g. `128k`, `0` = unlimited) |
