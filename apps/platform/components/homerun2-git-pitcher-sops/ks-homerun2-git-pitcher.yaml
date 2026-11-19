@@ -31,7 +31,7 @@ spec:
     substitute:
       HOMERUN2_NAMESPACE: "${HOMERUN2_NAMESPACE:-homerun2}"
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/homerun2-git-pitcher-kustomize
-      HOMERUN2_GIT_PITCHER_VERSION: "${HOMERUN2_GIT_PITCHER_VERSION:-v1.5.0}"
+      HOMERUN2_GIT_PITCHER_VERSION: "${HOMERUN2_GIT_PITCHER_VERSION:-v1.6.0}"
       HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM: "${HOMERUN2_GIT_PITCHER_WATCH_CONFIG_CM:-homerun2-git-pitcher-watch-config}"
       HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM: "${HOMERUN2_GIT_PITCHER_TRUST_BUNDLE_CM:-cluster-trust-bundle}"
     substituteFrom:
