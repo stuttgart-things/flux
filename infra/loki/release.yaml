@@ -74,7 +74,7 @@ spec:
     gateway:
       enabled: true
     # Off for a single small instance: memcached caches, the canary, the
-    # helm test, the bundled MinIO.
+    # helm test.
     chunksCache:
       enabled: false
     resultsCache:
@@ -82,8 +82,6 @@ spec:
     lokiCanary:
       enabled: false
     test:
-      enabled: false
-    minio:
       enabled: false
     # Every other deployment mode at zero.
     backend:
