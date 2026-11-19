@@ -146,6 +146,12 @@ what machinery reads there is the `Application` kind of the shared watch set
 names, `machinery` and `machinery-httproute`, waiting on `argo-cd` instead.
 Select one of the two, never both; `machinery-grpcroute` works with either.
 
+`machinery-auth` and `machinery-auth-sops` are two more alternatives of
+`machinery`: the same pair with machinery's gRPC bearer-token auth on, the
+token from a ClusterSecretStore or from a SOPS substituteFrom Secret
+(`MACHINERY_AUTH_TOKEN`) respectively — see
+[`cicd/machinery/README.md`](../machinery/README.md#grpc-auth-opt-in-per-cluster).
+
 ## OIDC login on Argo CD: `argo-cd-oidc`
 
 An add-on to `argo-cd`, listed **after** it: it patches the `argo-cd` child

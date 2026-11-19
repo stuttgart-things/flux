@@ -169,26 +169,51 @@ The `machinery-grpcroute` component of the cicd-platform bundle adds a
 `GRPCRoute` (`./grpcroute`) on the Gateway's `https` listener, with its own
 hostname: an HTTPRoute and a GRPCRoute on the same hostname conflict under the
 Gateway API rules. It is opt-in because it exposes the API beyond the cluster
-— **without authentication** unless the cluster selects `machinery-auth` (next
-section). Everything it serves is read-only status.
+— **without authentication** unless the cluster selects `machinery-auth` or
+`machinery-auth-sops` (next section). Everything it serves is read-only status.
 
 ## gRPC auth (opt-in per cluster)
 
 machinery (v1.14.0) can require `authorization: Bearer <token>` on every
 ResourceService call (`auth.enabled` in `config.json`). A cluster switches it
 on by selecting the cicd component **`machinery-auth` instead of `machinery`**
-— an alternative with the same two Kustomizations under the same names, plus:
+(or `machinery-auth-sops`, below) — an alternative with the same two Kustomizations under the same names, plus:
 
 | piece | where |
 |---|---|
 | `"auth": {"enabled": true, "tokenFile": "/var/run/machinery-auth/token"}` in `config.json` | `MACHINERY_AUTH_CONFIG`, substituted into [`watch-config.yaml`](watch-config.yaml); empty everywhere else, so plain `machinery` renders byte-identical |
 | ExternalSecret `machinery-auth-token` (`<mount>/machinery-grpc` → `token`) | [`auth/external-secret.yaml`](auth/external-secret.yaml) |
-| Secret mounted at `/var/run/machinery-auth` (required volume) | patch in [`auth/kustomization.yaml`](auth/kustomization.yaml) |
+| Secret mounted at `/var/run/machinery-auth` (required volume) | patch in [`auth-mount/kustomization.yaml`](auth-mount/kustomization.yaml), shared by both token sources |
 
 Cluster variables: `MACHINERY_AUTH_ESO_STORE` (required — the ClusterSecretStore,
 e.g. `vault-machinery`), `MACHINERY_AUTH_ESO_STORE_KIND`,
 `MACHINERY_AUTH_TOKEN_PATH` (`machinery-grpc`), `MACHINERY_AUTH_TOKEN_PROPERTY`
 (`token`), `MACHINERY_AUTH_ESO_REFRESH_INTERVAL`.
+
+### SOPS instead of ESO: `machinery-auth-sops`
+
+A Flux cluster that keeps its Secrets SOPS-encrypted in its own repo selects
+**`machinery-auth-sops`** instead. Same Kustomizations, same config member and
+mount; the ExternalSecret is replaced by a plain Secret `machinery-auth-token`
+([`auth-sops/secret.yaml`](auth-sops/secret.yaml)) whose `token` is
+substituted from `MACHINERY_AUTH_TOKEN` in a substituteFrom Secret in
+`flux-system` — `machinery-auth-sops-secrets` unless
+`MACHINERY_AUTH_SOPS_SECRET` names another. No default: a missing Secret fails
+the `machinery` Kustomization before anything is applied.
+
+```yaml
+# cluster repo, SOPS-encrypted, applied by flux-system
+apiVersion: v1
+kind: Secret
+metadata:
+  name: machinery-auth-sops-secrets
+  namespace: flux-system
+stringData:
+  MACHINERY_AUTH_TOKEN: <openssl rand -hex 32>  # pragma: allowlist secret
+```
+
+The value has to stay a YAML string after substitution (`openssl rand -hex 32`
+is). Every client sends the same value.
 
 What auth covers: **every** ResourceService RPC on `:50051` — through the
 GRPCRoute *and* in-cluster plaintext. Not covered: `/grpc.health.v1.Health/*`
@@ -205,7 +230,8 @@ and grpcurl take it as `--token` / `-H 'authorization: Bearer …'`.
 The token is read once, at start: a rotated value needs a new pod
 (`kubectl -n machinery rollout restart deploy/machinery`). Without the Secret,
 the new pod waits in ContainerCreating, the old one keeps serving, and the
-`machinery` Kustomization reports the ExternalSecret not Ready.
+`machinery` Kustomization reports the ExternalSecret not Ready (with
+`machinery-auth-sops`: fails on the missing substituteFrom Secret).
 
 ### Testing it
 

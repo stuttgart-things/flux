@@ -1,0 +1,10 @@
+---
+# Opt-in: machinery-auth-sops -- machinery with its gRPC bearer-token auth ON,
+# the token from a SOPS substituteFrom Secret instead of a ClusterSecretStore.
+# For a Flux cluster without external-secrets. An ALTERNATIVE to ../machinery
+# (and to ../machinery-auth), not an add-on: select one of them.
+# bundle-alternative-of: machinery
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-machinery-auth-sops.yaml

@@ -1,0 +1,26 @@
+---
+# machinery's gRPC bearer-token auth, switched ON, token from the consumer's
+# substituteFrom Secret -- selected by the cicd component machinery-auth-sops
+# (an alternative of `machinery`), never by hand. For a cluster that runs no
+# external-secrets and keeps its Secrets SOPS-encrypted in its own repo,
+# decrypted by Flux. ../auth is the ClusterSecretStore variant.
+#
+# What it adds to ./cicd/machinery:
+#   * the Secret machinery-auth-token (secret.yaml), its `token` substituted
+#     from MACHINERY_AUTH_TOKEN, with NO default -- a placeholder would be a
+#     token anyone can read in this repo. The bundle component makes the
+#     substituteFrom Secret non-optional, so a missing Secret fails the
+#     Kustomization; a Secret WITHOUT the key renders an empty token, which
+#     is why the key is declared (substituteFrom-keys) and checked;
+#   * through ../auth-mount, the same volume patch as ../auth.
+# The `"auth": {...}` member of config.json comes in through
+# MACHINERY_AUTH_CONFIG, as for ../auth.
+#
+# The Secret is in this build, next to the Namespace, so Flux applies it before
+# the Deployment that mounts it: there is no ordering to arrange.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - secret.yaml
+components:
+  - ../auth-mount
