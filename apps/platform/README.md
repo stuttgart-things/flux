@@ -89,7 +89,7 @@ a `substituteFrom` Secret in `flux-system` instead:
 | `homerun2-sound-catcher-sops` | `homerun2-sound-catcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` -- the same value as `homerun2-sops`' | <!-- pragma: allowlist secret -->
 | `homerun2-git-pitcher-sops` | `homerun2-git-pitcher-sops-secrets` | `HOMERUN2_REDIS_PASSWORD_B64` (as `homerun2-sops`'), `HOMERUN2_GIT_PITCHER_GITHUB_TOKEN_B64` | <!-- pragma: allowlist secret -->
 | `homerun2-k8s-pitcher-remote-sops` | `homerun2-k8s-pitcher-remote-sops-secrets` | `HOMERUN2_K8S_PITCHER_AUTH_TOKEN` -- the CENTRAL cluster's omni-pitcher token | <!-- pragma: allowlist secret -->
-| `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN` | <!-- pragma: allowlist secret -->
+| `tabletennis-sops` | `tabletennis-sops-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`; optional `ZAEHLWERK_OMNI_PITCHER_TOKEN`, `ZAEHLWERK_REDIS_PASSWORD`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN`, `SCHMETTERPAUSE_KIOSK_TOKEN` | <!-- pragma: allowlist secret -->
 | `tabletennis-sops-backup` | `tabletennis-sops-secrets` | the above + `SCHMETTERPAUSE_BACKUP_ACCESS_KEY_ID`, `SCHMETTERPAUSE_BACKUP_SECRET_ACCESS_KEY` |
 | `tabletennis-sandbox` | `tabletennis-sandbox-secrets` | `SCHMETTERPAUSE_DB_PASSWORD`, `SCHMETTERPAUSE_SESSION_KEY`, `SCHMETTERPAUSE_SCOREBOARD_TOKEN`, `ZAEHLWERK_MATCHES_TOKEN`; optional `ZAEHLWERK_REDIS_PASSWORD` (homerun2's, with the redis panel) | <!-- pragma: allowlist secret -->
 | `openbao-sops` | `openbao-sops-secrets` | `OPENBAO_SEAL_STATIC_KEY` (`openssl rand -base64 32`); optional `OPENBAO_TERRAFORM_PASSWORD`, `OPENBAO_ADMIN_PASSWORD` (both needed with `OPENBAO_INIT: self-init-userpass`) |
@@ -133,6 +133,11 @@ rather than pruning it.
   HTTPRoute; a cluster without trust-manager's CA bundle sets the in-cluster
   `http://schmetterpause.<namespace>.svc.cluster.local` instead. `on` is the
   ESO variant and refuses to build here. Details: `apps/tabletennis/README.md`.
+- `TABLETENNIS_SCHMETTERPAUSE_KIOSK: sops` (default `off`) switches on
+  schmetterpause's `/kiosk` (`SCHMETTERPAUSE_KIOSK_TOKEN` → `SP_KIOSK_TOKEN`,
+  `openssl rand -hex 32`): one unlocked device at the table creates players
+  and enters counted results for everybody, e.g. a tournament nobody plays
+  from their phone. Admins take devices back under `/admin`.
 - `TABLETENNIS_FOB_CHECKIN: sops` (default `off`) switches on check-in by
   fob at both ends: schmetterpause links and resolves key fobs
   (`SCHMETTERPAUSE_RFID_UID_KEY` → `SP_RFID_UID_KEY`, at least 32 characters;

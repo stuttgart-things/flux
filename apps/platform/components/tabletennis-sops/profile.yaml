@@ -49,6 +49,7 @@ spec:
     TABLETENNIS_SCHMETTERPAUSE_BOOTSTRAP_ADMIN: {}
     TABLETENNIS_ZAEHLWERK_SCHMETTERPAUSE_URL: {}
     TABLETENNIS_FOB_CHECKIN: {}
+    TABLETENNIS_SCHMETTERPAUSE_KIOSK: {}
     TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK: {}
     TABLETENNIS_SCHMETTERPAUSE_ZAEHLWERK_URL: {}
     HOMERUN2_NAMESPACE: {}
@@ -75,3 +76,6 @@ spec:
         # The bearer of zaehlwerk's /ingest/checkin, sent by the hub (and the
         # table mock). Hex: substituted into YAML unquoted.
         ZAEHLWERK_CHECKIN_TOKEN: { generate: { type: hex, length: 64 } }
+        # Read only with TABLETENNIS_SCHMETTERPAUSE_KIOSK: sops: unlocks a kiosk
+        # device. Hex: substituted into YAML unquoted.
+        SCHMETTERPAUSE_KIOSK_TOKEN: { generate: { type: hex, length: 64 } }

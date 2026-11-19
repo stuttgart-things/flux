@@ -1,0 +1,43 @@
+---
+# schmetterpause-kiosk-sops -- the kiosk on schmetterpause, for the sops
+# credential mode (profiles/sops): one unlocked device at the table creates
+# players by name and enters results for everybody, counted at once, with a
+# named operator (schmetterpause ADR-0008, ADR-0014). The way to run a
+# tournament where the players do not touch a phone.
+# Selected with TABLETENNIS_SCHMETTERPAUSE_KIOSK: sops.
+#
+# REQUIRES SCHMETTERPAUSE_KIOSK_TOKEN. Whoever knows it can unlock a device and
+# write counted results, so treat it as a credential: a device is unlocked by
+# typing it on /kiosk (nothing in the address bar or history), and an admin
+# takes devices back under /admin without a restart.
+#
+# Unset, it arrives as "" (a Secret's stringData stores YAML null as ""), and
+# schmetterpause runs without a kiosk -- /kiosk stays a 404. There is no
+# default on purpose: a known token is a kiosk for anyone who reads this.
+# Generate it as `openssl rand -hex 32`: it is substituted into YAML unquoted.
+#
+# The Secret is read through envFrom, so the key needs nothing else to reach
+# the container. Only the sops variant exists, as with the fobs.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  # Guarded like schmetterpause-scoreboard-sops: on a build that is not in the
+  # sops mode the test fails it rather than writing into a Secret nobody
+  # applies (flux#526).
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: schmetterpause
+    patch: |
+      - op: test
+        path: /metadata/annotations/tabletennis.stuttgart-things.com~1credentials
+        value: sops
+  # The Secret is in this build (../schmetterpause/sops/secrets.yaml).
+  - target:
+      version: v1
+      kind: Secret
+      name: schmetterpause-app
+    patch: |
+      - op: add
+        path: /stringData/SP_KIOSK_TOKEN
+        value: ${SCHMETTERPAUSE_KIOSK_TOKEN}

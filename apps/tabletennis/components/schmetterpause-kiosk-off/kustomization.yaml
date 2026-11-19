@@ -1,0 +1,12 @@
+---
+# schmetterpause-kiosk-off -- no kiosk: the default. Selected through
+# TABLETENNIS_SCHMETTERPAUSE_KIOSK (default off) on the tabletennis-sops*
+# bundles.
+#
+# Empty on purpose. Without SP_KIOSK_TOKEN schmetterpause does not register
+# /kiosk at all (a 404), so "off" is what the base already renders.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+# `patches: []` because kustomize refuses an empty kustomization.yaml (see
+# schmetterpause-scoreboard-off).
+patches: []
