@@ -18,7 +18,7 @@ cicd/argocd-platform/
 ├── components/            # one opt-in kustomize Component per catalog platform
 │   ├── network/  security/  cicd/  storage/
 │   ├── kind/
-│   └── homerun2-pr-preview/  machinery-pr-preview/  machinery-catalog-locator-pr-preview/
+│   └── homerun2-pr-preview/  machinery-pr-preview/
 └── overlays/
     └── full/              # base + ALL platforms enabled (copy & trim per cluster)
 ```
@@ -48,13 +48,13 @@ components:
   # …add only what this cluster needs
 ```
 
-`overlays/full` is a ready-made overlay with all 8 platforms enabled — copy it
+`overlays/full` is a ready-made overlay with all 7 platforms enabled — copy it
 and delete what you don't want. Enabling a platform is safe even if a cluster
 uses none of it: the AppSets are **label-gated**, so an enabled-but-unlabeled
 platform matches zero clusters and deploys nothing.
 
 Available components: `network`, `security`, `cicd`, `storage`, `kind`,
-`homerun2-pr-preview`, `machinery-pr-preview`, `machinery-catalog-locator-pr-preview`.
+`homerun2-pr-preview`, `machinery-pr-preview`.
 
 ## The label chain
 
