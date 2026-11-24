@@ -1,0 +1,8 @@
+---
+# MACHINERY_ORDER_SERVICE_GRPC=none (the default): the gRPC API (port 9090,
+# v0.8.0+) is reachable in-cluster only. Nothing to add; this component exists
+# so the bundle component can pick ./components/grpc-${...} without a special
+# case (same pattern as route-all).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources: []

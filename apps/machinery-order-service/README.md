@@ -19,6 +19,8 @@ one instance per lab on the lab's infra cluster.
 | `MACHINERY_ORDER_SERVICE_HOSTNAME` | `orders` | HTTPRoute hostname prefix |
 | `MACHINERY_ORDER_SERVICE_ROOT_REDIRECT` | `none` | `portal`: `/` (exactly) on the own hostname answers 302 to `https://<PORTAL_HOSTNAME>.<INFRA_DOMAIN>/` instead of 404 |
 | `MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME` | `machinery-portal` | Host prefix of the sthings-portal for `ROOT_REDIRECT=portal` |
+| `MACHINERY_ORDER_SERVICE_GRPC` | `none` | `route`: a `GRPCRoute` for the gRPC API (`order.v1.OrderService`, port 9090, v0.8.0+) on the Gateway's `https` listener; `none`: in-cluster only |
+| `MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME` | `orders-grpc` | GRPCRoute hostname prefix (its own: an HTTPRoute and a GRPCRoute cannot share one) |
 | `INFRA_DOMAIN` | - (required) | HTTPRoute domain suffix |
 | `INFRA_GATEWAY_NAME` / `_NAMESPACE` | `cilium-gateway` / `default` | Gateway parentRef |
 | `MACHINERY_ORDER_SERVICE_TRUST_BUNDLE_CONFIGMAP` / `_KEY` | `cluster-trust-bundle` / `trust-bundle.pem` | trust-manager CA bundle, read through `SSL_CERT_DIR` |
