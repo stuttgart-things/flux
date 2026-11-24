@@ -1,0 +1,29 @@
+---
+# ClusterRoleBindings for the lab-wide ZITADEL roles → ./infra/oidc-rbac
+# (stuttgart-things/stuttgart-things#4879): zitadel:k8s-admin -> cluster-admin,
+# zitadel:k8s-edit -> edit, zitadel:k8s-view -> view, plus read on namespaces,
+# nodes and other cluster-scoped objects for the latter two.
+#
+# Standalone: plain RBAC objects, nothing to wait for. Harmless on a cluster
+# whose apiserver does not trust ZITADEL: no token ever carries the groups.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: oidc-rbac
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${OIDC_RBAC_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/oidc-rbac

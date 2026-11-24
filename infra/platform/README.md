@@ -51,7 +51,8 @@ infra/platform/
     ├── cnpg-barman-cloud/        → ./apps/cnpg-barman-cloud                (requires cnpg-operator, cert-manager-install)
     ├── prometheus-pve-exporter/  → ./infra/prometheus-pve-exporter          (requires kube-prometheus-stack)
     ├── backup-freshness/         → ./infra/backup-freshness                (requires trust-manager + two Secrets)
-    └── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
+    ├── coredns-lab-zone/         → ./infra/coredns/components/lab-zone      (RKE2/k3s only)
+    └── oidc-rbac/                → ./infra/oidc-rbac                       (RBAC for the lab-wide ZITADEL roles k8s-admin/-edit/-view)
 ```
 
 Five of those paths are under `apps/`, and that is deliberate: the bundle a
@@ -155,6 +156,31 @@ Four things worth knowing before selecting it:
 Unset, it forwards `unset.invalid.` to `0.0.0.0`: visible in the Corefile and
 verified not to touch `cluster.local`, service discovery or upstream DNS, which
 live in a separate server block.
+
+### oidc-rbac
+
+ClusterRoleBindings for Kubernetes logins through the lab's ZITADEL
+(stuttgart-things/stuttgart-things#4879). The cluster build writes the
+kube-apiserver's `AuthenticationConfiguration`, which maps a token of the lab's
+`kubernetes` project to the user `zitadel:<email>` and the groups
+`zitadel:<role>`. This component says what those roles may do:
+
+| Group | ClusterRole |
+|---|---|
+| `zitadel:k8s-admin` | `cluster-admin` |
+| `zitadel:k8s-edit` | `edit` + `oidc-cluster-reader` |
+| `zitadel:k8s-view` | `view` + `oidc-cluster-reader` |
+
+`oidc-cluster-reader` is read-only on namespaces, nodes, PVs, storage and
+gateway/ingress classes, CRDs and metrics. Without it, `view` / `edit` users
+cannot even list namespaces. Roles are granted once per lab in ZITADEL
+(`kubernetes_roles` in the lab's Terraform root) and apply on every cluster
+that selects this component.
+
+No variables and no dependencies. On a cluster whose apiserver does not trust
+ZITADEL it does nothing, because no token carries the groups.
+`OIDC_RBAC_SUSPEND: "true"` freezes it. Removing it from the list prunes the
+bindings, and OIDC users then have no rights at all.
 
 ### headlamp-oidc
 

@@ -1,0 +1,8 @@
+---
+# RBAC for OIDC logins (stuttgart-things/stuttgart-things#4879). Selected
+# through ../platform/components/oidc-rbac.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - clusterrole-cluster-reader.yaml
+  - clusterrolebindings.yaml

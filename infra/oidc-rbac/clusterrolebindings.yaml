@@ -1,0 +1,72 @@
+---
+# What the lab-wide ZITADEL roles may do on this cluster
+# (stuttgart-things/stuttgart-things#4879).
+#
+# The kube-apiserver's AuthenticationConfiguration (written by the cluster
+# build, deploy-configure-rke rke2_authentication_config_src) maps a ZITADEL
+# ID token of the lab's `kubernetes` project to
+#   username  zitadel:<email>
+#   groups    zitadel:<role key>   (k8s-admin, k8s-edit, k8s-view)
+# A role is granted in ZITADEL once per lab and applies on every cluster that
+# selects this component. Nothing else grants an OIDC user anything.
+#
+# Certificates and ServiceAccount tokens are untouched: the admin-cert
+# kubeconfig stays the break-glass login.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: zitadel:k8s-admin
+---
+# edit: create/change most namespaced objects, read Secrets, no RBAC.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-edit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: zitadel:k8s-edit
+---
+# view: read most namespaced objects, no Secrets, no changes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: zitadel:k8s-view
+---
+# view and edit cover namespaced objects only: without this, `kubectl get
+# namespaces` / `get nodes` fail for both roles. Read-only, no Secrets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-cluster-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oidc-cluster-reader
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: zitadel:k8s-edit
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: zitadel:k8s-view
