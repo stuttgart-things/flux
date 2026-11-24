@@ -1,0 +1,36 @@
+---
+# The gRPC API on its OWN hostname
+# (${MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME}.${DOMAIN}): an HTTPRoute and a
+# GRPCRoute that claim the same hostname on one listener conflict under the
+# Gateway API rules (same as machinery's cicd/machinery/grpcroute).
+#
+# Bound to the `https` listener only (sectionName), so gRPC is TLS-terminated
+# at the Gateway with the wildcard certificate and never offered as plaintext
+# on :80. Auth is the service's own: a ZITADEL bearer token in the
+# `authorization` metadata, as for REST. Health and reflection answer without
+# one.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: machinery-order-service
+  namespace: machinery-order-service
+spec:
+  parentRefs:
+    - name: ${GATEWAY_NAME}
+      namespace: ${GATEWAY_NAMESPACE:-default}
+      sectionName: https
+  hostnames:
+    - ${MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME}.${DOMAIN}
+  rules:
+    - matches:
+        - method:
+            service: order.v1.OrderService
+        - method:
+            service: grpc.health.v1.Health
+        - method:
+            service: grpc.reflection.v1.ServerReflection
+        - method:
+            service: grpc.reflection.v1alpha.ServerReflection
+      backendRefs:
+        - name: machinery-order-service
+          port: 9090

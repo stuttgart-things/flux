@@ -47,6 +47,10 @@ spec:
     # or `portal` (302 to the sthings-portal overview at
     # MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME.INFRA_DOMAIN). After route-*.
     - ./components/root-redirect-${MACHINERY_ORDER_SERVICE_ROOT_REDIRECT:-none}
+    # The gRPC API (port 9090, v0.8.0+): `none` (default: in-cluster only) or
+    # `route` (a GRPCRoute on the Gateway's https listener at
+    # MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME.INFRA_DOMAIN).
+    - ./components/grpc-${MACHINERY_ORDER_SERVICE_GRPC:-none}
   postBuild:
     substitute:
       # renovate: datasource=docker depName=ghcr.io/stuttgart-things/machinery-order-service
@@ -68,6 +72,9 @@ spec:
       MACHINERY_ORDER_SERVICE_HOSTNAME: "${MACHINERY_ORDER_SERVICE_HOSTNAME:-orders}"
       # Host prefix of the sthings-portal that ROOT_REDIRECT=portal points at.
       MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME: "${MACHINERY_ORDER_SERVICE_PORTAL_HOSTNAME:-machinery-portal}"
+      # Host prefix of the GRPCRoute (MACHINERY_ORDER_SERVICE_GRPC=route); its
+      # own hostname, the HTTPRoute's cannot be shared.
+      MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME: "${MACHINERY_ORDER_SERVICE_GRPC_HOSTNAME:-orders-grpc}"
       DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
       GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
       GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
