@@ -23,6 +23,7 @@ cicd/platform/
     ├── machinery-argocd/     → ./cicd/machinery       (alternative: needs argo-cd instead, for Argo CD clusters without Crossplane)
     ├── tekton/               → ./cicd/tekton          (needs cilium-gateway)
     ├── kargo/                → ./apps/kargo/…         (needs the ESO vault store + a Secret)
+    ├── kargo-oidc/           + OIDC login (ZITADEL) on kargo  (add-on: needs kargo earlier; public client, no Secret)
     ├── dapr/                 → ./apps/dapr/root       (control plane only)
     ├── dapr-workflows/       → ./apps/dapr/workflow-secrets  (needs dapr + external-secrets; brings its own Redis)
     ├── dapr-workflows-trigger/ → ./apps/dapr/root     (the BackstageTemplateRun RGD; needs kro + dapr-workflows)
@@ -186,6 +187,36 @@ local admin stays as emergency access.
 
 UI login only: `argocd login --sso` would need an `http://localhost:8085`
 redirect at the IdP.
+
+## OIDC login on Kargo: `kargo-oidc`
+
+An add-on to `kargo`, listed **after** it: it patches the `kargo` child
+Kustomization with a HelmRelease patch (stuttgart-things#4859). The local
+admin stays as emergency access.
+
+```yaml
+  components:
+    - ../components/kargo
+    - ../components/kargo-oidc
+  postBuild:
+    substitute:
+      KARGO_OIDC_ISSUER: https://zitadel.example
+      KARGO_OIDC_CLIENT_ID: "123456789012345678"   # quoted: digits only
+```
+
+- `api.oidc`: issuer, client ID, username claim `email`, additional scope
+  `KARGO_OIDC_SCOPES` (default ZITADEL's roles scope)
+- roles from the ID token claim `KARGO_OIDC_ROLES_CLAIM` (default
+  `argocd_roles`, a **list**): `argocd-admin` → Kargo admin, `argocd-reader`
+  → viewer (`KARGO_OIDC_ADMIN_ROLE` / `_VIEWER_ROLE`). The defaults reuse the
+  Argo CD project's roles and claim: whoever may run Argo CD may run Kargo
+- **no client secret**: Kargo runs the code flow with PKCE in the browser.
+  At the IdP a public client (ZITADEL: user agent app, auth method none),
+  redirect `https://<kargo host>/login`
+- the issuer's CA: `KARGO_OIDC_CA_CONFIGMAP` (default `cluster-trust-bundle`)
+  as `api.cabundle`; the chart's init container splits a multi-cert bundle
+
+UI login only: `kargo login --sso` would need a localhost redirect at the IdP.
 
 ## Upgrading a Crossplane Configuration is not a version bump
 

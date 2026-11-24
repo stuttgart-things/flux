@@ -1,0 +1,38 @@
+---
+# Opt-in: kargo-oidc -- the Kargo UI logs in through an OIDC provider (ZITADEL)
+# next to the local admin (stuttgart-things#4859).
+#
+# An ADD-ON, not an alternative: REQUIRES ../kargo EARLIER in the same
+# spec.components list. The patch below targets the Flux Kustomization `kargo`
+# that component renders and adds a HelmRelease patch to it; without ../kargo
+# it matches nothing and does nothing.
+#
+# Kargo runs the authorization code flow with PKCE in the browser: a PUBLIC
+# client (ZITADEL: user agent app, auth method none), so there is NO client
+# secret -- nothing to supply but the client ID.
+#
+# Variables (bundle postBuild.substitute):
+#   KARGO_OIDC_ISSUER         REQUIRED, the issuer as in the discovery document
+#   KARGO_OIDC_CLIENT_ID      REQUIRED (ZITADEL: digits only -- stays quoted
+#                             inside the block scalar)
+#   KARGO_OIDC_ROLES_CLAIM    the ID token claim the role mapping reads,
+#                             default argocd_roles (a LIST of role keys; Kargo,
+#                             like Argo CD, cannot read ZITADEL's roles map).
+#                             stuttgart-things' zitadel-config roots add it
+#                             with an action for the argocd project.
+#   KARGO_OIDC_ADMIN_ROLE     -> Kargo admin, default argocd-admin
+#   KARGO_OIDC_VIEWER_ROLE    -> Kargo viewer (read-only, no Secrets),
+#                             default argocd-reader
+#   KARGO_OIDC_SCOPES         additional scopes (openid profile email are
+#                             always sent), default the ZITADEL roles scope
+#   KARGO_OIDC_CA_CONFIGMAP   the issuer's CA, default trust-manager's
+#                             cluster-trust-bundle (the chart's cabundle init
+#                             container splits a multi-cert bundle itself)
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: kargo
+    path: patch-kargo.yaml

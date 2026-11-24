@@ -1,0 +1,40 @@
+# Substituted by the BUNDLE: the KARGO_OIDC_* variables are read here and never
+# reach the child's substitute map -- a digits-only client ID threaded as a
+# child substitute value turns into a number after kustomize drops the quotes
+# and breaks the bundle apply (map[string]string; see argo-cd-oidc,
+# headlamp-oidc). The chart quotes OIDC_CLIENT_ID into its ConfigMap, but only
+# a string survives Helm's values parsing intact (a number this long becomes
+# a float).
+#
+# The claim keys below are literal YAML keys in the HelmRelease values
+# (admins.claims.<claim>: [<role>]); a claim name with colons would need
+# quoting -- the default argocd_roles has none.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: kargo
+      patch: |
+        - op: add
+          path: /spec/values/api/oidc
+          value:
+            enabled: true
+            issuerURL: "${KARGO_OIDC_ISSUER:-https://set-KARGO_OIDC_ISSUER.invalid}"
+            clientID: "${KARGO_OIDC_CLIENT_ID:-set-KARGO_OIDC_CLIENT_ID}"
+            usernameClaim: email
+            additionalScopes:
+              - "${KARGO_OIDC_SCOPES:-urn:zitadel:iam:org:projects:roles}"
+            admins:
+              claims:
+                ${KARGO_OIDC_ROLES_CLAIM:-argocd_roles}:
+                  - "${KARGO_OIDC_ADMIN_ROLE:-argocd-admin}"
+            viewers:
+              claims:
+                ${KARGO_OIDC_ROLES_CLAIM:-argocd_roles}:
+                  - "${KARGO_OIDC_VIEWER_ROLE:-argocd-reader}"
+        - op: add
+          path: /spec/values/api/cabundle
+          value:
+            configMapName: "${KARGO_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
