@@ -57,6 +57,12 @@
 # API (spec.package, status.currentRevision), not yet checked on a live
 # cluster. The keys are the names the client asks for, so keep them.
 #
+# readyConditions / readyWithoutStatus (machinery#119, machinery >= the
+# release after v1.18.0; an older machinery ignores the keys): packages are
+# Ready when Installed and Healthy, XRDs when Established, and an
+# EnvironmentConfig, which has no status at all, counts as ready. Before
+# that, the dashboard showed every one of them as not ready.
+#
 # CompositeResourceDefinition and EnvironmentConfig are the order service's
 # capabilities (stuttgart-things/machinery-order-service#32): which XR kinds
 # (group, kind, versions) the cluster offers, and from which Configuration --
@@ -244,6 +250,7 @@ data:
           "group": "pkg.crossplane.io",
           "version": "v1",
           "resource": "configurations",
+          "readyConditions": ["Installed", "Healthy"],
           "infoFields": [
             { "label": "Package",  "path": "spec.package" },
             { "label": "Revision", "path": "status.currentRevision" }
@@ -253,6 +260,7 @@ data:
           "group": "pkg.crossplane.io",
           "version": "v1",
           "resource": "providers",
+          "readyConditions": ["Installed", "Healthy"],
           "infoFields": [
             { "label": "Package",  "path": "spec.package" },
             { "label": "Revision", "path": "status.currentRevision" }
@@ -262,6 +270,7 @@ data:
           "group": "pkg.crossplane.io",
           "version": "v1",
           "resource": "functions",
+          "readyConditions": ["Installed", "Healthy"],
           "infoFields": [
             { "label": "Package",  "path": "spec.package" },
             { "label": "Revision", "path": "status.currentRevision" }
@@ -271,6 +280,7 @@ data:
           "group": "apiextensions.crossplane.io",
           "version": "v1",
           "resource": "compositeresourcedefinitions",
+          "readyConditions": ["Established"],
           "infoFields": [
             { "label": "Group",    "path": "spec.group" },
             { "label": "Kind",     "path": "spec.names.kind" },
@@ -282,6 +292,7 @@ data:
           "group": "apiextensions.crossplane.io",
           "version": "v1beta1",
           "resource": "environmentconfigs",
+          "readyWithoutStatus": true,
           "infoFields": [
             { "label": "Labels", "path": "metadata.labels" }
           ]
