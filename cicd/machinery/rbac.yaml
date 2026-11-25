@@ -55,6 +55,12 @@ rules:
       - pkg.crossplane.io
     resources: ["configurations", "providers", "functions"]
     verbs: ["get", "list", "watch"]
+  # XRDs and EnvironmentConfigs, for the order service's capabilities (which
+  # XR kinds the cluster offers). Not compositions, not revisions.
+  - apiGroups:
+      - apiextensions.crossplane.io
+    resources: ["compositeresourcedefinitions", "environmentconfigs"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

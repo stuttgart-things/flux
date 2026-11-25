@@ -56,6 +56,17 @@
 # since a package has no Ready condition. Paths from the Crossplane v1 package
 # API (spec.package, status.currentRevision), not yet checked on a live
 # cluster. The keys are the names the client asks for, so keep them.
+#
+# CompositeResourceDefinition and EnvironmentConfig are the order service's
+# capabilities (stuttgart-things/machinery-order-service#32): which XR kinds
+# (group, kind, versions) the cluster offers, and from which Configuration --
+# `Owners` flattens metadata.ownerReferences to the owning
+# ConfigurationRevision's name, which is a Configuration's `Revision`. An
+# order for a kind the cluster lacks is then refused before its PR. XRDs are
+# read through apiextensions.crossplane.io/v1, which Crossplane v1 and v2 both
+# serve (v2 XRDs convert); `Versions` flattens spec.versions to their names.
+# EnvironmentConfigs are listed by name only: machinery does not render
+# labels, and an XR selects its EnvironmentConfig by a label value.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -252,6 +263,22 @@ data:
             { "label": "Package",  "path": "spec.package" },
             { "label": "Revision", "path": "status.currentRevision" }
           ]
+        },
+        "CompositeResourceDefinition": {
+          "group": "apiextensions.crossplane.io",
+          "version": "v1",
+          "resource": "compositeresourcedefinitions",
+          "infoFields": [
+            { "label": "Group",    "path": "spec.group" },
+            { "label": "Kind",     "path": "spec.names.kind" },
+            { "label": "Versions", "path": "spec.versions" },
+            { "label": "Owners",   "path": "metadata.ownerReferences" }
+          ]
+        },
+        "EnvironmentConfig": {
+          "group": "apiextensions.crossplane.io",
+          "version": "v1beta1",
+          "resource": "environmentconfigs"
         }
       }
     }
