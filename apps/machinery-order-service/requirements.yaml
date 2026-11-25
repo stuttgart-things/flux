@@ -12,4 +12,4 @@ spec:
   interval: 1h
   url: oci://ghcr.io/stuttgart-things/machinery-order-service-kustomize
   ref:
-    tag: ${MACHINERY_ORDER_SERVICE_VERSION:-v0.3.0}
+    tag: ${MACHINERY_ORDER_SERVICE_VERSION:-v0.11.0}

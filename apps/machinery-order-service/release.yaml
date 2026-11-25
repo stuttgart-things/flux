@@ -84,7 +84,7 @@ spec:
                         path: private-key.pem
               containers:
                 - name: machinery-order-service
-                  image: ghcr.io/stuttgart-things/machinery-order-service:${MACHINERY_ORDER_SERVICE_VERSION:-v0.3.0}
+                  image: ghcr.io/stuttgart-things/machinery-order-service:${MACHINERY_ORDER_SERVICE_VERSION:-v0.11.0}
                   env:
                     # URL prefix behind sthings-portal, = the portal key
                     # (/orders). `/` = the root. An env entry and not a
