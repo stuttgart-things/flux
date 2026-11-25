@@ -65,8 +65,11 @@
 # order for a kind the cluster lacks is then refused before its PR. XRDs are
 # read through apiextensions.crossplane.io/v1, which Crossplane v1 and v2 both
 # serve (v2 XRDs convert); `Versions` flattens spec.versions to their names.
-# EnvironmentConfigs are listed by name only: machinery does not render
-# labels, and an XR selects its EnvironmentConfig by a label value.
+# EnvironmentConfigs carry `Labels` (metadata.labels as sorted k=v pairs,
+# machinery >= the release of stuttgart-things/machinery#117; an older
+# machinery leaves the field out): an XR selects its EnvironmentConfig by the
+# label value <configuration>.<group>/environment, so the order service can
+# refuse an order whose environmentConfig no EnvironmentConfig has.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -278,7 +281,10 @@ data:
         "EnvironmentConfig": {
           "group": "apiextensions.crossplane.io",
           "version": "v1beta1",
-          "resource": "environmentconfigs"
+          "resource": "environmentconfigs",
+          "infoFields": [
+            { "label": "Labels", "path": "metadata.labels" }
+          ]
         }
       }
     }
