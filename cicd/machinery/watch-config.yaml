@@ -46,6 +46,16 @@
 #
 # ArgoRegister on ClusterStack (spec.rancher.argocd.register) is what tells
 # that client whether to wait for Argo at all.
+#
+# Configuration, Provider and Function (pkg.crossplane.io) are here for
+# machinery-order-service's cluster health check
+# (stuttgart-things/machinery-order-service#31): a package with Healthy=False
+# makes the management cluster not ready, and the service stops taking orders
+# for it. The client reads the Healthy condition, which machinery passes
+# through in `conditions`; machinery's own `ready` stays false for these kinds,
+# since a package has no Ready condition. Paths from the Crossplane v1 package
+# API (spec.package, status.currentRevision), not yet checked on a live
+# cluster. The keys are the names the client asks for, so keep them.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -214,6 +224,33 @@ data:
           "infoFields": [
             { "label": "Vault",   "path": "spec.vaultAddr" },
             { "label": "Cluster", "path": "spec.clusterName" }
+          ]
+        },
+        "Configuration": {
+          "group": "pkg.crossplane.io",
+          "version": "v1",
+          "resource": "configurations",
+          "infoFields": [
+            { "label": "Package",  "path": "spec.package" },
+            { "label": "Revision", "path": "status.currentRevision" }
+          ]
+        },
+        "Provider": {
+          "group": "pkg.crossplane.io",
+          "version": "v1",
+          "resource": "providers",
+          "infoFields": [
+            { "label": "Package",  "path": "spec.package" },
+            { "label": "Revision", "path": "status.currentRevision" }
+          ]
+        },
+        "Function": {
+          "group": "pkg.crossplane.io",
+          "version": "v1",
+          "resource": "functions",
+          "infoFields": [
+            { "label": "Package",  "path": "spec.package" },
+            { "label": "Revision", "path": "status.currentRevision" }
           ]
         }
       }

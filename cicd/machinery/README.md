@@ -70,6 +70,7 @@ The kinds and fields come from `config.json` in the `machinery-watch-config` Con
 | `NativeProxmoxVM` | IP, VMID, whether it started, and whether its AnsibleRun succeeded |
 | `NativeVsphereVM` | IP, MOID, power state, and whether its AnsibleRun succeeded |
 | `AnsibleRun` | reason and result, plus the PipelineRun name — which is what you need to find the logs |
+| `Configuration`, `Provider`, `Function` | Crossplane packages: package reference and current revision. For machinery-order-service's cluster health check ([#31](https://github.com/stuttgart-things/machinery-order-service/issues/31)), which reads their `Healthy` condition: one `Healthy=False` makes the management cluster not ready for new orders. The dashboard shows them as not ready, because a package has no `Ready` condition |
 
 The two VM kinds are separate entries rather than one, because their `status.share` blocks genuinely differ: proxmox reports `vmId` and `started`, vsphere `moid` and `powerState`. Merged, one column would always be blank.
 
