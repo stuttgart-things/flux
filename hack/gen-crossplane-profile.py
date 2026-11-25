@@ -202,8 +202,12 @@ def scalar(v):
 # workspace is RENDERED: a PersistentVolumeClaim (in the profile's namespace)
 # plus the volume, mount and pod securityContext in the provider's own
 # DeploymentRuntimeConfig -- see workspace_doc() and runtime_doc().
+#
+# trustBundle is RENDERED (catalog 0.39.0+): a configMap volume (optional),
+# a read-only mount and SSL_CERT_DIR in the same DeploymentRuntimeConfig --
+# see runtime_doc().
 RENDERED = {"kind", "name", "package", "apiVersion", "env", "resources",
-            "runtimeConfig", "workspace"}
+            "runtimeConfig", "workspace", "trustBundle"}
 IGNORED = {"pulls", "providerCrd", "clusterRole"}
 
 
@@ -234,6 +238,7 @@ def runtime_doc(p):
     container = {"name": "package-runtime"}
     pod = {}
     w = p.get("workspace")
+    t = p.get("trustBundle")
     if w:
         # A pod securityContext in the template REPLACES Crossplane's default
         # (runAsNonRoot, runAsUser/Group 2000) instead of merging with it --
@@ -246,20 +251,45 @@ def runtime_doc(p):
             "runAsGroup": 2000,
             "fsGroup": w["fsGroup"],
         }
-    if p.get("env"):
+    env = dict(p.get("env") or {})
+    if t:
+        # Go reads every file in each SSL_CERT_DIR entry and the system bundle
+        # file regardless, so the image's own CAs stay trusted. The catalog
+        # rejects SSL_CERT_DIR in env beside a trustBundle; refuse it here too
+        # rather than let one silently win.
+        if "SSL_CERT_DIR" in env:
+            sys.exit(f"{p['name']}: env sets SSL_CERT_DIR and trustBundle "
+                     f"renders it -- two values for one variable.")
+        env["SSL_CERT_DIR"] = f"/etc/ssl/certs:{t['mountPath']}"
+    if env:
         # env, not args: args in a DeploymentRuntimeConfig REPLACE the image's
         # own arguments instead of adding to them.
         # env_value(), so a catalog value written bare (`PROVIDER_POLL = 3600`,
         # `DEBUG = True`) still renders as a quoted string -- a container env
         # value has to be one and the API server rejects a number or a bool.
         container["env"] = [{"name": k, "value": env_value(v)}
-                            for k, v in sorted(p["env"].items())]
+                            for k, v in sorted(env.items())]
     if p.get("resources"):
         container["resources"] = p["resources"]
     spec = {"selector": {}}
+    # Fixed order, workspace first, shared with xplane-management-plane.
+    mounts, volumes = [], []
     if w:
-        container["volumeMounts"] = [{"name": "workspace",
-                                      "mountPath": w["mountPath"]}]
+        mounts.append({"name": "workspace", "mountPath": w["mountPath"]})
+        volumes.append({"name": "workspace",
+                        "persistentVolumeClaim": {
+                            "claimName": w["claimName"]}})
+    if t:
+        # optional: a cluster without trust-manager still starts the
+        # provider, with exactly the CAs it had before.
+        mounts.append({"name": "trust-bundle", "mountPath": t["mountPath"],
+                       "readOnly": True})
+        volumes.append({"name": "trust-bundle",
+                        "configMap": {"name": t["configMap"],
+                                      "optional": True}})
+    if mounts:
+        container["volumeMounts"] = mounts
+    if w:
         # ReadWriteOnce: no surge, so two pods of one revision never run
         # terraform on the same state. NOT type=Recreate: Crossplane applies
         # the Deployment as a JSON merge patch, the existing rollingUpdate
@@ -269,10 +299,8 @@ def runtime_doc(p):
                             "rollingUpdate": {"maxSurge": 0,
                                               "maxUnavailable": 1}}
     pod["containers"] = [container]
-    if w:
-        pod["volumes"] = [{"name": "workspace",
-                           "persistentVolumeClaim": {
-                               "claimName": w["claimName"]}}]
+    if volumes:
+        pod["volumes"] = volumes
     spec["template"] = {"spec": pod}
     return doc({
         "apiVersion": "pkg.crossplane.io/v1beta1",
@@ -334,13 +362,14 @@ def package_docs(packages, namespace):
                 "spec": {"package": p["package"]},
             }
             external = p.get("runtimeConfig")
-            if p.get("env") or p.get("resources") or p.get("workspace"):
+            if (p.get("env") or p.get("resources") or p.get("workspace")
+                    or p.get("trustBundle")):
                 if kind != "Provider":
-                    sys.exit(f"{p['name']}: env/resources/workspace are a "
+                    sys.exit(f"{p['name']}: env/resources/workspace/trustBundle are a "
                              f"provider runtime setting, and this is a {kind}.")
                 if external:
                     sys.exit(f"{p['name']}: the catalog sets runtimeConfig "
-                             f"({external}) AND env/resources/workspace. A Provider has "
+                             f"({external}) AND env/resources/workspace/trustBundle. A Provider has "
                              f"exactly one runtimeConfigRef, so these two "
                              f"cannot both apply -- put the env and resources "
                              f"into whatever ships {external}, or drop "

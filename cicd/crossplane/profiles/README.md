@@ -306,6 +306,16 @@ delete it. To preview an unreleased catalog:
 `python3 hack/gen-crossplane-profile.py --catalog-path <kcl>/crossplane/xplane-crossplane-catalog`
 (the banner then names the path, so a committed preview fails `--check`).
 
+A provider the catalog gives a `trustBundle` (catalog 0.39.0+: opentofu) gets,
+in that same `DeploymentRuntimeConfig`, a volume from the trust-manager
+ConfigMap `cluster-trust-bundle` with `optional: true`, a read-only mount at
+`/etc/ssl/custom` and `SSL_CERT_DIR=/etc/ssl/certs:/etc/ssl/custom` -- the
+pattern `apps/claim-machinery-api` already uses for the same ConfigMap. The
+zitadel provider inside opentofu's pod needs the lab CA to reach ZITADEL;
+without it the zitadel-oidc-client pilot on machinery-dev (2026-11-25) failed
+the TLS handshake. `optional` keeps a cluster without trust-manager starting
+the provider with the CAs it had before.
+
 `upbound-provider-vault` is the heavy provider that deliberately gets **no**
 `env`/`resources` and runs on `runtimeConfigRef: default` (#522). Measured
 after the seeds moved their Vault auth to it (stuttgart-things#3063, #3085),
