@@ -69,8 +69,11 @@
 # `Owners` flattens metadata.ownerReferences to the owning
 # ConfigurationRevision's name, which is a Configuration's `Revision`. An
 # order for a kind the cluster lacks is then refused before its PR. XRDs are
-# read through apiextensions.crossplane.io/v1, which Crossplane v1 and v2 both
-# serve (v2 XRDs convert); `Versions` flattens spec.versions to their names.
+# read through apiextensions.crossplane.io/v2, the version Crossplane v2
+# prefers: reading them through v1 made the apiserver log "CompositeResourceDefinition
+# v1 is deprecated" on every relist. A Crossplane v1 cluster does not serve v2;
+# machinery then reports the kind as unserved and the order service, without
+# capabilities, refuses nothing. `Versions` flattens spec.versions to their names.
 # EnvironmentConfigs carry `Labels` (metadata.labels as sorted k=v pairs,
 # machinery >= the release of stuttgart-things/machinery#117; an older
 # machinery leaves the field out): an XR selects its EnvironmentConfig by the
@@ -278,7 +281,7 @@ data:
         },
         "CompositeResourceDefinition": {
           "group": "apiextensions.crossplane.io",
-          "version": "v1",
+          "version": "v2",
           "resource": "compositeresourcedefinitions",
           "readyConditions": ["Established"],
           "infoFields": [
