@@ -1,6 +1,6 @@
 # GENERATED -- DO NOT EDIT.
 #
-# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.39.0, profile `machinery`.
+# Source: oci://ghcr.io/stuttgart-things/xplane-crossplane-catalog:0.40.0, profile `machinery`.
 # Regenerate: python3 hack/gen-crossplane-profile.py
 #
 # This is the same list `ManagementPlane` installs, so a cluster built by
@@ -385,7 +385,14 @@ kind: Configuration
 metadata:
   name: stuttgart-things-crossplane-configurations-minio
 spec:
-  package: ghcr.io/stuttgart-things/crossplane-configurations/minio:v0.1.0
+  package: ghcr.io/stuttgart-things/crossplane-configurations/minio:v0.1.2
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: stuttgart-things-crossplane-configurations-zitadel-oidc-client
+spec:
+  package: ghcr.io/stuttgart-things/crossplane-configurations/zitadel-oidc-client:v0.2.0
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Configuration
