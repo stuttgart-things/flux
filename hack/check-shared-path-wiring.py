@@ -108,6 +108,15 @@ MUST_MATCH = {
         # is not compared here; the render test in the PR that added it is.
         "extra_components_allowed": {"./components/external-secret"},
     },
+    "./apps/flux-web": {
+        "why": "flux-web-oidc is the flux-web component behind an OIDC login "
+               "-- the same chart, route and namespace, so a cluster switching "
+               "between the two keeps its hostname and version",
+        # Nothing: the OIDC settings are a spec.patches block on the child,
+        # substituted by the bundle, and the client ID comes from a Secret
+        # (valuesFrom) -- never a substitute key.
+        "extra_allowed": set(),
+    },
     "./apps/headlamp": {
         "why": "headlamp-oidc is the headlamp component with OIDC login "
                "instead of token login -- the same chart, route and namespace, "

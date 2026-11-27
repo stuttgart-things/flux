@@ -53,6 +53,14 @@ spec:
 | `HOSTNAME` | *(required)* | HTTPRoute hostname prefix |
 | `DOMAIN` | *(required)* | HTTPRoute domain suffix |
 
+## OIDC login (optional)
+
+The `flux-web-oidc` component of the infra-platform bundle puts the UI behind
+an OIDC login and impersonates the logged-in user (`zitadel:<email>`, groups
+`zitadel:<role>`), so the cluster's RBAC decides what each user sees and may
+do. Without it the UI is open and read-only. See `infra/platform/README.md`
+for the variables and the client Secret.
+
 ## Notes
 
 - Uses the Flux Operator Helm chart from `oci://ghcr.io/controlplaneio-fluxcd/charts`

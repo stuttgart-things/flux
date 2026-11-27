@@ -38,6 +38,7 @@ infra/platform/
     ├── external-secrets/         → ./infra/external-secrets/components/install
     ├── external-secrets-vault-store/ → …/components/cluster-store-vault      (requires external-secrets)
     ├── flux-web/                 → ./apps/flux-web                          (requires cilium-gateway)
+    ├── flux-web-oidc/            → ./apps/flux-web + OIDC patch             (instead of flux-web; OIDC login, requires cilium-gateway)
     ├── headlamp/                 → ./apps/headlamp                          (requires cilium-gateway)
     ├── headlamp-oidc/            → ./apps/headlamp + OIDC patch             (instead of headlamp; OIDC login, requires cilium-gateway)
     ├── reloader/                 → ./infra/reloader
@@ -182,6 +183,51 @@ ZITADEL it does nothing, because no token carries the groups.
 `OIDC_RBAC_SUSPEND: "true"` freezes it. Removing it from the list prunes the
 bindings, and OIDC users then have no rights at all.
 
+### flux-web-oidc
+
+flux-web behind an OIDC login instead of the open, anonymous UI: the same
+child `flux-web`, so select it **instead of** `flux-web`. After the login
+flux-web impersonates the user for every request, as `<prefix><email>` with a
+group `<prefix><role>` per key of the roles claim. The defaults are what the
+RKE2 apiserver maps a ZITADEL token to, so `oidc-rbac`'s bindings
+(`zitadel:k8s-admin` / `-edit` / `-view`) apply unchanged -- provided the
+client is in the lab's `kubernetes` project, whose role assertion puts those
+roles into the ID token. A user without a role is refused; every action is
+audited. Proven in the harvester lab first (stuttgart-things/harvester#719).
+
+```yaml
+FLUX_WEB_OIDC_ISSUER_URL: https://zitadel.infra.example
+```
+
+| Variable | Default | |
+|---|---|---|
+| `FLUX_WEB_OIDC_ISSUER_URL` | *(required)* | as in the discovery document |
+| `FLUX_WEB_OIDC_SCOPES` | `[openid, profile, email]` | a YAML flow list |
+| `FLUX_WEB_OIDC_ROLES_CLAIM` | `urn:zitadel:iam:org:project:roles` | a map claim; its keys become groups |
+| `FLUX_WEB_OIDC_PREFIX` | `zitadel:` | user and group prefix |
+| `FLUX_WEB_OIDC_SESSION` | `12h` | session duration |
+| `FLUX_WEB_OIDC_SECRET_NAME` | `flux-web-oidc` | existing Secret in the flux-web namespace, key `values.yaml` |
+| `FLUX_WEB_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | CA bundle for the issuer (`SSL_CERT_FILE`) |
+| `FLUX_WEB_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
+
+The client's redirect URI is `https://<FLUX_WEB_HOSTNAME>.<INFRA_DOMAIN>/oauth2/callback`.
+Client ID and secret are not variables. The Secret's `values.yaml` is merged
+into the chart values (`valuesFrom`, deliberately without `targetPath`, whose
+`--set` parsing turns a digits-only ID into a number and makes helm-controller
+upgrade in a loop):
+
+```yaml
+web:
+  config:
+    authentication:
+      oauth2:
+        clientID: "123456789012345678"   # keep quoted (digits only)
+        clientSecret: "..."
+```
+
+flux-web has no local login; the admin kubeconfig and the flux CLI are the
+fallback, and switching back to `flux-web` restores the anonymous UI.
+
 ### headlamp-oidc
 
 Headlamp with OIDC login instead of token login: the same child `headlamp`,
@@ -310,6 +356,7 @@ the same list:
 | `kube-prometheus-stack-eso` | `cilium-gateway`, `external-secrets-vault-store` |
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
+| `flux-web-oidc` | `cilium-gateway`; the CA ConfigMap (default `trust-manager`'s bundle) and the client's `values.yaml` Secret |
 | `headlamp` | `cilium-gateway` |
 | `headlamp-oidc` | `cilium-gateway`; the CA ConfigMap (default `trust-manager`'s bundle) and the client-secret Secret |
 | `prometheus-pve-exporter` | `kube-prometheus-stack` |

@@ -1,0 +1,13 @@
+---
+# Opt-in: flux-web-oidc -- flux-web behind an OIDC login instead of the open,
+# anonymous UI (a HelmRelease patch in the child, see ks-flux-web-oidc.yaml).
+# bundle-alternative-of: flux-web
+#
+# REQUIRES ../cilium-gateway in the same spec.components list, the CA
+# ConfigMap (default: ../trust-manager's cluster-trust-bundle) and the Secret
+# with the client's values.yaml in the flux-web namespace. What the logged-in
+# users may do is RBAC on their impersonated groups (e.g. ../oidc-rbac).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-flux-web-oidc.yaml

@@ -1,0 +1,154 @@
+---
+# Flux web UI with OIDC login (opt-in) → ./apps/flux-web + the patch below
+#
+# Same child Kustomization, same name, as the flux-web component: select ONE
+# of the two. Everything the flux-web component threads is threaded here the
+# same way (check-shared-path-wiring.py), so a cluster switching between the
+# two keeps its hostname, version and namespace.
+#
+# Without a web config flux-web serves the UI to anyone who reaches the route,
+# read-only, as its own ServiceAccount. With this one it needs an OIDC login
+# and IMPERSONATES the user for every request (userActions.access Impersonated,
+# the chart default):
+#   username  <PREFIX><email>
+#   groups    <PREFIX><role> for every key of the roles claim (a map, as
+#             ZITADEL's urn:zitadel:iam:org:project:roles)
+# The defaults are exactly what the RKE2 apiserver's AuthenticationConfiguration
+# maps a ZITADEL token to (deploy-configure-rke), so ../oidc-rbac's bindings
+# (zitadel:k8s-admin / -edit / -view) apply unchanged: one role model for
+# kubectl, Headlamp and this UI. For that the client has to be in the SAME
+# ZITADEL project (`kubernetes`), whose role assertion puts those roles into
+# its ID token. The prefix is added here, not taken from the token, so no
+# claim can name a group such as system:masters. A user without a role is
+# refused (first validation); every action is audited.
+#
+# Proven per cluster in the harvester lab first (stuttgart-things/harvester#719,
+# homerun2-dev / machinery-hv); this is that patch as a component
+# (stuttgart-things/flux#1088).
+#
+# CLIENT ID AND SECRET: neither is a variable. They come from an existing
+# Secret (FLUX_WEB_OIDC_SECRET_NAME, key values.yaml) merged into the chart
+# values via valuesFrom, holding
+#   web:
+#     config:
+#       authentication:
+#         oauth2:
+#           clientID: "<id>"        # quoted: ZITADEL IDs are digits only
+#           clientSecret: "<secret>"
+# NOT valuesFrom.targetPath: its --set parsing turns a digits-only ID into a
+# number, and helm-controller then never matches the release to the object and
+# upgrades in a loop (seen in harvester, 2026-11-26). Rendered by ESO or SOPS.
+# A missing Secret fails the HelmRelease; a missing CA ConfigMap keeps the pod
+# in ContainerCreating.
+#
+# Fallback: flux-web has no local login. The admin kubeconfig and the flux CLI
+# do everything the UI does; switch back to ../flux-web for the anonymous UI.
+#
+# NO DOLLAR SIGN in the CEL below: the bundle and the child both run postBuild
+# substitution over it. The FLUX_WEB_OIDC_* variables are read HERE, by the
+# bundle, and never reach the child's substitute map.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-web
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  # Same reason as flux-web: the HelmRelease renders an HTTPRoute
+  # unconditionally, and one whose parentRef does not resolve fails quietly.
+  dependsOn:
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  # Off switch. Set FLUX_WEB_SUSPEND: "true" in the consumer's substitute block.
+  # STOPS RECONCILING; objects stay. To uninstall, drop the component.
+  suspend: ${FLUX_WEB_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./apps/flux-web
+  # Substituted by the bundle (see above). Variables, all optional but the
+  # first:
+  #   FLUX_WEB_OIDC_ISSUER_URL      REQUIRED, as in the discovery document
+  #   FLUX_WEB_OIDC_SCOPES          [openid, profile, email] (a YAML flow list)
+  #   FLUX_WEB_OIDC_ROLES_CLAIM     urn:zitadel:iam:org:project:roles
+  #   FLUX_WEB_OIDC_PREFIX          zitadel:  (user and group prefix)
+  #   FLUX_WEB_OIDC_SESSION         12h
+  #   FLUX_WEB_OIDC_SECRET_NAME     flux-web-oidc (key values.yaml)
+  #   FLUX_WEB_OIDC_CA_CONFIGMAP / _KEY   cluster-trust-bundle / trust-bundle.pem
+  # The callback is <baseURL>/oauth2/callback; it must be a redirect URI of the
+  # client.
+  patches:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: flux-web
+      patch: |  # pragma: allowlist secret -- names a Secret, holds none
+        - op: add
+          path: /spec/values/web/config
+          value:
+            baseURL: "https://${FLUX_WEB_HOSTNAME:-flux}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+            authentication:
+              type: OAuth2
+              sessionDuration: "${FLUX_WEB_OIDC_SESSION:-12h}"
+              oauth2:
+                provider: OIDC
+                issuerURL: "${FLUX_WEB_OIDC_ISSUER_URL:-https://set-FLUX_WEB_OIDC_ISSUER_URL.invalid}"
+                scopes: ${FLUX_WEB_OIDC_SCOPES:-[openid, profile, email]}
+                variables:
+                  - name: roles
+                    expression: "'${FLUX_WEB_OIDC_ROLES_CLAIM:-urn:zitadel:iam:org:project:roles}' in claims ? claims['${FLUX_WEB_OIDC_ROLES_CLAIM:-urn:zitadel:iam:org:project:roles}'] : {}"
+                  - name: groups
+                    expression: "variables.roles.map(r, '${FLUX_WEB_OIDC_PREFIX:-zitadel:}' + r)"
+                validations:
+                  - expression: "size(variables.groups) > 0"
+                    message: "no role in the OIDC token -- ask for one on the client's project"
+                  - expression: "has(claims.email) && claims.email != ''"
+                    message: "the OIDC token carries no email claim"
+                impersonation:
+                  username: "'${FLUX_WEB_OIDC_PREFIX:-zitadel:}' + claims.email"
+                  groups: "variables.groups"
+            userActions:
+              audit: ["*"]
+        - op: add
+          path: /spec/valuesFrom
+          value:
+            - kind: Secret
+              name: "${FLUX_WEB_OIDC_SECRET_NAME:-flux-web-oidc}"
+              valuesKey: values.yaml
+        - op: add
+          path: /spec/values/extraVolumes
+          value:
+            - name: oidc-ca
+              configMap:
+                name: "${FLUX_WEB_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
+        - op: add
+          path: /spec/values/extraVolumeMounts
+          value:
+            - name: oidc-ca
+              mountPath: /etc/ssl/oidc-ca
+              readOnly: true
+        - op: add
+          path: /spec/values/extraEnvs
+          value:
+            - name: SSL_CERT_FILE
+              value: "/etc/ssl/oidc-ca/${FLUX_WEB_OIDC_CA_KEY:-trust-bundle.pem}"
+  postBuild:
+    substitute:
+      FLUX_WEB_NAMESPACE: "${FLUX_WEB_NAMESPACE:-flux-system}"
+      # renovate: datasource=docker depName=ghcr.io/controlplaneio-fluxcd/charts/flux-operator
+      FLUX_WEB_VERSION: "${FLUX_WEB_VERSION:-0.62.1}"
+      # The base names these bare, without defaults of their own, so every one
+      # has to carry a default here -- an unset value reaches Flux as a YAML
+      # null and the API server rejects the whole CR.
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${FLUX_WEB_HOSTNAME:-flux}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED
