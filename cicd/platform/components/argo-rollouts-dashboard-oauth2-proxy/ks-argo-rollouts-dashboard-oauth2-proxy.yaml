@@ -1,0 +1,51 @@
+---
+# Argo Rollouts dashboard behind oauth2-proxy → ./infra/oauth2-proxy
+#
+# See ../../../../infra/oauth2-proxy/release.yaml for the client model: ONE
+# confidential client per cluster (Secret OAUTH2_PROXY_SECRET_NAME with
+# client-id, client-secret, cookie-secret, here in ARGO_ROLLOUTS_NAMESPACE).
+# Who may log in: the users with a role on the client's ZITADEL project.
+#
+# dependsOn argo-rollouts-dashboard, not only argo-rollouts: the dashboard's
+# own route must be gone before this one claims the hostname, and the
+# upstream Service (created by the argo-rollouts release) exists by then.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: argo-rollouts-dashboard-oauth2-proxy
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: cicd
+    kustomization.stuttgart-things.com/bundle: cicd-platform
+spec:
+  dependsOn:
+    - name: argo-rollouts-dashboard
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${ARGO_ROLLOUTS_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${APPS_SOURCE:-flux-apps}
+  path: ./infra/oauth2-proxy
+  postBuild:
+    substitute:
+      OAUTH2_PROXY_NAME: "argo-rollouts-dashboard-oauth2-proxy"
+      OAUTH2_PROXY_NAMESPACE: "${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}"
+      OAUTH2_PROXY_UPSTREAM: "http://argo-rollouts-dashboard.${ARGO_ROLLOUTS_NAMESPACE:-argo-rollouts}.svc.cluster.local:3100"
+      # ---- cluster-wide (same for every oauth2-proxy component) ----
+      OAUTH2_PROXY_ISSUER: "${OAUTH2_PROXY_ISSUER:-https://set-OAUTH2_PROXY_ISSUER.invalid}" # REQUIRED
+      OAUTH2_PROXY_SECRET_NAME: "${OAUTH2_PROXY_SECRET_NAME:-oauth2-proxy}"
+      OAUTH2_PROXY_CA_CONFIGMAP: "${OAUTH2_PROXY_CA_CONFIGMAP:-cluster-trust-bundle}"
+      OAUTH2_PROXY_CA_KEY: "${OAUTH2_PROXY_CA_KEY:-trust-bundle.pem}"
+      # renovate: datasource=helm depName=oauth2-proxy registryUrl=https://oauth2-proxy.github.io/manifests
+      OAUTH2_PROXY_VERSION: "${OAUTH2_PROXY_VERSION:-10.7.4}"
+      # ---- route ----
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${ARGO_ROLLOUTS_HOSTNAME:-argo-rollouts}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

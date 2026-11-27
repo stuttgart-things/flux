@@ -1,0 +1,16 @@
+# The proxy's HTTPRoute serves the hostname now; the direct route to the
+# dashboard goes, or the Gateway would have two routes for one host and the
+# unprotected one could win.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        name: argo-rollouts-dashboard
+      patch: |
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: HTTPRoute
+        metadata:
+          name: argo-rollouts-dashboard
+        $patch: delete
