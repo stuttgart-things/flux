@@ -33,6 +33,8 @@ infra/platform/
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
     ├── kube-prometheus-stack-eso/ → ./infra/kube-prometheus-stack           (instead of kube-prometheus-stack; webhook token via external-secrets-vault-store)
     ├── kube-prometheus-stack-grafana-oidc/ + Grafana login via ZITADEL     (add-on: needs kube-prometheus-stack or -eso earlier + a Secret)
+    ├── prometheus-oauth2-proxy/  → ./infra/oauth2-proxy                     (Prometheus UI behind a ZITADEL login; requires kube-prometheus-stack + a Secret)
+    ├── alertmanager-oauth2-proxy/ → ./infra/oauth2-proxy                    (Alertmanager UI behind a ZITADEL login; requires kube-prometheus-stack + a Secret)
     ├── loki/                     → ./infra/loki + httproute                 (requires cilium-gateway; one per lab)
     ├── fluent-bit/               → ./infra/fluent-bit                       (ships logs to the loki component of this cluster)
     ├── fluent-bit-remote/        → ./infra/fluent-bit + remote              (instead of fluent-bit; Loki on another cluster, HTTPS)
@@ -269,6 +271,20 @@ substitute. A missing Secret or CA ConfigMap keeps the Grafana pod from
 starting. The component sets `spec.patches` on the child; a cluster that
 patches `kube-prometheus-stack` itself must append (`/spec/patches/-`).
 
+### prometheus-oauth2-proxy / alertmanager-oauth2-proxy
+
+kube-prometheus-stack routes only Grafana. These components put the
+Prometheus and Alertmanager UIs on their own hosts, behind an oauth2-proxy
+with a ZITADEL login (`./infra/oauth2-proxy`, one instance each). All
+oauth2-proxies of a cluster share one ZITADEL client and one Secret, so one
+login opens them all; who may log in is the client's project role check.
+
+```yaml
+OAUTH2_PROXY_ISSUER: https://zitadel.infra.example
+```
+
+Client, Secret and the remaining variables: `infra/oauth2-proxy/README.md`.
+
 ### headlamp-oidc
 
 Headlamp with OIDC login instead of token login: the same child `headlamp`,
@@ -396,6 +412,7 @@ the same list:
 | `kube-prometheus-stack` | `cilium-gateway` |
 | `kube-prometheus-stack-eso` | `cilium-gateway`, `external-secrets-vault-store` |
 | `kube-prometheus-stack-grafana-oidc` | `kube-prometheus-stack` or `kube-prometheus-stack-eso` earlier in the list; the CA ConfigMap (default `trust-manager`'s bundle) and the client Secret |
+| `prometheus-oauth2-proxy` / `alertmanager-oauth2-proxy` | `kube-prometheus-stack` (or `-eso`), `cilium-gateway`; the CA ConfigMap and the cluster's oauth2-proxy client Secret (see `infra/oauth2-proxy/README.md`) |
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `flux-web-oidc` | `cilium-gateway`; the CA ConfigMap (default `trust-manager`'s bundle) and the client's `values.yaml` Secret |

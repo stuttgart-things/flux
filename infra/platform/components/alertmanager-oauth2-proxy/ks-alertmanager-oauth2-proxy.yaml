@@ -1,0 +1,54 @@
+---
+# Alertmanager UI behind oauth2-proxy → ./infra/oauth2-proxy
+#
+# kube-prometheus-stack does not route the Alertmanager UI at all; this component
+# adds a route to an oauth2-proxy in front of it, so the UI is only reachable
+# after a ZITADEL login. See ../../../oauth2-proxy/release.yaml for the client
+# model: ONE confidential client per cluster (Secret OAUTH2_PROXY_SECRET_NAME
+# with client-id, client-secret, cookie-secret, in the KPS namespace), with
+# https://<ALERTMANAGER_UI_HOSTNAME>.<INFRA_DOMAIN>/oauth2/callback as one of its
+# redirect URIs. Who may log in: the users with a role on the client's
+# ZITADEL project (project role check).
+#
+# dependsOn kube-prometheus-stack: the upstream Service is created there.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: alertmanager-oauth2-proxy
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/managed-by: flux
+    kustomization.stuttgart-things.com/type: infrastructure
+    kustomization.stuttgart-things.com/bundle: infra-platform
+spec:
+  dependsOn:
+    - name: kube-prometheus-stack
+    - name: cilium-gateway
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  force: false
+  prune: true
+  suspend: ${ALERTMANAGER_OAUTH2_PROXY_SUSPEND:-false}
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: ${FLUX_SOURCE:-flux-infra}
+  path: ./infra/oauth2-proxy
+  postBuild:
+    substitute:
+      OAUTH2_PROXY_NAME: "alertmanager-oauth2-proxy"
+      OAUTH2_PROXY_NAMESPACE: "${KPS_NAMESPACE:-monitoring}"
+      OAUTH2_PROXY_UPSTREAM: "http://kube-prometheus-stack-alertmanager.${KPS_NAMESPACE:-monitoring}.svc.cluster.local:9093"
+      # ---- cluster-wide (same for every oauth2-proxy component) ----
+      OAUTH2_PROXY_ISSUER: "${OAUTH2_PROXY_ISSUER:-https://set-OAUTH2_PROXY_ISSUER.invalid}" # REQUIRED
+      OAUTH2_PROXY_SECRET_NAME: "${OAUTH2_PROXY_SECRET_NAME:-oauth2-proxy}"
+      OAUTH2_PROXY_CA_CONFIGMAP: "${OAUTH2_PROXY_CA_CONFIGMAP:-cluster-trust-bundle}"
+      OAUTH2_PROXY_CA_KEY: "${OAUTH2_PROXY_CA_KEY:-trust-bundle.pem}"
+      # renovate: datasource=helm depName=oauth2-proxy registryUrl=https://oauth2-proxy.github.io/manifests
+      OAUTH2_PROXY_VERSION: "${OAUTH2_PROXY_VERSION:-10.7.4}"
+      # ---- route ----
+      GATEWAY_NAME: "${INFRA_GATEWAY_NAME:-cilium-gateway}"
+      GATEWAY_NAMESPACE: "${INFRA_GATEWAY_NAMESPACE:-default}"
+      HOSTNAME: "${ALERTMANAGER_UI_HOSTNAME:-alertmanager}"
+      DOMAIN: "${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}" # REQUIRED

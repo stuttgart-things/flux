@@ -1,0 +1,9 @@
+---
+# Opt-in: alertmanager-oauth2-proxy -- the Alertmanager UI of kube-prometheus-stack behind a
+# ZITADEL login (oauth2-proxy, stuttgart-things#5023). Requires
+# kube-prometheus-stack (or -eso), the CA ConfigMap and the cluster's
+# oauth2-proxy client Secret in the kube-prometheus-stack namespace.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-alertmanager-oauth2-proxy.yaml
