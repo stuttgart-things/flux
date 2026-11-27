@@ -13,6 +13,7 @@ apps/platform/
     ├── vault/       → ./apps/vault       (existing instances only — see below; + vault-autounseal, route: vault-httproute)
     ├── rancher/     → ./apps/rancher     (requires cilium-gateway, cert-manager-install)
     ├── minio/       → ./apps/minio       (requires cilium-gateway + a Secret; routes: minio-httproute)
+    ├── minio-oidc/  + OIDC login (ZITADEL) on the minio console  (add-on: needs minio earlier + a Secret)
     ├── backstage/   → ./apps/backstage   (requires cilium-gateway + a Secret)
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
@@ -345,6 +346,40 @@ The component renders two children: `minio` and `minio-httproute`
 (`./apps/minio/components/httproute`, `dependsOn: minio`). The routes are applied
 only once the Service exists — a route applied before it serves HTTP 500 for
 good (the same split as the homerun2 `*-routes`).
+
+## OIDC login on the MinIO console: `minio-oidc`
+
+An add-on to `minio`, listed **after** it: it patches the `minio` child
+Kustomization with a HelmRelease patch (stuttgart-things#5023). The root user
+stays as emergency access.
+
+```yaml
+  components:
+    - ../components/minio
+    - ../components/minio-oidc
+  postBuild:
+    substitute:
+      MINIO_OIDC_ISSUER: https://zitadel.example
+```
+
+- `MINIO_IDENTITY_OPENID_*`: discovery URL from `MINIO_OIDC_ISSUER`, client
+  ID and secret from the Secret `MINIO_OIDC_SECRET_NAME` (default
+  `minio-oidc-zitadel`, keys `client-id`, `client-secret`) in the minio
+  namespace, scopes `MINIO_OIDC_SCOPES`
+- policies from the claim `MINIO_OIDC_CLAIM` (default `minio_policy`, a
+  **list** of MinIO policy names). ZITADEL's roles claim is a map, so the
+  zitadel-config roots add the list with an action: `minio-admin` →
+  `consoleAdmin`, `minio-readwrite` → `readwrite`, `minio-readonly` →
+  `readonly`
+- confidential web client, redirect
+  `https://<MINIO_HOSTNAME_CONSOLE>.<INFRA_DOMAIN>/oauth_callback`
+  (`MINIO_BROWSER_REDIRECT_URL` is the console's URL)
+- the issuer's CA: `MINIO_OIDC_CA_CONFIGMAP` (default `cluster-trust-bundle`)
+  becomes MinIO's root store via `SSL_CERT_FILE`, so it has to carry the
+  public roots as well (trust-manager `useDefaultCAs`)
+
+Console login only: S3 clients keep using access keys (or STS
+`AssumeRoleWithWebIdentity` with a ZITADEL token).
 
 ## `vault` never becomes Ready on its own
 
