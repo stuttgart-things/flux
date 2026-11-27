@@ -18,6 +18,7 @@ apps/platform/
     ├── clusterbook/ → ./apps/clusterbook  (requires cilium-gateway + a Secret; lab-bound)
     ├── redis-stack/ → ./apps/redis-stack (requires a StorageClass + a Secret)
     ├── harbor/      → ./apps/harbor      (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
+    ├── harbor-oidc/ + OIDC login (ZITADEL) on harbor  (add-on: needs harbor earlier + two Secrets)
     ├── harbor-project-proxy/ → ./apps/harbor/components/project-proxy
     │                  (requires harbor; route: harbor-project-proxy-httproute)
     ├── keycloak/    → ./apps/keycloak    (requires cilium-gateway, cert-manager-install, a StorageClass + a Secret)
@@ -346,6 +347,51 @@ The component renders two children: `minio` and `minio-httproute`
 (`./apps/minio/components/httproute`, `dependsOn: minio`). The routes are applied
 only once the Service exists — a route applied before it serves HTTP 500 for
 good (the same split as the homerun2 `*-routes`).
+
+## OIDC login on Harbor: `harbor-oidc`
+
+An add-on to `harbor`, listed **after** it (stuttgart-things#5023). Harbor
+takes OIDC from its configuration, which the core reads from
+`CONFIG_OVERWRITE_JSON` at every start; the component only points the chart at
+two Secrets the cluster supplies in `HARBOR_NAMESPACE`:
+
+```yaml
+  components:
+    - ../components/harbor
+    - ../components/harbor-oidc
+```
+
+- `HARBOR_OIDC_SECRET_NAME` (default `harbor-oidc-zitadel`), key
+  `overrides.json` (SOPS / ESO, it holds the client secret):
+
+  ```json
+  {
+    "auth_mode": "oidc_auth",
+    "oidc_name": "ZITADEL",
+    "oidc_endpoint": "https://zitadel.example",
+    "oidc_client_id": "<client id>",
+    "oidc_client_secret": "<client secret>",
+    "oidc_scope": "openid,profile,email,offline_access",
+    "oidc_verify_cert": true,
+    "oidc_auto_onboard": true,
+    "oidc_user_claim": "preferred_username",
+    "oidc_groups_claim": "harbor_groups",
+    "oidc_admin_group": "harbor-admin"
+  }
+  ```
+
+  The groups claim must be a **list**; ZITADEL's roles claim is a map, so the
+  zitadel-config roots add `harbor_groups` with an action (`harbor-admin` →
+  Harbor system admin, `harbor-user` → login only, projects through group or
+  user membership). `offline_access` plus a refresh token grant on the client
+  keep the CLI secret (`docker login`) valid past the ID token's lifetime.
+  Redirect URI: `https://<HARBOR_HOSTNAME>.<HARBOR_DOMAIN>/c/oidc/callback`.
+- `HARBOR_OIDC_CA_SECRET` (default `harbor-oidc-ca`), key `ca.crt`: the
+  issuer's CA (`internalTLS.caBundleSecret`; internal TLS stays off), e.g. a
+  trust-manager `Bundle` with a Secret target in the harbor namespace.
+
+Switching `auth_mode` works only while Harbor has **no local users** besides
+`admin`. The local admin stays as emergency access.
 
 ## OIDC login on the MinIO console: `minio-oidc`
 

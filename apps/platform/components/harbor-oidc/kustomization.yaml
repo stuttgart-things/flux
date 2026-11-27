@@ -1,0 +1,32 @@
+---
+# Opt-in: harbor-oidc -- Harbor logs in through an OIDC provider (ZITADEL)
+# instead of its own user database (stuttgart-things#5023). The local admin
+# stays as emergency access.
+#
+# An ADD-ON, not an alternative: REQUIRES ../harbor EARLIER in the same
+# spec.components list. The patch below targets the Flux Kustomization `harbor`
+# that component renders and adds a HelmRelease patch to it; without ../harbor
+# it matches nothing and does nothing.
+#
+# Harbor takes OIDC from its configuration, not from chart values: the core
+# reads CONFIG_OVERWRITE_JSON at every start (auth_mode, oidc_*). Switching
+# auth_mode to oidc_auth works only while Harbor has no local users but admin.
+#
+# The cluster supplies, in HARBOR_NAMESPACE:
+#   HARBOR_OIDC_SECRET_NAME  Secret with key overrides.json (the whole OIDC
+#                            configuration, client secret included -- SOPS or
+#                            ESO), default harbor-oidc-zitadel. See the README
+#                            (apps/platform) for the JSON.
+#   HARBOR_OIDC_CA_SECRET    Secret with key ca.crt: the issuer's CA, put into
+#                            the trust store of core, jobservice, registry and
+#                            trivy (internalTLS.caBundleSecret; internal TLS
+#                            itself stays off), default harbor-oidc-ca. A
+#                            trust-manager Bundle with a Secret target writes it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: harbor
+    path: patch-harbor.yaml
