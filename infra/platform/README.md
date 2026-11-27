@@ -32,6 +32,7 @@ infra/platform/
     ├── prometheus/               → ./infra/prometheus                       (requires cilium-gateway)
     ├── kube-prometheus-stack/    → ./infra/kube-prometheus-stack            (requires cilium-gateway)
     ├── kube-prometheus-stack-eso/ → ./infra/kube-prometheus-stack           (instead of kube-prometheus-stack; webhook token via external-secrets-vault-store)
+    ├── kube-prometheus-stack-grafana-oidc/ + Grafana login via ZITADEL     (add-on: needs kube-prometheus-stack or -eso earlier + a Secret)
     ├── loki/                     → ./infra/loki + httproute                 (requires cilium-gateway; one per lab)
     ├── fluent-bit/               → ./infra/fluent-bit                       (ships logs to the loki component of this cluster)
     ├── fluent-bit-remote/        → ./infra/fluent-bit + remote              (instead of fluent-bit; Loki on another cluster, HTTPS)
@@ -228,6 +229,46 @@ web:
 flux-web has no local login; the admin kubeconfig and the flux CLI are the
 fallback, and switching back to `flux-web` restores the anonymous UI.
 
+### kube-prometheus-stack-grafana-oidc
+
+Grafana logs in through ZITADEL (generic OAuth, code flow with PKCE), next to
+the local admin. An **add-on**: it patches the `kube-prometheus-stack`
+Kustomization, so put it **after** `kube-prometheus-stack` or
+`kube-prometheus-stack-eso` in the list; on its own it does nothing. Same
+option and defaults as the argocd catalog's `grafana.oidc`
+(stuttgart-things/argocd#854), so one ZITADEL client setup serves both repos.
+
+```yaml
+KPS_GRAFANA_OIDC_ISSUER: https://zitadel.infra.example
+```
+
+| Variable | Default | |
+|---|---|---|
+| `KPS_GRAFANA_OIDC_ISSUER` | *(required)* | as in the discovery document, no trailing slash |
+| `KPS_GRAFANA_OIDC_NAME` | `ZITADEL` | label on the login button |
+| `KPS_GRAFANA_OIDC_ADMIN_ROLE` | `grafana-admin` | ZITADEL project role mapped to Grafana Admin |
+| `KPS_GRAFANA_OIDC_EDITOR_ROLE` | `grafana-editor` | ZITADEL project role mapped to Grafana Editor |
+| `KPS_GRAFANA_OIDC_VIEWER_ROLE` | `grafana-readonly` | ZITADEL project role mapped to Grafana Viewer |
+| `KPS_GRAFANA_OIDC_SCOPES` | `openid profile email` | space separated; see below |
+| `KPS_GRAFANA_OIDC_SECRET_NAME` | `kube-prometheus-stack-grafana-oidc` | existing Secret in the kube-prometheus-stack namespace (SOPS / ESO) |
+| `KPS_GRAFANA_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | CA bundle for the issuer (`tls_client_ca`) |
+| `KPS_GRAFANA_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
+
+The client's redirect URI is `https://<KPS_HOSTNAME>.<INFRA_DOMAIN>/login/generic_oauth`.
+Roles come from ZITADEL's `urn:zitadel:iam:org:project:roles` claim (ID token
+or userinfo); a user with neither role is refused (`role_attribute_strict`).
+The LabUL/LabDA clients sit in their own ZITADEL project `grafana` (#4697),
+with the roles `grafana-admin` / `grafana-editor` / `grafana-viewer`; there set
+`KPS_GRAFANA_OIDC_VIEWER_ROLE: grafana-viewer` and add
+`urn:zitadel:iam:org:project:id:<grafana project id>:aud urn:zitadel:iam:org:projects:roles`
+to `KPS_GRAFANA_OIDC_SCOPES`, so that project's roles reach the token.
+Client ID and secret are not variables: the Secret carries
+`GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` and
+is loaded as env (`envFromSecret`), so a digits-only ID never passes through a
+substitute. A missing Secret or CA ConfigMap keeps the Grafana pod from
+starting. The component sets `spec.patches` on the child; a cluster that
+patches `kube-prometheus-stack` itself must append (`/spec/patches/-`).
+
 ### headlamp-oidc
 
 Headlamp with OIDC login instead of token login: the same child `headlamp`,
@@ -354,6 +395,7 @@ the same list:
 | `prometheus` | `cilium-gateway` |
 | `kube-prometheus-stack` | `cilium-gateway` |
 | `kube-prometheus-stack-eso` | `cilium-gateway`, `external-secrets-vault-store` |
+| `kube-prometheus-stack-grafana-oidc` | `kube-prometheus-stack` or `kube-prometheus-stack-eso` earlier in the list; the CA ConfigMap (default `trust-manager`'s bundle) and the client Secret |
 | `external-secrets-vault-store` | `external-secrets` |
 | `flux-web` | `cilium-gateway` |
 | `flux-web-oidc` | `cilium-gateway`; the CA ConfigMap (default `trust-manager`'s bundle) and the client's `values.yaml` Secret |

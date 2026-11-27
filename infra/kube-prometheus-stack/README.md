@@ -46,6 +46,10 @@ EOF
 Grafana is then reachable at `https://grafana.platform.sthings-vsphere.labul.sva.de`
 (login `admin` / `KPS_GRAFANA_ADMIN_PASSWORD`).
 
+ZITADEL login for Grafana (next to the local admin): add the platform component
+`kube-prometheus-stack-grafana-oidc` after `kube-prometheus-stack(-eso)`, see
+[infra/platform/README.md](../platform/README.md#kube-prometheus-stack-grafana-oidc).
+
 ## Variables
 
 | Variable | Default | Description |

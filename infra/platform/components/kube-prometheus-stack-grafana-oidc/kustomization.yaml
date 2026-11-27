@@ -1,0 +1,52 @@
+---
+# Opt-in: kube-prometheus-stack-grafana-oidc -- Grafana logs in through an
+# OIDC provider (ZITADEL, generic OAuth) next to the local admin
+# (stuttgart-things#5023, #4697).
+#
+# An ADD-ON, not an alternative: REQUIRES ../kube-prometheus-stack OR
+# ../kube-prometheus-stack-eso EARLIER in the same spec.components list. The
+# patch below targets the Flux Kustomization either of them renders (both are
+# named kube-prometheus-stack) and adds a HelmRelease patch to it; without one
+# of them it matches nothing and does nothing.
+#
+# Same option, same defaults as the argocd catalog's grafana.oidc
+# (stuttgart-things/argocd#854): one ZITADEL client setup serves both.
+#
+# Variables (bundle postBuild.substitute):
+#   KPS_GRAFANA_OIDC_ISSUER        REQUIRED, the issuer as in the discovery
+#                                  document, no trailing slash
+#   KPS_GRAFANA_OIDC_NAME          login button, default ZITADEL
+#   KPS_GRAFANA_OIDC_ADMIN_ROLE    ZITADEL project role -> Grafana Admin,
+#                                  default grafana-admin
+#   KPS_GRAFANA_OIDC_EDITOR_ROLE   ZITADEL project role -> Grafana Editor,
+#                                  default grafana-editor
+#   KPS_GRAFANA_OIDC_VIEWER_ROLE   ZITADEL project role -> Grafana Viewer,
+#                                  default grafana-readonly
+#                                  (the LabUL/LabDA grafana project: grafana-viewer)
+#   KPS_GRAFANA_OIDC_SCOPES        default "openid profile email"; a client in
+#                                  its own ZITADEL project (LabUL/LabDA
+#                                  `grafana`, #4697) adds
+#                                  urn:zitadel:iam:org:project:id:<id>:aud
+#                                  urn:zitadel:iam:org:projects:roles
+#   KPS_GRAFANA_OIDC_SECRET_NAME   default kube-prometheus-stack-grafana-oidc
+#   KPS_GRAFANA_OIDC_CA_CONFIGMAP / KPS_GRAFANA_OIDC_CA_KEY
+#                                  the issuer's CA, default trust-manager's
+#                                  cluster-trust-bundle / trust-bundle.pem
+#
+# NOT a variable: client ID and secret. They come as env from the Secret
+# KPS_GRAFANA_OIDC_SECRET_NAME in the kube-prometheus-stack namespace, keys
+# GF_AUTH_GENERIC_OAUTH_CLIENT_ID and GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET (SOPS
+# or ESO, written by the cluster). Env, so a digits-only ZITADEL client ID
+# never passes through a substitute or a values file. A missing Secret or CA
+# ConfigMap keeps the Grafana pod in CreateContainerConfigError /
+# ContainerCreating.
+#
+# The client's redirect URI is https://<KPS_HOSTNAME>.<INFRA_DOMAIN>/login/generic_oauth.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: kube-prometheus-stack
+    path: patch-kube-prometheus-stack.yaml
