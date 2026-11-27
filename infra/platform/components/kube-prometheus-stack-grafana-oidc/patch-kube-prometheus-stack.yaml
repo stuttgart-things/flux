@@ -1,0 +1,50 @@
+# Substituted by the BUNDLE: the KPS_GRAFANA_OIDC_* variables are read here
+# and never reach the child's substitute map (see argo-cd-oidc for why that
+# matters). After the bundle's pass no ${...} is left for the child.
+#
+# Settings as in the argocd catalog (infra/kube-prometheus-stack, #854) and the
+# LabDA platform patch (#4697): code flow with PKCE, roles read from ZITADEL's
+# project-roles claim, a user with neither role is refused
+# (role_attribute_strict). The local admin stays as the fallback login.
+#
+# Replaces spec.patches of the kube-prometheus-stack Kustomization: a cluster
+# that patches it too must append (/spec/patches/-) after this component.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: kube-prometheus-stack
+      patch: |
+        apiVersion: helm.toolkit.fluxcd.io/v2
+        kind: HelmRelease
+        metadata:
+          name: kube-prometheus-stack
+        spec:
+          values:
+            grafana:
+              envFromSecret: "${KPS_GRAFANA_OIDC_SECRET_NAME:-kube-prometheus-stack-grafana-oidc}"
+              extraConfigmapMounts:
+                - name: oidc-ca
+                  configMap: "${KPS_GRAFANA_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
+                  mountPath: /etc/grafana/oidc-ca
+                  readOnly: true
+              grafana.ini:
+                auth.generic_oauth:
+                  enabled: true
+                  name: "${KPS_GRAFANA_OIDC_NAME:-ZITADEL}"
+                  allow_sign_up: true
+                  auto_login: false
+                  scopes: "openid profile email"
+                  auth_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oauth/v2/authorize"
+                  token_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oauth/v2/token"
+                  api_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oidc/v1/userinfo"
+                  auth_style: InHeader
+                  use_pkce: true
+                  tls_client_ca: "/etc/grafana/oidc-ca/${KPS_GRAFANA_OIDC_CA_KEY:-trust-bundle.pem}"
+                  login_attribute_path: preferred_username
+                  name_attribute_path: name
+                  email_attribute_path: email
+                  role_attribute_strict: true
+                  role_attribute_path: "contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_ADMIN_ROLE:-grafana-admin}') && 'Admin' || contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_VIEWER_ROLE:-grafana-readonly}') && 'Viewer'"
