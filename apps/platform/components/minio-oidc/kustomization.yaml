@@ -1,0 +1,41 @@
+---
+# Opt-in: minio-oidc -- the MinIO console logs in through an OIDC provider
+# (ZITADEL) next to the root user (stuttgart-things#5023).
+#
+# An ADD-ON, not an alternative: REQUIRES ../minio EARLIER in the same
+# spec.components list. The patch below targets the Flux Kustomization `minio`
+# that component renders and adds a HelmRelease patch to it; without ../minio
+# it matches nothing and does nothing.
+#
+# MinIO maps a CLAIM to its policies: the claim must be a string or a list of
+# policy names (consoleAdmin, readwrite, readonly, ...). ZITADEL's roles claim
+# is a map, so stuttgart-things' zitadel-config roots add a list claim
+# minio_policy with an action for the minio project (minio-admin ->
+# consoleAdmin, minio-readwrite -> readwrite, minio-readonly -> readonly).
+#
+# Variables (bundle postBuild.substitute):
+#   MINIO_OIDC_ISSUER        REQUIRED, the issuer as in the discovery document
+#   MINIO_OIDC_SECRET_NAME   Secret in MINIO_NAMESPACE with keys client-id and
+#                            client-secret (confidential client), default
+#                            minio-oidc-zitadel
+#   MINIO_OIDC_CLAIM         the policy claim, default minio_policy
+#   MINIO_OIDC_SCOPES        comma separated, default openid,profile,email
+#   MINIO_OIDC_DISPLAY_NAME  label of the console's login button, default
+#                            ZITADEL
+#   MINIO_OIDC_CA_CONFIGMAP  the issuer's CA, default trust-manager's
+#   / _CA_KEY                cluster-trust-bundle / trust-bundle.pem; it
+#                            becomes MinIO's root store (SSL_CERT_FILE), so it
+#                            must carry the public roots too (trust-manager's
+#                            useDefaultCAs)
+#
+# The console's redirect URI is
+# https://<MINIO_HOSTNAME_CONSOLE>.<INFRA_DOMAIN>/oauth_callback
+# (MINIO_BROWSER_REDIRECT_URL is set to the console's URL).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: minio
+    path: patch-minio.yaml

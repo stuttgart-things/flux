@@ -1,0 +1,55 @@
+# Substituted by the BUNDLE: the MINIO_OIDC_* variables are read here and never
+# reach the child's substitute map. The client ID comes from the Secret, never
+# as a substitute value: ZITADEL's IDs are digits only and would turn into a
+# number on the way.
+#
+# The bitnami chart passes extraEnvVars to the minio server as they are.
+# MINIO_IDENTITY_OPENID_CLAIM_USERINFO: the claim is read from the userinfo
+# endpoint too, where ZITADEL's pre-userinfo action puts it.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: minio-deployment
+      patch: |
+        - op: add
+          path: /spec/values/extraEnvVars
+          value:
+            - name: MINIO_IDENTITY_OPENID_CONFIG_URL
+              value: "${MINIO_OIDC_ISSUER:-https://set-MINIO_OIDC_ISSUER.invalid}/.well-known/openid-configuration"
+            - name: MINIO_IDENTITY_OPENID_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "${MINIO_OIDC_SECRET_NAME:-minio-oidc-zitadel}"
+                  key: client-id
+            - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "${MINIO_OIDC_SECRET_NAME:-minio-oidc-zitadel}"
+                  key: client-secret
+            - name: MINIO_IDENTITY_OPENID_CLAIM_NAME
+              value: "${MINIO_OIDC_CLAIM:-minio_policy}"
+            - name: MINIO_IDENTITY_OPENID_CLAIM_USERINFO
+              value: "on"
+            - name: MINIO_IDENTITY_OPENID_SCOPES
+              value: "${MINIO_OIDC_SCOPES:-openid,profile,email}"
+            - name: MINIO_IDENTITY_OPENID_DISPLAY_NAME
+              value: "${MINIO_OIDC_DISPLAY_NAME:-ZITADEL}"
+            - name: MINIO_BROWSER_REDIRECT_URL
+              value: "https://${MINIO_HOSTNAME_CONSOLE:-minio-console}.${INFRA_DOMAIN:-set-INFRA_DOMAIN.invalid}"
+            - name: SSL_CERT_FILE
+              value: "/etc/ssl/oidc-ca/${MINIO_OIDC_CA_KEY:-trust-bundle.pem}"
+        - op: add
+          path: /spec/values/extraVolumes
+          value:
+            - name: oidc-ca
+              configMap:
+                name: "${MINIO_OIDC_CA_CONFIGMAP:-cluster-trust-bundle}"
+        - op: add
+          path: /spec/values/extraVolumeMounts
+          value:
+            - name: oidc-ca
+              mountPath: /etc/ssl/oidc-ca
+              readOnly: true
