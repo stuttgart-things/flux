@@ -36,7 +36,7 @@
                   name: "${KPS_GRAFANA_OIDC_NAME:-ZITADEL}"
                   allow_sign_up: true
                   auto_login: false
-                  scopes: "openid profile email"
+                  scopes: "${KPS_GRAFANA_OIDC_SCOPES:-openid profile email}"
                   auth_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oauth/v2/authorize"
                   token_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oauth/v2/token"
                   api_url: "${KPS_GRAFANA_OIDC_ISSUER:-https://set-KPS_GRAFANA_OIDC_ISSUER.invalid}/oidc/v1/userinfo"
@@ -47,4 +47,4 @@
                   name_attribute_path: name
                   email_attribute_path: email
                   role_attribute_strict: true
-                  role_attribute_path: "contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_ADMIN_ROLE:-grafana-admin}') && 'Admin' || contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_VIEWER_ROLE:-grafana-readonly}') && 'Viewer'"
+                  role_attribute_path: "contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_ADMIN_ROLE:-grafana-admin}') && 'Admin' || contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_EDITOR_ROLE:-grafana-editor}') && 'Editor' || contains(keys(\"urn:zitadel:iam:org:project:roles\" || `{}`), '${KPS_GRAFANA_OIDC_VIEWER_ROLE:-grafana-readonly}') && 'Viewer'"

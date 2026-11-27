@@ -247,7 +247,9 @@ KPS_GRAFANA_OIDC_ISSUER: https://zitadel.infra.example
 | `KPS_GRAFANA_OIDC_ISSUER` | *(required)* | as in the discovery document, no trailing slash |
 | `KPS_GRAFANA_OIDC_NAME` | `ZITADEL` | label on the login button |
 | `KPS_GRAFANA_OIDC_ADMIN_ROLE` | `grafana-admin` | ZITADEL project role mapped to Grafana Admin |
+| `KPS_GRAFANA_OIDC_EDITOR_ROLE` | `grafana-editor` | ZITADEL project role mapped to Grafana Editor |
 | `KPS_GRAFANA_OIDC_VIEWER_ROLE` | `grafana-readonly` | ZITADEL project role mapped to Grafana Viewer |
+| `KPS_GRAFANA_OIDC_SCOPES` | `openid profile email` | space separated; see below |
 | `KPS_GRAFANA_OIDC_SECRET_NAME` | `kube-prometheus-stack-grafana-oidc` | existing Secret in the kube-prometheus-stack namespace (SOPS / ESO) |
 | `KPS_GRAFANA_OIDC_CA_CONFIGMAP` | `cluster-trust-bundle` | CA bundle for the issuer (`tls_client_ca`) |
 | `KPS_GRAFANA_OIDC_CA_KEY` | `trust-bundle.pem` | its key |
@@ -255,6 +257,11 @@ KPS_GRAFANA_OIDC_ISSUER: https://zitadel.infra.example
 The client's redirect URI is `https://<KPS_HOSTNAME>.<INFRA_DOMAIN>/login/generic_oauth`.
 Roles come from ZITADEL's `urn:zitadel:iam:org:project:roles` claim (ID token
 or userinfo); a user with neither role is refused (`role_attribute_strict`).
+The LabUL/LabDA clients sit in their own ZITADEL project `grafana` (#4697),
+with the roles `grafana-admin` / `grafana-editor` / `grafana-viewer`; there set
+`KPS_GRAFANA_OIDC_VIEWER_ROLE: grafana-viewer` and add
+`urn:zitadel:iam:org:project:id:<grafana project id>:aud urn:zitadel:iam:org:projects:roles`
+to `KPS_GRAFANA_OIDC_SCOPES`, so that project's roles reach the token.
 Client ID and secret are not variables: the Secret carries
 `GF_AUTH_GENERIC_OAUTH_CLIENT_ID` and `GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET` and
 is loaded as env (`envFromSecret`), so a digits-only ID never passes through a
