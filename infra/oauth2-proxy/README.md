@@ -10,6 +10,7 @@ hostname:
 |---|---|---|
 | `prometheus-oauth2-proxy` | kube-prometheus-stack's Prometheus UI | `prometheus.<INFRA_DOMAIN>` |
 | `alertmanager-oauth2-proxy` | kube-prometheus-stack's Alertmanager UI | `alertmanager.<INFRA_DOMAIN>` |
+| `argo-rollouts-dashboard-oauth2-proxy` (cicd bundle, add-on to `argo-rollouts`) | the Argo Rollouts dashboard | `argo-rollouts.<INFRA_DOMAIN>` (`ARGO_ROLLOUTS_HOSTNAME`) |
 
 Why one proxy per app and not one Gateway-level auth for all: the Gateway API
 `ExternalAuth` filter needs Cilium >= 1.20 and the experimental Gateway API

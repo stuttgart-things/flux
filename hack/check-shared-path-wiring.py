@@ -129,7 +129,7 @@ MUST_MATCH = {
     },
     "./infra/oauth2-proxy": {
         "why": "one oauth2-proxy per protected app (prometheus-oauth2-proxy, "
-               "alertmanager-oauth2-proxy, ...): the same base with the same "
+               "alertmanager-oauth2-proxy, argo-rollouts-dashboard-oauth2-proxy, ...): the same base with the same "
                "cluster-wide client, CA and chart version -- only name, "
                "upstream and hostname differ, as values of the same keys",
         # Nothing: every instance threads the same keys.

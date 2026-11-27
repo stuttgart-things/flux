@@ -13,6 +13,7 @@ cicd/platform/
     ├── argo-cd-oidc/         + OIDC login (ZITADEL) on argo-cd  (add-on: needs argo-cd earlier + a Secret)
     ├── argocd-platform/      → ./cicd/argocd-platform/overlays/…  (an ArgoCD control plane)
     ├── argo-rollouts/        → ./cicd/argo-rollouts
+    ├── argo-rollouts-dashboard-oauth2-proxy/ + ZITADEL login in front of the dashboard (add-on: needs argo-rollouts earlier + a Secret)
     ├── crossplane/           → ./cicd/crossplane/profiles/${CROSSPLANE_PROFILE}/…
     ├── crossplane-capabilities/ → …/capabilities/sets/${CROSSPLANE_CAPABILITY_SET}  (needs crossplane + sops-git)
     ├── crossplane-runtime-defaults/ → ./cicd/crossplane/runtime-defaults  (machinery profile WITHOUT fleet state only)
@@ -217,6 +218,30 @@ admin stays as emergency access.
   as `api.cabundle`; the chart's init container splits a multi-cert bundle
 
 UI login only: `kargo login --sso` would need a localhost redirect at the IdP.
+
+## Login in front of the Argo Rollouts dashboard: `argo-rollouts-dashboard-oauth2-proxy`
+
+The dashboard has no login of its own and can promote, abort and restart
+rollouts. This add-on to `argo-rollouts`, listed **after** it, puts an
+oauth2-proxy (`./infra/oauth2-proxy`, stuttgart-things#5023) in front: the
+proxy's HTTPRoute takes `ARGO_ROLLOUTS_HOSTNAME`, and the dashboard's own
+route is dropped from `argo-rollouts-dashboard`.
+
+```yaml
+  components:
+    - ../components/argo-rollouts
+    - ../components/argo-rollouts-dashboard-oauth2-proxy
+  postBuild:
+    substitute:
+      OAUTH2_PROXY_ISSUER: https://zitadel.example
+```
+
+Same client model as the infra components `prometheus-oauth2-proxy` /
+`alertmanager-oauth2-proxy`: the cluster's ONE oauth2-proxy client, Secret
+`OAUTH2_PROXY_SECRET_NAME` (client-id, client-secret, cookie-secret) in
+`ARGO_ROLLOUTS_NAMESPACE`, redirect URI
+`https://<ARGO_ROLLOUTS_HOSTNAME>.<INFRA_DOMAIN>/oauth2/callback` on the
+client. See [`infra/oauth2-proxy`](../../infra/oauth2-proxy/README.md).
 
 ## Upgrading a Crossplane Configuration is not a version bump
 

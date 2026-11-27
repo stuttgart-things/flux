@@ -1,0 +1,28 @@
+---
+# Opt-in: argo-rollouts-dashboard-oauth2-proxy -- the Argo Rollouts dashboard
+# behind a ZITADEL login (oauth2-proxy, stuttgart-things#5023). The dashboard
+# has no login of its own and can promote, abort and restart rollouts.
+#
+# An ADD-ON, not an alternative: REQUIRES ../argo-rollouts EARLIER in the same
+# spec.components list. It
+#   - adds the Flux Kustomization argo-rollouts-dashboard-oauth2-proxy
+#     (./infra/oauth2-proxy), whose HTTPRoute takes the dashboard's hostname
+#     ARGO_ROLLOUTS_HOSTNAME, and
+#   - drops the dashboard's own HTTPRoute from the Kustomization
+#     argo-rollouts-dashboard (without ../argo-rollouts that patch matches
+#     nothing).
+#
+# Requires the CA ConfigMap and the cluster's oauth2-proxy client Secret
+# (OAUTH2_PROXY_SECRET_NAME) in ARGO_ROLLOUTS_NAMESPACE, and the redirect URI
+# https://<ARGO_ROLLOUTS_HOSTNAME>.<INFRA_DOMAIN>/oauth2/callback on the client.
+# See ../../../../infra/oauth2-proxy/README.md.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ks-argo-rollouts-dashboard-oauth2-proxy.yaml
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      kind: Kustomization
+      name: argo-rollouts-dashboard
+    path: patch-argo-rollouts-dashboard.yaml
