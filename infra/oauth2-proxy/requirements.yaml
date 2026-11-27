@@ -1,0 +1,13 @@
+---
+# Named after the instance, not `oauth2-proxy`: two proxies in one namespace
+# (prometheus + alertmanager in monitoring) would otherwise apply the same
+# HelmRepository from two Kustomizations, and pruning one would delete the
+# other's source.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: ${OAUTH2_PROXY_NAME}
+  namespace: ${OAUTH2_PROXY_NAMESPACE}
+spec:
+  interval: 12h
+  url: https://oauth2-proxy.github.io/manifests

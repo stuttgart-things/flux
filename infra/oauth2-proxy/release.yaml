@@ -1,0 +1,66 @@
+---
+# OIDC login (ZITADEL) in front of ${OAUTH2_PROXY_UPSTREAM}.
+#
+# One confidential ZITADEL client per CLUSTER, shared by every proxy on it:
+# the Secret ${OAUTH2_PROXY_SECRET_NAME} (keys client-id, client-secret,
+# cookie-secret) is the same for all of them, each proxy adds its redirect URI
+# https://<host>/oauth2/callback to that client. The cookie is set for the
+# whole cluster domain with one name and one secret, so one login opens every
+# protected app of the cluster.
+#
+# Who may log in is decided by ZITADEL, not here: the client sits in a project
+# with "check for project role on authentication", so only users with a role
+# on that project get a token. oauth2-proxy cannot read ZITADEL's roles claim
+# (a map; its groups claim must be a list), so there is no allowed-group check.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ${OAUTH2_PROXY_NAME}
+  namespace: ${OAUTH2_PROXY_NAMESPACE}
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: oauth2-proxy
+      # renovate: datasource=helm depName=oauth2-proxy registryUrl=https://oauth2-proxy.github.io/manifests
+      version: ${OAUTH2_PROXY_VERSION:-10.7.4}
+      sourceRef:
+        kind: HelmRepository
+        name: ${OAUTH2_PROXY_NAME}
+        namespace: ${OAUTH2_PROXY_NAMESPACE}
+      interval: 12h
+  values:
+    config:
+      existingSecret: ${OAUTH2_PROXY_SECRET_NAME:-oauth2-proxy}
+      emailDomains: ["*"]
+      upstreams:
+        - ${OAUTH2_PROXY_UPSTREAM}
+    extraArgs:
+      provider: oidc
+      oidc-issuer-url: ${OAUTH2_PROXY_ISSUER:-https://set-OAUTH2_PROXY_ISSUER.invalid}
+      # The issuer's CA (ZITADEL behind the lab Vault PKI).
+      provider-ca-file: /etc/oauth2-proxy/ca/${OAUTH2_PROXY_CA_KEY:-trust-bundle.pem}
+      scope: openid profile email
+      code-challenge-method: S256
+      redirect-url: https://${HOSTNAME}.${DOMAIN}/oauth2/callback
+      # One cookie for the cluster domain: one login for all its proxies.
+      cookie-domain: .${DOMAIN}
+      whitelist-domain: .${DOMAIN}
+      cookie-name: _oauth2_proxy
+      cookie-secure: "true"
+      skip-provider-button: "true"
+      reverse-proxy: "true"
+    extraVolumes:
+      - name: oidc-ca
+        configMap:
+          name: ${OAUTH2_PROXY_CA_CONFIGMAP:-cluster-trust-bundle}
+    extraVolumeMounts:
+      - name: oidc-ca
+        mountPath: /etc/oauth2-proxy/ca
+        readOnly: true
+    resources:
+      requests:
+        cpu: 5m
+        memory: 24Mi
+      limits:
+        memory: 64Mi

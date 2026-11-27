@@ -1,0 +1,14 @@
+---
+# oauth2-proxy in front of ONE app without a login of its own
+# (stuttgart-things/stuttgart-things#5023). One instance per protected app,
+# selected through a platform component (e.g. ../platform/components/
+# prometheus-oauth2-proxy) that sets the upstream and the hostname.
+#
+# No Namespace here: the proxy runs in the namespace of the app it protects,
+# which that app's component creates.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - requirements.yaml
+  - release.yaml
+  - httproute.yaml
