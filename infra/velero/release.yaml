@@ -48,7 +48,7 @@ spec:
           readOnly: true
     initContainers:
       - name: velero-plugin-for-aws
-        image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.14.4}
+        image: velero/velero-plugin-for-aws:${VELERO_PLUGIN_AWS_VERSION:-v1.15.0}
         imagePullPolicy: IfNotPresent
         volumeMounts:
           - name: plugins
