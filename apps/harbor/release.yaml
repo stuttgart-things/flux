@@ -23,6 +23,9 @@ spec:
   values:
     externalURL: https://${HARBOR_HOSTNAME}.${HARBOR_DOMAIN}
     clusterDomain: cluster.local
+    # The chart's default is debug, which makes core log every OIDC ID token
+    # in full (pkg/oidc/helper.go "Raw ID token for verification").
+    logLevel: info
     adminPassword: "${HARBOR_ADMIN_PASSWORD}"
 
     global:
