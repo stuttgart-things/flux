@@ -1,0 +1,17 @@
+# Substituted by the BUNDLE. Nothing secret here: both values are Secret names.
+- op: add
+  path: /spec/patches
+  value:
+    - target:
+        group: helm.toolkit.fluxcd.io
+        kind: HelmRelease
+        name: harbor
+      patch: |
+        - op: add
+          path: /spec/values/core/configOverwriteJsonSecret
+          value: "${HARBOR_OIDC_SECRET_NAME:-harbor-oidc-zitadel}"
+        - op: add
+          path: /spec/values/internalTLS
+          value:
+            enabled: false
+            caBundleSecret: "${HARBOR_OIDC_CA_SECRET:-harbor-oidc-ca}"
